@@ -264,7 +264,17 @@ export default function Listing({
     }, [row1Listings, row2Listings]);
 
     const handleCardClick = useCallback((item) => {
-        router.push(`/listing_details/${item.id}`);
+        const titleSlug = item.title
+            ? item.title
+                .toLowerCase()
+                .replace(/ä/g, 'ae')
+                .replace(/ö/g, 'oe')
+                .replace(/ü/g, 'ue')
+                .replace(/ß/g, 'ss')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+            : item.id;
+        router.push(`/listing_details/${titleSlug || item.id}`);
     }, [router]);
 
     const x1 = useMotionValue(0);

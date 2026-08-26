@@ -1,6 +1,5 @@
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import AppShell from "./components/AppShell";
 
 export const metadata = {
   title: "Campuna® – Dein Camping-Marktplatz",
@@ -19,9 +18,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="de" className="h-full antialiased font-sans">
       <body className="min-h-full flex flex-col bg-white text-charcoal">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

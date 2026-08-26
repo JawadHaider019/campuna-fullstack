@@ -263,7 +263,7 @@ export default function ToolsSection() {
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                     <div className="space-y-3">
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
-                            Entdecke Campuna®
+                            Entdecke Campuna
                         </span>
                         <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-forest">
                             Camping-Wissen & Nützliche Tools

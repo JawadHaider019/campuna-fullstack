@@ -40,7 +40,15 @@ const CATEGORY_SLUGS = {
     'Boote & Wassersport': 'boote-wassersport'
 };
 
-export default function CategoriesSection({ onSelectCategory, excludeCategory }) {
+export default function CategoriesSection({
+    onSelectCategory,
+    excludeCategory,
+    badge = "Kategorien",
+    title = "Camping hat viele Seiten. Wir bringen sie zusammen.",
+    showHeader = true,
+    titleClassName = "font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-forest leading-[1.1]",
+    align = "left"
+}) {
     // Filter out current/excluded category if prop is provided
     const filteredCategories = excludeCategory
         ? CATEGORIES.filter(cat => cat.name !== excludeCategory)
@@ -64,20 +72,26 @@ export default function CategoriesSection({ onSelectCategory, excludeCategory })
         <section id="categories" className="relative z-20 my-8 py-4">
             <div className="max-w-7xl mx-auto px-6 md:px-12">
                 {/* Section Headline */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                    className="mb-8 space-y-2 text-left"
-                >
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
-                        Kategorien
-                    </span>
-                    <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-forest leading-[1.1]">
-                        Camping hat viele Seiten. Wir bringen sie zusammen.
-                    </h2>
-                </motion.div>
+                {showHeader && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                        className={`mb-8 space-y-2 ${align === 'center' ? 'text-center' : 'text-left'}`}
+                    >
+                        {badge && (
+                            <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
+                                {badge}
+                            </span>
+                        )}
+                        {title && (
+                            <h2 className={titleClassName}>
+                                {title}
+                            </h2>
+                        )}
+                    </motion.div>
+                )}
 
                 {/* Horizontal Scroll on Mobile, Grid on Desktop */}
                 <div className={gridClass}>

@@ -1,10 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;805;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Poppins", sans-serif;
-  --font-display: "Poppins", sans-serif;
-  --font-mono: "Poppins", monospace;
+  --font-sans: "Poppins";
+  --font-display: "Poppins";
+  --font-mono: "Poppins";
 
   --color-forest: #00630D;
   --color-sand: #f7f3ea;
@@ -14,6 +14,96 @@
   --color-charcoal: #1A1A1A;
 }
 
-body {
+/* Custom global overrides for smooth styling */
+html {
+  scroll-behavior: smooth;
   font-family: var(--font-sans);
+  background-color: #fff;
+  /* luxury sand default */
+  color: #1A1A1A;
+  /* charcoal */
+}
+
+/* Ensure all clickable buttons, role="button", interactive inputs, links, and labels have pointer cursor */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"],
+input[type="file"]::-webkit-file-upload-button,
+select,
+summary,
+a,
+label {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+[aria-disabled="true"],
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+}
+
+
+/* Custom scrollbar to match the premium aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f7f3ea;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #00630D;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #004d0a;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* White text shine animation */
+@keyframes text-shine {
+  0% {
+    background-position: -200% center;
+  }
+  30%, 100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-text-shine {
+  background: linear-gradient(
+    to right,
+    #C8A96B 0%,
+    #C8A96B 35%,
+    #ffffff 50%,
+    #C8A96B 65%,
+    #C8A96B 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  animation: text-shine 6s ease-in-out infinite;
 }

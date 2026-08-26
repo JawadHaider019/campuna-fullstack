@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, User, Bell } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,7 +8,7 @@ import Image from 'next/image';
 import WelcomeBar from './WelcomeBar';
 import { useAuthStore } from '@/store/useAuthStore';
 
-export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal, wishlistCount = 0, onOpenWishlist, isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
+export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
   const storeIsLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const isLoggedIn = propIsLoggedIn ?? storeIsLoggedIn;
   const [isOpen, setIsOpen] = useState(false);
@@ -29,9 +29,13 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
   ];
 
   const scrollToSection = (id) => {
+    if (id === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return true;
+    }
     const element = document.getElementById(id);
     if (element) {
-      const navHeaderOffset = 85;
+      const navHeaderOffset = 90;
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - navHeaderOffset;
 
@@ -70,15 +74,11 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
     }
   };
 
-  // Scrollspy & Scrolled state detection
+  // Scrollspy & Navbar shrink detection
   useEffect(() => {
     const handleScroll = () => {
-      // 1. Navbar shrink/fixed position check
-      if (window.scrollY > 40) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      // 1. Scrolled state check for fixed position
+      setIsScrolled(window.scrollY > 30);
 
       // 2. Section scrollspy (only active on homepage)
       if (!isHomepage) {
@@ -86,20 +86,25 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
         return;
       }
 
-      const scrollPosition = window.scrollY + 130;
-      const sectionIds = ['exclusive-offers', 'campuna-spotlight', 'journal', 'tool'];
+      const scrollY = window.scrollY;
+      const navOffset = 140; // Navbar offset
 
-      let current = 'top';
-      for (const sectionId of sectionIds) {
-        const el = document.getElementById(sectionId);
+      // Only check section IDs that are explicitly mapped in navLinks
+      const navSectionIds = ['exclusive-offers', 'campuna-spotlight', 'tool', 'journal'];
+      let current = 'top'; // Default to 'top' (Startseite) if not inside a navlink section
+
+      for (const id of navSectionIds) {
+        const el = document.getElementById(id);
         if (el) {
-          const top = el.getBoundingClientRect().top + window.scrollY;
+          const top = el.getBoundingClientRect().top + scrollY;
           const height = el.offsetHeight;
-          if (scrollPosition >= top && scrollPosition < top + height) {
-            current = sectionId;
+          if (scrollY + navOffset >= top && scrollY + navOffset < top + height) {
+            current = id;
+            break;
           }
         }
       }
+
       setActiveSection(current);
     };
 
@@ -108,80 +113,30 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isHomepage]);
 
-  // Auto-correct encoded hash URLs (%23 -> #)
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.pathname.includes('%23')) {
-      const decodedPath = decodeURIComponent(window.location.pathname);
-      const [pathPart, hashPart] = decodedPath.split('#');
-      const newPath = (pathPart || '/') + (hashPart ? `#${hashPart}` : '');
-      window.location.replace(newPath);
-    }
-  }, [pathname]);
-
-  // Handle hash scrolling on page load
+  // Handle hash scrolling on initial page load
   useEffect(() => {
     if (typeof window !== 'undefined' && isHomepage && window.location.hash) {
       const targetId = window.location.hash.replace('#', '');
-      window.scrollTo(0, 0);
-
-      let scrolled = false;
-      const initialHeight = document.body.scrollHeight;
-      let heightChanged = false;
-      let stableCount = 0;
-      let lastHeight = initialHeight;
-
-      const doScroll = () => {
-        if (scrolled) return;
-        scrolled = true;
+      setTimeout(() => {
         scrollToSection(targetId);
-      };
-
-      const check = () => {
-        if (scrolled) return;
-        const h = document.body.scrollHeight;
-        if (h !== initialHeight) {
-          heightChanged = true;
-        }
-        if (heightChanged) {
-          if (h === lastHeight) {
-            stableCount++;
-          } else {
-            stableCount = 0;
-          }
-          lastHeight = h;
-          if (stableCount >= 2) {
-            doScroll();
-            return;
-          }
-        }
-        setTimeout(check, 100);
-      };
-
-      const timer = setTimeout(check, 50);
-      const fallback = setTimeout(doScroll, 4000);
-
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(fallback);
-      };
+      }, 200);
     }
   }, [isHomepage]);
 
   return (
     <>
       {/* Welcome Bar at top when not scrolled on homepage */}
-      <WelcomeBar isLoggedIn={isLoggedIn} />
+      {isHomepage && <WelcomeBar isLoggedIn={isLoggedIn} />}
 
       <nav
         id="main-navbar"
-        className={`fixed left-0 w-full z-50 transition-all duration-300 bg-white py-4 ${
-          isScrolled || !isHomepage ? 'top-0 shadow-md' : 'top-[75px] sm:top-[65px] md:top-[75px] lg:top-[64px]'
-        }`}
+        className={`fixed left-0 w-full z-50 transition-all duration-300 bg-white py-4 ${isScrolled || !isHomepage ? 'top-0 ' : 'top-[75px] sm:top-[65px] md:top-[75px] lg:top-[64px]'
+          }`}
       >
         <div className="max-w-8xl mx-auto px-4 md:px-12">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <button onClick={() => handleNavClick('top')} className="flex items-start group relative">
+            <button onClick={() => handleNavClick('top')} className="flex items-start group relative cursor-pointer">
               <Image
                 src="/logo.webp"
                 alt="Campuna® – Dein Camping-Marktplatz"
@@ -202,16 +157,17 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
                   <button
                     key={link.id || link.path}
                     onClick={() => handleNavClick(link.id, link.path)}
-                    className={`relative font-sans text-sm font-medium tracking-wide transition-colors duration-200 py-1 ${
-                      isActive ? 'text-gold font-semibold' : 'text-forest hover:text-gold'
-                    }`}
+                    className={`relative font-sans text-sm font-medium tracking-wide transition-colors duration-200 py-1 cursor-pointer ${isActive ? 'text-gold font-semibold' : 'text-forest hover:text-gold'
+                      }`}
                   >
                     {link.label}
                     {isActive && (
                       <motion.div
-                        layoutId="activeNavUnderline"
-                        className="absolute bottom-0 left-0 right-0 h-[2px] bg-gold rounded-full"
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                        initial={{ opacity: 0, scaleX: 0.6 }}
+                        animate={{ opacity: 1, scaleX: 1 }}
+                        exit={{ opacity: 0, scaleX: 0.6 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute bottom-0 left-0 right-0 h-[2px] bg-gold rounded-full origin-center"
                       />
                     )}
                   </button>
@@ -220,7 +176,7 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
 
               <button
                 onClick={() => router.push(isLoggedIn ? '/my_account' : '/signup_login')}
-                className="relative flex items-center space-x-2 bg-forest text-sand hover:bg-gold hover:text-forest py-2.5 px-5 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg min-w-[135px] justify-center group ml-2"
+                className="relative flex items-center space-x-2 bg-forest text-sand hover:bg-gold hover:text-forest py-2.5 px-5 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg min-w-[135px] justify-center group ml-2 cursor-pointer"
               >
                 <User className="w-4 h-4 shrink-0" />
                 <div className="relative">
@@ -244,7 +200,7 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
             <div className="flex lg:hidden items-center space-x-4">
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-forest focus:outline-none"
+                className="relative p-2 text-forest focus:outline-none cursor-pointer"
                 aria-label="Menü umschalten"
               >
                 <div className="relative">
@@ -280,9 +236,8 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
                     <button
                       key={link.id || link.path}
                       onClick={() => handleNavClick(link.id, link.path)}
-                      className={`font-sans text-base font-medium text-left transition-colors duration-200 flex items-center justify-between py-1.5 ${
-                        isActive ? 'text-gold font-bold' : 'text-forest hover:text-gold'
-                      }`}
+                      className={`font-sans text-base font-medium text-left transition-colors duration-200 flex items-center justify-between py-1.5 cursor-pointer ${isActive ? 'text-gold font-bold' : 'text-forest hover:text-gold'
+                        }`}
                     >
                       <span>{link.label}</span>
                       {isActive && <div className="w-2 h-2 rounded-full bg-gold" />}
@@ -298,7 +253,7 @@ export default function Navbar({ onSearchFocus, onOpenSellModal, onOpenAuthModal
                       setIsOpen(false);
                       router.push(isLoggedIn ? '/my_account' : '/signup_login');
                     }}
-                    className="w-full bg-forest text-sand py-3 rounded-full font-sans text-sm font-semibold hover:bg-gold hover:text-forest transition-colors duration-300 shadow-md flex items-center justify-center space-x-2 min-h-[48px] group"
+                    className="w-full bg-forest text-sand py-3 rounded-full font-sans text-sm font-semibold hover:bg-gold hover:text-forest transition-colors duration-300 shadow-md flex items-center justify-center space-x-2 min-h-[48px] group cursor-pointer"
                   >
                     <User className="w-4 h-4 shrink-0" />
                     <div className="relative">

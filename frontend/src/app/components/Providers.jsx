@@ -13,12 +13,22 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, router }) => {
     const [coverSrc, setCoverSrc] = useState(partner.coverImage || DEFAULT_COVER);
     const [logoSrc, setLogoSrc] = useState(partner.logo || DEFAULT_LOGO);
 
+    const handleCardClick = () => {
+        if (onPartnerClick) onPartnerClick(partner.name);
+        const nameSlug = partner.name
+            .toLowerCase()
+            .replace(/ä/g, 'ae')
+            .replace(/ö/g, 'oe')
+            .replace(/ü/g, 'ue')
+            .replace(/ß/g, 'ss')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        router.push(`/provider_details/${nameSlug || partner.id}`);
+    };
+
     return (
         <div
-            onClick={() => {
-                if (onPartnerClick) onPartnerClick(partner.name);
-                router.push(`/all_business${partner.slug || ''}`);
-            }}
+            onClick={handleCardClick}
             className="provider-card group relative flex-shrink-0 w-[360px] sm:w-[370px] md:w-[500px] lg:w-[550px] h-[150px] sm:h-[180px] md:h-[210px] lg:h-[240px] rounded-[24px] sm:rounded-[32px] overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-all duration-500 select-none border border-white/10 flex"
         >
             {/* Background Image & Overlay */}
@@ -146,7 +156,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                 {/* Section header */}
                 <div className="flex flex-col md:flex-row items-center justify-between mb-8">
                     <div className="space-y-1">
-                        <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold-dark block">
+                        <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
                             CAMPUNA SPOTLIGHT
                         </span>
                         <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-black">
@@ -162,7 +172,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                         >
                             Auch Anbieter werden
                         </button>
-                        <button onClick={() => router.push('/all_business')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest">
+                        <button onClick={() => router.push('/provider_details/vtmcamping')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest">
                             <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
                             <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -204,7 +214,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                         >
                             Auch Anbieter werden
                         </button>
-                        <button onClick={() => router.push('/all_business')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest">
+                        <button onClick={() => router.push('/provider_details/vtmcamping')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest">
                             <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
                             <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </button>
