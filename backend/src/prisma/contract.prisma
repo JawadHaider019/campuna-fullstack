@@ -1,0 +1,63 @@
+// use prisma-next
+
+enum user_role {
+  ADMIN
+  USER
+}
+
+enum user_type {
+  COMMERCIAL
+  PRIVATE
+}
+
+model User {
+  id               Uuid              @id @default(uuid())
+  email            String            @unique
+  password_hash    String
+  role             user_role         @default(USER)
+  user_type        user_type         @default(PRIVATE)
+  email_verified   Boolean           @default(false)
+  is_suspended     Boolean           @default(false)
+  referral_code    String?           @unique
+  referred_by_code String?
+  created_at       TimestamptzString @default(now())
+  updated_at       temporal.updatedAtString()
+
+  private_profile PrivateProfile?
+  company_profile CompanyProfile?
+
+  @@map("users")
+}
+
+model PrivateProfile {
+  id         Int               @id @default(autoincrement())
+  user_id    Uuid              @unique
+  first_name String            @default("")
+  last_name  String            @default("")
+  created_at TimestamptzString @default(now())
+
+  user       User              @relation(fields: [user_id], references: [id])
+
+  @@map("private_profiles")
+}
+
+model CompanyProfile {
+  id           Int               @id @default(autoincrement())
+  user_id      Uuid              @unique
+  company_name String            @default("")
+  created_at   TimestamptzString @default(now())
+
+  user         User              @relation(fields: [user_id], references: [id])
+
+  @@map("company_profiles")
+}
+
+model Referral {
+  id          Int               @id @default(autoincrement())
+  referrer_id Uuid
+  referred_id Uuid
+  status      String            @default("PENDING")
+  created_at  TimestamptzString @default(now())
+
+  @@map("referrals")
+}

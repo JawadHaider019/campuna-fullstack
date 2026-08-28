@@ -7,7 +7,7 @@ import Footer from './Footer';
 
 export default function AppShell({ children }) {
     const pathname = usePathname();
-    const isAuthPage = pathname === '/auth' || pathname === '/signup_login' || pathname === '/login';
+    const isAuthPage = pathname === '/login' || pathname === '/register';
 
     return (
         <>
