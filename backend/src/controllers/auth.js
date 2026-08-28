@@ -86,6 +86,9 @@ export const register = async (req, res) => {
             first_name,
             last_name,
             company_name,
+            company_email,
+            website_url,
+            impressum,
             referred_by_code,
         } = req.body;
 
@@ -133,6 +136,10 @@ export const register = async (req, res) => {
                 await tx.orm.public.CompanyProfile.create({
                     user_id: newUser.id,
                     company_name: company_name || '',
+                    company_email: company_email || null,
+                    website_url: website_url || null,
+                    first_name: first_name || null,
+                    last_name: last_name || null,
                 });
             }
 

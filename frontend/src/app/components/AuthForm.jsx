@@ -71,10 +71,7 @@ export default function AuthForm({ initialMode = 'login' }) {
     // Business-only fields
     const [companyName, setCompanyName] = useState('');
     const [companyEmail, setCompanyEmail] = useState('');
-    const [companyAddress, setCompanyAddress] = useState('');
-    const [companyPhone, setCompanyPhone] = useState('');
-    const [vatId, setVatId] = useState('');
-    const [impressum, setImpressum] = useState('');
+    const [websiteUrl, setWebsiteUrl] = useState('');
 
     // Forgot password & OTP state
     const [forgotEmail, setForgotEmail] = useState('');
@@ -181,6 +178,17 @@ export default function AuthForm({ initialMode = 'login' }) {
                 }, 800);
             }
         } else if (mode === 'signup') {
+            if (userType === 'business') {
+                if (websiteUrl) {
+                    const trimmedWebsite = websiteUrl.trim();
+                    if (!trimmedWebsite.startsWith('https://')) {
+                        setAuthError('Der Website-Link muss mit https:// beginnen.');
+                        setLoading(false);
+                        return;
+                    }
+                }
+            }
+
             const userData = {
                 email: signupEmail,
                 password: signupPw,
@@ -189,6 +197,8 @@ export default function AuthForm({ initialMode = 'login' }) {
                 first_name: firstName,
                 last_name: lastName,
                 company_name: companyName,
+                company_email: userType === 'business' ? companyEmail : undefined,
+                website_url: userType === 'business' ? websiteUrl : undefined,
                 referred_by_code: referredByCode,
             };
 
@@ -372,32 +382,11 @@ export default function AuthForm({ initialMode = 'login' }) {
                                                     </div>
                                                 </div>
 
-                                                {/* Full Address ── full width */}
+                                                {/* Website-Link ── full width */}
                                                 <div className="flex flex-col gap-1">
-                                                    <label htmlFor="biz-address" className={labelCls}>Vollständige Adresse</label>
-                                                    <Field id="biz-address" placeholder="Musterstraße 1, 12345 Berlin" value={companyAddress}
-                                                        onChange={e => setCompanyAddress(e.target.value)} autoComplete="street-address" />
-                                                </div>
-
-                                                {/* Row 2: Phone + VAT ID */}
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    <div className="flex flex-col gap-1">
-                                                        <label htmlFor="biz-phone" className={labelCls}>Telefon</label>
-                                                        <Field id="biz-phone" type="tel" placeholder="+49 123 456" value={companyPhone}
-                                                            onChange={e => setCompanyPhone(e.target.value)} autoComplete="tel" />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                        <label htmlFor="biz-vat" className={labelCls}>USt-IdNr.</label>
-                                                        <Field id="biz-vat" placeholder="DE123456789" value={vatId}
-                                                            onChange={e => setVatId(e.target.value)} />
-                                                    </div>
-                                                </div>
-
-                                                {/* Impressum ── full width */}
-                                                <div className="flex flex-col gap-1">
-                                                    <label htmlFor="biz-impressum" className={labelCls}>Impressum-Link</label>
-                                                    <Field id="biz-impressum" type="url" placeholder="https://firma.de/impressum" value={impressum}
-                                                        onChange={e => setImpressum(e.target.value)} autoComplete="url" />
+                                                    <label htmlFor="biz-website" className={labelCls}>Website-Link</label>
+                                                    <Field id="biz-website" type="url" placeholder="https://firma.de" value={websiteUrl}
+                                                        onChange={e => setWebsiteUrl(e.target.value)} autoComplete="url" />
                                                 </div>
                                             </div>
                                         </motion.div>

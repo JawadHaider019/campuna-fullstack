@@ -107,15 +107,31 @@ Keep listing status separate from full moderation decision history.
 ---
 
 ## 9. Free + Business Monetization Model
-- **Free**: Company name, logo, short description, contact details, website, normal visibility, max 3 active listings.
-- **Business** (~€29/month configurable): Everything in Free + header/background cover image, longer description, more active listings, higher search visibility, spotlight placement, stats, CSV/API import.
+- **Free Profile**:
+  - Company name, logo, short description (max 150 characters), contact details, website.
+  - Normal search visibility on Campuna.
+  - Limited number of active listings (maximum of 3 active approved listings).
+- **Business Profile** (~€29/month, exact price subject to final approval):
+  - Professional extended company profile.
+  - Custom header/background cover image.
+  - Longer description (longer bio, e.g. up to 1000 characters).
+  - High listing limits or unlimited listings.
+  - Higher search visibility (Spotlight or highlighted placements).
+  - Statistics/Performance analytics.
+  - CSV/API import and additional business features.
 
 ---
 
 ## 10. Direct Referral System
-- Unique referral code and link for every account. Direct referrals only (no MLM, no cash payouts).
-- **Commercial qualification**: Referred business completes email confirmation & first Business subscription payment $\rightarrow$ Referrer receives Campuna Credit.
-- **Private qualification**: Referred user completes email confirmation & publishes 1st approved listing $\rightarrow$ Referrer receives Campuna Credit or Boost.
+- **Referral Code & Tracking**: Unique referral code and link for every account (both commercial and private users).
+- **No Cash Payout / Direct Only**: Direct 1-level referral system (no multi-level marketing, no non-cash payout, no commissions for referrals made by referred users).
+- **Commercial Referral reward**: If a company invites another commercial provider and the referred provider becomes a paying Business customer (completes email confirmation + first Business subscription payment), the referrer receives Campuna Credit.
+- **Private Referral reward**: If a private user invites another camper, and the referred camper registers and publishes their first approved listing, the referrer receives a free Premium boost or Campuna credit.
+- **Credit Use cases**:
+  - Paying Business plan subscription fees.
+  - Buying Premium boosts.
+  - Spotlight placements.
+  - Other paid Campuna marketplace features.
 
 ---
 
@@ -127,7 +143,11 @@ Keep listing status separate from full moderation decision history.
 ---
 
 ## 12. Strategic Partner System
-Partners reuse referral infrastructure with custom reward rules, landing pages, and enhanced visibility.
+- Partners receive a special **Strategic Partner Status** (custom field or flag).
+- Enhanced custom visibility and branding on Campuna.
+- Personal partner referral link.
+- Dedicated partner landing pages or custom homepage sections.
+- Individual/custom reward conditions and credit structures.
 
 ---
 

@@ -13,6 +13,8 @@ const PRIVATE_ALLOWED_FIELDS = [
 
 const COMPANY_ALLOWED_FIELDS = [
     'company_name',
+    'first_name',
+    'last_name',
     'bio',
     'location',
     'company_email',
@@ -124,7 +126,41 @@ export const updateMyProfile = async (req, res) => {
         }
 
         if (user_type === 'COMMERCIAL') {
+            const profile = await db.orm.public.CompanyProfile
+                .where((p) => p.user_id.eq(id))
+                .first();
+
+            if (!profile) {
+                return res.status(404).json({ success: false, error: 'Firmenprofil nicht gefunden.' });
+            }
+
             const updates = pickFields(req.body, COMPANY_ALLOWED_FIELDS);
+
+            // Gating validation based on subscription tier
+            if (profile.tier === 'FREE') {
+                // Block cover image updates
+                if (updates.cover_image_url && updates.cover_image_url !== profile.cover_image_url) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Das Hintergrundbild ist ein exklusives Business-Feature. Bitte aktualisiere dein Abonnement.'
+                    });
+                }
+                // Enforce 150 character limit on description
+                if (updates.bio && updates.bio.length > 150) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Beschreibung auf 150 Zeichen begrenzt im Free-Tarif.'
+                    });
+                }
+            } else {
+                // Enforce 1000 character limit on description for Business users
+                if (updates.bio && updates.bio.length > 1000) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Beschreibung auf 1000 Zeichen begrenzt.'
+                    });
+                }
+            }
 
             if (Object.keys(updates).length === 0) {
                 return res.status(400).json({

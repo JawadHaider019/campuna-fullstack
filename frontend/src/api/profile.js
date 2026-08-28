@@ -20,3 +20,17 @@ export const updateMyProfile = (updates) => api.put('/profile/me', updates);
  * @param {string} userId
  */
 export const getPublicProfile = (userId) => api.get(`/profile/${userId}`);
+
+// ─── Subscription API ───
+export const getMySubscription = () => api.get('/subscriptions/me');
+export const upgradeSubscription = () => api.post('/subscriptions/upgrade');
+export const cancelSubscription = () => api.post('/subscriptions/cancel');
+
+// ─── Credit API ───
+export const getCreditBalance = () => api.get('/credits/balance');
+export const getCreditTransactions = () => api.get('/credits/transactions');
+export const earnSimulatedCredits = () => api.post('/credits/earn-simulated');
+
+// ─── Referral API ───
+export const getReferralStats = () => api.get('/referrals/stats');
+export const getReferralsList = () => api.get('/referrals/list');

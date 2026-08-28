@@ -4,6 +4,9 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import uploadRoutes from './routes/upload.js';
+import subscriptionRoutes from './routes/subscription.js';
+import creditRoutes from './routes/credit.js';
+import referralRoutes from './routes/referral.js';
 
 dotenv.config();
 
@@ -23,6 +26,9 @@ app.get('/', (req, res) => {
 app.use('/api', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/credits', creditRoutes);
+app.use('/api/referrals', referralRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
