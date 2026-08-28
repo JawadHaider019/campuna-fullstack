@@ -30,24 +30,43 @@ model User {
 }
 
 model PrivateProfile {
-  id         Int               @id @default(autoincrement())
-  user_id    Uuid              @unique
-  first_name String            @default("")
-  last_name  String            @default("")
-  created_at TimestamptzString @default(now())
+  id                Int               @id @default(autoincrement())
+  user_id           Uuid              @unique
+  first_name        String            @default("")
+  last_name         String            @default("")
+  bio               String?
+  location          String?
+  profile_image_url String?
+  cover_image_url   String?
+  created_at        TimestamptzString @default(now())
+  updated_at        temporal.updatedAtString()
 
-  user       User              @relation(fields: [user_id], references: [id])
+  user              User              @relation(fields: [user_id], references: [id])
 
   @@map("private_profiles")
 }
 
 model CompanyProfile {
-  id           Int               @id @default(autoincrement())
-  user_id      Uuid              @unique
-  company_name String            @default("")
-  created_at   TimestamptzString @default(now())
+  id                  Int               @id @default(autoincrement())
+  user_id             Uuid              @unique
+  company_name        String            @default("")
+  bio                 String?
+  location            String?
+  company_email       String?
+  company_address     String?
+  impressum           String?
+  privacy_policy_url  String?
+  phone               String?
+  vat_id              String?
+  website_url         String?
+  instagram_url       String?
+  facebook_url        String?
+  logo_url            String?
+  cover_image_url     String?
+  created_at          TimestamptzString @default(now())
+  updated_at          temporal.updatedAtString()
 
-  user         User              @relation(fields: [user_id], references: [id])
+  user                User              @relation(fields: [user_id], references: [id])
 
   @@map("company_profiles")
 }

@@ -97,7 +97,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                             Camping Helfer
                         </motion.button>
                         <motion.button
-                            onClick={() => router.push(isLoggedIn ? '/my_account?n=yes' : '/register')}
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/register')}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 font-sans font-semibold py-3 px-6 rounded-full transition-all duration-300 text-[12px] tracking-wider"

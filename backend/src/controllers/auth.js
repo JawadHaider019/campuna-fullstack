@@ -288,3 +288,67 @@ export const login = async (req, res) => {
         return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
     }
 };
+
+/**
+ * POST /api/logout
+ * Logs out the user by returning a success message.
+ * The client will discard the tokens.
+ */
+export const logout = async (req, res) => {
+    try {
+        // Since we are using stateless JWTs, we just return success.
+        // If we implement a token blacklist, we can store blacklisted tokens here.
+        return res.status(200).json({
+            success: true,
+            message: 'Erfolgreich abgemeldet.'
+        });
+    } catch (error) {
+        console.error('❌ Logout error:', error.message);
+        return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
+    }
+};
+
+/**
+ * POST /api/refresh
+ * Exchanges a valid refresh token for a fresh access & refresh token pair.
+ */
+export const refresh = async (req, res) => {
+    try {
+        const { refresh_token } = req.body;
+        if (!refresh_token) {
+            return res.status(400).json({ success: false, error: 'Refresh-Token ist erforderlich.' });
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(refresh_token, JWT_SECRET + '_refresh');
+        } catch {
+            return res.status(401).json({ success: false, error: 'Ungültiger oder abgelaufener Refresh-Token.' });
+        }
+
+        const user = await db.orm.public.User
+            .where((u) => u.id.eq(decoded.id))
+            .first();
+
+        if (!user) {
+            return res.status(401).json({ success: false, error: 'Benutzer existiert nicht.' });
+        }
+
+        if (user.is_suspended) {
+            return res.status(403).json({ success: false, error: 'Konto ist gesperrt.' });
+        }
+
+        const { accessToken, refreshToken } = generateTokens(user);
+
+        return res.status(200).json({
+            success: true,
+            access_token: accessToken,
+            refresh_token: refreshToken,
+        });
+    } catch (error) {
+        console.error('❌ Refresh token error:', error.message);
+        return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
+    }
+};
+
+

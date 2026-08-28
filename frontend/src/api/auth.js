@@ -24,8 +24,13 @@ export const loginUser = async (credentials) => {
     return api.post('/login', credentials);
 };
 
+export const logoutUser = async () => {
+    return api.post('/logout');
+};
+
 export default {
     register: registerUser,
     login: loginUser,
+    logout: logoutUser,
     checkVerificationStatus,
 };

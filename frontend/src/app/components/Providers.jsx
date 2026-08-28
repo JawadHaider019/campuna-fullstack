@@ -167,7 +167,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
 
                     <div className="hidden lg:flex items-center space-x-6">
                         <button
-                            onClick={() => router.push(isLoggedIn ? '/my_account?n=yes' : '/signup_login')}
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/signup_login')}
                             className="text-charcoal/60 hover:text-forest text-[11px] font-sans font-semibold transition-colors border-b border-transparent hover:border-forest/30 pb-0.5"
                         >
                             Auch Anbieter werden
@@ -209,7 +209,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
 
                     <div className="mt-8 flex items-center justify-center gap-4 sm:gap-6 lg:hidden">
                         <button
-                            onClick={() => router.push(isLoggedIn ? '/my_account?n=yes' : '/register')}
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/register')}
                             className="text-charcoal/60 hover:text-forest text-[11px] font-sans font-semibold transition-colors border-b border-transparent hover:border-forest/30 pb-0.5"
                         >
                             Auch Anbieter werden

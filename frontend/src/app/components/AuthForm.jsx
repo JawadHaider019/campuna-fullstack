@@ -99,7 +99,7 @@ export default function AuthForm({ initialMode = 'login' }) {
                     clearInterval(intervalId);
                     toast.success('E-Mail erfolgreich verifiziert! Willkommen bei Campuna.');
                     login(response.data.user);
-                    router.push('/my_account');
+                    router.push('/mein-konto');
                 }
             } catch (err) {
                 console.error("Error polling verification status:", err);
@@ -212,7 +212,7 @@ export default function AuthForm({ initialMode = 'login' }) {
             if (response.success) {
                 login(response.data.user, response.data.access_token, response.data.refresh_token);
                 toast.success('Erfolgreich angemeldet!');
-                router.push('/my_account');
+                router.push('/mein-konto');
             } else {
                 const errMsg = response.error || 'Login fehlgeschlagen.';
                 setAuthError(errMsg);

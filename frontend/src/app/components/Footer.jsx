@@ -55,7 +55,7 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/my_account" className="hover:text-forest transition-colors font-[400]">
+                                <Link href="/mein-konto" className="hover:text-forest transition-colors font-[400]">
                                     Mein Konto
                                 </Link>
                             </li>
