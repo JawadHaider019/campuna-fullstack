@@ -596,8 +596,8 @@ export default function ProviderDetails() {
                             </div>
 
                             {/* Pioneer Badge */}
-                            <div className="inline-flex items-center gap-1.5 px-4.5 py-2 border border-yellow-500/25 bg-amber-500/5 text-amber-900 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm select-none">
-                                <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500 shrink-0" />
+                            <div className="inline-flex items-center gap-1.5 px-4.5 py-2 border border-gold/30 bg-gold/10 text-gold-dark rounded-full text-xs font-bold uppercase tracking-wider shadow-sm select-none">
+                                <Star className="w-3.5 h-3.5 text-gold-dark fill-gold-dark shrink-0" />
                                 <span>Campuna Pioneer</span>
                             </div>
 

@@ -25,7 +25,6 @@ model User {
 
   private_profile     PrivateProfile?
   company_profile     CompanyProfile?
-  subscription        Subscription?
   credit_transactions CreditTransaction[]
 
   @@map("users")
@@ -85,31 +84,6 @@ model Referral {
   created_at  TimestamptzString @default(now())
 
   @@map("referrals")
-}
-
-model Plan {
-  id            Int               @id @default(autoincrement())
-  name          String            @unique
-  price_monthly Int               @default(0)
-  description   String?
-  created_at    TimestamptzString @default(now())
-
-  @@map("plans")
-}
-
-model Subscription {
-  id                   Int               @id @default(autoincrement())
-  user_id              Uuid              @unique
-  plan_id              Int
-  status               String            @default("ACTIVE")
-  current_period_start TimestamptzString
-  current_period_end   TimestamptzString
-  created_at           TimestamptzString @default(now())
-  updated_at           temporal.updatedAtString()
-
-  user                 User              @relation(fields: [user_id], references: [id])
-
-  @@map("subscriptions")
 }
 
 model CreditTransaction {

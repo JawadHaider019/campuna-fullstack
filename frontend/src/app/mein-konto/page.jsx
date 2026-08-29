@@ -400,11 +400,11 @@ export default function MeinKontoPage() {
     };
 
     const handleEarnTestCredits = async () => {
-        const toastId = toast.loading('Simuliertes Guthaben wird geladen...');
+        const toastId = toast.loading('Simulierte Credits werden geladen...');
         try {
             const res = await earnSimulatedCredits();
             if (res.success) {
-                toast.success('29,00 € Test-Guthaben gutgeschrieben!', { id: toastId });
+                toast.success('2900 CC Test-Credits gutgeschrieben!', { id: toastId });
                 const creditRes = await getCreditBalance();
                 if (creditRes.success) {
                     setCreditBalance(creditRes.data.balance);
@@ -797,14 +797,18 @@ export default function MeinKontoPage() {
                         {/* 1. Campuna Credits Card */}
                         <div className="bg-white rounded-3xl shadow-sm border border-beige/60 p-6 space-y-4">
                             <h3 className="text-sm font-bold text-charcoal/50 uppercase tracking-widest pb-2 border-b border-beige flex items-center gap-1.5">
-                                <Award className="w-4 h-4 text-gold-dark" />
-                                Campuna Guthaben
+                                <img src="/coin.png" className="w-5 h-5 shrink-0" alt="CC" />
+                                Campuna Credits
                             </h3>
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs text-charcoal/50 font-sans">Aktueller Stand:</span>
-                                <span className="text-xl font-bold text-charcoal font-sans">
-                                    {(creditBalance / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                                </span>
+                            <div className="flex items-center gap-3.5 py-1">
+                                <img src="/coin.png" className="w-12 h-12 shrink-0 filter drop-shadow-sm" alt="Campuna Credit Coin" />
+                                <div>
+                                    <span className="text-xs text-charcoal/50 font-sans block mb-0.5">Aktueller Stand:</span>
+                                    <span className="text-2xl font-black text-gold-dark font-sans flex items-center gap-1.5 leading-none">
+                                        {creditBalance}
+                                        <span className="text-xs font-bold text-gold-dark font-sans tracking-wide mt-1">CC</span>
+                                    </span>
+                                </div>
                             </div>
                             <button
                                 type="button"
@@ -812,7 +816,9 @@ export default function MeinKontoPage() {
                                 className="w-full flex items-center justify-center gap-1.5 bg-gold/15 hover:bg-gold/25 text-gold-dark border border-gold/30 rounded-xl py-2.5 text-xs font-semibold font-sans transition-colors cursor-pointer"
                             >
                                 <Plus className="w-3.5 h-3.5" />
-                                Test-Guthaben aufladen (+29,00 €)
+                                Test-Credits aufladen (+2900 
+                                <img src="/coin.png" className="w-4 h-4 shrink-0 mx-0.5 align-middle" alt="CC" />
+                                )
                             </button>
                         </div>
 
@@ -830,8 +836,10 @@ export default function MeinKontoPage() {
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        <p className="text-xs text-charcoal/60 leading-relaxed font-sans">
-                                            Schalte das volle Potenzial deines Unternehmens frei. Für nur 29,00 € / Monat (oder mit Campuna Credits).
+                                        <p className="text-xs text-charcoal/60 leading-relaxed font-sans flex items-center flex-wrap gap-x-1 gap-y-0.5">
+                                            Schalte das volle Potenzial deines Unternehmens frei. Für nur 29,00 € / Monat (oder mit 2900 
+                                            <img src="/coin.png" className="w-4.5 h-4.5 shrink-0 align-middle" alt="CC" />
+                                            ).
                                         </p>
                                         <button
                                             type="button"

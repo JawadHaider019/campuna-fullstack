@@ -27,7 +27,7 @@ export const getTransactions = async (req, res) => {
         const { id } = req.user;
         const transactions = await db.orm.public.CreditTransaction
             .where((t) => t.user_id.eq(id))
-            .order((t) => t.created_at.desc())
+            .orderBy((t) => t.created_at.desc())
             .all();
 
         return res.status(200).json({ success: true, transactions });

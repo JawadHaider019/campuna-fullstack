@@ -12,20 +12,12 @@
       "model": "CreditTransaction",
       "namespace": "public"
     },
-    "plans": {
-      "model": "Plan",
-      "namespace": "public"
-    },
     "private_profiles": {
       "model": "PrivateProfile",
       "namespace": "public"
     },
     "referrals": {
       "model": "Referral",
-      "namespace": "public"
-    },
-    "subscriptions": {
-      "model": "Subscription",
       "namespace": "public"
     },
     "users": {
@@ -399,67 +391,6 @@
               "table": "credit_transactions"
             }
           },
-          "Plan": {
-            "fields": {
-              "created_at": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
-              },
-              "description": {
-                "nullable": true,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "name": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "price_monthly": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              }
-            },
-            "relations": {},
-            "storage": {
-              "fields": {
-                "created_at": {
-                  "column": "created_at"
-                },
-                "description": {
-                  "column": "description"
-                },
-                "id": {
-                  "column": "id"
-                },
-                "name": {
-                  "column": "name"
-                },
-                "price_monthly": {
-                  "column": "price_monthly"
-                }
-              },
-              "namespaceId": "public",
-              "table": "plans"
-            }
-          },
           "PrivateProfile": {
             "fields": {
               "bio": {
@@ -648,113 +579,6 @@
               "table": "referrals"
             }
           },
-          "Subscription": {
-            "fields": {
-              "created_at": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
-              },
-              "current_period_end": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
-              },
-              "current_period_start": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
-              },
-              "id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "plan_id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/int4@1",
-                  "kind": "scalar"
-                }
-              },
-              "status": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "updated_at": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "kind": "scalar"
-                }
-              },
-              "user_id": {
-                "nullable": false,
-                "type": {
-                  "codecId": "pg/uuid@1",
-                  "kind": "scalar"
-                }
-              }
-            },
-            "relations": {
-              "user": {
-                "cardinality": "N:1",
-                "on": {
-                  "localFields": [
-                    "user_id"
-                  ],
-                  "targetFields": [
-                    "id"
-                  ]
-                },
-                "to": {
-                  "model": "User",
-                  "namespace": "public"
-                }
-              }
-            },
-            "storage": {
-              "fields": {
-                "created_at": {
-                  "column": "created_at"
-                },
-                "current_period_end": {
-                  "column": "current_period_end"
-                },
-                "current_period_start": {
-                  "column": "current_period_start"
-                },
-                "id": {
-                  "column": "id"
-                },
-                "plan_id": {
-                  "column": "plan_id"
-                },
-                "status": {
-                  "column": "status"
-                },
-                "updated_at": {
-                  "column": "updated_at"
-                },
-                "user_id": {
-                  "column": "user_id"
-                }
-              },
-              "namespaceId": "public",
-              "table": "subscriptions"
-            }
-          },
           "User": {
             "fields": {
               "created_at": {
@@ -890,21 +714,6 @@
                 },
                 "to": {
                   "model": "PrivateProfile",
-                  "namespace": "public"
-                }
-              },
-              "subscription": {
-                "cardinality": "1:1",
-                "on": {
-                  "localFields": [
-                    "id"
-                  ],
-                  "targetFields": [
-                    "user_id"
-                  ]
-                },
-                "to": {
-                  "model": "Subscription",
                   "namespace": "public"
                 }
               }
@@ -1199,61 +1008,6 @@
               },
               "uniques": []
             },
-            "plans": {
-              "columns": {
-                "created_at": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
-                  "nativeType": "timestamptz",
-                  "nullable": false
-                },
-                "description": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": true
-                },
-                "id": {
-                  "codecId": "pg/int4@1",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
-                  "nativeType": "int4",
-                  "nullable": false
-                },
-                "name": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
-                "price_monthly": {
-                  "codecId": "pg/int4@1",
-                  "default": {
-                    "kind": "literal",
-                    "value": 0
-                  },
-                  "nativeType": "int4",
-                  "nullable": false
-                }
-              },
-              "foreignKeys": [],
-              "indexes": [],
-              "primaryKey": {
-                "columns": [
-                  "id"
-                ]
-              },
-              "uniques": [
-                {
-                  "columns": [
-                    "name"
-                  ]
-                }
-              ]
-            },
             "private_profiles": {
               "columns": {
                 "bio": {
@@ -1404,93 +1158,6 @@
               },
               "uniques": []
             },
-            "subscriptions": {
-              "columns": {
-                "created_at": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "default": {
-                    "expression": "now()",
-                    "kind": "function"
-                  },
-                  "nativeType": "timestamptz",
-                  "nullable": false
-                },
-                "current_period_end": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
-                  "nullable": false
-                },
-                "current_period_start": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
-                  "nullable": false
-                },
-                "id": {
-                  "codecId": "pg/int4@1",
-                  "default": {
-                    "expression": "autoincrement()",
-                    "kind": "function"
-                  },
-                  "nativeType": "int4",
-                  "nullable": false
-                },
-                "plan_id": {
-                  "codecId": "pg/int4@1",
-                  "nativeType": "int4",
-                  "nullable": false
-                },
-                "status": {
-                  "codecId": "pg/text@1",
-                  "default": {
-                    "kind": "literal",
-                    "value": "ACTIVE"
-                  },
-                  "nativeType": "text",
-                  "nullable": false
-                },
-                "updated_at": {
-                  "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
-                  "nullable": false
-                },
-                "user_id": {
-                  "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
-                  "nullable": false
-                }
-              },
-              "foreignKeys": [
-                {
-                  "source": {
-                    "columns": [
-                      "user_id"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "subscriptions"
-                  },
-                  "target": {
-                    "columns": [
-                      "id"
-                    ],
-                    "namespaceId": "public",
-                    "tableName": "users"
-                  }
-                }
-              ],
-              "indexes": [],
-              "primaryKey": {
-                "columns": [
-                  "id"
-                ]
-              },
-              "uniques": [
-                {
-                  "columns": [
-                    "user_id"
-                  ]
-                }
-              ]
-            },
             "users": {
               "checks": [
                 {
@@ -1635,10 +1302,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "d9c4c7d7edc569b87eac2d5eb016f687df9fec300d8350d4f7d4f3fae252f334"
+    "storageHash": "c7e09a8eb7959e8b0d0b2aa3c32a22a1175677c79758265462a911e821382c60"
   },
   "execution": {
-    "executionHash": "5f1891cfc2c7339b9fea016624b826386c756881074b43eb6c7c04c9f524cabb",
+    "executionHash": "00dac374460dc0d6dd456ef90e064509543e6ead9657e15255a4332bd72864f6",
     "mutations": {
       "defaults": [
         {
@@ -1669,21 +1336,6 @@
             "column": "updated_at",
             "namespace": "public",
             "table": "private_profiles"
-          }
-        },
-        {
-          "onCreate": {
-            "id": "timestampNow",
-            "kind": "generator"
-          },
-          "onUpdate": {
-            "id": "timestampNow",
-            "kind": "generator"
-          },
-          "ref": {
-            "column": "updated_at",
-            "namespace": "public",
-            "table": "subscriptions"
           }
         },
         {

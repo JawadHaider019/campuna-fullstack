@@ -358,4 +358,54 @@ export const refresh = async (req, res) => {
     }
 };
 
+/**
+ * POST /api/verify-email
+ * Verifies email using verification token. Updates user.email_verified = true.
+ */
+export const verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            return res.status(400).json({ success: false, error: 'Token ist erforderlich.' });
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch (err) {
+            return res.status(400).json({ success: false, error: 'Ungültiger oder abgelaufener Verifizierungstoken.' });
+        }
+
+        if (decoded.purpose !== 'email-verification') {
+            return res.status(400).json({ success: false, error: 'Ungültiger Token-Typ.' });
+        }
+
+        const user = await db.orm.public.User
+            .where((u) => u.id.eq(decoded.id))
+            .first();
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'Benutzer nicht gefunden.' });
+        }
+
+        if (user.email_verified) {
+            return res.status(200).json({ success: true, message: 'E-Mail-Adresse ist bereits verifiziert.' });
+        }
+
+        // Set email_verified to true
+        await db.orm.public.User
+            .where((u) => u.id.eq(user.id))
+            .update({ email_verified: true });
+
+        return res.status(200).json({
+            success: true,
+            message: 'E-Mail-Adresse erfolgreich verifiziert!',
+        });
+
+    } catch (error) {
+        console.error('❌ Email verification error:', error.message);
+        return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
+    }
+};
+
 
