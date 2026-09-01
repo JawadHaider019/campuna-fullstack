@@ -24,6 +24,7 @@ import {
     Check
 } from 'lucide-react';
 import { FEATURED_LISTINGS } from '@/data';
+import { getListingDetail, getAllListings } from '@/api/listings';
 
 function slugifyTitle(title = '') {
     return title
@@ -39,8 +40,15 @@ function slugifyTitle(title = '') {
 function parseListingId(slug = '') {
     if (!slug) return '';
     const decoded = decodeURIComponent(slug);
-    const match = decoded.match(/(CP-\w+)$/i) || decoded.match(/-([a-zA-Z0-9_]+)$/);
-    if (match) return match[1];
+    // 1. Try matching UUID (if appended at the end)
+    const uuidMatch = decoded.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i);
+    if (uuidMatch) return uuidMatch[1];
+    
+    // 2. Try matching CP- style mock ID
+    const cpMatch = decoded.match(/(CP-\w+)$/i);
+    if (cpMatch) return cpMatch[1];
+    
+    // 3. Otherwise return the full slug directly (e.g. title-only slug)
     return decoded;
 }
 
@@ -121,74 +129,43 @@ export default function ListingDetailPage() {
                 }
 
                 // 2. If not in static data, check API
-                if (!foundListing) {
-                    const data = await getHomepageProducts();
-                    if (data && data.status === 'success' && data.response && Array.isArray(data.response.listing)) {
-                        const apiMatch = data.response.listing.find(item => item._id === listingId);
-                        if (apiMatch) {
-                            // Map API item structure to our layout
-                            // Prioritize Main Image, fallback to images array
-                            let rawImages = [];
-                            const mainImg = apiMatch['Main Image'] || apiMatch.MainImage;
-                            if (mainImg) {
-                                rawImages.push(mainImg);
-                            }
-                            if (apiMatch.images && Array.isArray(apiMatch.images)) {
-                                apiMatch.images.forEach(img => {
-                                    if (img && img !== mainImg && !rawImages.includes(img)) {
-                                        rawImages.push(img);
-                                    }
-                                });
-                            } else if (apiMatch.images && typeof apiMatch.images === 'string') {
-                                if (apiMatch.images !== mainImg) {
-                                    rawImages.push(apiMatch.images);
-                                }
-                            }
-
-                            let images = rawImages
-                                .filter(Boolean)
-                                .map(url => {
-                                    url = url.startsWith('//') ? `https:${url}` : url;
-                                    if (/\.heic$/i.test(url.split('?')[0]) && url.includes('cdn.bubble.io')) {
-                                        url = url.replace(
-                                            /(https:\/\/[^/]+\.cdn\.bubble\.io\/)(f[0-9x]+\/)/,
-                                            '$1cdn-cgi/image/f=auto,fit=cover/$2'
-                                        );
-                                    }
-                                    return url;
-                                });
-
-                            if (images.length === 0) images.push('/hero-campuna.webp');
-
-                            const resolvedSellerType = apiMatch['listing user type'] || 'Privat';
-                            const sellerName = resolvedSellerType === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer';
+                if (!foundListing && listingId) {
+                    try {
+                        const res = await getListingDetail(listingId);
+                        if (res.success && res.data.listing) {
+                            const apiMatch = res.data.listing;
+                            const images = apiMatch.images && apiMatch.images.length > 0
+                                ? apiMatch.images
+                                : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
 
                             foundListing = {
-                                id: apiMatch._id,
-                                title: apiMatch.title || apiMatch.description || 'Camping Angebot',
-                                category: apiMatch.Category || 'Camping Zubehör',
-                                price: typeof apiMatch.price === 'number' ? apiMatch.price : parseFloat(apiMatch.price) || 0,
-                                pricePeriod: apiMatch.Category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
-                                location: apiMatch['location geo']?.address || 'Deutschland',
-                                displayLocation: formatLocation(apiMatch['location geo']?.address || 'Deutschland'),
+                                id: apiMatch.id,
+                                title: apiMatch.title || 'Camping Angebot',
+                                category: apiMatch.category || 'Camping Zubehör',
+                                price: parseFloat(apiMatch.price) || 0,
+                                pricePeriod: apiMatch.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
+                                location: apiMatch.location || 'Deutschland',
+                                displayLocation: apiMatch.location || 'Deutschland',
                                 images,
                                 seller: {
-                                    name: sellerName,
+                                    name: apiMatch.seller?.name || 'Verkäufer',
                                     verified: true,
-                                    type: resolvedSellerType
+                                    type: apiMatch.seller?.type || 'Privat'
                                 },
-                                features: [apiMatch['Condition item'], apiMatch['Sub - Category']].filter(Boolean),
-                                isNegotiable: apiMatch.title?.toLowerCase().includes('vb') || apiMatch.description?.toLowerCase().includes('vb') || false,
+                                features: [apiMatch.condition, apiMatch.subcategory].filter(Boolean),
+                                isNegotiable: apiMatch.negotiable || false,
                                 description: apiMatch.description || '',
                                 publishedDate: 'Neu eingestellt',
-                                anzeigeNr: `CP-${apiMatch._id.slice(-4).toUpperCase()}`,
+                                anzeigeNr: `CP-${apiMatch.id.slice(-4).toUpperCase()}`,
                                 viewsCount: 12,
                                 likesCount: 0,
                                 chatsCount: 0,
-                                condition: apiMatch['Condition item'] === 'Used' ? 'Gebraucht' : (apiMatch['Condition item'] === 'New' ? 'Neu' : 'Gut'),
+                                condition: apiMatch.condition || 'Sehr gut',
                                 status: 'Aktiv'
                             };
                         }
+                    } catch (apiErr) {
+                        console.error("API error fetching listing detail:", apiErr);
                     }
                 }
 
@@ -196,8 +173,25 @@ export default function ListingDetailPage() {
                     setListing(foundListing);
                     setActiveImageIdx(0);
 
-                    const related = FEATURED_LISTINGS.filter(item => item.id !== foundListing.id);
-                    setRelatedListings(related);
+                    // Fetch related listings from database
+                    getAllListings().then(res => {
+                        if (res.success && active) {
+                            const dbListings = res.data.listings || [];
+                            const mapped = dbListings.map(l => ({
+                                id: l.id,
+                                title: l.title || 'Camping Angebot',
+                                price: parseFloat(l.price) || 0,
+                                pricePeriod: l.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
+                                location: l.location || 'Deutschland',
+                                displayLocation: l.location || 'Deutschland',
+                                images: l.images && l.images.length > 0 ? l.images : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80']
+                            }));
+                            const related = mapped.filter(item => item.id !== foundListing.id);
+                            setRelatedListings(related);
+                        }
+                    }).catch(err => {
+                        console.error("Error loading related listings:", err);
+                    });
                 }
             } catch (err) {
                 console.error("Error loading listing details:", err);
@@ -308,19 +302,32 @@ export default function ListingDetailPage() {
 
             {/* Seller Details */}
             <div
-                onClick={() => router.push(`/provider_details/${slugifyTitle(seller.name)}`)}
+                onClick={() => router.push(`/provider_details/${slugifyTitle(seller.name)}-${listing.user_id || listing.owner_user_id || listing.ownerUserId}`)}
                 className="flex items-center gap-3 text-left border-b border-forest/5 pb-4 cursor-pointer group/seller hover:opacity-90 transition-opacity"
             >
                 <div className="w-12 h-12 rounded-full bg-forest flex items-center justify-center text-white font-display text-lg font-bold select-none shadow shrink-0 group-hover/seller:ring-2 group-hover/seller:ring-gold/50 transition-all">
                     {seller.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-display font-bold text-charcoal sm:text-base leading-tight group-hover/seller:text-forest transition-colors">
                             {seller.name}
                         </span>
                         {seller.verified && (
                             <ShieldCheck className="w-4.5 h-4.5 text-forest shrink-0 fill-forest/15" />
+                        )}
+                        {seller.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
+                            <div 
+                                className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2 py-0.5 text-[10px] font-bold font-sans shadow-sm cursor-help"
+                                title={`Campuna Pioneer #${seller.achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER').position}`}
+                            >
+                                <img 
+                                    src="/pioneer_badge.jpg" 
+                                    alt="Campuna Pioneer Badge" 
+                                    className="w-4 h-4 rounded-full object-cover border border-gold/30"
+                                />
+                                <span>Pioneer #{seller.achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER').position}</span>
+                            </div>
                         )}
                     </div>
                     <span className="text-[11px] text-charcoal/50 font-bold">

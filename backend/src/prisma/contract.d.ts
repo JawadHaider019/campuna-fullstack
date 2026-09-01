@@ -33,9 +33,9 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'c7e09a8eb7959e8b0d0b2aa3c32a22a1175677c79758265462a911e821382c60'>;
+  StorageHashBase<'1609f66c3e0a807b409ec38f2329a4e9fd36bb6f92705ca633c8ae211ce1ef6b'>;
 export type ExecutionHash =
-  ExecutionHashBase<'00dac374460dc0d6dd456ef90e064509543e6ead9657e15255a4332bd72864f6'>;
+  ExecutionHashBase<'967b95ddeb17386c27a8fa3556b54ac3580a43b05f6a2ba6e9f77413cd673ddf'>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
 
@@ -273,6 +273,43 @@ export type FieldOutputTypes = {
       readonly description: CodecTypes['pg/text@1']['output'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly Listing: {
+      readonly id: CodecTypes['pg/uuid@1']['output'];
+      readonly user_id: CodecTypes['pg/uuid@1']['output'];
+      readonly title: CodecTypes['pg/text@1']['output'];
+      readonly slug: CodecTypes['pg/text@1']['output'] | null;
+      readonly description: CodecTypes['pg/text@1']['output'];
+      readonly category_id: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly subcategory_id: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly category: CodecTypes['pg/text@1']['output'] | null;
+      readonly subcategory: CodecTypes['pg/text@1']['output'] | null;
+      readonly price: CodecTypes['pg/numeric@1']['output'] | null;
+      readonly negotiable: CodecTypes['pg/bool@1']['output'];
+      readonly location: CodecTypes['pg/text@1']['output'] | null;
+      readonly condition: CodecTypes['pg/text@1']['output'] | null;
+      readonly type_of_offer: CodecTypes['pg/text@1']['output'] | null;
+      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly featured: CodecTypes['pg/bool@1']['output'];
+      readonly reviewed_by_type: CodecTypes['pg/text@1']['output'] | null;
+      readonly reviewed_by_id: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly reviewed_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly images: ReadonlyArray<CodecTypes['pg/text@1']['output']>;
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
+    readonly Plan: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly price_cents: CodecTypes['pg/int4@1']['output'];
+      readonly listing_limit: CodecTypes['pg/int4@1']['output'];
+      readonly has_cover_image: CodecTypes['pg/bool@1']['output'];
+      readonly has_spotlight: CodecTypes['pg/bool@1']['output'];
+      readonly has_statistics: CodecTypes['pg/bool@1']['output'];
+      readonly has_csv_import: CodecTypes['pg/bool@1']['output'];
+      readonly description_limit: CodecTypes['pg/int4@1']['output'];
+      readonly is_active: CodecTypes['pg/bool@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'] | null;
+    };
     readonly PrivateProfile: {
       readonly id: CodecTypes['pg/int4@1']['output'];
       readonly user_id: CodecTypes['pg/uuid@1']['output'];
@@ -292,6 +329,21 @@ export type FieldOutputTypes = {
       readonly status: CodecTypes['pg/text@1']['output'];
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
+    readonly Subscription: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly user_id: CodecTypes['pg/uuid@1']['output'];
+      readonly plan_id: CodecTypes['pg/int4@1']['output'];
+      readonly status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'PENDING';
+      readonly started_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly expires_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly cancelled_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly payment_method: CodecTypes['pg/text@1']['output'] | null;
+      readonly amount_paid_cents: CodecTypes['pg/int4@1']['output'];
+      readonly credit_tx_id: CodecTypes['pg/int4@1']['output'] | null;
+      readonly notes: CodecTypes['pg/text@1']['output'] | null;
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
     readonly User: {
       readonly id: CodecTypes['pg/uuid@1']['output'];
       readonly email: CodecTypes['pg/text@1']['output'];
@@ -304,6 +356,13 @@ export type FieldOutputTypes = {
       readonly referred_by_code: CodecTypes['pg/text@1']['output'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
+    };
+    readonly UserAchievement: {
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly user_id: CodecTypes['pg/uuid@1']['output'];
+      readonly badge_key: CodecTypes['pg/text@1']['output'];
+      readonly position: CodecTypes['pg/int4@1']['output'] | null;
+      readonly earned_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
   };
 };
@@ -341,6 +400,43 @@ export type FieldInputTypes = {
       readonly description: CodecTypes['pg/text@1']['input'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
+    readonly Listing: {
+      readonly id: CodecTypes['pg/uuid@1']['input'];
+      readonly user_id: CodecTypes['pg/uuid@1']['input'];
+      readonly title: CodecTypes['pg/text@1']['input'];
+      readonly slug: CodecTypes['pg/text@1']['input'] | null;
+      readonly description: CodecTypes['pg/text@1']['input'];
+      readonly category_id: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly subcategory_id: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly category: CodecTypes['pg/text@1']['input'] | null;
+      readonly subcategory: CodecTypes['pg/text@1']['input'] | null;
+      readonly price: CodecTypes['pg/numeric@1']['input'] | null;
+      readonly negotiable: CodecTypes['pg/bool@1']['input'];
+      readonly location: CodecTypes['pg/text@1']['input'] | null;
+      readonly condition: CodecTypes['pg/text@1']['input'] | null;
+      readonly type_of_offer: CodecTypes['pg/text@1']['input'] | null;
+      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly featured: CodecTypes['pg/bool@1']['input'];
+      readonly reviewed_by_type: CodecTypes['pg/text@1']['input'] | null;
+      readonly reviewed_by_id: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly reviewed_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly images: ReadonlyArray<CodecTypes['pg/text@1']['input']>;
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly Plan: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly price_cents: CodecTypes['pg/int4@1']['input'];
+      readonly listing_limit: CodecTypes['pg/int4@1']['input'];
+      readonly has_cover_image: CodecTypes['pg/bool@1']['input'];
+      readonly has_spotlight: CodecTypes['pg/bool@1']['input'];
+      readonly has_statistics: CodecTypes['pg/bool@1']['input'];
+      readonly has_csv_import: CodecTypes['pg/bool@1']['input'];
+      readonly description_limit: CodecTypes['pg/int4@1']['input'];
+      readonly is_active: CodecTypes['pg/bool@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'] | null;
+    };
     readonly PrivateProfile: {
       readonly id: CodecTypes['pg/int4@1']['input'];
       readonly user_id: CodecTypes['pg/uuid@1']['input'];
@@ -360,6 +456,21 @@ export type FieldInputTypes = {
       readonly status: CodecTypes['pg/text@1']['input'];
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
+    readonly Subscription: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly user_id: CodecTypes['pg/uuid@1']['input'];
+      readonly plan_id: CodecTypes['pg/int4@1']['input'];
+      readonly status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'PENDING';
+      readonly started_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly expires_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly cancelled_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly payment_method: CodecTypes['pg/text@1']['input'] | null;
+      readonly amount_paid_cents: CodecTypes['pg/int4@1']['input'];
+      readonly credit_tx_id: CodecTypes['pg/int4@1']['input'] | null;
+      readonly notes: CodecTypes['pg/text@1']['input'] | null;
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
     readonly User: {
       readonly id: CodecTypes['pg/uuid@1']['input'];
       readonly email: CodecTypes['pg/text@1']['input'];
@@ -372,6 +483,13 @@ export type FieldInputTypes = {
       readonly referred_by_code: CodecTypes['pg/text@1']['input'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
+    };
+    readonly UserAchievement: {
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly user_id: CodecTypes['pg/uuid@1']['input'];
+      readonly badge_key: CodecTypes['pg/text@1']['input'];
+      readonly position: CodecTypes['pg/int4@1']['input'] | null;
+      readonly earned_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
   };
 };
@@ -409,6 +527,43 @@ export type StorageColumnTypes = {
       readonly type: CodecTypes['pg/text@1']['output'];
       readonly user_id: CodecTypes['pg/uuid@1']['output'];
     };
+    readonly listings: {
+      readonly category: CodecTypes['pg/text@1']['output'] | null;
+      readonly category_id: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly condition: CodecTypes['pg/text@1']['output'] | null;
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly description: CodecTypes['pg/text@1']['output'];
+      readonly featured: CodecTypes['pg/bool@1']['output'];
+      readonly id: CodecTypes['pg/uuid@1']['output'];
+      readonly images: ReadonlyArray<CodecTypes['pg/text@1']['output']>;
+      readonly location: CodecTypes['pg/text@1']['output'] | null;
+      readonly negotiable: CodecTypes['pg/bool@1']['output'];
+      readonly price: CodecTypes['pg/numeric@1']['output'] | null;
+      readonly reviewed_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly reviewed_by_id: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly reviewed_by_type: CodecTypes['pg/text@1']['output'] | null;
+      readonly slug: CodecTypes['pg/text@1']['output'] | null;
+      readonly status: CodecTypes['pg/text@1']['output'];
+      readonly subcategory: CodecTypes['pg/text@1']['output'] | null;
+      readonly subcategory_id: CodecTypes['pg/uuid@1']['output'] | null;
+      readonly title: CodecTypes['pg/text@1']['output'];
+      readonly type_of_offer: CodecTypes['pg/text@1']['output'] | null;
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly user_id: CodecTypes['pg/uuid@1']['output'];
+    };
+    readonly plans: {
+      readonly description: CodecTypes['pg/text@1']['output'] | null;
+      readonly description_limit: CodecTypes['pg/int4@1']['output'];
+      readonly has_cover_image: CodecTypes['pg/bool@1']['output'];
+      readonly has_csv_import: CodecTypes['pg/bool@1']['output'];
+      readonly has_spotlight: CodecTypes['pg/bool@1']['output'];
+      readonly has_statistics: CodecTypes['pg/bool@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly is_active: CodecTypes['pg/bool@1']['output'];
+      readonly listing_limit: CodecTypes['pg/int4@1']['output'];
+      readonly name: CodecTypes['pg/text@1']['output'];
+      readonly price_cents: CodecTypes['pg/int4@1']['output'];
+    };
     readonly private_profiles: {
       readonly bio: CodecTypes['pg/text@1']['output'] | null;
       readonly cover_image_url: CodecTypes['pg/text@1']['output'] | null;
@@ -427,6 +582,28 @@ export type StorageColumnTypes = {
       readonly referred_id: CodecTypes['pg/uuid@1']['output'];
       readonly referrer_id: CodecTypes['pg/uuid@1']['output'];
       readonly status: CodecTypes['pg/text@1']['output'];
+    };
+    readonly subscriptions: {
+      readonly amount_paid_cents: CodecTypes['pg/int4@1']['output'];
+      readonly cancelled_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly credit_tx_id: CodecTypes['pg/int4@1']['output'] | null;
+      readonly expires_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly notes: CodecTypes['pg/text@1']['output'] | null;
+      readonly payment_method: CodecTypes['pg/text@1']['output'] | null;
+      readonly plan_id: CodecTypes['pg/int4@1']['output'];
+      readonly started_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'PENDING';
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly user_id: CodecTypes['pg/uuid@1']['output'];
+    };
+    readonly user_achievements: {
+      readonly badge_key: CodecTypes['pg/text@1']['output'];
+      readonly earned_at: CodecTypes['pg/timestamptz-string@1']['output'];
+      readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly position: CodecTypes['pg/int4@1']['output'] | null;
+      readonly user_id: CodecTypes['pg/uuid@1']['output'];
     };
     readonly users: {
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
@@ -477,6 +654,43 @@ export type StorageColumnInputTypes = {
       readonly type: CodecTypes['pg/text@1']['input'];
       readonly user_id: CodecTypes['pg/uuid@1']['input'];
     };
+    readonly listings: {
+      readonly category: CodecTypes['pg/text@1']['input'] | null;
+      readonly category_id: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly condition: CodecTypes['pg/text@1']['input'] | null;
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly description: CodecTypes['pg/text@1']['input'];
+      readonly featured: CodecTypes['pg/bool@1']['input'];
+      readonly id: CodecTypes['pg/uuid@1']['input'];
+      readonly images: ReadonlyArray<CodecTypes['pg/text@1']['input']>;
+      readonly location: CodecTypes['pg/text@1']['input'] | null;
+      readonly negotiable: CodecTypes['pg/bool@1']['input'];
+      readonly price: CodecTypes['pg/numeric@1']['input'] | null;
+      readonly reviewed_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly reviewed_by_id: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly reviewed_by_type: CodecTypes['pg/text@1']['input'] | null;
+      readonly slug: CodecTypes['pg/text@1']['input'] | null;
+      readonly status: CodecTypes['pg/text@1']['input'];
+      readonly subcategory: CodecTypes['pg/text@1']['input'] | null;
+      readonly subcategory_id: CodecTypes['pg/uuid@1']['input'] | null;
+      readonly title: CodecTypes['pg/text@1']['input'];
+      readonly type_of_offer: CodecTypes['pg/text@1']['input'] | null;
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly user_id: CodecTypes['pg/uuid@1']['input'];
+    };
+    readonly plans: {
+      readonly description: CodecTypes['pg/text@1']['input'] | null;
+      readonly description_limit: CodecTypes['pg/int4@1']['input'];
+      readonly has_cover_image: CodecTypes['pg/bool@1']['input'];
+      readonly has_csv_import: CodecTypes['pg/bool@1']['input'];
+      readonly has_spotlight: CodecTypes['pg/bool@1']['input'];
+      readonly has_statistics: CodecTypes['pg/bool@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly is_active: CodecTypes['pg/bool@1']['input'];
+      readonly listing_limit: CodecTypes['pg/int4@1']['input'];
+      readonly name: CodecTypes['pg/text@1']['input'];
+      readonly price_cents: CodecTypes['pg/int4@1']['input'];
+    };
     readonly private_profiles: {
       readonly bio: CodecTypes['pg/text@1']['input'] | null;
       readonly cover_image_url: CodecTypes['pg/text@1']['input'] | null;
@@ -495,6 +709,28 @@ export type StorageColumnInputTypes = {
       readonly referred_id: CodecTypes['pg/uuid@1']['input'];
       readonly referrer_id: CodecTypes['pg/uuid@1']['input'];
       readonly status: CodecTypes['pg/text@1']['input'];
+    };
+    readonly subscriptions: {
+      readonly amount_paid_cents: CodecTypes['pg/int4@1']['input'];
+      readonly cancelled_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly credit_tx_id: CodecTypes['pg/int4@1']['input'] | null;
+      readonly expires_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly notes: CodecTypes['pg/text@1']['input'] | null;
+      readonly payment_method: CodecTypes['pg/text@1']['input'] | null;
+      readonly plan_id: CodecTypes['pg/int4@1']['input'];
+      readonly started_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'PENDING';
+      readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly user_id: CodecTypes['pg/uuid@1']['input'];
+    };
+    readonly user_achievements: {
+      readonly badge_key: CodecTypes['pg/text@1']['input'];
+      readonly earned_at: CodecTypes['pg/timestamptz-string@1']['input'];
+      readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly position: CodecTypes['pg/int4@1']['input'] | null;
+      readonly user_id: CodecTypes['pg/uuid@1']['input'];
     };
     readonly users: {
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
@@ -740,6 +976,278 @@ type ContractBase = Omit<
                 },
               ];
             };
+            readonly listings: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                };
+                readonly user_id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                };
+                readonly title: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly slug: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly description: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly category_id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
+                };
+                readonly subcategory_id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
+                };
+                readonly category: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly subcategory: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly price: {
+                  readonly nativeType: 'numeric';
+                  readonly codecId: 'pg/numeric@1';
+                  readonly nullable: true;
+                };
+                readonly negotiable: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly location: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly condition: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly type_of_offer: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly status: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'REVIEW'>;
+                  };
+                };
+                readonly featured: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly reviewed_by_type: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly reviewed_by_id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: true;
+                };
+                readonly reviewed_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
+                readonly images: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', readonly []>;
+                  };
+                };
+                readonly created_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly updated_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'listings_user_id_idx_6c952402';
+                  readonly prefix: 'listings_user_id_idx';
+                  readonly columns: readonly ['user_id'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'listings_reviewed_by_id_idx_660e1779';
+                  readonly prefix: 'listings_reviewed_by_id_idx';
+                  readonly columns: readonly ['reviewed_by_id'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'listings';
+                    readonly columns: readonly ['user_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'users';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'listings';
+                    readonly columns: readonly ['reviewed_by_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'users';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly plans: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly name: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly price_cents: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                };
+                readonly listing_limit: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 3>;
+                  };
+                };
+                readonly has_cover_image: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly has_spotlight: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly has_statistics: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly has_csv_import: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', false>;
+                  };
+                };
+                readonly description_limit: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 150>;
+                  };
+                };
+                readonly is_active: {
+                  readonly nativeType: 'bool';
+                  readonly codecId: 'pg/bool@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
+                  };
+                };
+                readonly description: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['name'] }];
+              indexes: readonly [];
+              foreignKeys: readonly [];
+            };
             readonly private_profiles: {
               columns: {
                 readonly id: {
@@ -866,6 +1374,189 @@ type ContractBase = Omit<
               indexes: readonly [];
               foreignKeys: readonly [];
             };
+            readonly subscriptions: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly user_id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                };
+                readonly plan_id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                };
+                readonly status: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'ACTIVE'>;
+                  };
+                };
+                readonly started_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly expires_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
+                readonly cancelled_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
+                };
+                readonly payment_method: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly amount_paid_cents: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
+                };
+                readonly credit_tx_id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly notes: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly created_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+                readonly updated_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [];
+              indexes: readonly [
+                {
+                  readonly name: 'subscriptions_user_id_idx_6c952402';
+                  readonly prefix: 'subscriptions_user_id_idx';
+                  readonly columns: readonly ['user_id'];
+                  readonly unique: false;
+                },
+                {
+                  readonly name: 'subscriptions_plan_id_idx_f8e0a1e0';
+                  readonly prefix: 'subscriptions_plan_id_idx';
+                  readonly columns: readonly ['plan_id'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'subscriptions';
+                    readonly columns: readonly ['user_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'users';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'subscriptions';
+                    readonly columns: readonly ['plan_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'plans';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
+            readonly user_achievements: {
+              columns: {
+                readonly id: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'function';
+                    readonly expression: 'autoincrement()';
+                  };
+                };
+                readonly user_id: {
+                  readonly nativeType: 'uuid';
+                  readonly codecId: 'pg/uuid@1';
+                  readonly nullable: false;
+                };
+                readonly badge_key: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                };
+                readonly position: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: true;
+                };
+                readonly earned_at: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: false;
+                  readonly default: { readonly kind: 'function'; readonly expression: 'now()' };
+                };
+              };
+              primaryKey: { readonly columns: readonly ['id'] };
+              uniques: readonly [{ readonly columns: readonly ['user_id', 'badge_key'] }];
+              indexes: readonly [
+                {
+                  readonly name: 'user_achievements_user_id_idx_6c952402';
+                  readonly prefix: 'user_achievements_user_id_idx';
+                  readonly columns: readonly ['user_id'];
+                  readonly unique: false;
+                },
+              ];
+              foreignKeys: readonly [
+                {
+                  readonly source: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'user_achievements';
+                    readonly columns: readonly ['user_id'];
+                  };
+                  readonly target: {
+                    readonly namespaceId: 'public' & NamespaceId;
+                    readonly tableName: 'users';
+                    readonly columns: readonly ['id'];
+                  };
+                },
+              ];
+            };
             readonly users: {
               columns: {
                 readonly id: {
@@ -951,6 +1642,10 @@ type ContractBase = Omit<
             };
           };
           readonly valueSet: {
+            readonly subscription_status: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['ACTIVE', 'CANCELLED', 'EXPIRED', 'PENDING'];
+            };
             readonly user_role: {
               readonly kind: 'valueSet';
               readonly values: readonly ['ADMIN', 'USER'];
@@ -983,6 +1678,16 @@ type ContractBase = Omit<
     readonly credit_transactions: {
       readonly namespace: 'public' & NamespaceId;
       readonly model: 'CreditTransaction';
+    };
+    readonly listings: { readonly namespace: 'public' & NamespaceId; readonly model: 'Listing' };
+    readonly plans: { readonly namespace: 'public' & NamespaceId; readonly model: 'Plan' };
+    readonly subscriptions: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'Subscription';
+    };
+    readonly user_achievements: {
+      readonly namespace: 'public' & NamespaceId;
+      readonly model: 'UserAchievement';
     };
   };
   readonly domain: {
@@ -1178,6 +1883,232 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly Listing: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly user_id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly title: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly slug: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly description: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly category_id: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly subcategory_id: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly category: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly subcategory: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly price: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/numeric@1' };
+              };
+              readonly negotiable: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly location: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly condition: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly type_of_offer: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly featured: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly reviewed_by_type: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly reviewed_by_id: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly reviewed_at: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly images: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+                readonly many: true;
+              };
+              readonly created_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly updated_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly reviewer: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['reviewed_by_id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['user_id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'listings';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly user_id: { readonly column: 'user_id' };
+                readonly title: { readonly column: 'title' };
+                readonly slug: { readonly column: 'slug' };
+                readonly description: { readonly column: 'description' };
+                readonly category_id: { readonly column: 'category_id' };
+                readonly subcategory_id: { readonly column: 'subcategory_id' };
+                readonly category: { readonly column: 'category' };
+                readonly subcategory: { readonly column: 'subcategory' };
+                readonly price: { readonly column: 'price' };
+                readonly negotiable: { readonly column: 'negotiable' };
+                readonly location: { readonly column: 'location' };
+                readonly condition: { readonly column: 'condition' };
+                readonly type_of_offer: { readonly column: 'type_of_offer' };
+                readonly status: { readonly column: 'status' };
+                readonly featured: { readonly column: 'featured' };
+                readonly reviewed_by_type: { readonly column: 'reviewed_by_type' };
+                readonly reviewed_by_id: { readonly column: 'reviewed_by_id' };
+                readonly reviewed_at: { readonly column: 'reviewed_at' };
+                readonly images: { readonly column: 'images' };
+                readonly created_at: { readonly column: 'created_at' };
+                readonly updated_at: { readonly column: 'updated_at' };
+              };
+            };
+          };
+          readonly Plan: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly name: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly price_cents: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly listing_limit: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly has_cover_image: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly has_spotlight: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly has_statistics: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly has_csv_import: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly description_limit: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly is_active: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
+              };
+              readonly description: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+            };
+            readonly relations: {
+              readonly subscriptions: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Subscription';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['plan_id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'plans';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly name: { readonly column: 'name' };
+                readonly price_cents: { readonly column: 'price_cents' };
+                readonly listing_limit: { readonly column: 'listing_limit' };
+                readonly has_cover_image: { readonly column: 'has_cover_image' };
+                readonly has_spotlight: { readonly column: 'has_spotlight' };
+                readonly has_statistics: { readonly column: 'has_statistics' };
+                readonly has_csv_import: { readonly column: 'has_csv_import' };
+                readonly description_limit: { readonly column: 'description_limit' };
+                readonly is_active: { readonly column: 'is_active' };
+                readonly description: { readonly column: 'description' };
+              };
+            };
+          };
           readonly PrivateProfile: {
             readonly fields: {
               readonly id: {
@@ -1293,6 +2224,114 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly Subscription: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly user_id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly plan_id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly started_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly expires_at: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly cancelled_at: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly payment_method: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly amount_paid_cents: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly credit_tx_id: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly notes: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly created_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+              readonly updated_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly plan: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'Plan' };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['plan_id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['user_id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'subscriptions';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly user_id: { readonly column: 'user_id' };
+                readonly plan_id: { readonly column: 'plan_id' };
+                readonly status: { readonly column: 'status' };
+                readonly started_at: { readonly column: 'started_at' };
+                readonly expires_at: { readonly column: 'expires_at' };
+                readonly cancelled_at: { readonly column: 'cancelled_at' };
+                readonly payment_method: { readonly column: 'payment_method' };
+                readonly amount_paid_cents: { readonly column: 'amount_paid_cents' };
+                readonly credit_tx_id: { readonly column: 'credit_tx_id' };
+                readonly notes: { readonly column: 'notes' };
+                readonly created_at: { readonly column: 'created_at' };
+                readonly updated_at: { readonly column: 'updated_at' };
+              };
+            };
+          };
           readonly User: {
             readonly fields: {
               readonly id: {
@@ -1347,6 +2386,17 @@ type ContractBase = Omit<
               };
             };
             readonly relations: {
+              readonly achievements: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'UserAchievement';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['user_id'];
+                };
+              };
               readonly company_profile: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
@@ -1369,12 +2419,45 @@ type ContractBase = Omit<
                   readonly targetFields: readonly ['user_id'];
                 };
               };
+              readonly listings: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Listing';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['user_id'];
+                };
+              };
               readonly private_profile: {
                 readonly to: {
                   readonly namespace: 'public' & NamespaceId;
                   readonly model: 'PrivateProfile';
                 };
                 readonly cardinality: '1:1';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['user_id'];
+                };
+              };
+              readonly reviewed_listings: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Listing';
+                };
+                readonly cardinality: '1:N';
+                readonly on: {
+                  readonly localFields: readonly ['id'];
+                  readonly targetFields: readonly ['reviewed_by_id'];
+                };
+              };
+              readonly subscriptions: {
+                readonly to: {
+                  readonly namespace: 'public' & NamespaceId;
+                  readonly model: 'Subscription';
+                };
+                readonly cardinality: '1:N';
                 readonly on: {
                   readonly localFields: readonly ['id'];
                   readonly targetFields: readonly ['user_id'];
@@ -1399,6 +2482,54 @@ type ContractBase = Omit<
               };
             };
           };
+          readonly UserAchievement: {
+            readonly fields: {
+              readonly id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly user_id: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/uuid@1' };
+              };
+              readonly badge_key: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly position: {
+                readonly nullable: true;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly earned_at: {
+                readonly nullable: false;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
+            };
+            readonly relations: {
+              readonly user: {
+                readonly to: { readonly namespace: 'public' & NamespaceId; readonly model: 'User' };
+                readonly cardinality: 'N:1';
+                readonly on: {
+                  readonly localFields: readonly ['user_id'];
+                  readonly targetFields: readonly ['id'];
+                };
+              };
+            };
+            readonly storage: {
+              readonly table: 'user_achievements';
+              readonly namespaceId: 'public';
+              readonly fields: {
+                readonly id: { readonly column: 'id' };
+                readonly user_id: { readonly column: 'user_id' };
+                readonly badge_key: { readonly column: 'badge_key' };
+                readonly position: { readonly column: 'position' };
+                readonly earned_at: { readonly column: 'earned_at' };
+              };
+            };
+          };
         };
         readonly enum: {
           readonly user_role: {
@@ -1413,6 +2544,15 @@ type ContractBase = Omit<
             readonly members: readonly [
               { readonly name: 'COMMERCIAL'; readonly value: 'COMMERCIAL' },
               { readonly name: 'PRIVATE'; readonly value: 'PRIVATE' },
+            ];
+          };
+          readonly subscription_status: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'ACTIVE'; readonly value: 'ACTIVE' },
+              { readonly name: 'CANCELLED'; readonly value: 'CANCELLED' },
+              { readonly name: 'EXPIRED'; readonly value: 'EXPIRED' },
+              { readonly name: 'PENDING'; readonly value: 'PENDING' },
             ];
           };
         };
@@ -1454,7 +2594,33 @@ type ContractBase = Omit<
         {
           readonly ref: {
             readonly namespace: 'public';
+            readonly table: 'listings';
+            readonly column: 'id';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'uuidv4' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'listings';
+            readonly column: 'updated_at';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
             readonly table: 'private_profiles';
+            readonly column: 'updated_at';
+          };
+          readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+          readonly onUpdate: { readonly kind: 'generator'; readonly id: 'timestampNow' };
+        },
+        {
+          readonly ref: {
+            readonly namespace: 'public';
+            readonly table: 'subscriptions';
             readonly column: 'updated_at';
           };
           readonly onCreate: { readonly kind: 'generator'; readonly id: 'timestampNow' };

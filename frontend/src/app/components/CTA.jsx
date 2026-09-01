@@ -12,7 +12,7 @@ export default function CTA({ onSellClick }) {
         if (onSellClick) {
             onSellClick();
         } else {
-            router.push('/create_listing');
+            router.push('/anzeige-erstellen');
         }
     };
 

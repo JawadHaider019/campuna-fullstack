@@ -1,4 +1,5 @@
 import { db } from '../prisma/db.js';
+import { checkAndAwardPioneerBadge } from './badge.js';
 
 // ─── Allowed update fields per profile type ──────────────────────────────────
 
@@ -53,6 +54,16 @@ export const getMyProfile = async (req, res) => {
     try {
         const { id, user_type } = req.user;
 
+        // Auto-check/award Pioneer Badge when loading dashboard profile
+        await checkAndAwardPioneerBadge(id).catch(err => {
+            console.error('Auto Pioneer check error:', err.message);
+        });
+
+        // Query user achievements
+        const achievements = await db.orm.public.UserAchievement
+            .where({ user_id: id })
+            .all();
+
         if (user_type === 'PRIVATE') {
             const profile = await db.orm.public.PrivateProfile
                 .where((p) => p.user_id.eq(id))
@@ -66,6 +77,7 @@ export const getMyProfile = async (req, res) => {
                 success: true,
                 profile_type: 'PRIVATE',
                 profile,
+                achievements,
             });
         }
 
@@ -82,6 +94,7 @@ export const getMyProfile = async (req, res) => {
                 success: true,
                 profile_type: 'COMMERCIAL',
                 profile,
+                achievements,
             });
         }
 
@@ -206,6 +219,10 @@ export const getPublicProfile = async (req, res) => {
             return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
         }
 
+        const achievements = await db.orm.public.UserAchievement
+            .where({ user_id: userId })
+            .all();
+
         if (user.user_type === 'PRIVATE') {
             const profile = await db.orm.public.PrivateProfile
                 .where((p) => p.user_id.eq(userId))
@@ -221,7 +238,8 @@ export const getPublicProfile = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 profile_type: 'PRIVATE',
-                profile: publicFields,
+                profile: { ...publicFields, member_since: user.created_at },
+                achievements,
             });
         }
 
@@ -240,7 +258,8 @@ export const getPublicProfile = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 profile_type: 'COMMERCIAL',
-                profile: publicFields,
+                profile: { ...publicFields, member_since: user.created_at },
+                achievements,
             });
         }
 
@@ -249,5 +268,183 @@ export const getPublicProfile = async (req, res) => {
     } catch (error) {
         console.error('❌ getPublicProfile error:', error.message);
         return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
+    }
+};
+
+/**
+ * POST /api/profile/me/avatar
+ * Handles profile image (avatar) or company logo uploads.
+ * Uses uploadSingle middleware.
+ */
+export const uploadAvatar = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'Keine Datei hochgeladen.' });
+        }
+
+        const { id, user_type } = req.user;
+
+        // Generate full URL
+        const PORT = process.env.PORT || 5000;
+        const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
+        const fileUrl = `${host}/uploads/${req.file.filename}`;
+
+        if (user_type === 'PRIVATE') {
+            const profile = await db.orm.public.PrivateProfile
+                .where((p) => p.user_id.eq(id))
+                .first();
+
+            if (!profile) {
+                return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
+            }
+
+            await db.orm.public.PrivateProfile
+                .where((p) => p.user_id.eq(id))
+                .update({ profile_image_url: fileUrl });
+        } else if (user_type === 'COMMERCIAL') {
+            const profile = await db.orm.public.CompanyProfile
+                .where((p) => p.user_id.eq(id))
+                .first();
+
+            if (!profile) {
+                return res.status(404).json({ success: false, error: 'Firmenprofil nicht gefunden.' });
+            }
+
+            await db.orm.public.CompanyProfile
+                .where((p) => p.user_id.eq(id))
+                .update({ logo_url: fileUrl });
+        } else {
+            return res.status(400).json({ success: false, error: 'Unbekannter Kontotyp.' });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Bild erfolgreich hochgeladen.',
+            url: fileUrl
+        });
+
+    } catch (error) {
+        console.error('❌ uploadAvatar error:', error.message);
+        return res.status(500).json({ success: false, error: 'Upload fehlgeschlagen.' });
+    }
+};
+
+/**
+ * POST /api/profile/me/cover
+ * Handles cover image uploads.
+ * Uses uploadSingle middleware.
+ * Gated feature for COMMERCIAL (Business tier only) and PRIVATE users.
+ */
+export const uploadCover = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'Keine Datei hochgeladen.' });
+        }
+
+        const { id, user_type } = req.user;
+
+        // Generate full URL
+        const PORT = process.env.PORT || 5000;
+        const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
+        const fileUrl = `${host}/uploads/${req.file.filename}`;
+
+        if (user_type === 'PRIVATE') {
+            const profile = await db.orm.public.PrivateProfile
+                .where((p) => p.user_id.eq(id))
+                .first();
+
+            if (!profile) {
+                return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
+            }
+
+            await db.orm.public.PrivateProfile
+                .where((p) => p.user_id.eq(id))
+                .update({ cover_image_url: fileUrl });
+        } else if (user_type === 'COMMERCIAL') {
+            const profile = await db.orm.public.CompanyProfile
+                .where((p) => p.user_id.eq(id))
+                .first();
+
+            if (!profile) {
+                return res.status(404).json({ success: false, error: 'Firmenprofil nicht gefunden.' });
+            }
+
+            // Gating: Block cover image uploads for free tier
+            if (profile.tier === 'FREE') {
+                return res.status(403).json({
+                    success: false,
+                    error: 'Das Hintergrundbild ist ein exklusives Business-Feature. Bitte aktualisiere dein Abonnement.'
+                });
+            }
+
+            await db.orm.public.CompanyProfile
+                .where((p) => p.user_id.eq(id))
+                .update({ cover_image_url: fileUrl });
+        } else {
+            return res.status(400).json({ success: false, error: 'Unbekannter Kontotyp.' });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Hintergrundbild erfolgreich hochgeladen.',
+            url: fileUrl
+        });
+
+    } catch (error) {
+        console.error('❌ uploadCover error:', error.message);
+        return res.status(500).json({ success: false, error: 'Upload fehlgeschlagen.' });
+    }
+};
+
+/**
+ * GET /api/profile
+ * Returns a public list of all active user profiles with their listing counts.
+ */
+export const getAllProfiles = async (req, res) => {
+    try {
+        const users = await db.orm.public.User
+            .where({
+                is_suspended: false,
+                user_type: 'COMMERCIAL'
+            })
+            .all();
+        
+        const profiles = [];
+        for (const u of users) {
+            let profileObj = null;
+            if (u.user_type === 'COMMERCIAL') {
+                profileObj = await db.orm.public.CompanyProfile.where({ user_id: u.id }).first();
+            } else {
+                profileObj = await db.orm.public.PrivateProfile.where({ user_id: u.id }).first();
+            }
+            
+            if (profileObj) {
+                const listings = await db.orm.public.Listing
+                    .where({ user_id: u.id, status: 'APPROVED' })
+                    .all();
+                
+                const name = u.user_type === 'COMMERCIAL'
+                    ? (profileObj.company_name || 'Gewerblicher Anbieter')
+                    : `${profileObj.first_name || ''} ${profileObj.last_name || ''}`.trim() || 'Privatverkäufer';
+                    
+                profiles.push({
+                    id: u.id,
+                    name,
+                    logo: profileObj.avatar_url || profileObj.logo_url || profileObj.profile_image_url || '',
+                    coverImage: profileObj.cover_image_url || profileObj.cover_url || '',
+                    description: profileObj.bio || '',
+                    listingsCount: listings.length,
+                    type: u.user_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'
+                });
+            }
+        }
+        
+        return res.status(200).json({
+            success: true,
+            profiles
+        });
+    } catch (error) {
+        console.error('❌ getAllProfiles error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Laden der Profile.' });
     }
 };

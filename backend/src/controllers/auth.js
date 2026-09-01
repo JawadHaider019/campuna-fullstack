@@ -1,5 +1,6 @@
 import { db } from '../prisma/db.js';
 import crypto from 'crypto';
+import { checkAndAwardPioneerBadge } from './badge.js';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -396,6 +397,11 @@ export const verifyEmail = async (req, res) => {
         await db.orm.public.User
             .where((u) => u.id.eq(user.id))
             .update({ email_verified: true });
+
+        // Trigger Pioneer Badge check
+        await checkAndAwardPioneerBadge(user.id).catch(err => {
+            console.error('Pioneer check during email verification error:', err.message);
+        });
 
         return res.status(200).json({
             success: true,

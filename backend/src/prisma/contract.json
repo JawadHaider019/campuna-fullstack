@@ -12,12 +12,28 @@
       "model": "CreditTransaction",
       "namespace": "public"
     },
+    "listings": {
+      "model": "Listing",
+      "namespace": "public"
+    },
+    "plans": {
+      "model": "Plan",
+      "namespace": "public"
+    },
     "private_profiles": {
       "model": "PrivateProfile",
       "namespace": "public"
     },
     "referrals": {
       "model": "Referral",
+      "namespace": "public"
+    },
+    "subscriptions": {
+      "model": "Subscription",
+      "namespace": "public"
+    },
+    "user_achievements": {
+      "model": "UserAchievement",
       "namespace": "public"
     },
     "users": {
@@ -29,6 +45,27 @@
     "namespaces": {
       "public": {
         "enum": {
+          "subscription_status": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "ACTIVE",
+                "value": "ACTIVE"
+              },
+              {
+                "name": "CANCELLED",
+                "value": "CANCELLED"
+              },
+              {
+                "name": "EXPIRED",
+                "value": "EXPIRED"
+              },
+              {
+                "name": "PENDING",
+                "value": "PENDING"
+              }
+            ]
+          },
           "user_role": {
             "codecId": "pg/text@1",
             "members": [
@@ -391,6 +428,406 @@
               "table": "credit_transactions"
             }
           },
+          "Listing": {
+            "fields": {
+              "category": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "category_id": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "condition": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "created_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "description": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "featured": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "images": {
+                "many": true,
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "location": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "negotiable": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "price": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewed_at": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewed_by_id": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewed_by_type": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "slug": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "subcategory": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "subcategory_id": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "title": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "type_of_offer": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updated_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "user_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "reviewer": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "reviewed_by_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "user_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "category": {
+                  "column": "category"
+                },
+                "category_id": {
+                  "column": "category_id"
+                },
+                "condition": {
+                  "column": "condition"
+                },
+                "created_at": {
+                  "column": "created_at"
+                },
+                "description": {
+                  "column": "description"
+                },
+                "featured": {
+                  "column": "featured"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "images": {
+                  "column": "images"
+                },
+                "location": {
+                  "column": "location"
+                },
+                "negotiable": {
+                  "column": "negotiable"
+                },
+                "price": {
+                  "column": "price"
+                },
+                "reviewed_at": {
+                  "column": "reviewed_at"
+                },
+                "reviewed_by_id": {
+                  "column": "reviewed_by_id"
+                },
+                "reviewed_by_type": {
+                  "column": "reviewed_by_type"
+                },
+                "slug": {
+                  "column": "slug"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "subcategory": {
+                  "column": "subcategory"
+                },
+                "subcategory_id": {
+                  "column": "subcategory_id"
+                },
+                "title": {
+                  "column": "title"
+                },
+                "type_of_offer": {
+                  "column": "type_of_offer"
+                },
+                "updated_at": {
+                  "column": "updated_at"
+                },
+                "user_id": {
+                  "column": "user_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "listings"
+            }
+          },
+          "Plan": {
+            "fields": {
+              "description": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "description_limit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "has_cover_image": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "has_csv_import": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "has_spotlight": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "has_statistics": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "is_active": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "listing_limit": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "price_cents": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "subscriptions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "plan_id"
+                  ]
+                },
+                "to": {
+                  "model": "Subscription",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "description": {
+                  "column": "description"
+                },
+                "description_limit": {
+                  "column": "description_limit"
+                },
+                "has_cover_image": {
+                  "column": "has_cover_image"
+                },
+                "has_csv_import": {
+                  "column": "has_csv_import"
+                },
+                "has_spotlight": {
+                  "column": "has_spotlight"
+                },
+                "has_statistics": {
+                  "column": "has_statistics"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "is_active": {
+                  "column": "is_active"
+                },
+                "listing_limit": {
+                  "column": "listing_limit"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "price_cents": {
+                  "column": "price_cents"
+                }
+              },
+              "namespaceId": "public",
+              "table": "plans"
+            }
+          },
           "PrivateProfile": {
             "fields": {
               "bio": {
@@ -579,6 +1016,184 @@
               "table": "referrals"
             }
           },
+          "Subscription": {
+            "fields": {
+              "amount_paid_cents": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "cancelled_at": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "created_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "credit_tx_id": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "expires_at": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "notes": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "payment_method": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "plan_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "started_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "subscription_status",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "updated_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "user_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "plan": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "plan_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Plan",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "user_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "amount_paid_cents": {
+                  "column": "amount_paid_cents"
+                },
+                "cancelled_at": {
+                  "column": "cancelled_at"
+                },
+                "created_at": {
+                  "column": "created_at"
+                },
+                "credit_tx_id": {
+                  "column": "credit_tx_id"
+                },
+                "expires_at": {
+                  "column": "expires_at"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "notes": {
+                  "column": "notes"
+                },
+                "payment_method": {
+                  "column": "payment_method"
+                },
+                "plan_id": {
+                  "column": "plan_id"
+                },
+                "started_at": {
+                  "column": "started_at"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "updated_at": {
+                  "column": "updated_at"
+                },
+                "user_id": {
+                  "column": "user_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "subscriptions"
+            }
+          },
           "User": {
             "fields": {
               "created_at": {
@@ -672,6 +1287,21 @@
               }
             },
             "relations": {
+              "achievements": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "user_id"
+                  ]
+                },
+                "to": {
+                  "model": "UserAchievement",
+                  "namespace": "public"
+                }
+              },
               "company_profile": {
                 "cardinality": "1:1",
                 "on": {
@@ -702,6 +1332,21 @@
                   "namespace": "public"
                 }
               },
+              "listings": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "user_id"
+                  ]
+                },
+                "to": {
+                  "model": "Listing",
+                  "namespace": "public"
+                }
+              },
               "private_profile": {
                 "cardinality": "1:1",
                 "on": {
@@ -714,6 +1359,36 @@
                 },
                 "to": {
                   "model": "PrivateProfile",
+                  "namespace": "public"
+                }
+              },
+              "reviewed_listings": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "reviewed_by_id"
+                  ]
+                },
+                "to": {
+                  "model": "Listing",
+                  "namespace": "public"
+                }
+              },
+              "subscriptions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "user_id"
+                  ]
+                },
+                "to": {
+                  "model": "Subscription",
                   "namespace": "public"
                 }
               }
@@ -756,6 +1431,83 @@
               },
               "namespaceId": "public",
               "table": "users"
+            }
+          },
+          "UserAchievement": {
+            "fields": {
+              "badge_key": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "earned_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "position": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "user_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "user": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "user_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "badge_key": {
+                  "column": "badge_key"
+                },
+                "earned_at": {
+                  "column": "earned_at"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "position": {
+                  "column": "position"
+                },
+                "user_id": {
+                  "column": "user_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "user_achievements"
             }
           }
         }
@@ -1008,6 +1760,317 @@
               },
               "uniques": []
             },
+            "listings": {
+              "checks": [
+                {
+                  "expression": "array_position(\"images\", NULL) IS NULL",
+                  "name": "listings_images_elem_not_null_2f12556f",
+                  "prefix": "listings_images_elem_not_null"
+                }
+              ],
+              "columns": {
+                "category": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "category_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
+                "condition": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "description": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "featured": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "images": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": []
+                  },
+                  "many": true,
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "location": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "negotiable": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "price": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
+                  "nullable": true
+                },
+                "reviewed_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "reviewed_by_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
+                "reviewed_by_type": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "slug": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "REVIEW"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "subcategory": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "subcategory_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
+                "title": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "type_of_offer": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "updated_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "user_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "user_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "listings"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "reviewed_by_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "listings"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "reviewed_by_id"
+                  ],
+                  "name": "listings_reviewed_by_id_idx_660e1779",
+                  "prefix": "listings_reviewed_by_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "user_id"
+                  ],
+                  "name": "listings_user_id_idx_6c952402",
+                  "prefix": "listings_user_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "plans": {
+              "columns": {
+                "description": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "description_limit": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 150
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "has_cover_image": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "has_csv_import": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "has_spotlight": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "has_statistics": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "is_active": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "listing_limit": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 3
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "price_cents": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "name"
+                  ]
+                }
+              ]
+            },
             "private_profiles": {
               "columns": {
                 "bio": {
@@ -1158,6 +2221,246 @@
               },
               "uniques": []
             },
+            "subscriptions": {
+              "checks": [
+                {
+                  "expression": "\"status\" IN ('ACTIVE', 'CANCELLED', 'EXPIRED', 'PENDING')",
+                  "name": "subscriptions_status_check_5cb03393",
+                  "prefix": "subscriptions_status_check"
+                }
+              ],
+              "columns": {
+                "amount_paid_cents": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "cancelled_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "credit_tx_id": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "expires_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "notes": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "payment_method": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "plan_id": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "started_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "ACTIVE"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "subscription_status",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updated_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "user_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "user_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "subscriptions"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "plan_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "subscriptions"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "plans"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "plan_id"
+                  ],
+                  "name": "subscriptions_plan_id_idx_f8e0a1e0",
+                  "prefix": "subscriptions_plan_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "user_id"
+                  ],
+                  "name": "subscriptions_user_id_idx_6c952402",
+                  "prefix": "subscriptions_user_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "user_achievements": {
+              "columns": {
+                "badge_key": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "earned_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "expression": "autoincrement()",
+                    "kind": "function"
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "position": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "user_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "user_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "user_achievements"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "user_id"
+                  ],
+                  "name": "user_achievements_user_id_idx_6c952402",
+                  "prefix": "user_achievements_user_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "user_id",
+                    "badge_key"
+                  ]
+                }
+              ]
+            },
             "users": {
               "checks": [
                 {
@@ -1282,6 +2585,15 @@
             }
           },
           "valueSet": {
+            "subscription_status": {
+              "kind": "valueSet",
+              "values": [
+                "ACTIVE",
+                "CANCELLED",
+                "EXPIRED",
+                "PENDING"
+              ]
+            },
             "user_role": {
               "kind": "valueSet",
               "values": [
@@ -1302,10 +2614,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c7e09a8eb7959e8b0d0b2aa3c32a22a1175677c79758265462a911e821382c60"
+    "storageHash": "1609f66c3e0a807b409ec38f2329a4e9fd36bb6f92705ca633c8ae211ce1ef6b"
   },
   "execution": {
-    "executionHash": "00dac374460dc0d6dd456ef90e064509543e6ead9657e15255a4332bd72864f6",
+    "executionHash": "967b95ddeb17386c27a8fa3556b54ac3580a43b05f6a2ba6e9f77413cd673ddf",
     "mutations": {
       "defaults": [
         {
@@ -1325,6 +2637,32 @@
         },
         {
           "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "listings"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updated_at",
+            "namespace": "public",
+            "table": "listings"
+          }
+        },
+        {
+          "onCreate": {
             "id": "timestampNow",
             "kind": "generator"
           },
@@ -1336,6 +2674,21 @@
             "column": "updated_at",
             "namespace": "public",
             "table": "private_profiles"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "onUpdate": {
+            "id": "timestampNow",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "updated_at",
+            "namespace": "public",
+            "table": "subscriptions"
           }
         },
         {

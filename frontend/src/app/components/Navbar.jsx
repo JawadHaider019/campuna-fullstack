@@ -26,7 +26,9 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
     { label: 'Spotlight', id: 'campuna-spotlight' },
     { label: 'Entdecke', id: 'tool' },
     { label: 'Ratgeber', id: 'journal' },
+    { label: '⭐ Business', path: '/abo' },
   ];
+
 
   const scrollToSection = (id) => {
     if (id === 'top') {

@@ -1,29 +1,33 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
-    Heart,
     MapPin,
     ShieldCheck,
     Mail,
     Calendar,
     Globe,
-    ArrowLeft,
     MessageSquare,
     Star,
     Eye,
     Info,
     ExternalLink,
-    Megaphone
+    Megaphone,
+    Phone,
+    ArrowLeft,
+    Building2,
+    Package
 } from 'lucide-react';
-import { PROVIDERS, FEATURED_LISTINGS } from '@/data';
+import { getPublicProfile } from '@/api/profile';
+import { getListingsByUser } from '@/api/listings';
+
+// ─── SVG Social Icons ─────────────────────────────────────────────────────────
 
 function FacebookIcon(props) {
     return (
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
             <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
         </svg>
     );
@@ -31,7 +35,7 @@ function FacebookIcon(props) {
 
 function InstagramIcon(props) {
     return (
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
             <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
             <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
@@ -39,8 +43,9 @@ function InstagramIcon(props) {
     );
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function slugifyName(name = '') {
-    if (!name) return '';
     return name
         .toLowerCase()
         .replace(/ä/g, 'ae')
@@ -63,119 +68,78 @@ function formatLocation(location) {
     return 'Deutschland';
 }
 
-// Mock specific Tiny House listings for LivianEssence
-const LIVIAN_MOCK_LISTINGS = [
-    {
-        id: 'liv_1',
-        title: 'Tiny House – Platz für 4–6 Personen, Lärche & Fichte',
-        price: 55000,
-        pricePeriod: 'Kaufpreis',
-        location: 'Gelnhausen, Hessen',
-        displayLocation: 'Gelnhausen',
-        images: [
-            'https://images.unsplash.com/photo-1549692520-acc6669e2f0c?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?auto=format&fit=crop&w=650&q=80'
-        ],
-        features: ['4-6 Personen', 'Lärche & Fichte', 'Mobil', 'Winterfest'],
-        isNegotiable: false
-    },
-    {
-        id: 'liv_2',
-        title: 'Tiny House – Flexibel, modern & vielseitig nutzbar',
-        price: 52000,
-        pricePeriod: 'Kaufpreis',
-        location: 'Gelnhausen, Hessen',
-        displayLocation: 'Gelnhausen',
-        images: [
-            'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1533873984035-25970ab07461?auto=format&fit=crop&w=650&q=80'
-        ],
-        features: ['Flexibel', 'Vielseitig', 'Modern', 'Holzbau'],
-        isNegotiable: true
-    },
-    {
-        id: 'liv_3',
-        title: 'Tiny House - Hochwertig, modern & ganzjährig bewohnbar',
-        price: 65000,
-        pricePeriod: 'Kaufpreis',
-        location: 'Gelnhausen, Hessen',
-        displayLocation: 'Gelnhausen',
-        images: [
-            'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=650&q=80',
-            'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=650&q=80'
-        ],
-        features: ['Highlight', 'Ganzjährig bewohnbar', 'Luxusausstattung'],
-        isNegotiable: false
-    }
-];
+function formatMemberSince(dateStr) {
+    if (!dateStr) return 'Neu registriert';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 'Neu registriert';
+    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
-// Card component mapping a row of horizontal grid previews (keep the below cards same)
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80';
+const DEFAULT_LOGO  = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+
+// ─── Listing Card ─────────────────────────────────────────────────────────────
+
 function ListingCard({ item }) {
     const router = useRouter();
-    const handleCardClick = () => {
+
+    const handleClick = () => {
         const slug = buildListingSlug(item.title, item.id);
         router.push(`/listing_details/${slug}`);
     };
+
+    const images = Array.isArray(item.images) && item.images.length > 0
+        ? item.images
+        : [DEFAULT_COVER];
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            onClick={handleCardClick}
+            onClick={handleClick}
             className="group relative flex flex-col bg-white rounded-2xl md:rounded-3xl overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
         >
             {/* 4-Image Grid Preview */}
             <div className="grid grid-cols-4 gap-0.5 aspect-[16/9] w-full bg-sand/15 overflow-hidden border-b border-forest/5">
-                {item.images.slice(0, 4).map((img, idx) => (
+                {images.slice(0, 4).map((img, idx) => (
                     <div key={idx} className="relative w-full h-full overflow-hidden">
                         <img
                             src={img}
-                            alt={`${item.title} preview ${idx}`}
+                            alt={`${item.title} preview ${idx + 1}`}
                             className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-105"
                             loading="lazy"
                             referrerPolicy="no-referrer"
                         />
                     </div>
                 ))}
-                {item.images.length < 4 && Array.from({ length: 4 - item.images.length }).map((_, i) => (
+                {images.length < 4 && Array.from({ length: 4 - images.length }).map((_, i) => (
                     <div key={i} className="bg-sand/30 w-full h-full" />
                 ))}
             </div>
 
-            {/* Content Area */}
-            <div className="p-4.5 flex flex-col flex-1 justify-between gap-4">
-                <div>
-                    <h3 className="font-display text-xs sm:text-sm md:text-base font-bold text-black group-hover:text-gold transition-colors duration-200 line-clamp-2 leading-snug">
-                        {item.title}
-                    </h3>
+            {/* Content */}
+            <div className="p-4 flex flex-col flex-1 justify-between gap-4">
+                <h3 className="font-display text-xs sm:text-sm md:text-base font-bold text-black group-hover:text-gold transition-colors duration-200 line-clamp-2 leading-snug">
+                    {item.title}
+                </h3>
 
-                </div>
-
-                {/* Pricing / Location info */}
                 <div>
                     <div className="flex items-center justify-between pb-3 border-b border-forest/5">
                         <div>
-                            <span className="block text-[8px] md:text-[9px] uppercase tracking-widest text-charcoal/40 font-mono leading-none mb-1">
-                                Preis
-                            </span>
+                            <span className="block text-[8px] md:text-[9px] uppercase tracking-widest text-charcoal/40 font-mono leading-none mb-1">Preis</span>
                             <span className="font-display text-xs sm:text-base font-extrabold text-forest">
-                                {item.price.toLocaleString('de-DE')} € {item.isNegotiable && <span className="text-[10px] font-normal text-charcoal/50">(VB)</span>}
+                                {Number(item.price).toLocaleString('de-DE')} €
+                                {item.negotiable && <span className="text-[10px] font-normal text-charcoal/50 ml-1">(VB)</span>}
                             </span>
                         </div>
-
-                        <div className="flex items-center gap-0.5 text-stone-500 text-[10px] sm:text-xs">
-                            <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                            <span>{item.displayLocation || item.location.split(',')[0]}</span>
-                        </div>
+                        {item.location && (
+                            <div className="flex items-center gap-0.5 text-stone-500 text-[10px] sm:text-xs">
+                                <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
+                                <span>{formatLocation(item.location).split(',')[0]}</span>
+                            </div>
+                        )}
                     </div>
-
                     <div className="pt-3 flex justify-center">
                         <span className="w-full bg-white hover:bg-sand/30 border border-forest/10 py-2 rounded-xl text-[10px] sm:text-xs font-semibold tracking-wider text-forest flex items-center justify-center gap-1.5 transition-colors duration-300">
                             <Eye className="w-3.5 h-3.5 text-forest/70" />
@@ -183,244 +147,122 @@ function ListingCard({ item }) {
                         </span>
                     </div>
                 </div>
-
             </div>
         </motion.div>
     );
 }
 
-// ─── Main ProviderDetails ────────────────────────────────────────────────────────
+// ─── Empty Listings State ─────────────────────────────────────────────────────
+
+function EmptyListings({ providerName }) {
+    return (
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+            <div className="w-16 h-16 rounded-full bg-sand/50 flex items-center justify-center">
+                <Package className="w-7 h-7 text-charcoal/30" />
+            </div>
+            <p className="font-display text-base font-bold text-charcoal/50">Noch keine aktiven Anzeigen</p>
+            <p className="text-xs text-charcoal/40 max-w-xs">
+                {providerName} hat noch keine genehmigten Inserate auf Campuna veröffentlicht.
+            </p>
+        </div>
+    );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function ProviderDetails() {
-    const params = useParams();
-    const searchParams = useSearchParams();
-    const router = useRouter();
+    const params  = useParams();
+    const router  = useRouter();
 
     const rawSlug = params?.slug ? decodeURIComponent(params.slug) : '';
-    const queryUid = searchParams?.get('uid');
 
-    const uid = rawSlug || queryUid || '';
+    // Extract UUID from slug (appended at the end, e.g. "vtmcamping-<uuid>")
+    const uuidMatch = rawSlug.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i);
+    const userId = uuidMatch ? uuidMatch[1] : null;
 
-    const [provider, setProvider] = useState(null);
-    const [listings, setListings] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [provider,  setProvider]  = useState(null);
+    const [listings,  setListings]  = useState([]);
+    const [loading,   setLoading]   = useState(true);
+    const [notFound,  setNotFound]  = useState(false);
+    const [coverSrc,  setCoverSrc]  = useState(DEFAULT_COVER);
+    const [logoSrc,   setLogoSrc]   = useState(DEFAULT_LOGO);
 
     useEffect(() => {
-        const fetchProviderData = async () => {
+        if (!userId) {
+            setNotFound(true);
+            setLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+
+        const fetchData = async () => {
             setLoading(true);
             try {
-                // Fetch F_users from hompage_tips
-                const tipsRes = await fetch('https://simoneasalvo.bubbleapps.io/api/1.1/wf/homepage_tips/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+                // Fetch profile and listings in parallel
+                const [profileRes, listingsRes] = await Promise.all([
+                    getPublicProfile(userId),
+                    getListingsByUser(userId),
+                ]);
 
-                // Fetch products to filter listings
-                const productsRes = await fetch('https://simoneasalvo.bubbleapps.io/api/1.1/wf/homepage-products/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+                if (cancelled) return;
 
-                let users = [];
-                let allProducts = [];
-
-                if (tipsRes.ok) {
-                    const tipsData = await tipsRes.json();
-                    if (tipsData && tipsData.status === 'success' && tipsData.response && Array.isArray(tipsData.response.F_users)) {
-                        users = tipsData.response.F_users;
-                    }
+                if (!profileRes.success || !profileRes.data?.profile) {
+                    setNotFound(true);
+                    setLoading(false);
+                    return;
                 }
 
-                if (productsRes.ok) {
-                    const productsData = await productsRes.json();
-                    if (productsData && productsData.status === 'success' && productsData.response && Array.isArray(productsData.response.listing)) {
-                        allProducts = productsData.response.listing;
-                    }
-                }
+                const p    = profileRes.data.profile;
+                const type = profileRes.data.profile_type;
 
-                const cleanSlug = uid.toLowerCase();
+                const name = type === 'COMMERCIAL'
+                    ? (p.company_name || 'Gewerblicher Anbieter')
+                    : (`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Privatverkäufer');
 
-                // Try to find the user in dynamic list
-                const matchedUser = users.find(u => {
-                    const companyName = u['BU - Company name'] || u.username || '';
-                    const nameSlug = slugifyName(companyName);
-                    return (
-                        u._id === uid ||
-                        u.username?.toLowerCase() === cleanSlug ||
-                        nameSlug === cleanSlug ||
-                        (cleanSlug && nameSlug && (cleanSlug.includes(nameSlug) || nameSlug.includes(cleanSlug))) ||
-                        u._id === queryUid
-                    );
+                const logo  = p.logo_url || p.profile_image_url || DEFAULT_LOGO;
+                const cover = p.cover_image_url || DEFAULT_COVER;
+
+                setProvider({
+                    id:           userId,
+                    name,
+                    type:         type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
+                    logo,
+                    cover,
+                    bio:          p.bio || '',
+                    location:     p.location || '',
+                    email:        p.company_email || '',
+                    phone:        p.phone || '',
+                    website:      p.website_url || '',
+                    instagram:    p.instagram_url || '',
+                    facebook:     p.facebook_url || '',
+                    address:      p.company_address || p.location || '',
+                    impressum:    p.privacy_policy_url || '',
+                    memberSince:  formatMemberSince(p.member_since),
+                    isStrategic:  p.is_strategic_partner || false,
+                    tier:         p.tier || 'FREE',
+                    achievements: profileRes.data.achievements || [],
                 });
 
-                if (matchedUser) {
-                    // Count how many listings belong to this user
-                    const userProducts = allProducts.filter(l => l['Created By'] === matchedUser._id);
+                setCoverSrc(cover);
+                setLogoSrc(logo);
 
-                    // Format their listings to ListingCard structure:
-                    const formatted = userProducts.map((item, idx) => {
-                        // Image fallback logic: Prioritize Main Image, fallback to images array
-                        let rawImages = [];
-                        const mainImg = item['Main Image'] || item.MainImage;
-                        if (mainImg) {
-                            rawImages.push(mainImg);
-                        }
-                        if (item.images && Array.isArray(item.images)) {
-                            item.images.forEach(img => {
-                                if (img && img !== mainImg && !rawImages.includes(img)) {
-                                    rawImages.push(img);
-                                }
-                            });
-                        } else if (item.images && typeof item.images === 'string') {
-                            if (item.images !== mainImg) {
-                                rawImages.push(item.images);
-                            }
-                        }
-
-                        let images = rawImages
-                            .filter(Boolean)
-                            .map(url => {
-                                url = url.startsWith('//') ? `https:${url}` : url;
-                                if (/\.heic$/i.test(url.split('?')[0]) && url.includes('cdn.bubble.io')) {
-                                    url = url.replace(
-                                        /(https:\/\/[^/]+\.cdn\.bubble\.io\/)(f[0-9x]+\/)/,
-                                        '$1cdn-cgi/image/f=auto,fit=cover/$2'
-                                    );
-                                }
-                                return url;
-                            });
-
-                        if (images.length === 0) {
-                            images.push('/hero-campuna.webp');
-                        }
-
-                        return {
-                            id: item._id || `api_lst_${idx}`,
-                            title: item.title || item.Title || 'Kein Titel',
-                            price: item.price || item.Price || 0,
-                            pricePeriod: item['price type'] || 'Preis',
-                            location: item.location || 'Deutschland',
-                            displayLocation: formatLocation(item.location || 'Deutschland'),
-                            images,
-                            isNegotiable: item['price type'] === 'Preis' || false
-                        };
-                    });
-
-                    // Format member since date
-                    let memberSince = '12.11.2025';
-                    if (matchedUser['Created Date']) {
-                        const d = new Date(matchedUser['Created Date']);
-                        if (!isNaN(d.getTime())) {
-                            memberSince = d.toLocaleDateString('de-DE');
-                        }
-                    }
-
-                    // Logo URL
-                    let logo = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
-                    if (matchedUser['Logo/Profile']) {
-                        const rawLogo = matchedUser['Logo/Profile'];
-                        logo = rawLogo.startsWith('//') ? `https:${rawLogo}` : rawLogo;
-                        if (/\.heic$/i.test(logo.split('?')[0]) && logo.includes('cdn.bubble.io')) {
-                            logo = logo.replace(
-                                /(https:\/\/[^/]+\.cdn\.bubble\.io\/)(f[0-9x]+\/)/,
-                                '$1cdn-cgi/image/f=auto,fit=cover/$2'
-                            );
-                        }
-                    }
-
-                    // Cover URL
-                    let coverImage = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1000&q=80';
-                    if (matchedUser.Cover) {
-                        const rawCover = matchedUser.Cover;
-                        coverImage = rawCover.startsWith('//') ? `https:${rawCover}` : rawCover;
-                        if (/\.heic$/i.test(coverImage.split('?')[0]) && coverImage.includes('cdn.bubble.io')) {
-                            coverImage = coverImage.replace(
-                                /(https:\/\/[^/]+\.cdn\.bubble\.io\/)(f[0-9x]+\/)/,
-                                '$1cdn-cgi/image/f=auto,fit=cover/$2'
-                            );
-                        }
-                    }
-
-                    const providerListingsCount = (matchedUser['Total Listings'] !== undefined && matchedUser['Total Listings'] !== null)
-                        ? Number(matchedUser['Total Listings'])
-                        : userProducts.length;
-
-                    const dynamicProviderObj = {
-                        id: matchedUser._id,
-                        name: matchedUser['BU - Company name'] || matchedUser.username || 'Camping Partner',
-                        logo,
-                        coverImage,
-                        description: matchedUser.Bio || 'Dein Partner für Camping Abenteuer.',
-                        slug: `?uid=${matchedUser._id}`,
-                        listingsCount: providerListingsCount,
-                        email: matchedUser.email || matchedUser.authentication?.email?.email || 'kontakt@campuna.de',
-                        memberSince,
-                        phone: matchedUser['BU - phone'] || '+49 (0) 6051 4567-89',
-                        adresse: matchedUser['BU - Full address'] || 'Deutschland',
-                        impressum: matchedUser['BU - Impressum '] || 'https://campuna.de/impressum'
-                    };
-
-                    setProvider(dynamicProviderObj);
-                    setListings(formatted);
-                } else {
-                    // Fallback to local static providers if needed
-                    const fallbackProv = PROVIDERS.find(p => {
-                        const provNameSlug = slugifyName(p.name);
-                        return (
-                            p.id.toLowerCase() === cleanSlug ||
-                            provNameSlug === cleanSlug ||
-                            p.name.toLowerCase() === cleanSlug ||
-                            (cleanSlug && provNameSlug && (cleanSlug.includes(provNameSlug) || provNameSlug.includes(cleanSlug))) ||
-                            (p.slug && p.slug.toLowerCase().includes(cleanSlug))
-                        );
-                    }) || PROVIDERS.find(p => p.name.toLowerCase().includes('livian')) || PROVIDERS[0];
-
-                    if (fallbackProv) {
-                        const isLivian = fallbackProv.name.toLowerCase().includes('livian');
-                        const memberSince = isLivian ? '07.04.2026' : '12.11.2025';
-                        const email = isLivian ? 'd.zipf@markson-tinyhouse.com' : `info@${fallbackProv.name.toLowerCase().replace(/[^a-z0-9]/g, '')}.de`;
-
-                        const staticObj = {
-                            ...fallbackProv,
-                            email,
-                            memberSince,
-                            phone: '+49 (0) 6051 4567-89',
-                            adresse: fallbackProv.location || 'Deutschland',
-                            impressum: 'https://campuna.de/impressum'
-                        };
-                        setProvider(staticObj);
-
-                        let listingsVal = [];
-                        if (isLivian) {
-                            listingsVal = LIVIAN_MOCK_LISTINGS;
-                        } else {
-                            listingsVal = FEATURED_LISTINGS.map((l, i) => ({
-                                ...l,
-                                id: `prov_lst_${i}`,
-                                displayLocation: formatLocation(l.location),
-                                isNegotiable: l.pricePeriod === 'Preis' || false
-                            })).slice(0, Math.min(3, fallbackProv.listingsCount || 3));
-
-                            if (listingsVal.length === 0) {
-                                listingsVal = FEATURED_LISTINGS.slice(0, 2).map((l, i) => ({
-                                    ...l,
-                                    id: `prov_lst_${i}`,
-                                    displayLocation: formatLocation(l.location),
-                                    isNegotiable: false
-                                }));
-                            }
-                        }
-                        setListings(listingsVal);
-                    }
+                if (listingsRes.success && Array.isArray(listingsRes.data?.listings)) {
+                    setListings(listingsRes.data.listings);
                 }
             } catch (err) {
-                console.error("Error setting provider details:", err);
+                console.error('Error fetching provider details:', err);
+                if (!cancelled) setNotFound(true);
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
-        fetchProviderData();
-    }, [uid]);
+        fetchData();
+        return () => { cancelled = true; };
+    }, [userId]);
+
+    // ── Loading ──────────────────────────────────────────────────────────────
 
     if (loading) {
         return (
@@ -433,247 +275,292 @@ export default function ProviderDetails() {
         );
     }
 
-    if (!provider) {
+    // ── Not Found ────────────────────────────────────────────────────────────
+
+    if (notFound || !provider) {
         return (
-            <div className="min-h-screen bg-sand flex items-center justify-center pt-24 text-center">
-                <p className="font-sans text-sm font-semibold text-charcoal/60">Anbieter nicht gefunden.</p>
+            <div className="min-h-screen bg-sand flex flex-col items-center justify-center pt-24 gap-6 text-center px-4">
+                <div className="w-20 h-20 rounded-full bg-forest/5 flex items-center justify-center">
+                    <Building2 className="w-9 h-9 text-forest/30" />
+                </div>
+                <div>
+                    <p className="font-display text-xl font-bold text-charcoal mb-1">Anbieter nicht gefunden</p>
+                    <p className="text-sm text-charcoal/50">Dieser Anbieter existiert nicht oder ist nicht mehr aktiv.</p>
+                </div>
+                <button
+                    onClick={() => router.back()}
+                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-forest border border-forest/20 px-5 py-2.5 rounded-full hover:bg-forest/5 transition-colors"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Zurück
+                </button>
             </div>
         );
     }
 
-    const providerName = provider.name;
-    const isLivian = providerName.toLowerCase().includes('livian');
-    const memberSince = provider.memberSince;
-    const email = provider.email;
+    // ── Render ───────────────────────────────────────────────────────────────
 
-    // Bullet points
-    const bioLines = isLivian ? [
-        'Livianessence | Tiny House Kooperation',
-        'Nachhaltiges, minimalistisches Wohnen mit Stil.',
-        'Ob als eigener Wohnraum oder als Ferienhaus-Investition.',
-        'Persönlicher Service & smarte, preisbewusste Lösung.',
-        'Mehr Freiheit. Weniger Raum. Mehr Leben - Wir schauen Individuell'
-    ] : [
-        `${providerName} – Premium Partner auf Campuna.`,
-        provider.description || 'Expertise, Zuverlässigkeit und erstklassiger Service.',
-        'Ihr Ansprechpartner rund ums Camping & Fahrgeräte.',
-        'Besuchen Sie unsere Inserate oder kontaktieren Sie uns direkt für Angebote.'
-    ];
-
-    // Legal Information Impressum attributes
-    const legalDetails = {
-        firmenname: provider.firmenname || (isLivian ? 'Livianessence Co. (Markson Tiny House)' : `${providerName} GmbH`),
-        adresse: provider.adresse || (isLivian ? 'Gelnhäuser Allee 10, 63571 Gelnhausen, Deutschland' : `${provider.location || 'Deutschland'}`),
-        kontaktinfo: `E-Mail: ${email} | Tel: ${provider.phone || '+49 (0) 6051 4567-89'}`,
-        impressumUrl: provider.impressum || 'https://campuna.de/impressum'
-    };
+    const hasSocials = provider.website || provider.instagram || provider.facebook;
+    const contactEmail = provider.email || `kontakt@campuna.de`;
 
     return (
         <div className="bg-white min-h-screen relative font-sans text-charcoal">
-            <main className="max-w-7xl mx-auto  py-20">
+            <title>{provider.name} – Anbieter auf Campuna</title>
+            <meta name="description" content={provider.bio || `${provider.name} – Camping-Anbieter auf Campuna.`} />
 
-                {/* ── Facebook / LinkedIn Style Profile Box ── */}
-                <section className="bg-white rounded-3xl overflow-hidden border border-forest/10 shadow-lg mb-12">
+            <main className="max-w-7xl mx-auto py-20 px-4 md:px-6">
 
-                    {/* Cover Picture */}
+                {/* Back button */}
+                <button
+                    onClick={() => router.back()}
+                    className="mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-charcoal/50 hover:text-forest transition-colors"
+                >
+                    <ArrowLeft className="w-4 h-4" />
+                    Zurück
+                </button>
+
+                {/* ── Profile Card ── */}
+                <section className="bg-white rounded-3xl overflow-hidden border border-forest/10 shadow-lg mb-10">
+
+                    {/* Cover */}
                     <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-sand/20">
                         <img
-                            src={provider.coverImage || '/hero-campuna.webp'}
-                            alt={`${providerName} Banner`}
+                            src={coverSrc}
+                            alt={`${provider.name} Banner`}
                             className="w-full h-full object-cover"
+                            onError={() => setCoverSrc(DEFAULT_COVER)}
                             referrerPolicy="no-referrer"
                         />
+                        {/* Subtle bottom gradient for readability */}
+                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                     </div>
 
-                    {/* Logo & Headline info section (overlapping cover picture) */}
-                    <div className="relative px-6 md:px-12 flex flex-col items-start gap-4">
-
-                        {/* Round profile image overlapping bottom of cover */}
+                    {/* Logo overlap */}
+                    <div className="relative px-6 md:px-12">
                         <div className="-mt-14 md:-mt-24 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 z-10 select-none">
                             <img
-                                src={provider.logo || '/logo.webp'}
-                                alt={`${providerName} Logo`}
+                                src={logoSrc}
+                                alt={`${provider.name} Logo`}
                                 className="w-full h-full object-cover"
+                                onError={() => setLogoSrc(DEFAULT_LOGO)}
                                 referrerPolicy="no-referrer"
                             />
                         </div>
-
                     </div>
 
-                    {/* Details & Actions section */}
+                    {/* Info + Actions */}
                     <div className="px-6 md:px-12 pb-10 pt-4 flex flex-col lg:flex-row justify-between gap-8 items-start">
 
-                        {/* Info and Bio area (Left) */}
-                        <div className="flex-1 space-y-4 max-w-3xl">
-                            <div className="space-y-1">
+                        {/* Left — Info */}
+                        <div className="flex-1 space-y-5 max-w-3xl">
 
-                                {/* Name line + verified checkmark badge */}
+                            {/* Name + Verified badge */}
+                            <div className="space-y-1.5">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
-                                        {providerName}
+                                        {provider.name}
                                     </h1>
-                                    <span className="p-1 bg-forest/5 text-forest rounded-full border border-forest/10 inline-flex items-center justify-center shrink-0">
+                                    <span className="p-1 bg-forest/5 text-forest rounded-full border border-forest/10 inline-flex items-center justify-center shrink-0" title="Verifizierter Campuna-Anbieter">
                                         <ShieldCheck className="w-4 h-4 text-forest shrink-0 fill-forest/15" />
                                     </span>
+                                    {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
+                                        <div 
+                                            className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2 py-0.5 text-[10px] font-bold font-sans shadow-sm cursor-help"
+                                            title={`Campuna Pioneer #${provider.achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER').position}`}
+                                        >
+                                            <img 
+                                                src="/pioneer_badge.jpg" 
+                                                alt="Campuna Pioneer Badge" 
+                                                className="w-4 h-4 rounded-full object-cover border border-gold/30"
+                                            />
+                                            <span>Pioneer #{provider.achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER').position}</span>
+                                        </div>
+                                    )}
+                                    {provider.tier === 'BUSINESS' && (
+                                        <span className="px-2.5 py-0.5 bg-gold/10 text-gold border border-gold/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                            Business
+                                        </span>
+                                    )}
+                                    {provider.isStrategic && (
+                                        <span className="px-2.5 py-0.5 bg-forest/10 text-forest border border-forest/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                            Strategischer Partner
+                                        </span>
+                                    )}
                                 </div>
 
-                                {/* Category tagline */}
-                                <p className="text-xs md:text-sm font-semibold text-charcoal/65 flex items-center gap-1.5 flex-wrap">
-                                    <span>{isLivian ? 'Livianessence | Tiny House Kooperation' : (provider.description?.slice(0, 45) || 'Gewerblicher Partner')}</span>
-                                </p>
+                                {/* Type + Location */}
+                                <div className="flex items-center gap-4 text-xs text-charcoal/55 font-medium flex-wrap">
+                                    <span className="flex items-center gap-1">
+                                        <Building2 className="w-3.5 h-3.5 text-gold shrink-0" />
+                                        {provider.type}
+                                    </span>
+                                    {provider.location && (
+                                        <span className="flex items-center gap-1">
+                                            <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
+                                            {provider.location}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* Sub-meta details (Email, Date joined) */}
+                            {/* Contact row */}
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70">
-                                <a
-                                    href={`mailto:${email}`}
-                                    className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium"
-                                >
-                                    <Mail className="w-4.5 h-4.5 text-gold shrink-0" />
-                                    {email}
-                                </a>
+                                {provider.email && (
+                                    <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                        <Mail className="w-4 h-4 text-gold shrink-0" />
+                                        {provider.email}
+                                    </a>
+                                )}
+                                {provider.phone && (
+                                    <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                        <Phone className="w-4 h-4 text-gold shrink-0" />
+                                        {provider.phone}
+                                    </a>
+                                )}
                                 <div className="flex items-center gap-1.5 text-charcoal/85 font-semibold">
-                                    <Calendar className="w-4.5 h-4.5 text-gold shrink-0" />
-                                    Mitglied seit {memberSince}
+                                    <Calendar className="w-4 h-4 text-gold shrink-0" />
+                                    Mitglied seit {provider.memberSince}
                                 </div>
                             </div>
 
-                            {/* Description / Bio Lines list (as bullet items) */}
-                            <div className="space-y-2 pt-4 border-t border-forest/5">
-                                {bioLines.slice(isLivian ? 1 : 0).map((line, i) => (
-                                    <p key={i} className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light flex items-start gap-2">
-
-                                        <span>{line}</span>
+                            {/* Bio */}
+                            {provider.bio && (
+                                <div className="pt-4 border-t border-forest/5">
+                                    <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line">
+                                        {provider.bio}
                                     </p>
-                                ))}
-                            </div>
+                                </div>
+                            )}
 
-                            {/* Link / Social Icon */}
-                            <div className="pt-2 flex gap-2">
-                                <a
-                                    href={isLivian ? 'https://markson-tinyhouse.com' : 'https://campuna.de'}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-8.5 h-8.5 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm shrink-0 inline-flex cursor-pointer"
-                                >
-                                    <Globe className="w-4.5 h-4.5" />
-                                </a>
-                                <a
-                                    href={isLivian ? 'https://markson-tinyhouse.com' : 'https://campuna.de'}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-8.5 h-8.5 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm shrink-0 inline-flex cursor-pointer"
-                                >
-                                    <InstagramIcon className="w-4.5 h-4.5" />
-                                </a>
-                                <a
-                                    href={isLivian ? 'https://markson-tinyhouse.com' : 'https://campuna.de'}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-8.5 h-8.5 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm shrink-0 inline-flex cursor-pointer"
-                                >
-                                    <FacebookIcon className="w-4.5 h-4.5" />
-                                </a>
-
-                            </div>
+                            {/* Social / Website links */}
+                            {hasSocials && (
+                                <div className="flex gap-2 pt-1">
+                                    {provider.website && (
+                                        <a href={provider.website} target="_blank" rel="noopener noreferrer"
+                                            title="Webseite besuchen"
+                                            className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                            <Globe className="w-4.5 h-4.5" />
+                                        </a>
+                                    )}
+                                    {provider.instagram && (
+                                        <a href={provider.instagram} target="_blank" rel="noopener noreferrer"
+                                            title="Instagram"
+                                            className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                            <InstagramIcon />
+                                        </a>
+                                    )}
+                                    {provider.facebook && (
+                                        <a href={provider.facebook} target="_blank" rel="noopener noreferrer"
+                                            title="Facebook"
+                                            className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                            <FacebookIcon />
+                                        </a>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
-                        {/* Support/Call to Actions (Right/Side) */}
-                        <div className="w-full lg:w-auto lg:min-w-[280px] flex flex-col items-center lg:items-end gap-5 shrink-0">
-
-                            {/* Message button */}
-                            <div className="w-full text-center lg:text-right">
+                        {/* Right — CTA */}
+                        <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col items-center lg:items-end gap-4 shrink-0">
+                            <div className="w-full">
                                 <a
-                                    href={`mailto:${email}?subject=Anfrage%20über%20Campuna`}
-                                    className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                                    href={`mailto:${contactEmail}?subject=Anfrage%20über%20Campuna`}
+                                    className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
                                 >
-                                    <MessageSquare className="w-4.5 h-4.5 shrink-0" />
-                                    Verkäufer kontaktieren
+                                    <MessageSquare className="w-4 h-4 shrink-0" />
+                                    Anbieter kontaktieren
                                 </a>
-                                <span className="block mt-2 text-[10px] text-charcoal/45 font-medium leading-none">
-                                    Nachricht direkt an den Verkäufer senden
+                                <span className="block mt-2 text-center text-[10px] text-charcoal/40 font-medium">
+                                    Nachricht direkt senden
                                 </span>
                             </div>
 
-                            {/* Pioneer Badge */}
-                            <div className="inline-flex items-center gap-1.5 px-4.5 py-2 border border-gold/30 bg-gold/10 text-gold-dark rounded-full text-xs font-bold uppercase tracking-wider shadow-sm select-none">
-                                <Star className="w-3.5 h-3.5 text-gold-dark fill-gold-dark shrink-0" />
-                                <span>Campuna Pioneer</span>
+                            {/* Listing count badge */}
+                            <div className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-forest/15 bg-forest/5 text-forest rounded-full text-xs font-bold">
+                                <Star className="w-3.5 h-3.5 text-gold fill-gold shrink-0" />
+                                {listings.length === 1 ? '1 Inserat' : `${listings.length} Inserate`}
                             </div>
-
                         </div>
-
                     </div>
-
                 </section>
 
-                {/* ── Inserate Listings Section ── */}
+                {/* ── Listings Section ── */}
                 <section className="mb-14">
                     <div className="flex items-center gap-2.5 border-b border-forest/5 pb-4 mb-8">
                         <Megaphone className="w-5 h-5 text-gold shrink-0" />
                         <h2 className="font-display text-xl sm:text-2xl font-black text-forest uppercase tracking-tight">
-                            Anzeigen von {providerName}
+                            Anzeigen von {provider.name}
                         </h2>
                         <span className="ml-1 bg-forest/5 text-forest px-3 py-1 rounded-full text-xs font-bold font-mono">
                             {listings.length}
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                        {listings.map((item) => (
-                            <div key={item.id} className="h-full">
-                                <ListingCard item={item} />
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                {/* ── Legal Details Impressum Box ── */}
-                <section className="max-w-7xl">
-                    <div className="bg-sand/5 border border-forest/10 p-6 md:p-8 rounded-2xl shadow-sm text-charcoal">
-
-                        <h3 className="font-display text-base md:text-lg font-bold text-forest flex items-center gap-2 pb-3.5 border-b border-forest/10 mb-5 uppercase tracking-wide">
-                            <Info className="w-4.5 h-4.5 text-gold shrink-0" />
-                            Rechtliche Angaben
-                        </h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-xs md:text-sm leading-relaxed">
-
-                            <div className="space-y-1">
-                                <span className="block font-bold text-charcoal/90">Firmenname:</span>
-                                <span className="font-light text-charcoal/80">{legalDetails.firmenname}</span>
-                            </div>
-
-                            <div className="space-y-1">
-                                <span className="block font-bold text-charcoal/90">Adresse:</span>
-                                <span className="font-light text-charcoal/80">{legalDetails.adresse}</span>
-                            </div>
-
-                            <div className="space-y-1">
-                                <span className="block font-bold text-charcoal/90">Kontaktinformationen:</span>
-                                <span className="font-light text-charcoal/80">{legalDetails.kontaktinfo}</span>
-                            </div>
-
-                            <div className="space-y-1">
-                                <span className="block font-bold text-charcoal/90">Impressum:</span>
-                                <a
-                                    href={legalDetails.impressumUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 font-semibold text-forest hover:text-gold transition-colors"
-                                >
-                                    Siehe Anbieter-Impressum
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                            </div>
-
+                    {listings.length === 0 ? (
+                        <EmptyListings providerName={provider.name} />
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            {listings.map((item) => (
+                                <div key={item.id} className="h-full">
+                                    <ListingCard item={item} />
+                                </div>
+                            ))}
                         </div>
-
-                    </div>
+                    )}
                 </section>
+
+                {/* ── Legal / Impressum Section ── */}
+                {(provider.address || provider.email || provider.phone || provider.impressum) && (
+                    <section>
+                        <div className="bg-sand/5 border border-forest/10 p-6 md:p-8 rounded-2xl shadow-sm">
+                            <h3 className="font-display text-base md:text-lg font-bold text-forest flex items-center gap-2 pb-3.5 border-b border-forest/10 mb-5 uppercase tracking-wide">
+                                <Info className="w-4.5 h-4.5 text-gold shrink-0" />
+                                Rechtliche Angaben
+                            </h3>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-xs md:text-sm leading-relaxed">
+
+                                <div className="space-y-1">
+                                    <span className="block font-bold text-charcoal/90">Firmenname:</span>
+                                    <span className="font-light text-charcoal/80">{provider.name}</span>
+                                </div>
+
+                                {provider.address && (
+                                    <div className="space-y-1">
+                                        <span className="block font-bold text-charcoal/90">Adresse:</span>
+                                        <span className="font-light text-charcoal/80">{provider.address}</span>
+                                    </div>
+                                )}
+
+                                {(provider.email || provider.phone) && (
+                                    <div className="space-y-1">
+                                        <span className="block font-bold text-charcoal/90">Kontaktinformationen:</span>
+                                        <span className="font-light text-charcoal/80">
+                                            {[provider.email && `E-Mail: ${provider.email}`, provider.phone && `Tel: ${provider.phone}`].filter(Boolean).join(' | ')}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {provider.impressum && (
+                                    <div className="space-y-1">
+                                        <span className="block font-bold text-charcoal/90">Impressum / Datenschutz:</span>
+                                        <a
+                                            href={provider.impressum}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 font-semibold text-forest hover:text-gold transition-colors"
+                                        >
+                                            Zum Impressum
+                                            <ExternalLink className="w-3.5 h-3.5" />
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                )}
 
             </main>
-
         </div>
     );
 }

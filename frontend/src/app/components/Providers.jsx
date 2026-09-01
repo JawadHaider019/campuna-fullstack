@@ -4,7 +4,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
 import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { PROVIDERS } from '@/data';
+import { getAllProfiles } from '@/api/profile';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1000&q=80';
 const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
@@ -23,7 +24,8 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, router }) => {
             .replace(/ß/g, 'ss')
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
-        router.push(`/provider_details/${nameSlug || partner.id}`);
+        // Embed user UUID at the end so the details page can look up the real profile
+        router.push(`/provider_details/${nameSlug}-${partner.id}`);
     };
 
     return (
@@ -74,7 +76,7 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, router }) => {
                     <div className="inline-flex items-center space-x-1 bg-white/10 backdrop-blur-md px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-white shadow-sm shrink-0">
                         <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gold" />
                         <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide">
-                            {partner.listingsCount || 1} online
+                            {partner.listingsCount === 1 ? '1 Inserat' : `${partner.listingsCount || 0} Inserate`}
                         </span>
                     </div>
 
@@ -95,8 +97,25 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
     const router = useRouter();
     const rowRef = useRef(null);
     const [constraints, setConstraints] = useState(0);
+    const [isDesktop, setIsDesktop] = useState(false);
 
-    const providersList = PROVIDERS || [];
+    const { user } = useAuthStore();
+    const [providersList, setProvidersList] = useState([]);
+
+    useEffect(() => {
+        const loadProviders = async () => {
+            try {
+                const res = await getAllProfiles();
+                if (res.success) {
+                    const filtered = (res.data.profiles || []).filter(p => p.id !== user?.id);
+                    setProvidersList(filtered);
+                }
+            } catch (err) {
+                console.error("Error loading providers:", err);
+            }
+        };
+        loadProviders();
+    }, [user?.id]);
 
     const x = useMotionValue(0);
     const isHoveredRef = useRef(false);
@@ -112,6 +131,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                 cardWidthRef.current = card.getBoundingClientRect().width;
             }
             setConstraints(Math.max(0, rowRef.current.scrollWidth - rowRef.current.offsetWidth));
+            setIsDesktop(window.innerWidth >= 1024);
         };
 
         const timer = setTimeout(measureCard, 100);
@@ -122,6 +142,8 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
         };
     }, [providersList]);
 
+    const shouldSlide = !isDesktop || providersList.length > 3;
+
     useEffect(() => {
         let animationFrameId;
         let lastTime = performance.now();
@@ -130,7 +152,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
             const delta = (time - lastTime) / 1000;
             lastTime = time;
 
-            if (providersList.length > 0 && !isHoveredRef.current && !isDraggingRef.current) {
+            if (shouldSlide && constraints > 0 && providersList.length > 0 && !isHoveredRef.current && !isDraggingRef.current) {
                 const step = cardWidthRef.current + gap;
                 const maxMove = step * providersList.length;
                 let currentX = x.get() - 30 * delta;
@@ -141,6 +163,8 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                     currentX -= maxMove;
                 }
                 x.set(currentX);
+            } else {
+                x.set(0);
             }
 
             animationFrameId = requestAnimationFrame(loop);
@@ -148,7 +172,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
 
         animationFrameId = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(animationFrameId);
-    }, [providersList.length, x]);
+    }, [providersList.length, constraints, x, shouldSlide]);
 
     return (
         <section id="campuna-spotlight" className="py-10 sm:py-16 bg-sand relative overflow-x-hidden scroll-mt-24">
@@ -180,22 +204,29 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                 </div>
 
                 <div className="relative">
-                    <div className="hidden md:block absolute inset-y-0 left-0 w-24 lg:w-32 bg-gradient-to-r from-sand via-sand/35 to-transparent z-10 pointer-events-none" />
-                    <div className="hidden md:block absolute inset-y-0 right-0 w-24 lg:w-32 bg-gradient-to-l from-sand via-sand/35 to-transparent z-10 pointer-events-none" />
+                    {shouldSlide && (
+                        <>
+                            <div className="hidden md:block absolute inset-y-0 left-0 w-24 lg:w-32 bg-gradient-to-r from-sand via-sand/35 to-transparent z-10 pointer-events-none" />
+                            <div className="hidden md:block absolute inset-y-0 right-0 w-24 lg:w-32 bg-gradient-to-l from-sand via-sand/35 to-transparent z-10 pointer-events-none" />
+                        </>
+                    )}
 
                     {providersList.length > 0 && (
-                        <div className="relative overflow-x-hidden cursor-grab active:cursor-grabbing" ref={rowRef}>
+                        <div className={`relative overflow-x-hidden ${shouldSlide ? 'cursor-grab active:cursor-grabbing' : ''}`} ref={rowRef}>
                             <motion.div
-                                drag="x"
-                                dragConstraints={{ right: 0, left: -constraints }}
-                                style={{ x }}
+                                drag={shouldSlide ? "x" : false}
+                                dragConstraints={shouldSlide ? { right: 0, left: -constraints } : { right: 0, left: 0 }}
+                                style={shouldSlide ? { x } : { x: 0 }}
                                 onDragStart={() => { isDraggingRef.current = true; }}
                                 onDragEnd={() => { isDraggingRef.current = false; }}
                                 onMouseEnter={() => { isHoveredRef.current = true; }}
                                 onMouseLeave={() => { isHoveredRef.current = false; }}
-                                className="flex gap-4 w-max px-4 sm:px-16 md:px-32 py-4 sm:py-6"
+                                className={shouldSlide 
+                                    ? "flex gap-4 w-max px-4 sm:px-16 md:px-32 py-4 sm:py-6" 
+                                    : "flex gap-4 justify-center w-full py-4 sm:py-6"
+                                }
                             >
-                                {[...providersList, ...providersList].map((partner, idx) => (
+                                {providersList.map((partner, idx) => (
                                     <ProviderCard
                                         key={`${partner.id}-${idx}`}
                                         partner={partner}

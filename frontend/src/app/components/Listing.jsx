@@ -5,6 +5,7 @@ import { motion, useMotionValue } from 'framer-motion';
 import { Heart, MapPin, ShieldCheck, Eye, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { FEATURED_LISTINGS } from '@/data';
+import { getAllListings } from '@/api/listings';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
 
@@ -201,13 +202,31 @@ export default function Listing({
     const rowRef2 = useRef(null);
     const [rowConstraints1, setRowConstraints1] = useState(0);
     const [rowConstraints2, setRowConstraints2] = useState(0);
+    const [apiListings, setApiListings] = useState([]);
+
+    useEffect(() => {
+        const fetchListings = async () => {
+            try {
+                const res = await getAllListings();
+                if (res.success) {
+                    console.log("Loaded API listings on homepage:", res.data.listings);
+                    setApiListings(res.data.listings || []);
+                } else {
+                    console.error("Failed to load listings from backend:", res.error);
+                }
+            } catch (err) {
+                console.error("Error loading listings:", err);
+            }
+        };
+        fetchListings();
+    }, []);
 
     const activeListings = useMemo(() => {
         if (propListings && propListings.length > 0) {
             return propListings;
         }
-        return FEATURED_LISTINGS;
-    }, [propListings]);
+        return apiListings;
+    }, [apiListings, propListings]);
 
     const filteredListings = useMemo(() => {
         return activeListings.filter((rawItem) => {
@@ -264,18 +283,18 @@ export default function Listing({
     }, [row1Listings, row2Listings]);
 
     const handleCardClick = useCallback((item) => {
-        const titleSlug = item.title
-            ? item.title
-                .toLowerCase()
-                .replace(/ä/g, 'ae')
-                .replace(/ö/g, 'oe')
-                .replace(/ü/g, 'ue')
-                .replace(/ß/g, 'ss')
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-+|-+$/g, '')
-            : item.id;
-        router.push(`/listing_details/${titleSlug || item.id}`);
-    }, [router]);
+         const titleSlug = item.slug || (item.title
+             ? item.title
+                 .toLowerCase()
+                 .replace(/ä/g, 'ae')
+                 .replace(/ö/g, 'oe')
+                 .replace(/ü/g, 'ue')
+                 .replace(/ß/g, 'ss')
+                 .replace(/[^a-z0-9]+/g, '-')
+                 .replace(/^-+|-+$/g, '')
+             : item.id);
+         router.push(`/listing_details/${titleSlug}`);
+     }, [router]);
 
     const x1 = useMotionValue(0);
     const x2 = useMotionValue(0);

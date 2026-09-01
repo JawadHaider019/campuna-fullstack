@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Heart, MapPin, ShieldCheck, Eye, ArrowLeft } from 'lucide-react';
-import { FEATURED_LISTINGS, CATEGORIES } from '@/data';
+import { CATEGORIES } from '@/data';
+import { getAllListings } from '@/api/listings';
 import CategoriesSection from '@/app/components/CategoriesSection';
 
 // Map URL slugs → internal category names
@@ -262,13 +263,49 @@ export default function CategoryPage() {
     }, [slug]);
 
     useEffect(() => {
-        setLoading(true);
-        const filtered = categoryName
-            ? FEATURED_LISTINGS.filter(l => l.category === categoryName)
-            : FEATURED_LISTINGS;
-        const mappedMock = filtered.map(l => mapListing({ ...l, displayLocation: formatLocation(l.location) }));
-        setListings(mappedMock);
-        setLoading(false);
+        const fetchCategoryListings = async () => {
+            setLoading(true);
+            try {
+                const res = await getAllListings();
+                if (res.success) {
+                    const allListings = res.data.listings || [];
+                    const filtered = categoryName
+                        ? allListings.filter(l => l.category === categoryName)
+                        : allListings;
+                    
+                    const mapped = filtered.map(l => {
+                        const images = l.images && l.images.length > 0
+                            ? l.images
+                            : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
+                        
+                        return {
+                            id: l.id,
+                            title: l.title || 'Camping Angebot',
+                            category: l.category || 'Camping Zubehör',
+                            price: parseFloat(l.price) || 0,
+                            pricePeriod: l.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
+                            location: l.location || 'Deutschland',
+                            displayLocation: l.location || 'Deutschland',
+                            images,
+                            seller: {
+                                name: l.seller?.name || (l.seller?.type === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer'),
+                                verified: true,
+                                type: l.seller?.type || 'Privat'
+                            },
+                            features: [l.condition, l.subcategory].filter(Boolean),
+                            isNegotiable: l.negotiable || false,
+                            rating: 4.8
+                        };
+                    });
+                    setListings(mapped);
+                }
+            } catch (err) {
+                console.error("Error fetching category listings:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCategoryListings();
     }, [slug, categoryName]);
 
     const handleToggleWishlist = (id) => {

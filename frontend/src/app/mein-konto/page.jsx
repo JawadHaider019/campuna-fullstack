@@ -8,20 +8,22 @@ import {
     getMyProfile, 
     updateMyProfile,
     getMySubscription,
-    upgradeSubscription,
+    getMyFeatures,
+    subscribeToPlan,
     cancelSubscription,
     getCreditBalance,
-    earnSimulatedCredits,
     getReferralStats,
-    getReferralsList
+    getReferralsList,
+    uploadAvatar,
+    uploadCover
 } from '@/api/profile';
+import { getMyListings } from '@/api/listings';
 import { logoutUser } from '@/api/auth';
-import { uploadImage } from '@/api/upload';
 import { toast } from 'react-hot-toast';
 import {
     User, Building2, MapPin, Phone, Globe, AtSign, Share2,
     Mail, FileText, Shield, Camera, Edit3, Save, X, LogOut,
-    ChevronRight, Copy, Check, Loader2, Plus, Award, AlertTriangle
+    ChevronRight, Copy, Check, Loader2, Plus, Award, AlertTriangle, Lock, Sparkles
 } from 'lucide-react';
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -51,7 +53,7 @@ const Avatar = ({ src, name, size = 'lg', onUploadClick }) => {
                 <button
                     onClick={onUploadClick}
                     className="absolute bottom-0 right-0 w-8 h-8 bg-gold rounded-full border-2 border-white flex items-center justify-center hover:bg-gold-dark transition-colors shadow-md"
-                    title="Foto ändern"
+                    title="Foto ändern (Max. 5 MB)"
                 >
                     <Camera className="w-4 h-4 text-white" />
                 </button>
@@ -220,13 +222,24 @@ export default function MeinKontoPage() {
     const [draft, setDraft] = useState({});
     const [mounted, setMounted] = useState(false);
     const [badgeModalOpen, setBadgeModalOpen] = useState(false);
+    const [achievements, setAchievements] = useState([]);
+
+    const pioneerBadge = achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER');
+    const isProfileComplete = profileType === 'PRIVATE'
+        ? !!(profile?.first_name?.trim() && profile?.last_name?.trim() && profile?.bio?.trim() && profile?.location?.trim() && profile?.profile_image_url?.trim())
+        : !!(profile?.company_name?.trim() && profile?.bio?.trim() && profile?.location?.trim() && profile?.logo_url?.trim());
     
     // Strategic updates states
-    const [subDetails, setSubDetails] = useState({ tier: 'FREE', is_strategic_partner: false });
+    const [subDetails, setSubDetails] = useState({ plan_name: 'FREE', is_business: false });
     const [creditBalance, setCreditBalance] = useState(0);
     const [referralsList, setReferralsList] = useState([]);
     const [referralStats, setReferralStats] = useState({ total: 0, pending: 0, completed: 0 });
     const [upgrading, setUpgrading] = useState(false);
+
+    // Listings states
+    const [userListings, setUserListings] = useState([]);
+    const [listingsLoading, setListingsLoading] = useState(false);
+    const [limitModalOpen, setLimitModalOpen] = useState(false);
 
     const avatarInputRef = useRef(null);
     const coverInputRef = useRef(null);
@@ -236,9 +249,15 @@ export default function MeinKontoPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+            toast.error('Die Datei ist zu groß. Maximale Dateigröße ist 5 MB.');
+            return;
+        }
+
         const toastId = toast.loading('Bild wird hochgeladen...');
         try {
-            const res = await uploadImage(file);
+            const res = await uploadAvatar(file);
             if (res.success) {
                 const url = res.data.url;
                 if (profileType === 'PRIVATE') {
@@ -265,9 +284,15 @@ export default function MeinKontoPage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+            toast.error('Die Datei ist zu groß. Maximale Dateigröße ist 5 MB.');
+            return;
+        }
+
         const toastId = toast.loading('Hintergrundbild wird hochgeladen...');
         try {
-            const res = await uploadImage(file);
+            const res = await uploadCover(file);
             if (res.success) {
                 setDraft(prev => ({ ...prev, cover_image_url: res.data.url }));
                 toast.success('Hintergrundbild erfolgreich hochgeladen!', { id: toastId });
@@ -307,15 +332,15 @@ export default function MeinKontoPage() {
                     setProfile(profileRes.data.profile);
                     setProfileType(profileRes.data.profile_type);
                     setDraft(profileRes.data.profile);
+                    setAchievements(profileRes.data.achievements || []);
 
-                    if (profileRes.data.profile_type === 'COMMERCIAL') {
-                        const subRes = await getMySubscription().catch(() => null);
-                        if (subRes && subRes.success) {
-                            setSubDetails({
-                                tier: subRes.data.tier,
-                                is_strategic_partner: subRes.data.is_strategic_partner,
-                            });
-                        }
+                    const subRes = await getMySubscription().catch(() => null);
+                    if (subRes && subRes.success) {
+                        setSubDetails({
+                            plan_name: subRes.data.plan?.name ?? 'FREE',
+                            is_business: subRes.data.is_business ?? false,
+                            expires_at: subRes.data.subscription?.expires_at ?? null,
+                        });
                     }
                 } else {
                     toast.error(profileRes.error || 'Profil konnte nicht geladen werden.');
@@ -336,6 +361,14 @@ export default function MeinKontoPage() {
                 if (refListRes && refListRes.success) {
                     setReferralsList(refListRes.data.referrals);
                 }
+
+                // Load user listings
+                setListingsLoading(true);
+                const listingsRes = await getMyListings().catch(() => null);
+                if (listingsRes && listingsRes.success) {
+                    setUserListings(listingsRes.data.listings || []);
+                }
+                setListingsLoading(false);
             } catch (err) {
                 console.error("Error loading account details:", err);
             } finally {
@@ -345,6 +378,20 @@ export default function MeinKontoPage() {
 
         loadAllData();
     }, [mounted, isLoggedIn]);
+
+    const handleCreateListingClick = () => {
+        const limit = 3;
+        const activeApprovedListings = userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status));
+        
+        const isBusinessUser = subDetails.is_business;
+        const isAtLimit = !isBusinessUser && activeApprovedListings.length >= limit;
+        
+        if (isAtLimit) {
+            setLimitModalOpen(true);
+        } else {
+            router.push('/anzeige-erstellen');
+        }
+    };
 
     const handleEdit = () => {
         setDraft({ ...profile });
@@ -373,15 +420,16 @@ export default function MeinKontoPage() {
         setUpgrading(true);
         const toastId = toast.loading('Upgrade wird durchgeführt...');
         try {
-            const res = await upgradeSubscription();
+            const res = await subscribeToPlan('BUSINESS', 'CREDIT', 1);
             if (res.success) {
-                toast.success('Upgrade erfolgreich! Du bist jetzt ein Business-Mitglied.', { id: toastId });
+                toast.success('Upgrade erfolgreich! Du bist jetzt ein Business-Mitglied. 🎉', { id: toastId });
                 // Reload sub
                 const subRes = await getMySubscription();
                 if (subRes.success) {
                     setSubDetails({
-                        tier: subRes.data.tier,
-                        is_strategic_partner: subRes.data.is_strategic_partner,
+                        plan_name: subRes.data.plan?.name ?? 'FREE',
+                        is_business: subRes.data.is_business ?? false,
+                        expires_at: subRes.data.subscription?.expires_at ?? null,
                     });
                 }
                 const creditRes = await getCreditBalance();
@@ -396,25 +444,6 @@ export default function MeinKontoPage() {
             toast.error('Fehler beim Upgrade.', { id: toastId });
         } finally {
             setUpgrading(false);
-        }
-    };
-
-    const handleEarnTestCredits = async () => {
-        const toastId = toast.loading('Simulierte Credits werden geladen...');
-        try {
-            const res = await earnSimulatedCredits();
-            if (res.success) {
-                toast.success('2900 CC Test-Credits gutgeschrieben!', { id: toastId });
-                const creditRes = await getCreditBalance();
-                if (creditRes.success) {
-                    setCreditBalance(creditRes.data.balance);
-                }
-            } else {
-                toast.error(res.error || 'Fehler beim Laden.', { id: toastId });
-            }
-        } catch (err) {
-            console.error(err);
-            toast.error('Netzwerkfehler.', { id: toastId });
         }
     };
 
@@ -488,7 +517,7 @@ export default function MeinKontoPage() {
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
 
                         {isEditing && (
-                            profileType === 'COMMERCIAL' && subDetails.tier === 'FREE' ? (
+                            profileType === 'COMMERCIAL' && !subDetails.is_business ? (
                                 <div className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center gap-1.5 text-white font-sans text-center px-4 z-20">
                                     <Shield className="w-5 h-5 text-gold" />
                                     <span className="font-bold text-xs uppercase tracking-wider">Hintergrundbild ist ein Business-Feature</span>
@@ -508,7 +537,8 @@ export default function MeinKontoPage() {
                                     className="absolute inset-0 bg-black/40 hover:bg-black/55 transition-colors flex flex-col items-center justify-center gap-1 text-white font-sans font-semibold text-xs cursor-pointer z-20"
                                 >
                                     <Camera className="w-5 h-5 animate-pulse" />
-                                    <span>Cover ändern</span>
+                                    <span>Hintergrundbild ändern</span>
+                                    <span className="text-[10px] text-white/70 font-normal">(Max. 5 MB)</span>
                                 </button>
                             )
                         )}
@@ -525,10 +555,10 @@ export default function MeinKontoPage() {
                             </span>
                             {profileType === 'COMMERCIAL' && (
                                 <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow
-                                            ${subDetails.tier === 'BUSINESS'
+                                            ${subDetails.is_business
                                         ? 'bg-forest text-sand border border-forest-light'
                                         : 'bg-sand text-charcoal/60 border border-beige'}`}>
-                                    {subDetails.tier === 'BUSINESS' ? '★ Business' : 'Free Plan'}
+                                    {subDetails.is_business ? '★ Business' : 'Free Plan'}
                                 </span>
                             )}
                         </div>
@@ -547,16 +577,18 @@ export default function MeinKontoPage() {
                             {/* Action buttons (Top right position like LinkedIn edit button) */}
                             <div className="flex items-center gap-2 self- md:self-auto">
                                 {!isEditing ? (
-                                    <button
-                                        id="btn-edit-profile"
-                                        onClick={handleEdit}
-                                        className="flex items-center gap-2 border border-forest text-forest hover:bg-forest/5 px-5 py-2 rounded-full text-sm font-semibold transition-all shadow-sm"
-                                    >
-                                        <Edit3 className="w-4 h-4" />
-                                        Profil bearbeiten
-                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            id="btn-edit-profile"
+                                            onClick={handleEdit}
+                                            className="flex items-center gap-2 border border-forest text-forest hover:bg-forest/5 px-5 py-2 rounded-full text-sm font-semibold transition-all shadow-sm"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                            Profil bearbeiten
+                                        </button>
+                                    </div>
                                 ) : (
-                                    <>
+                                    <div className="flex items-center gap-2">
                                         <button
                                             onClick={handleCancel}
                                             className="flex items-center gap-2 bg-beige text-charcoal hover:bg-beige/80 px-5 py-2 rounded-full text-sm font-semibold transition-all"
@@ -575,7 +607,7 @@ export default function MeinKontoPage() {
                                                 : <Save className="w-4 h-4" />}
                                             {saving ? 'Speichern…' : 'Speichern'}
                                         </button>
-                                    </>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -623,18 +655,18 @@ export default function MeinKontoPage() {
                                     <div className="flex justify-between items-center">
                                         <label className="text-xs font-bold text-charcoal/40 uppercase tracking-wider font-sans">Über mich / Info</label>
                                         <span className="text-[10px] text-charcoal/50 font-sans">
-                                            {(draft.bio ?? '').length} / {profileType === 'COMMERCIAL' && subDetails.tier === 'FREE' ? 150 : 1000}
+                                            {(draft.bio ?? '').length} / {profileType === 'COMMERCIAL' && !subDetails.is_business ? 150 : 1000}
                                         </span>
                                     </div>
                                     <textarea
                                         value={draft.bio ?? ''}
                                         onChange={e => setDraft(prev => ({ ...prev, bio: e.target.value }))}
-                                        placeholder={profileType === 'COMMERCIAL' && subDetails.tier === 'FREE' ? 'Kurzbeschreibung (max. 150 Zeichen)...' : 'Erzähl etwas über dich...'}
-                                        maxLength={profileType === 'COMMERCIAL' && subDetails.tier === 'FREE' ? 150 : 1000}
+                                        placeholder={profileType === 'COMMERCIAL' && !subDetails.is_business ? 'Kurzbeschreibung (max. 150 Zeichen)...' : 'Erzähl etwas über dich...'}
+                                        maxLength={profileType === 'COMMERCIAL' && !subDetails.is_business ? 150 : 1000}
                                         rows={3}
                                         className="w-full bg-sand border border-beige rounded-xl px-4 py-2 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-forest/30 font-sans resize-none"
                                     />
-                                    {profileType === 'COMMERCIAL' && subDetails.tier === 'FREE' && (draft.bio ?? '').length >= 150 && (
+                                    {profileType === 'COMMERCIAL' && !subDetails.is_business && (draft.bio ?? '').length >= 150 && (
                                         <p className="text-[10px] text-red-500 font-sans mt-0.5">
                                             Konto-Limit erreicht! Für längere Beschreibungen aktualisiere dein Konto auf Business.
                                         </p>
@@ -660,14 +692,29 @@ export default function MeinKontoPage() {
                                     <h1 className="text-2xl md:text-3xl font-bold text-charcoal font-sans">
                                         {displayName || 'Kein Name'}
                                     </h1>
-                                    <button
-                                        type="button"
-                                        onClick={() => setBadgeModalOpen(true)}
-                                        className="inline-flex items-center gap-1 bg-gold/15 hover:bg-gold/25 text-gold-dark border border-gold/30 rounded-full px-2.5 py-0.5 text-xs font-semibold font-sans transition-colors cursor-pointer"
-                                    >
-                                        <Plus className="w-3.5 h-3.5" />
-                                        Get a Badge
-                                    </button>
+                                    {pioneerBadge ? (
+                                        <div 
+                                            onClick={() => setBadgeModalOpen(true)}
+                                            className="flex items-center gap-1.5 bg-forest/5 hover:bg-forest/10 border border-forest/20 text-forest rounded-full px-3 py-1 text-xs font-bold font-sans cursor-pointer transition-all shadow-sm"
+                                            title={`Campuna Pioneer #${pioneerBadge.position}`}
+                                        >
+                                            <img 
+                                                src="/pioneer_badge.jpg" 
+                                                alt="Campuna Pioneer Badge" 
+                                                className="w-5 h-5 rounded-full object-cover border border-gold/35"
+                                            />
+                                            <span>Pioneer #{pioneerBadge.position}</span>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            onClick={() => setBadgeModalOpen(true)}
+                                            className="inline-flex items-center gap-1 bg-gold/15 hover:bg-gold/25 text-gold-dark border border-gold/30 rounded-full px-2.5 py-0.5 text-xs font-semibold font-sans transition-colors cursor-pointer"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            Get a Badge
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* Bio below the name */}
@@ -763,31 +810,80 @@ export default function MeinKontoPage() {
 
                             <div className="flex items-center justify-between mb-2">
                                 <h2 className="text-lg font-bold text-charcoal font-sans ">
-                                    Meine Inserate
+                                    Meine Inserate ({userListings.length})
                                 </h2>
                                 <button
                                     id="btn-create-listing"
-                                    onClick={() => router.push('/create-listing')}
-                                    className="flex items-center px-2 justify-center gap-2 bg-forest text-sand hover:bg-forest/90  py-2 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all shadow-sm group"
+                                    onClick={handleCreateListingClick}
+                                    className="flex items-center px-2 justify-center gap-2 bg-forest text-sand hover:bg-forest/90  py-2 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all shadow-sm group cursor-pointer"
                                 >
                                     <Edit3 className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
                                     <span>Inserat erstellen</span>
                                 </button>
                             </div>
 
-                            {/* Empty listings state */}
-                            <div className="flex flex-col items-center justify-center text-center py-10 px-4 border border-dashed border-beige/80 rounded-2xl bg-sand/30">
-                                <div className="w-16 h-16 rounded-full bg-forest/5 flex items-center justify-center mb-4 border border-forest/10">
-                                    <FileText className="w-8 h-8 text-forest/40" />
+                            {listingsLoading ? (
+                                <div className="flex items-center justify-center py-12">
+                                    <Loader2 className="w-8 h-8 animate-spin text-forest" />
                                 </div>
-                                <h3 className="text-md font-semibold text-charcoal font-sans mb-1">
-                                    Keine aktiven Inserate
-                                </h3>
-                                <p className="text-xs text-charcoal/50 font-sans max-w-sm mb-5 leading-relaxed">
-                                    Du hast aktuell noch keine Angebote auf Campuna veröffentlicht. Erstelle jetzt dein erstes Inserat!
-                                </p>
-
-                            </div>
+                            ) : userListings.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center text-center py-10 px-4 border border-dashed border-beige/80 rounded-2xl bg-sand/30">
+                                    <div className="w-16 h-16 rounded-full bg-forest/5 flex items-center justify-center mb-4 border border-forest/10">
+                                        <FileText className="w-8 h-8 text-forest/40" />
+                                    </div>
+                                    <h3 className="text-md font-semibold text-charcoal font-sans mb-1">
+                                        Keine aktiven Inserate
+                                    </h3>
+                                    <p className="text-xs text-charcoal/50 font-sans max-w-sm mb-5 leading-relaxed">
+                                        Du hast aktuell noch keine Angebote auf Campuna veröffentlicht. Erstelle jetzt dein erstes Inserat!
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+                                    {userListings.map((item) => {
+                                        const previewImg = item.images && item.images.length > 0
+                                            ? item.images[0]
+                                            : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
+                                        return (
+                                            <div key={item.id} className="flex flex-col bg-sand/20 border border-beige/60 rounded-2xl overflow-hidden shadow-sm hover:shadow transition-shadow">
+                                                <div className="relative aspect-[16/9] bg-sand/40">
+                                                    <img src={previewImg} alt={item.title} className="w-full h-full object-cover" />
+                                                    <span className={`absolute top-3 left-3 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase shadow-sm ${
+                                                        item.status === 'APPROVED' ? 'bg-forest/10 text-forest' : 'bg-gold/15 text-gold-dark'
+                                                    }`}>
+                                                        {item.status === 'APPROVED' ? 'Veröffentlicht' : 'In Prüfung'}
+                                                    </span>
+                                                </div>
+                                                <div className="p-4 flex-1 flex flex-col justify-between space-y-2">
+                                                    <div>
+                                                        <span className="text-[8px] uppercase tracking-widest text-gold font-bold block mb-0.5 font-sans">
+                                                            {item.category}
+                                                        </span>
+                                                        <h4 className="font-sans text-sm font-bold text-charcoal line-clamp-2 leading-tight">
+                                                            {item.title}
+                                                        </h4>
+                                                        {item.subcategory && (
+                                                            <span className="inline-block text-[9px] text-charcoal/60 bg-sand px-1.5 py-0.5 rounded border border-beige/40 mt-1.5 font-medium font-sans">
+                                                                {item.subcategory}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="pt-2.5 border-t border-beige/40 flex items-center justify-between">
+                                                        <span className="font-display text-sm font-black text-forest">
+                                                            {parseFloat(item.price).toLocaleString('de-DE')} €
+                                                            {item.negotiable && <span className="text-[9px] font-sans font-normal text-charcoal/50 ml-1">VB</span>}
+                                                        </span>
+                                                        <span className="text-[9px] text-charcoal/40 font-medium font-sans flex items-center gap-0.5">
+                                                            <MapPin className="w-3 h-3 text-gold-dark" />
+                                                            {item.location}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -810,29 +906,30 @@ export default function MeinKontoPage() {
                                     </span>
                                 </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleEarnTestCredits}
-                                className="w-full flex items-center justify-center gap-1.5 bg-gold/15 hover:bg-gold/25 text-gold-dark border border-gold/30 rounded-xl py-2.5 text-xs font-semibold font-sans transition-colors cursor-pointer"
-                            >
-                                <Plus className="w-3.5 h-3.5" />
-                                Test-Credits aufladen (+2900 
-                                <img src="/coin.png" className="w-4 h-4 shrink-0 mx-0.5 align-middle" alt="CC" />
-                                )
-                            </button>
                         </div>
 
-                        {/* 2. Subscription Upgrade Card (Commercial Only) */}
-                        {profileType === 'COMMERCIAL' && (
+                        {/* 2. Subscription Upgrade Card */}
+                        {(profileType === 'COMMERCIAL' || subDetails.is_business) && (
                             <div className="bg-white rounded-3xl shadow-sm border border-beige/60 p-6 space-y-4">
                                 <h3 className="text-sm font-bold text-charcoal/50 uppercase tracking-widest pb-2 border-b border-beige">
                                     Mitgliedschaft
                                 </h3>
-                                {subDetails.tier === 'BUSINESS' ? (
+                                {subDetails.is_business ? (
                                     <div className="space-y-3">
                                         <div className="p-3 bg-forest/10 border border-forest/20 rounded-2xl text-forest text-xs leading-relaxed font-sans font-semibold">
-                                            ✓ Premium Business-Tarif aktiv! Genieße vollen Zugriff auf Banners, erweiterte Beschreibungen und Spotlight-Sichtbarkeit.
+                                            ✓ Business-Tarif aktiv!
+                                            {subDetails.expires_at && (
+                                                <span className="block text-[10px] text-forest/60 font-normal mt-1">
+                                                    Läuft bis {new Date(subDetails.expires_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                                </span>
+                                            )}
                                         </div>
+                                        <a
+                                            href="/abo"
+                                            className="flex items-center justify-center gap-1.5 text-xs text-charcoal/50 hover:text-forest font-sans transition-colors"
+                                        >
+                                            Abonnement verwalten →
+                                        </a>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
@@ -849,6 +946,12 @@ export default function MeinKontoPage() {
                                         >
                                             {upgrading ? <Loader2 className="w-4 h-4 animate-spin text-sand" /> : 'Jetzt auf Business upgraden'}
                                         </button>
+                                        <a
+                                            href="/abo"
+                                            className="flex items-center justify-center gap-1.5 text-xs text-charcoal/40 hover:text-forest font-sans transition-colors"
+                                        >
+                                            Alle Vorteile ansehen →
+                                        </a>
                                     </div>
                                 )}
                             </div>
@@ -945,57 +1048,167 @@ export default function MeinKontoPage() {
                                 </div>
 
                                 {/* Body */}
-                                <div className="space-y-4 font-sans">
-                                    <p className="text-sm text-charcoal/70 leading-relaxed">
-                                        Der <strong>Campuna Pioneer Status</strong> ist eine exklusive Auszeichnung für unsere ersten, engagiertesten Mitglieder.
-                                    </p>
+                                <div className="space-y-4 font-sans text-center">
+                                    {pioneerBadge ? (
+                                        <div className="space-y-4 py-2">
+                                            <div className="relative w-28 h-28 mx-auto">
+                                                <div className="absolute inset-0 bg-gold/20 rounded-full blur-xl animate-pulse" />
+                                                <img 
+                                                    src="/pioneer_badge.jpg" 
+                                                    alt="Campuna Pioneer" 
+                                                    className="w-28 h-28 rounded-full object-cover border-2 border-gold relative z-10 shadow-lg"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h4 className="text-xl font-bold text-forest">Glückwunsch, Pioneer!</h4>
+                                                <p className="text-xs font-bold text-gold-dark uppercase tracking-widest">Rank #{pioneerBadge.position} von 300</p>
+                                            </div>
+                                            <p className="text-sm text-charcoal/70 leading-relaxed px-2">
+                                                Du hast den exklusiven <strong>Campuna Pioneer Status</strong> freigeschaltet! Als eines der ersten 300 Mitglieder bist du ein tragender Teil unserer Campuna-Gemeinschaft. Vielen Dank für dein Vertrauen und Engagement! 🌲🏕️
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-sm text-charcoal/70 leading-relaxed text-left">
+                                                Der <strong>Campuna Pioneer Status</strong> ist eine exklusive Auszeichnung für unsere ersten, engagiertesten Mitglieder.
+                                            </p>
 
-                                    <div className="bg-sand/40 border border-beige/40 rounded-2xl p-4 space-y-3">
-                                        <h4 className="text-xs font-bold text-charcoal/50 uppercase tracking-wider">
-                                            Wie erhalte ich die Auszeichnung?
-                                        </h4>
-                                        <ul className="space-y-2.5 text-xs text-charcoal/70">
-
-                                            <li className="flex items-start gap-2">
-                                                <div className="w-5 h-5 rounded-full bg-forest/10 flex items-center justify-center text-forest shrink-0 mt-0.5">
-                                                    <Plus className="w-3.5 h-3.5" />
-                                                </div>
-                                                <div>
-                                                    <strong>Mindestens 3 Inserate:</strong> Du musst mindestens 3 aktive, vom System freigegebene Inserate veröffentlicht haben.
-                                                </div>
-                                            </li>
-                                            <li className="flex items-start gap-2">
-
-                                                <div className="w-5 h-5 rounded-full bg-forest/10 flex items-center justify-center text-forest shrink-0 mt-0.5">
-                                                    <AlertTriangle className="w-3.5 h-3.5" />
-                                                </div>
-                                                <div>
-                                                    Nur die ersten <strong>300 qualifizierten Benutzer</strong>  erhalten den Pioneer Award. Sichere dir deinen Status frühzeitig!
-
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </div>
-
+                                            <div className="bg-sand/40 border border-beige/40 rounded-2xl p-4 space-y-3 text-left">
+                                                <h4 className="text-xs font-bold text-charcoal/50 uppercase tracking-wider">
+                                                    Dein aktueller Fortschritt
+                                                </h4>
+                                                <ul className="space-y-2.5 text-xs text-charcoal/70">
+                                                    <li className="flex items-center justify-between gap-2 border-b border-beige/40 pb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-white ${isProfileComplete ? 'bg-forest' : 'bg-charcoal/20'}`}>
+                                                                <Check className="w-3 h-3" />
+                                                            </div>
+                                                            <span>Profil vollständig ausgefüllt</span>
+                                                        </div>
+                                                        <span className={`font-semibold ${isProfileComplete ? 'text-forest' : 'text-charcoal/40'}`}>
+                                                            {isProfileComplete ? 'Ja' : 'Nein'}
+                                                        </span>
+                                                    </li>
+                                                    <li className="flex items-center justify-between gap-2 border-b border-beige/40 pb-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 text-white ${userListings.filter(l => l.status === 'APPROVED').length >= 3 ? 'bg-forest' : 'bg-charcoal/20'}`}>
+                                                                <Plus className="w-3 h-3" />
+                                                            </div>
+                                                            <span>Freigegebene Inserate</span>
+                                                        </div>
+                                                        <span className="font-semibold text-charcoal">
+                                                            {userListings.filter(l => l.status === 'APPROVED').length} / 3
+                                                        </span>
+                                                    </li>
+                                                    <li className="flex items-start gap-2 pt-1 text-[11px] text-charcoal/50 leading-relaxed">
+                                                        <AlertTriangle className="w-4 h-4 text-gold-dark shrink-0 mt-0.5" />
+                                                        <span>Nur die ersten <strong>300 qualifizierten Benutzer</strong> erhalten den Pioneer Award. Sichere dir deinen Status frühzeitig!</span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Actions */}
                                 <div className="flex gap-3 pt-2">
-                                    <button
-                                        onClick={() => {
-                                            setBadgeModalOpen(false);
-                                            router.push('/create-listing');
-                                        }}
-                                        className="flex-1 flex items-center justify-center gap-2 bg-forest text-sand hover:bg-forest/90 py-3 rounded-full text-xs font-semibold uppercase tracking-wider transition-all shadow-sm group cursor-pointer"
-                                    >
-                                        <Plus className="w-4 h-4 text-gold" />
-                                        Inserat erstellen
-                                    </button>
+                                    {!pioneerBadge && (
+                                        <button
+                                            onClick={() => {
+                                                setBadgeModalOpen(false);
+                                                handleCreateListingClick();
+                                            }}
+                                            className="flex-1 flex items-center justify-center gap-2 bg-forest text-sand hover:bg-forest/90 py-3 rounded-full text-xs font-semibold uppercase tracking-wider transition-all shadow-sm group cursor-pointer"
+                                        >
+                                            <Plus className="w-4 h-4 text-gold" />
+                                            Inserat erstellen
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => setBadgeModalOpen(false)}
                                         className="flex-1 bg-beige text-charcoal hover:bg-beige/80 py-3 rounded-full text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer"
                                     >
                                         Schließen
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* --- Limit Modal (Premium Buy Prompt) --- */}
+                <AnimatePresence>
+                    {limitModalOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setLimitModalOpen(false)}
+                                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                transition={{ duration: 0.2 }}
+                                className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-beige/60 overflow-hidden relative z-10 p-6 space-y-6 text-center"
+                            >
+                                <div className="mx-auto w-16 h-16 rounded-full bg-forest/10 flex items-center justify-center text-forest">
+                                    <Lock className="w-8 h-8" />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="font-display text-2xl font-bold text-charcoal">
+                                        Inserat-Limit erreicht!
+                                    </h3>
+                                    <p className="font-sans text-sm text-charcoal/60 leading-relaxed">
+                                        Du hast das Limit von <strong>3 aktiven Inseraten</strong> für kostenlose Konten erreicht.
+                                    </p>
+                                </div>
+                                <div className="bg-sand/40 border border-beige/40 rounded-2xl p-4 text-left space-y-3 font-sans">
+                                    <h4 className="text-xs font-bold text-charcoal/50 uppercase tracking-wider text-center">
+                                        Deine Business-Vorteile:
+                                    </h4>
+                                    <ul className="space-y-2 text-xs text-charcoal/70">
+                                        <li className="flex items-center gap-2">
+                                            <Check className="w-4 h-4 text-forest shrink-0" />
+                                            <span><strong>Unbegrenzte Inserate</strong> schalten</span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Check className="w-4 h-4 text-forest shrink-0" />
+                                            <span><strong>Spotlight-Sichtbarkeit</strong> auf dem Marktplatz</span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Check className="w-4 h-4 text-forest shrink-0" />
+                                            <span>Eigenes <strong>Hintergrundbild & Firmenlogo</strong></span>
+                                        </li>
+                                        <li className="flex items-center gap-2">
+                                            <Check className="w-4 h-4 text-forest shrink-0" />
+                                            <span>Detaillierte <strong>Leistungsstatistiken</strong></span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setLimitModalOpen(false);
+                                            handleUpgrade();
+                                        }}
+                                        className="w-full bg-forest text-sand hover:bg-gold hover:text-forest py-3 rounded-xl font-sans font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow cursor-pointer"
+                                    >
+                                        Jetzt Business freischalten (2.900 CC / 29 €)
+                                    </button>
+                                    <a
+                                        href="/abo"
+                                        className="w-full bg-sand hover:bg-forest/10 text-forest py-2.5 rounded-xl font-sans font-bold text-xs uppercase tracking-wider transition-all duration-300 text-center block"
+                                    >
+                                        Abo-Optionen anzeigen
+                                    </a>
+                                    <button
+                                        onClick={() => setLimitModalOpen(false)}
+                                        className="w-full bg-sand/60 hover:bg-forest/10 text-charcoal/60 py-2.5 rounded-xl font-sans font-bold text-xs uppercase tracking-wider transition-all duration-300"
+                                    >
+                                        Abbrechen
                                     </button>
                                 </div>
                             </motion.div>

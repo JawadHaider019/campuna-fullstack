@@ -20,6 +20,8 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { CATEGORIES } from '@/data';
+import { createListing } from '@/api/listings';
+import { toast } from 'react-hot-toast';
 
 // Map of subcategories based on categories
 const SUBCATEGORIES_MAP = {
@@ -106,13 +108,15 @@ export default function CreateListingPage() {
     });
 
     const [images, setImages] = useState([]);
+    const [imageFiles, setImageFiles] = useState([]);
     const [dragActive, setDragActive] = useState(false);
     const [locationSuggestions, setLocationSuggestions] = useState([]);
     const [showLocationDropdown, setShowLocationDropdown] = useState(false);
     const [aiGenerating, setAiGenerating] = useState(false);
     const [aiProgress, setAiProgress] = useState(0);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [submitLoading, setSubmitLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [pioneerBadgeInfo, setPioneerBadgeInfo] = useState(null);
 
     // Suggested values for condition
     const conditions = ['Neu', 'Sehr gut', 'Gut', 'Gebraucht', 'Defekt'];
@@ -197,13 +201,23 @@ export default function CreateListingPage() {
     };
 
     const addImages = (files) => {
+        const maxSize = 5 * 1024 * 1024; // 5MB
         const validImageFiles = files.filter(file => file.type.startsWith('image/'));
-        const newImageUrls = validImageFiles.map(file => URL.createObjectURL(file));
+        
+        const oversizedFiles = validImageFiles.filter(file => file.size > maxSize);
+        if (oversizedFiles.length > 0) {
+            toast.error('Einige Bilder überschreiten das Limit von 5 MB und wurden nicht hinzugefügt.');
+        }
+
+        const allowedFiles = validImageFiles.filter(file => file.size <= maxSize);
+        const newImageUrls = allowedFiles.map(file => URL.createObjectURL(file));
         setImages((prev) => [...prev, ...newImageUrls]);
+        setImageFiles((prev) => [...prev, ...allowedFiles]);
     };
 
     const removeImage = (indexToRemove) => {
         setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+        setImageFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
     };
 
     // Simulated Campuna AI description generator with typewriter typing effect!
@@ -260,15 +274,61 @@ export default function CreateListingPage() {
     };
 
     // Form Submit Handler
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setSubmitLoading(true);
 
-        // Simulate database write
-        setTimeout(() => {
+        // Validate fields
+        if (!formData.title.trim()) {
+            toast.error('Bitte einen Titel eingeben.');
+            return;
+        }
+        if (!formData.price.trim()) {
+            toast.error('Bitte einen Preis eingeben.');
+            return;
+        }
+        if (formData.condition === 'Zustand') {
+            toast.error('Bitte einen Zustand auswählen.');
+            return;
+        }
+        if (!formData.location.trim()) {
+            toast.error('Bitte einen Ort eingeben.');
+            return;
+        }
+
+        setSubmitLoading(true);
+        const toastId = toast.loading('Anzeige wird erstellt...');
+
+        try {
+            const data = new FormData();
+            data.append('title', formData.title);
+            data.append('price', formData.price);
+            data.append('isNegotiable', formData.isNegotiable);
+            data.append('condition', formData.condition);
+            data.append('description', formData.description);
+            data.append('category', formData.category);
+            data.append('subcategory', formData.subcategory || '');
+            data.append('location', formData.location);
+
+            // Append images files
+            imageFiles.forEach((file) => {
+                data.append('images', file);
+            });
+
+            const res = await createListing(data);
+
+            if (res.success) {
+                toast.success('Anzeige erfolgreich erstellt!', { id: toastId });
+                setPioneerBadgeInfo(res.data.pioneer_badge_info);
+                setShowSuccessModal(true);
+            } else {
+                toast.error(res.error || 'Erstellung fehlgeschlagen.', { id: toastId });
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error('Netzwerkfehler beim Erstellen der Anzeige.', { id: toastId });
+        } finally {
             setSubmitLoading(false);
-            setShowSuccessModal(true);
-        }, 1500);
+        }
     };
 
     // Quick fill helper for testing
@@ -424,7 +484,7 @@ export default function CreateListingPage() {
                                             Lade Bilder hoch (optional, aber empfohlen)
                                         </p>
                                         <p className="font-sans text-[10px] text-charcoal/50">
-                                            Zieh deine Bilder hierher oder klicke zum Auswählen
+                                            Zieh deine Bilder hierher oder klicke zum Auswählen (Max. 5 MB pro Bild)
                                         </p>
                                     </div>
                                 </div>
@@ -798,9 +858,24 @@ export default function CreateListingPage() {
                                 </p>
                             </div>
 
-                            <div className="bg-sand/40 rounded-xl p-3 text-xs text-forest/80 font-medium">
-                                Viel Erfolg beim Verkaufen! 🎉
-                            </div>
+                             {pioneerBadgeInfo && (
+                                 <div className="p-4 rounded-2xl bg-gold/10 border border-gold/20 text-center space-y-1">
+                                     <span className="font-sans text-[10px] font-bold text-gold uppercase tracking-wider block">Pioneer-Programm</span>
+                                     <p className="font-sans text-xs text-charcoal/80 leading-relaxed">
+                                         {pioneerBadgeInfo.badge_unlocked ? (
+                                             <span>🎉 <strong>Glückwunsch!</strong> Du hast das Campuna Pioneer Badge freigeschaltet! 🏆</span>
+                                         ) : (
+                                             <span>
+                                                 Noch <strong>{pioneerBadgeInfo.remaining_for_badge} Inserat{pioneerBadgeInfo.remaining_for_badge > 1 ? 'e' : ''}</strong> einstellen, um das Campuna Pioneer Badge zu erhalten! 🚀
+                                             </span>
+                                         )}
+                                     </p>
+                                 </div>
+                             )}
+
+                             <div className="bg-sand/40 rounded-xl p-3 text-xs text-forest/80 font-medium">
+                                 Viel Erfolg beim Verkaufen! 🎉
+                             </div>
 
                             <div className="flex flex-col gap-2">
                                 <button

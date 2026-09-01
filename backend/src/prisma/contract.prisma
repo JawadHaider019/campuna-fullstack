@@ -10,6 +10,13 @@ enum user_type {
   PRIVATE
 }
 
+enum subscription_status {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PENDING
+}
+
 model User {
   id               Uuid              @id @default(uuid())
   email            String            @unique
@@ -26,6 +33,10 @@ model User {
   private_profile     PrivateProfile?
   company_profile     CompanyProfile?
   credit_transactions CreditTransaction[]
+  subscriptions       Subscription[]
+  listings            Listing[]         @relation("ListingOwner")
+  reviewed_listings   Listing[]         @relation("ListingReviewer")
+  achievements        UserAchievement[]
 
   @@map("users")
 }
@@ -97,4 +108,87 @@ model CreditTransaction {
   user        User              @relation(fields: [user_id], references: [id])
 
   @@map("credit_transactions")
+}
+
+model Listing {
+  id               Uuid              @id @default(uuid())
+  user_id          Uuid
+  title            String
+  slug             String?
+  description      String
+  category_id      Uuid?
+  subcategory_id   Uuid?
+  category         String?
+  subcategory      String?
+  price            Decimal?
+  negotiable       Boolean           @default(false)
+  location         String?
+  condition        String?
+  type_of_offer    String?
+  status           String            @default("REVIEW")
+  featured         Boolean           @default(false)
+  reviewed_by_type String?
+  reviewed_by_id   Uuid?
+  reviewed_at      TimestamptzString?
+  images           String[]          @default([])
+  created_at       TimestamptzString @default(now())
+  updated_at       temporal.updatedAtString()
+
+  // Relations
+  user             User              @relation("ListingOwner", fields: [user_id], references: [id], onDelete: Cascade)
+  reviewer         User?             @relation("ListingReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+
+  @@map("listings")
+}
+
+model Plan {
+  id                 Int            @id @default(autoincrement())
+  name               String         @unique
+  price_cents        Int            @default(0)
+  listing_limit      Int            @default(3)
+  has_cover_image    Boolean        @default(false)
+  has_spotlight      Boolean        @default(false)
+  has_statistics     Boolean        @default(false)
+  has_csv_import     Boolean        @default(false)
+  description_limit  Int            @default(150)
+  is_active          Boolean        @default(true)
+  description        String?
+
+  subscriptions      Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                Int                 @id @default(autoincrement())
+  user_id           Uuid
+  plan_id           Int
+  status            subscription_status @default(ACTIVE)
+  started_at        TimestamptzString   @default(now())
+  expires_at        TimestamptzString?
+  cancelled_at      TimestamptzString?
+  payment_method    String?             // "CREDIT" | "STRIPE" | "MANUAL"
+  amount_paid_cents Int                 @default(0)
+  credit_tx_id      Int?
+  notes             String?
+  created_at        TimestamptzString   @default(now())
+  updated_at        temporal.updatedAtString()
+
+  user              User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  plan              Plan                @relation(fields: [plan_id], references: [id])
+
+  @@map("subscriptions")
+}
+
+model UserAchievement {
+  id        Int               @id @default(autoincrement())
+  user_id   Uuid
+  badge_key String            // e.g. "CAMPUNA_PIONEER"
+  position  Int?              // award position (e.g. 127)
+  earned_at TimestamptzString @default(now())
+
+  user      User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, badge_key])
+  @@map("user_achievements")
 }
