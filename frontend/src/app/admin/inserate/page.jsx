@@ -1,0 +1,1283 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
+import { 
+    Search, 
+    Filter, 
+    CheckCircle2, 
+    XCircle, 
+    Clock, 
+    AlertTriangle, 
+    Eye, 
+    Trash2, 
+    RefreshCw, 
+    Layers, 
+    MapPin, 
+    Tag, 
+    Euro, 
+    Building2, 
+    User, 
+    ExternalLink, 
+    ChevronLeft, 
+    ChevronRight, 
+    LayoutGrid, 
+    ListFilter, 
+    Sparkles, 
+    ShieldCheck, 
+    MoreVertical,
+    FileText,
+    ArrowUpRight,
+    Star,
+    Rocket
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    getAdminListings, 
+    updateAdminListingStatus, 
+    deleteAdminListing,
+    toggleAdminListingFeatured
+} from '@/api/admin';
+
+export default function AdminListingsPage() {
+    // Data State
+    const [listings, setListings] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
+
+    // Filters & View State
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [categoryFilter, setCategoryFilter] = useState('ALL');
+    const [userTypeFilter, setUserTypeFilter] = useState('ALL');
+    const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
+    const [page, setPage] = useState(1);
+    const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12, totalPages: 1 });
+    const [summary, setSummary] = useState({
+        totalListings: 0,
+        approvedCount: 0,
+        reviewCount: 0,
+        rejectedCount: 0,
+        draftCount: 0,
+        totalActiveValue: 0
+    });
+
+    // Modals
+    const [selectedListing, setSelectedListing] = useState(null);
+    const [detailModalOpen, setDetailModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [listingToDelete, setListingToDelete] = useState(null);
+    const [rejectModalOpen, setRejectModalOpen] = useState(false);
+    const [listingToReject, setListingToReject] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [activeImageIdx, setActiveImageIdx] = useState(0);
+    const [feedbackMessage, setFeedbackMessage] = useState(null);
+
+    // Fetch Listings with filters
+    const fetchListings = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await getAdminListings({
+                page,
+                limit: 12,
+                search: search.trim() || undefined,
+                status: statusFilter,
+                category: categoryFilter,
+                user_type: userTypeFilter
+            });
+
+            if (res.data?.success) {
+                setListings(res.data.listings || []);
+                setPagination(res.data.pagination || { total: 0, page: 1, limit: 12, totalPages: 1 });
+                setSummary(res.data.summary || {});
+                if (res.data.categories?.length) {
+                    setCategories(res.data.categories);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load listings:', error);
+            showFeedback('Fehler beim Laden der Inserate.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    }, [page, search, statusFilter, categoryFilter, userTypeFilter]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchListings();
+        }, 250);
+        return () => clearTimeout(timer);
+    }, [fetchListings]);
+
+    const showFeedback = (msg, type = 'success') => {
+        setFeedbackMessage({ msg, type });
+        setTimeout(() => setFeedbackMessage(null), 4000);
+    };
+
+    // Moderation Actions
+    const handleStatusUpdate = async (listingId, newStatus, reason = '') => {
+        setActionLoading(true);
+        try {
+            const res = await updateAdminListingStatus(listingId, newStatus, reason);
+            if (res.success || res.data?.success) {
+                const actionLabel = newStatus === 'APPROVED' ? 'freigegeben' : newStatus === 'REJECTED' ? 'abgelehnt' : 'in Prüfung gesetzt';
+                showFeedback(res.data?.message || `Inserat wurde erfolgreich ${actionLabel}.`);
+                fetchListings();
+                if (selectedListing && selectedListing.id === listingId) {
+                    setSelectedListing(prev => ({ ...prev, status: newStatus }));
+                }
+                setRejectModalOpen(false);
+                setRejectionReason('');
+            } else {
+                showFeedback(res.error || res.data?.error || 'Statusänderung fehlgeschlagen.', 'error');
+            }
+        } catch (err) {
+            showFeedback(err.response?.data?.error || err.message || 'Statusänderung fehlgeschlagen.', 'error');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteListing = async () => {
+        if (!listingToDelete) return;
+        setActionLoading(true);
+        try {
+            const res = await deleteAdminListing(listingToDelete.id);
+            if (res.success || res.data?.success) {
+                showFeedback(res.data?.message || `Inserat "${listingToDelete.title}" wurde endgültig gelöscht.`);
+                setDeleteModalOpen(false);
+                setListingToDelete(null);
+                if (selectedListing?.id === listingToDelete.id) {
+                    setDetailModalOpen(false);
+                }
+                fetchListings();
+            } else {
+                showFeedback(res.error || res.data?.error || 'Löschen fehlgeschlagen.', 'error');
+            }
+        } catch (err) {
+            showFeedback(err.response?.data?.error || err.message || 'Löschen fehlgeschlagen.', 'error');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleToggleFeatured = async (item) => {
+        if (!item) return;
+        const newFeatured = !item.featured;
+        setActionLoading(true);
+        try {
+            const res = await toggleAdminListingFeatured(item.id, newFeatured);
+            if (res.success || res.data?.success) {
+                showFeedback(res.data?.message || (newFeatured ? 'Inserat als empfohlen markiert.' : 'Empfehlung entfernt.'));
+                setListings(prev => prev.map(l => l.id === item.id ? { ...l, featured: newFeatured } : l));
+                if (selectedListing?.id === item.id) {
+                    setSelectedListing(prev => ({ ...prev, featured: newFeatured }));
+                }
+            } else {
+                showFeedback(res.error || res.data?.error || 'Fehler beim Ändern des Featured-Status.', 'error');
+            }
+        } catch (err) {
+            showFeedback(err.response?.data?.error || err.message || 'Fehler beim Ändern des Featured-Status.', 'error');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // Helper for Status Badge
+    const renderStatusBadge = (status) => {
+        switch (status) {
+            case 'APPROVED':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Freigegeben
+                    </span>
+                );
+            case 'REVIEW':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        <Clock className="w-3 h-3 text-amber-600" />
+                        In Prüfung
+                    </span>
+                );
+            case 'REJECTED':
+                return (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        <XCircle className="w-3 h-3 text-rose-500" />
+                        Abgelehnt
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                        {status || 'Entwurf'}
+                    </span>
+                );
+        }
+    };
+
+    const formatPrice = (price, negotiable) => {
+        const formatted = new Intl.NumberFormat('de-DE', {
+            style: 'currency',
+            currency: 'EUR',
+            maximumFractionDigits: 0
+        }).format(price || 0);
+        return `${formatted}${negotiable ? ' VB' : ''}`;
+    };
+
+    return (
+        <div className="space-y-6 max-w-[1600px] mx-auto">
+            
+            {/* ─── Feedback Toast ─── */}
+            <AnimatePresence>
+                {feedbackMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-xs font-bold ${
+                            feedbackMessage.type === 'error'
+                                ? 'bg-rose-50 border-rose-200 text-rose-800'
+                                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                        }`}
+                    >
+                        {feedbackMessage.type === 'error' ? (
+                            <AlertTriangle className="w-4 h-4 text-rose-600" />
+                        ) : (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        )}
+                        <span>{feedbackMessage.msg}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── Top Page Header ─── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E8EAEF] pb-5">
+                <div className="space-y-1">
+                    <div className="inline-flex items-center gap-2">
+                        <span className="p-2 rounded-xl bg-forest/10 text-forest">
+                            <Layers className="w-5 h-5" />
+                        </span>
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-display">
+                                Inserate & Moderation
+                            </h1>
+                            <p className="text-xs text-slate-500 font-medium">
+                                Prüfe, verwalte und moderiere alle Inserate auf dem Campuna Marktplatz.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Top Quick Actions & View Switcher */}
+                <div className="flex items-center gap-2">
+                    {/* View Switch */}
+                    <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center">
+                        <button
+                            onClick={() => setViewMode('table')}
+                            title="Tabellenansicht"
+                            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                                viewMode === 'table' ? 'bg-white text-forest shadow-2xs' : 'text-slate-400 hover:text-slate-700'
+                            }`}
+                        >
+                            <ListFilter className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => setViewMode('grid')}
+                            title="Kartenansicht"
+                            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                                viewMode === 'grid' ? 'bg-white text-forest shadow-2xs' : 'text-slate-400 hover:text-slate-700'
+                            }`}
+                        >
+                            <LayoutGrid className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {/* Refresh Button */}
+                    <button
+                        onClick={fetchListings}
+                        disabled={loading}
+                        className="px-3.5 py-2 rounded-xl bg-white border border-[#E2E4E8] text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-2xs cursor-pointer"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-forest' : 'text-slate-500'}`} />
+                        <span>Aktualisieren</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* ─── Top Stats Bento Pills (5 Cards) ─── */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                
+                {/* 1. Gesamt Inserate */}
+                <div className="bg-white border border-[#E8EAEF] rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            Gesamt Inserate
+                        </span>
+                        <Layers className="w-3.5 h-3.5 text-forest" />
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 mt-1">
+                        {summary.totalListings || 0}
+                    </div>
+                </div>
+
+                {/* 2. Zur Prüfung (Pending Review) */}
+                <div className={`border rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between transition-all ${
+                    (summary.reviewCount || 0) > 0 
+                        ? 'bg-amber-50/70 border-amber-200' 
+                        : 'bg-white border-[#E8EAEF]'
+                }`}>
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                            {(summary.reviewCount || 0) > 0 && (
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping inline-block" />
+                            )}
+                            Zur Prüfung
+                        </span>
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                    </div>
+                    <div className="text-2xl font-black text-amber-900 mt-1">
+                        {summary.reviewCount || 0}
+                    </div>
+                </div>
+
+                {/* 3. Freigegeben (Active) */}
+                <div className="bg-white border border-[#E8EAEF] rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            Freigegeben
+                        </span>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    </div>
+                    <div className="text-2xl font-black text-emerald-600 mt-1">
+                        {summary.approvedCount || 0}
+                    </div>
+                </div>
+
+                {/* 4. Abgelehnt */}
+                <div className="bg-white border border-[#E8EAEF] rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            Abgelehnt
+                        </span>
+                        <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                    </div>
+                    <div className="text-2xl font-black text-rose-600 mt-1">
+                        {summary.rejectedCount || 0}
+                    </div>
+                </div>
+
+                {/* 5. Gesamtwert Aktiv */}
+                <div className="bg-white border border-[#E8EAEF] rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between col-span-2 sm:col-span-1">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            Marktwert (Aktiv)
+                        </span>
+                        <Euro className="w-3.5 h-3.5 text-gold" />
+                    </div>
+                    <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1 truncate" title={formatPrice(summary.totalActiveValue, false)}>
+                        {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(summary.totalActiveValue || 0)}
+                    </div>
+                </div>
+
+            </div>
+
+            {/* ─── Search & Filter Bar ─── */}
+            <div className="bg-white border border-[#E8EAEF] rounded-2xl p-4 shadow-2xs space-y-3">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                    
+                    {/* Search Input */}
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                setPage(1);
+                            }}
+                            placeholder="Suche nach Titel, Ort, Verkäufer, Kategorie..."
+                            className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest transition-all"
+                        />
+                        {search && (
+                            <button
+                                onClick={() => setSearch('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Filter Controls */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        
+                        {/* Status Tabs */}
+                        <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center text-xs">
+                            {[
+                                { label: 'Alle', val: 'ALL' },
+                                { label: 'In Prüfung', val: 'REVIEW', count: summary.reviewCount },
+                                { label: 'Freigegeben', val: 'APPROVED' },
+                                { label: 'Abgelehnt', val: 'REJECTED' },
+                            ].map((tab) => (
+                                <button
+                                    key={tab.val}
+                                    onClick={() => {
+                                        setStatusFilter(tab.val);
+                                        setPage(1);
+                                    }}
+                                    className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                        statusFilter === tab.val
+                                            ? 'bg-white text-slate-900 shadow-2xs'
+                                            : 'text-slate-500 hover:text-slate-800'
+                                    }`}
+                                >
+                                    <span>{tab.label}</span>
+                                    {Boolean(tab.count) && tab.count > 0 && (
+                                        <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
+                                            {tab.count}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Category Dropdown */}
+                        <select
+                            value={categoryFilter}
+                            onChange={(e) => {
+                                setCategoryFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer"
+                        >
+                            <option value="ALL">Kategorie: Alle</option>
+                            {categories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                    {cat}
+                                </option>
+                            ))}
+                        </select>
+
+                        {/* Seller Type Select */}
+                        <select
+                            value={userTypeFilter}
+                            onChange={(e) => {
+                                setUserTypeFilter(e.target.value);
+                                setPage(1);
+                            }}
+                            className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer"
+                        >
+                            <option value="ALL">Anbieter: Alle</option>
+                            <option value="COMMERCIAL">Nur Gewerblich</option>
+                            <option value="PRIVATE">Nur Privat</option>
+                        </select>
+
+                    </div>
+
+                </div>
+            </div>
+
+            {/* ─── Main Content Views (Table / Grid) ─── */}
+            {viewMode === 'table' ? (
+                /* ─── TABULAR VIEW ─── */
+                <div className="bg-white border border-[#E8EAEF] rounded-3xl shadow-2xs overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-[#FBFBFC] border-b border-[#E8EAEF] text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                                    <th className="py-3.5 px-5">Inserat</th>
+                                    <th className="py-3.5 px-4">Preis</th>
+                                    <th className="py-3.5 px-4">Kategorie</th>
+                                    <th className="py-3.5 px-4">Verkäufer</th>
+                                    <th className="py-3.5 px-4">Standort</th>
+                                    <th className="py-3.5 px-4">Status</th>
+                                    <th className="py-3.5 px-4">Erstellt</th>
+                                    <th className="py-3.5 px-5 text-right">Moderation</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#F0F2F5] text-xs">
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="8" className="py-16 text-center">
+                                            <div className="inline-flex flex-col items-center gap-2">
+                                                <div className="w-7 h-7 border-3 border-forest border-t-transparent rounded-full animate-spin" />
+                                                <span className="text-xs font-bold text-slate-400">
+                                                    Inserate werden geladen...
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : listings.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="8" className="py-16 text-center">
+                                            <div className="inline-flex flex-col items-center gap-2">
+                                                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
+                                                    <Layers className="w-6 h-6" />
+                                                </div>
+                                                <h4 className="text-sm font-bold text-slate-700">
+                                                    Keine Inserate gefunden
+                                                </h4>
+                                                <p className="text-xs text-slate-400 max-w-sm">
+                                                    Versuche deine Suchbegriffe oder aktiven Filter anzupassen.
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    listings.map((item) => {
+                                        const mainImage = item.images?.[0] || '/logo.webp';
+                                        const isReview = item.status === 'REVIEW';
+
+                                        return (
+                                            <tr 
+                                                key={item.id}
+                                                className={`hover:bg-[#F9FAFB] transition-colors group ${
+                                                    isReview ? 'bg-amber-50/20' : ''
+                                                }`}
+                                            >
+                                                {/* 1. Thumbnail & Title */}
+                                                <td className="py-3.5 px-5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-12 h-12 rounded-xl bg-slate-100 border border-[#E8EAEF] overflow-hidden shrink-0 relative">
+                                                            <Image
+                                                                src={mainImage}
+                                                                alt={item.title}
+                                                                fill
+                                                                sizes="48px"
+                                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                                                unoptimized
+                                                            />
+                                                            {item.images?.length > 1 && (
+                                                                <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 bg-black/60 text-white text-[9px] rounded font-mono">
+                                                                    +{item.images.length - 1}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="min-w-0 max-w-xs">
+                                                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                                                                {item.is_boosted && (
+                                                                    <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md">
+                                                                        🚀 Boosted
+                                                                    </span>
+                                                                )}
+                                                                {item.featured && (
+                                                                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-bold uppercase px-1.5 py-0.2 rounded-md">
+                                                                        ⭐ Empfohlen
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => {
+                                                                    setSelectedListing(item);
+                                                                    setActiveImageIdx(0);
+                                                                    setDetailModalOpen(true);
+                                                                }}
+                                                                className="text-xs font-bold text-slate-900 hover:text-forest transition-colors truncate block text-left cursor-pointer"
+                                                                title={item.title}
+                                                            >
+                                                                {item.title}
+                                                            </button>
+                                                            <span className="text-[11px] text-slate-400 font-mono">
+                                                                ID: {item.id.slice(0, 8)}...
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {/* 2. Price */}
+                                                <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
+                                                    {formatPrice(item.price, item.negotiable)}
+                                                </td>
+
+                                                {/* 3. Category */}
+                                                <td className="py-3.5 px-4">
+                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F4F5F7] text-slate-700 text-[11px] font-semibold whitespace-nowrap">
+                                                        <Tag className="w-2.5 h-2.5 text-slate-400" />
+                                                        {item.category}
+                                                    </span>
+                                                </td>
+
+                                                {/* 4. Seller */}
+                                                <td className="py-3.5 px-4">
+                                                    <div className="space-y-0.5">
+                                                        <div className="font-semibold text-slate-800 text-xs flex items-center gap-1.5">
+                                                            {item.seller?.type === 'COMMERCIAL' ? (
+                                                                <Building2 className="w-3 h-3 text-forest shrink-0" />
+                                                            ) : (
+                                                                <User className="w-3 h-3 text-slate-400 shrink-0" />
+                                                            )}
+                                                            <span className="truncate max-w-[120px]" title={item.seller?.name}>
+                                                                {item.seller?.name}
+                                                            </span>
+                                                        </div>
+                                                        <div className="text-[11px] text-slate-400 truncate max-w-[120px]">
+                                                            {item.seller?.email}
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                {/* 5. Location */}
+                                                <td className="py-3.5 px-4 text-slate-600 whitespace-nowrap">
+                                                    <div className="flex items-center gap-1 text-[11px]">
+                                                        <MapPin className="w-3 h-3 text-slate-400" />
+                                                        <span>{item.location}</span>
+                                                    </div>
+                                                </td>
+
+                                                {/* 6. Status */}
+                                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                                    {renderStatusBadge(item.status)}
+                                                </td>
+
+                                                {/* 7. Created Date */}
+                                                <td className="py-3.5 px-4 text-slate-400 text-[11px] whitespace-nowrap font-mono">
+                                                    {new Date(item.created_at).toLocaleDateString('de-DE', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric'
+                                                    })}
+                                                </td>
+
+                                                {/* 8. Moderation Actions */}
+                                                <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                                                    <div className="inline-flex items-center gap-1">
+                                                        
+                                                        {/* Feature / Empfehlen Toggle */}
+                                                        <button
+                                                            onClick={() => handleToggleFeatured(item)}
+                                                            disabled={actionLoading}
+                                                            title={item.featured ? "Empfehlung entfernen" : "Als Empfohlen (Featured) markieren"}
+                                                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                                                                item.featured
+                                                                    ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200'
+                                                                    : 'text-slate-300 hover:text-emerald-700 hover:bg-emerald-50'
+                                                            }`}
+                                                        >
+                                                            <Star className={`w-4 h-4 ${item.featured ? 'fill-emerald-600' : ''}`} />
+                                                        </button>
+
+                                                        {/* Quick Approve Button */}
+                                                        {item.status !== 'APPROVED' && (
+                                                            <button
+                                                                onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
+                                                                disabled={actionLoading}
+                                                                title="Inserat freigeben"
+                                                                className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                                            >
+                                                                <CheckCircle2 className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+
+                                                        {/* Quick Reject Button */}
+                                                        {item.status !== 'REJECTED' && (
+                                                            <button
+                                                                onClick={() => {
+                                                                    setListingToReject(item);
+                                                                    setRejectModalOpen(true);
+                                                                }}
+                                                                disabled={actionLoading}
+                                                                title="Inserat ablehnen"
+                                                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                            >
+                                                                <XCircle className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+
+                                                        {/* View Details */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedListing(item);
+                                                                setActiveImageIdx(0);
+                                                                setDetailModalOpen(true);
+                                                            }}
+                                                            title="Details ansehen"
+                                                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+
+                                                        {/* Delete Button */}
+                                                        <button
+                                                            onClick={() => {
+                                                                setListingToDelete(item);
+                                                                setDeleteModalOpen(true);
+                                                            }}
+                                                            disabled={actionLoading}
+                                                            title="Inserat löschen"
+                                                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination Bar */}
+                    <div className="p-4 border-t border-[#E8EAEF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+                        <div>
+                            Zeige <span className="font-bold text-slate-800">{listings.length}</span> von{' '}
+                            <span className="font-bold text-slate-800">{pagination.total}</span> Inseraten
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                onClick={() => setPage(Math.max(1, page - 1))}
+                                disabled={page <= 1 || loading}
+                                className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                            >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                                <span>Zurück</span>
+                            </button>
+                            <span className="px-3 py-1.5 text-slate-700 font-bold font-mono">
+                                Seite {page} von {pagination.totalPages || 1}
+                            </span>
+                            <button
+                                onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+                                disabled={page >= pagination.totalPages || loading}
+                                className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                            >
+                                <span>Weiter</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                /* ─── GRID CARDS VIEW ─── */
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {loading ? (
+                            <div className="col-span-full py-16 text-center">
+                                <div className="w-7 h-7 border-3 border-forest border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                                <span className="text-xs font-bold text-slate-400">
+                                    Inserate werden geladen...
+                                </span>
+                            </div>
+                        ) : listings.length === 0 ? (
+                            <div className="col-span-full py-16 text-center bg-white border border-[#E8EAEF] rounded-3xl p-8">
+                                <Layers className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                                <h4 className="text-sm font-bold text-slate-700">Keine Inserate gefunden</h4>
+                            </div>
+                        ) : (
+                            listings.map((item) => {
+                                const mainImage = item.images?.[0] || '/logo.webp';
+                                return (
+                                    <div
+                                        key={item.id}
+                                        className="bg-white border border-[#E8EAEF] rounded-2xl overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
+                                    >
+                                        {/* Image Area */}
+                                        <div className="relative aspect-video bg-slate-100 overflow-hidden">
+                                            <Image
+                                                src={mainImage}
+                                                alt={item.title}
+                                                fill
+                                                sizes="(max-width: 768px) 100vw, 25vw"
+                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                                unoptimized
+                                            />
+                                            {/* Status Badge in Top Left */}
+                                            <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 flex-wrap">
+                                                {item.is_boosted && (
+                                                    <span className="bg-amber-400 text-slate-950 font-black text-[9px] uppercase px-2 py-0.5 rounded-md shadow-sm">
+                                                        🚀
+                                                    </span>
+                                                )}
+                                                {item.featured && (
+                                                    <span className="bg-emerald-700 text-sand font-bold text-[9px] uppercase px-2 py-0.5 rounded-md shadow-sm">
+                                                        ⭐
+                                                    </span>
+                                                )}
+                                                {renderStatusBadge(item.status)}
+                                            </div>
+                                            {/* Price Badge in Top Right */}
+                                            <div className="absolute top-2.5 right-2.5 z-10 bg-slate-900/90 text-white backdrop-blur-xs px-2.5 py-1 rounded-lg text-xs font-bold font-display">
+                                                {formatPrice(item.price, item.negotiable)}
+                                            </div>
+                                        </div>
+
+                                        {/* Content Area */}
+                                        <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold">
+                                                    <Tag className="w-3 h-3 text-slate-400" />
+                                                    <span>{item.category}</span>
+                                                    <span>•</span>
+                                                    <span className="flex items-center gap-0.5">
+                                                        <MapPin className="w-3 h-3 text-slate-400" />
+                                                        {item.location}
+                                                    </span>
+                                                </div>
+                                                <h3 
+                                                    onClick={() => {
+                                                        setSelectedListing(item);
+                                                        setActiveImageIdx(0);
+                                                        setDetailModalOpen(true);
+                                                    }}
+                                                    className="text-xs font-bold text-slate-900 hover:text-forest transition-colors line-clamp-2 cursor-pointer"
+                                                >
+                                                    {item.title}
+                                                </h3>
+                                            </div>
+
+                                            {/* Seller Info */}
+                                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                                                <div className="flex items-center gap-1.5 truncate text-slate-600 font-medium">
+                                                    {item.seller?.type === 'COMMERCIAL' ? (
+                                                        <Building2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                                                    ) : (
+                                                        <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                                    )}
+                                                    <span className="truncate">{item.seller?.name}</span>
+                                                </div>
+                                                <span className="text-slate-400 font-mono text-[10px] shrink-0">
+                                                    {new Date(item.created_at).toLocaleDateString('de-DE')}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Card Actions Footer */}
+                                        <div className="px-4 py-2.5 bg-[#FAFBFD] border-t border-[#E8EAEF] flex items-center justify-between gap-1">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedListing(item);
+                                                    setActiveImageIdx(0);
+                                                    setDetailModalOpen(true);
+                                                }}
+                                                className="text-xs font-bold text-slate-700 hover:text-forest transition-colors flex items-center gap-1 cursor-pointer"
+                                            >
+                                                <Eye className="w-3.5 h-3.5" />
+                                                <span>Details</span>
+                                            </button>
+
+                                            <div className="flex items-center gap-1">
+                                                {item.status !== 'APPROVED' && (
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
+                                                        disabled={actionLoading}
+                                                        title="Freigeben"
+                                                        className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
+                                                    >
+                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                {item.status !== 'REJECTED' && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setListingToReject(item);
+                                                            setRejectModalOpen(true);
+                                                        }}
+                                                        disabled={actionLoading}
+                                                        title="Ablehnen"
+                                                        className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
+                                                    >
+                                                        <XCircle className="w-3.5 h-3.5" />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => {
+                                                        setListingToDelete(item);
+                                                        setDeleteModalOpen(true);
+                                                    }}
+                                                    title="Löschen"
+                                                    className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 transition-colors cursor-pointer"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    {/* Pagination Bar */}
+                    <div className="bg-white border border-[#E8EAEF] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+                        <div>
+                            Zeige <span className="font-bold text-slate-800">{listings.length}</span> von{' '}
+                            <span className="font-bold text-slate-800">{pagination.total}</span> Inseraten
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                onClick={() => setPage(Math.max(1, page - 1))}
+                                disabled={page <= 1 || loading}
+                                className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                            >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                                <span>Zurück</span>
+                            </button>
+                            <span className="px-3 py-1.5 text-slate-700 font-bold font-mono">
+                                Seite {page} von {pagination.totalPages || 1}
+                            </span>
+                            <button
+                                onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+                                disabled={page >= pagination.totalPages || loading}
+                                className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                            >
+                                <span>Weiter</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── MODAL: COMPLETE LISTING DETAIL DRAWER ─── */}
+            <AnimatePresence>
+                {detailModalOpen && selectedListing && (
+                    <motion.div
+                        key="detail-modal"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.96 }}
+                            className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#E8EAEF] flex flex-col"
+                        >
+                            {/* Modal Header */}
+                            <div className="p-5 sm:p-6 border-b border-[#E8EAEF] flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        {renderStatusBadge(selectedListing.status)}
+                                        <span className="text-xs text-slate-400 font-mono">
+                                            ID: {selectedListing.id}
+                                        </span>
+                                    </div>
+                                    <h2 className="text-base sm:text-lg font-black text-slate-900 line-clamp-1">
+                                        {selectedListing.title}
+                                    </h2>
+                                </div>
+                                <button
+                                    onClick={() => setDetailModalOpen(false)}
+                                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="p-5 sm:p-6 space-y-6 flex-1">
+                                
+                                {/* 1. Image Gallery */}
+                                {selectedListing.images?.length > 0 ? (
+                                    <div className="space-y-3">
+                                        <div className="relative aspect-video sm:aspect-2/1 bg-slate-900 rounded-2xl overflow-hidden shadow-inner">
+                                            <Image
+                                                src={selectedListing.images[activeImageIdx] || '/logo.webp'}
+                                                alt={selectedListing.title}
+                                                fill
+                                                className="object-contain"
+                                                unoptimized
+                                            />
+                                        </div>
+                                        {selectedListing.images.length > 1 && (
+                                            <div className="flex gap-2 overflow-x-auto pb-1">
+                                                {selectedListing.images.map((img, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => setActiveImageIdx(idx)}
+                                                        className={`w-16 h-16 rounded-xl overflow-hidden relative border-2 shrink-0 transition-all cursor-pointer ${
+                                                            activeImageIdx === idx ? 'border-forest ring-2 ring-forest/20' : 'border-transparent opacity-60 hover:opacity-100'
+                                                        }`}
+                                                    >
+                                                        <Image
+                                                            src={img}
+                                                            alt={`Bild ${idx + 1}`}
+                                                            fill
+                                                            className="object-cover"
+                                                            unoptimized
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="aspect-video bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 text-xs font-medium">
+                                        Keine Bilder hinterlegt
+                                    </div>
+                                )}
+
+                                {/* 2. Key Metadata Grid */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Preis</span>
+                                        <span className="text-base font-black text-forest">
+                                            {formatPrice(selectedListing.price, selectedListing.negotiable)}
+                                        </span>
+                                    </div>
+                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Kategorie</span>
+                                        <span className="text-xs font-bold text-slate-800">
+                                            {selectedListing.category}
+                                        </span>
+                                    </div>
+                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Standort</span>
+                                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                                            <MapPin className="w-3 h-3 text-slate-400" />
+                                            {selectedListing.location}
+                                        </span>
+                                    </div>
+                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Zustand</span>
+                                        <span className="text-xs font-bold text-slate-800">
+                                            {selectedListing.condition || 'Gebraucht'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* 3. Description */}
+                                <div className="space-y-1.5">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                        Beschreibung
+                                    </h4>
+                                    <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                        {selectedListing.description || 'Keine Beschreibung angegeben.'}
+                                    </div>
+                                </div>
+
+                                {/* 4. Seller Information Box */}
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                        Verkäufer-Details
+                                    </h4>
+                                    <div className="p-4 bg-slate-50 border border-[#E8EAEF] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-forest text-sand font-bold flex items-center justify-center text-sm">
+                                                {selectedListing.seller?.name?.charAt(0) || 'U'}
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                                                    <span>{selectedListing.seller?.name}</span>
+                                                    <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${
+                                                        selectedListing.seller?.type === 'COMMERCIAL' 
+                                                            ? 'bg-amber-100 text-amber-900' 
+                                                            : 'bg-slate-200 text-slate-700'
+                                                    }`}>
+                                                        {selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-slate-500">
+                                                    {selectedListing.seller?.email}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {selectedListing.seller?.phone && (
+                                            <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8]">
+                                                📞 {selectedListing.seller.phone}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Modal Actions Footer */}
+                            <div className="p-4 sm:p-5 bg-slate-50 border-t border-[#E8EAEF] flex flex-wrap items-center justify-between gap-3 sticky bottom-0 rounded-b-3xl">
+                                <div className="flex items-center gap-2">
+                                    <a
+                                        href={`/inserate/${selectedListing.id}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-3.5 py-2 rounded-xl bg-white border border-[#E2E4E8] text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-all"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                        Live ansehen
+                                    </a>
+
+                                    {/* Featured Toggle in Modal */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleToggleFeatured(selectedListing)}
+                                        disabled={actionLoading}
+                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                                            selectedListing.featured
+                                                ? 'bg-emerald-700 text-sand hover:bg-emerald-800'
+                                                : 'bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50'
+                                        }`}
+                                    >
+                                        <Star className={`w-3.5 h-3.5 ${selectedListing.featured ? 'fill-sand' : ''}`} />
+                                        <span>{selectedListing.featured ? 'Empfohlen (Aktiv)' : 'Als Empfohlen markieren'}</span>
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    {selectedListing.status !== 'APPROVED' && (
+                                        <button
+                                            onClick={() => {
+                                                handleStatusUpdate(selectedListing.id, 'APPROVED');
+                                                setDetailModalOpen(false);
+                                            }}
+                                            disabled={actionLoading}
+                                            className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                        >
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            Freigeben
+                                        </button>
+                                    )}
+                                    {selectedListing.status !== 'REJECTED' && (
+                                        <button
+                                            onClick={() => {
+                                                setListingToReject(selectedListing);
+                                                setRejectModalOpen(true);
+                                                setDetailModalOpen(false);
+                                            }}
+                                            className="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition-all flex items-center gap-1.5 cursor-pointer"
+                                        >
+                                            <XCircle className="w-4 h-4" />
+                                            Ablehnen
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── MODAL: REJECT LISTING WITH REASON ─── */}
+            <AnimatePresence>
+                {rejectModalOpen && listingToReject && (
+                    <motion.div
+                        key="reject-modal"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF]"
+                        >
+                            <div className="flex items-center gap-3 text-rose-600">
+                                <div className="p-3 bg-rose-50 rounded-2xl">
+                                    <XCircle className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">
+                                        Inserat ablehnen
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        Status wird auf "Abgelehnt" gesetzt.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                                Möchtest du das Inserat <strong className="text-slate-900">"{listingToReject.title}"</strong> ablehnen?
+                            </p>
+
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-slate-500 uppercase">
+                                    Grund / Feedback (optional):
+                                </label>
+                                <textarea
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                    placeholder="z. B. Unvollständige Angaben, unpassende Fotos, Preisangabe..."
+                                    rows={3}
+                                    className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-xl p-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setRejectModalOpen(false);
+                                        setListingToReject(null);
+                                        setRejectionReason('');
+                                    }}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    onClick={() => handleStatusUpdate(listingToReject.id, 'REJECTED', rejectionReason)}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                >
+                                    {actionLoading ? 'Wird gespeichert...' : 'Inserat ablehnen'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── MODAL: DELETE CONFIRMATION ─── */}
+            <AnimatePresence>
+                {deleteModalOpen && listingToDelete && (
+                    <motion.div
+                        key="delete-modal"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF]"
+                        >
+                            <div className="flex items-center gap-3 text-rose-600">
+                                <div className="p-3 bg-rose-50 rounded-2xl">
+                                    <Trash2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">
+                                        Inserat endgültig löschen
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        Diese Aktion kann nicht rückgängig gemacht werden.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                                Bist du sicher, dass du das Inserat <strong className="text-slate-900">"{listingToDelete.title}"</strong> sowie alle zugehörigen Favoriten und Medien unwiderruflich löschen möchtest?
+                            </p>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setDeleteModalOpen(false);
+                                        setListingToDelete(null);
+                                    }}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    onClick={handleDeleteListing}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                >
+                                    {actionLoading ? 'Wird gelöscht...' : 'Endgültig löschen'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+        </div>
+    );
+}

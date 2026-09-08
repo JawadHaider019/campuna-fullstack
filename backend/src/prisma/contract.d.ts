@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'1609f66c3e0a807b409ec38f2329a4e9fd36bb6f92705ca633c8ae211ce1ef6b'>;
+  StorageHashBase<'4f59754dd90663a949e0ea61dcc20d1016d45cab443b9787f43551adfdd2fc59'>;
 export type ExecutionHash =
   ExecutionHashBase<'967b95ddeb17386c27a8fa3556b54ac3580a43b05f6a2ba6e9f77413cd673ddf'>;
 export type ProfileHash =
@@ -290,6 +290,7 @@ export type FieldOutputTypes = {
       readonly type_of_offer: CodecTypes['pg/text@1']['output'] | null;
       readonly status: CodecTypes['pg/text@1']['output'];
       readonly featured: CodecTypes['pg/bool@1']['output'];
+      readonly boosted_until: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly reviewed_by_type: CodecTypes['pg/text@1']['output'] | null;
       readonly reviewed_by_id: CodecTypes['pg/uuid@1']['output'] | null;
       readonly reviewed_at: CodecTypes['pg/timestamptz-string@1']['output'] | null;
@@ -417,6 +418,7 @@ export type FieldInputTypes = {
       readonly type_of_offer: CodecTypes['pg/text@1']['input'] | null;
       readonly status: CodecTypes['pg/text@1']['input'];
       readonly featured: CodecTypes['pg/bool@1']['input'];
+      readonly boosted_until: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly reviewed_by_type: CodecTypes['pg/text@1']['input'] | null;
       readonly reviewed_by_id: CodecTypes['pg/uuid@1']['input'] | null;
       readonly reviewed_at: CodecTypes['pg/timestamptz-string@1']['input'] | null;
@@ -528,6 +530,7 @@ export type StorageColumnTypes = {
       readonly user_id: CodecTypes['pg/uuid@1']['output'];
     };
     readonly listings: {
+      readonly boosted_until: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly category: CodecTypes['pg/text@1']['output'] | null;
       readonly category_id: CodecTypes['pg/uuid@1']['output'] | null;
       readonly condition: CodecTypes['pg/text@1']['output'] | null;
@@ -655,6 +658,7 @@ export type StorageColumnInputTypes = {
       readonly user_id: CodecTypes['pg/uuid@1']['input'];
     };
     readonly listings: {
+      readonly boosted_until: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly category: CodecTypes['pg/text@1']['input'] | null;
       readonly category_id: CodecTypes['pg/uuid@1']['input'] | null;
       readonly condition: CodecTypes['pg/text@1']['input'] | null;
@@ -1069,6 +1073,11 @@ type ContractBase = Omit<
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/bool@1', false>;
                   };
+                };
+                readonly boosted_until: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                  readonly nullable: true;
                 };
                 readonly reviewed_by_type: {
                   readonly nativeType: 'text';
@@ -1949,6 +1958,13 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
               };
+              readonly boosted_until: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
               readonly reviewed_by_type: {
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
@@ -2022,6 +2038,7 @@ type ContractBase = Omit<
                 readonly type_of_offer: { readonly column: 'type_of_offer' };
                 readonly status: { readonly column: 'status' };
                 readonly featured: { readonly column: 'featured' };
+                readonly boosted_until: { readonly column: 'boosted_until' };
                 readonly reviewed_by_type: { readonly column: 'reviewed_by_type' };
                 readonly reviewed_by_id: { readonly column: 'reviewed_by_id' };
                 readonly reviewed_at: { readonly column: 'reviewed_at' };

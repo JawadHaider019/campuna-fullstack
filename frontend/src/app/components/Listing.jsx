@@ -4,8 +4,8 @@ import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { motion, useMotionValue } from 'framer-motion';
 import { Heart, MapPin, ShieldCheck, Eye, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { FEATURED_LISTINGS } from '@/data';
 import { getAllListings } from '@/api/listings';
+import { useFavoritesStore } from '@/store/useFavoritesStore';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
 
@@ -32,7 +32,23 @@ function normalizeListing(item) {
     }
 
     const sellerType = item.seller?.type || item.listing_user_type || 'Privat';
-    const features = Array.isArray(item.features) && item.features.length > 0 ? item.features : ['Camping'];
+
+    let features = [];
+    if (Array.isArray(item.features) && item.features.length > 0) {
+        features = item.features;
+    } else {
+        if (item.condition) features.push(item.condition);
+        if (item.subcategory) features.push(item.subcategory);
+    }
+    if (features.length === 0) {
+        features = ['Camping'];
+    }
+
+    const isBoosted = Boolean(
+        item.is_boosted || 
+        (item.boosted_until && new Date(item.boosted_until) > new Date())
+    );
+    const isFeatured = Boolean(item.featured);
 
     return {
         id,
@@ -43,12 +59,17 @@ function normalizeListing(item) {
         location,
         images,
         sellerType,
-        features
+        features,
+        featured: isFeatured,
+        boosted_until: item.boosted_until,
+        is_boosted: isBoosted
     };
 }
 
-const ListingCard = React.memo(({ item: rawItem, isWishlisted, onToggleWishlist, onCardClick }) => {
+const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
     const item = useMemo(() => normalizeListing(rawItem), [rawItem]);
+    const isFavorite = useFavoritesStore((state) => state.isFavorite(item?.id));
+    const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
     const [imgSrc, setImgSrc] = useState(item?.images[0] || DEFAULT_IMAGE);
     const tagsRef = useRef(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -95,33 +116,54 @@ const ListingCard = React.memo(({ item: rawItem, isWishlisted, onToggleWishlist,
                     loading="lazy"
                     onError={() => setImgSrc(DEFAULT_IMAGE)}
                 />
-                <div className="absolute top-4 inset-x-4 flex items-center justify-between">
-                    <span className="bg-forest flex items-center gap-1 justify-center text-white text-[8px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md">
-                        <ShieldCheck className="w-3 h-3 text-white" />
-                        {item.sellerType}
-                    </span>
+                {/* Top Badges */}
+                <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap pointer-events-none">
+                        {/* 🚀 Boosted Badge */}
+                        {item.is_boosted && (
+                            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
+                                <span>🚀</span>
+                                <span>BOOSTED</span>
+                            </span>
+                        )}
+
+                        {/* ⭐ Featured / Empfohlen Badge */}
+                        {item.featured && (
+                            <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-emerald-400/40 flex items-center gap-1 backdrop-blur-md">
+                                <span>⭐</span>
+                                <span>EMPFOHLEN</span>
+                            </span>
+                        )}
+
+                        {/* Seller Type Badge */}
+                        <span className="bg-forest/90 text-white text-[8px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1">
+                            <ShieldCheck className="w-2.5 h-2.5 text-white" />
+                            {item.sellerType}
+                        </span>
+                    </div>
+
                     <button
                         type="button"
-                        aria-label={isWishlisted ? "Von Merkzettel entfernen" : "Auf den Merkzettel"}
+                        aria-label={isFavorite ? "Von Merkzettel entfernen" : "Auf den Merkzettel"}
                         onClick={(e) => {
                             e.stopPropagation();
-                            if (onToggleWishlist) onToggleWishlist(item.id);
+                            toggleFavorite(item);
                         }}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-md ${isWishlisted
+                        className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-md cursor-pointer pointer-events-auto shrink-0 ${isFavorite
                             ? 'bg-rose-500 text-white hover:bg-rose-600 scale-110'
-                            : 'bg-white/70 hover:bg-white text-forest hover:scale-110'
+                            : 'bg-white/80 hover:bg-white text-forest hover:text-rose-500 hover:scale-110'
                             }`}
                     >
-                        <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
+                        <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current text-white' : ''}`} />
                     </button>
                 </div>
-                <div className="absolute bottom-4 right-0 inset-x-4 flex items-center justify-end pointer-events-none text-white/90">
+                <div className="absolute bottom-4 right-0 inset-x-4 flex items-center justify-end pointer-events-none text-white/90 z-10">
                     <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full text-[9px] flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-gold shrink-0" />
                         <span>{item.location}</span>
                     </div>
                 </div>
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none z-10">
                     <div className="bg-white text-forest px-5 py-3 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center space-x-2 shadow-lg scale-95 group-hover:scale-100 transition-all duration-300">
                         <Eye className="w-4 h-4" />
                         <span>Inserat ansehen</span>
@@ -208,14 +250,14 @@ export default function Listing({
         const fetchListings = async () => {
             try {
                 const res = await getAllListings();
-                if (res.success) {
-                    console.log("Loaded API listings on homepage:", res.data.listings);
-                    setApiListings(res.data.listings || []);
+                if (res.success && Array.isArray(res.data?.listings)) {
+                    setApiListings(res.data.listings);
                 } else {
-                    console.error("Failed to load listings from backend:", res.error);
+                    setApiListings([]);
                 }
             } catch (err) {
-                console.error("Error loading listings:", err);
+                console.error("Error loading listings from database:", err);
+                setApiListings([]);
             }
         };
         fetchListings();
@@ -293,7 +335,7 @@ export default function Listing({
                  .replace(/[^a-z0-9]+/g, '-')
                  .replace(/^-+|-+$/g, '')
              : item.id);
-         router.push(`/listing_details/${titleSlug}`);
+         router.push(`/inserate/${titleSlug}`);
      }, [router]);
 
     const x1 = useMotionValue(0);
@@ -374,7 +416,7 @@ export default function Listing({
                         </p>
                     </div>
                     <div className="hidden lg:block">
-                        <button onClick={() => router.push('/all_listings')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
+                        <button onClick={() => router.push('/inserate')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
                             <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Inserate</span>
                             <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -402,7 +444,7 @@ export default function Listing({
                             Keine Inserate entsprechen Ihren Filterkriterien.
                         </p>
                         <button
-                            onClick={() => router.push('/all_listings')}
+                            onClick={() => router.push('/inserate')}
                             className="bg-forest text-sand text-xs font-semibold uppercase tracking-wider py-3 px-6 rounded-full hover:bg-gold hover:text-forest transition-colors duration-300"
                         >
                             Alle Inserate ansehen
@@ -430,8 +472,6 @@ export default function Listing({
                                         <ListingCard
                                             key={`${item.id}-r1-${idx}`}
                                             item={item}
-                                            isWishlisted={wishlistedIds.includes(item.id)}
-                                            onToggleWishlist={onToggleWishlist}
                                             onCardClick={handleCardClick}
                                         />
                                     ))}
@@ -456,8 +496,6 @@ export default function Listing({
                                         <ListingCard
                                             key={`${item.id}-r2-${idx}`}
                                             item={item}
-                                            isWishlisted={wishlistedIds.includes(item.id)}
-                                            onToggleWishlist={onToggleWishlist}
                                             onCardClick={handleCardClick}
                                         />
                                     ))}
@@ -466,7 +504,7 @@ export default function Listing({
                         )}
 
                         <div className="mt-7 flex justify-center lg:hidden">
-                            <button onClick={() => router.push('/all_listings')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
+                            <button onClick={() => router.push('/inserate')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
                                 <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Inserate</span>
                                 <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                             </button>

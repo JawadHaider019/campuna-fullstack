@@ -23,8 +23,8 @@ import {
     User,
     Check
 } from 'lucide-react';
-import { FEATURED_LISTINGS } from '@/data';
 import { getListingDetail, getAllListings } from '@/api/listings';
+import { useFavoritesStore } from '@/store/useFavoritesStore';
 
 function slugifyTitle(title = '') {
     return title
@@ -43,11 +43,11 @@ function parseListingId(slug = '') {
     // 1. Try matching UUID (if appended at the end)
     const uuidMatch = decoded.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i);
     if (uuidMatch) return uuidMatch[1];
-    
+
     // 2. Try matching CP- style mock ID
     const cpMatch = decoded.match(/(CP-\w+)$/i);
     if (cpMatch) return cpMatch[1];
-    
+
     // 3. Otherwise return the full slug directly (e.g. title-only slug)
     return decoded;
 }
@@ -72,7 +72,8 @@ export default function ListingDetailPage() {
     const [loading, setLoading] = useState(true);
     const [activeImageIdx, setActiveImageIdx] = useState(0);
     const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
-    const [isWishlisted, setIsWishlisted] = useState(false);
+    const isFavorite = useFavoritesStore((state) => state.isFavorite(listing?.id));
+    const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
     const [copied, setCopied] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [relatedListings, setRelatedListings] = useState([]);
@@ -111,28 +112,11 @@ export default function ListingDetailPage() {
             try {
                 let foundListing = null;
 
-                const decodedSlug = slug.toLowerCase();
-                const mockMatch = FEATURED_LISTINGS.find(item => {
-                    const titleSlug = slugifyTitle(item.title);
-                    return (
-                        item.id.toLowerCase() === decodedSlug ||
-                        titleSlug === decodedSlug ||
-                        item.id === listingId ||
-                        decodedSlug.includes(item.id.toLowerCase())
-                    );
-                });
-                if (mockMatch) {
-                    foundListing = {
-                        ...mockMatch,
-                        displayLocation: formatLocation(mockMatch.location),
-                    };
-                }
-
-                // 2. If not in static data, check API
-                if (!foundListing && listingId) {
+                // 1. Try getListingDetail by ID
+                if (listingId) {
                     try {
                         const res = await getListingDetail(listingId);
-                        if (res.success && res.data.listing) {
+                        if (res.success && res.data?.listing) {
                             const apiMatch = res.data.listing;
                             const images = apiMatch.images && apiMatch.images.length > 0
                                 ? apiMatch.images
@@ -148,24 +132,77 @@ export default function ListingDetailPage() {
                                 displayLocation: apiMatch.location || 'Deutschland',
                                 images,
                                 seller: {
-                                    name: apiMatch.seller?.name || 'Verkäufer',
+                                    name: apiMatch.seller?.name || (apiMatch.seller?.type === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer'),
                                     verified: true,
                                     type: apiMatch.seller?.type || 'Privat'
                                 },
                                 features: [apiMatch.condition, apiMatch.subcategory].filter(Boolean),
                                 isNegotiable: apiMatch.negotiable || false,
                                 description: apiMatch.description || '',
-                                publishedDate: 'Neu eingestellt',
+                                publishedDate: apiMatch.createdAt ? new Date(apiMatch.createdAt).toLocaleDateString('de-DE') : 'Neu eingestellt',
                                 anzeigeNr: `CP-${apiMatch.id.slice(-4).toUpperCase()}`,
-                                viewsCount: 12,
+                                viewsCount: apiMatch.viewsCount || 1,
                                 likesCount: 0,
                                 chatsCount: 0,
                                 condition: apiMatch.condition || 'Sehr gut',
-                                status: 'Aktiv'
+                                status: apiMatch.status || 'Aktiv'
                             };
                         }
                     } catch (apiErr) {
                         console.error("API error fetching listing detail:", apiErr);
+                    }
+                }
+
+                // 2. If not found by direct ID, search in all database listings by title slug or ID
+                if (!foundListing) {
+                    try {
+                        const res = await getAllListings();
+                        if (res.success && Array.isArray(res.data?.listings)) {
+                            const decodedSlug = slug.toLowerCase();
+                            const match = res.data.listings.find(item => {
+                                const titleSlug = slugifyTitle(item.title);
+                                return (
+                                    item.id?.toLowerCase() === decodedSlug ||
+                                    titleSlug === decodedSlug ||
+                                    item.id === listingId ||
+                                    decodedSlug.includes(item.id?.toLowerCase())
+                                );
+                            });
+
+                            if (match) {
+                                const images = match.images && match.images.length > 0
+                                    ? match.images
+                                    : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
+
+                                foundListing = {
+                                    id: match.id,
+                                    title: match.title || 'Camping Angebot',
+                                    category: match.category || 'Camping Zubehör',
+                                    price: parseFloat(match.price) || 0,
+                                    pricePeriod: match.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
+                                    location: match.location || 'Deutschland',
+                                    displayLocation: match.location || 'Deutschland',
+                                    images,
+                                    seller: {
+                                        name: match.seller?.name || (match.seller?.type === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer'),
+                                        verified: true,
+                                        type: match.seller?.type || 'Privat'
+                                    },
+                                    features: [match.condition, match.subcategory].filter(Boolean),
+                                    isNegotiable: match.negotiable || false,
+                                    description: match.description || '',
+                                    publishedDate: match.createdAt ? new Date(match.createdAt).toLocaleDateString('de-DE') : 'Neu eingestellt',
+                                    anzeigeNr: `CP-${match.id.slice(-4).toUpperCase()}`,
+                                    viewsCount: match.viewsCount || 1,
+                                    likesCount: 0,
+                                    chatsCount: 0,
+                                    condition: match.condition || 'Sehr gut',
+                                    status: match.status || 'Aktiv'
+                                };
+                            }
+                        }
+                    } catch (allErr) {
+                        console.error("Error fetching all listings:", allErr);
                     }
                 }
 
@@ -302,7 +339,7 @@ export default function ListingDetailPage() {
 
             {/* Seller Details */}
             <div
-                onClick={() => router.push(`/provider_details/${slugifyTitle(seller.name)}-${listing.user_id || listing.owner_user_id || listing.ownerUserId}`)}
+                onClick={() => router.push(`/anbieter/${slugifyTitle(seller.name)}-${listing.user_id || listing.owner_user_id || listing.ownerUserId}`)}
                 className="flex items-center gap-3 text-left border-b border-forest/5 pb-4 cursor-pointer group/seller hover:opacity-90 transition-opacity"
             >
                 <div className="w-12 h-12 rounded-full bg-forest flex items-center justify-center text-white font-display text-lg font-bold select-none shadow shrink-0 group-hover/seller:ring-2 group-hover/seller:ring-gold/50 transition-all">
@@ -317,16 +354,16 @@ export default function ListingDetailPage() {
                             <ShieldCheck className="w-4.5 h-4.5 text-forest shrink-0 fill-forest/15" />
                         )}
                         {seller.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
-                            <div 
+                            <div
                                 className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2 py-0.5 text-[10px] font-bold font-sans shadow-sm cursor-help"
-                                title={`Campuna Pioneer #${seller.achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER').position}`}
+                                title="Campuna Pioneer"
                             >
-                                <img 
-                                    src="/pioneer_badge.jpg" 
-                                    alt="Campuna Pioneer Badge" 
+                                <img
+                                    src="/pioneer_badge.png"
+                                    alt="Campuna Pioneer Badge"
                                     className="w-4 h-4 rounded-full object-cover border border-gold/30"
                                 />
-                                <span>Pioneer #{seller.achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER').position}</span>
+                                <span>Pioneer</span>
                             </div>
                         )}
                     </div>
@@ -372,11 +409,11 @@ export default function ListingDetailPage() {
                 </button>
 
                 <button
-                    onClick={() => setIsWishlisted(!isWishlisted)}
+                    onClick={() => toggleFavorite(listing)}
                     className="bg-white hover:bg-sand/15 border border-forest/15 text-charcoal font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
                 >
-                    <Heart className={`w-4 h-4 shrink-0 ${isWishlisted ? 'text-red-500 fill-red-500' : 'text-charcoal/60'}`} />
-                    {isWishlisted ? 'Gespeichert' : 'Speichern'}
+                    <Heart className={`w-4 h-4 shrink-0 ${isFavorite ? 'text-rose-500 fill-rose-500' : 'text-charcoal/60'}`} />
+                    {isFavorite ? 'Gespeichert' : 'Speichern'}
                 </button>
             </div>
 
@@ -423,7 +460,23 @@ export default function ListingDetailPage() {
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                         Zurück
                     </button>
-                    <div className="flex flex-wrap items-start gap-3">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        {/* 🚀 Boosted Badge */}
+                        {(listing.is_boosted || (listing.boosted_until && new Date(listing.boosted_until) > new Date())) && (
+                            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[10px] sm:text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-md border border-yellow-100/90 flex items-center gap-1.5">
+                                <span>🚀</span>
+                                <span>BOOSTED</span>
+                            </span>
+                        )}
+
+                        {/* ⭐ Featured / Empfohlen Badge */}
+                        {listing.featured && (
+                            <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-md border border-emerald-400/40 flex items-center gap-1.5">
+                                <span>⭐</span>
+                                <span>EMPFOHLEN VON CAMPUNA</span>
+                            </span>
+                        )}
+
                         {isSold && (
                             <span className="bg-red-600 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md flex items-center gap-1">
                                 <Lock className="w-3.5 h-3.5" />
@@ -652,7 +705,7 @@ export default function ListingDetailPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        onClick={() => router.push(`/listing_details/${slug}`)}
+                                        onClick={() => router.push(`/inserate/${slug}`)}
                                         className="group relative flex flex-col bg-white rounded-[24px] overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 cursor-pointer h-full shrink-0 w-[270px] sm:w-[calc(50%-0.625rem)] lg:w-[calc(25%-0.9375rem)] snap-start text-left"
                                     >
                                         {/* Image Area */}
@@ -822,13 +875,13 @@ export default function ListingDetailPage() {
             {/* ── Contact Modal popup ── */}
             <AnimatePresence>
                 {isContactModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full flex flex-col relative text-left max-h-[90vh]"
-                        >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full flex flex-col relative text-left max-h-[90vh]"
+                    >
+                        <div className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm">
                             {/* Close Button */}
                             <button
                                 onClick={() => {
@@ -891,104 +944,163 @@ export default function ListingDetailPage() {
                                             )}
                                         </div>
                                     </div>
+                                    <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 font-sans">
+                                        <span className="bg-white px-2 py-1 rounded border border-gray-100 shadow-2xs font-semibold">
+                                            {listing.category?.name || 'Kategorie'}
+                                        </span>
+                                        {listing.condition && (
+                                            <span className="bg-white px-2 py-1 rounded border border-gray-100 shadow-2xs font-semibold">
+                                                {listing.condition}
+                                            </span>
+                                        )}
+                                        {listing.location && (
+                                            <span className="bg-white px-2 py-1 rounded border border-gray-100 shadow-2xs font-semibold">
+                                                {listing.location}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="font-display font-black text-xl text-[#2a7f55]">
+                                        {listing.price_formatted || (listing.price ? `€ ${Number(listing.price).toLocaleString('de-DE')}` : 'Auf Anfrage')}
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <div className="pt-4 border-t border-[#eaeaea] mt-4">
-                                    <span className="block text-[9px] text-[#9c9c9c] uppercase font-mono tracking-wider mb-0.5 font-sans">Kaufpreis</span>
-                                    <span className="font-display text-xl font-extrabold text-[#2a7f55]">
-                                        {listing.price.toLocaleString('de-DE')} €
-                                    </span>
-                                </div>
-
-
-                                {isMessageSent ? (
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        className="text-center space-y-4 py-8"
+                        {/* Dynamic Messaging Form Body or Success Message */}
+                        <div className="p-6 md:p-8 flex-1 flex flex-col justify-center">
+                            {isMessageSent ? (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="py-12 flex flex-col items-center text-center space-y-4 font-sans"
+                                >
+                                    <div className="w-16 h-16 rounded-full bg-[#2a7f55]/10 text-[#2a7f55] flex items-center justify-center">
+                                        <Check className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="font-display font-bold text-2xl text-charcoal">Nachricht übermittelt!</h3>
+                                    <p className="text-xs text-charcoal/60 max-w-sm leading-relaxed">
+                                        Deine Anfrage wurde direkt an den Verkäufer weitergeleitet. Du erhältst eine Kopie sowie die Antwort per E-Mail.
+                                    </p>
+                                    <button
+                                        onClick={() => {
+                                            setIsContactModalOpen(false);
+                                            setIsMessageSent(false);
+                                        }}
+                                        className="mt-4 px-6 py-2.5 rounded-full bg-sand text-charcoal hover:bg-beige text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
                                     >
-                                        <div className="w-16 h-16 bg-[#e6f4ea] rounded-full flex items-center justify-center mx-auto text-[#137333] shadow">
-                                            <Check className="w-8 h-8 stroke-[3]" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-display font-bold text-lg text-black">Nachricht gesendet!</h3>
-                                            <p className="text-xs text-charcoal/60 leading-relaxed font-light font-sans text-center">
-                                                Ihre Anfrage wurde erfolgreich an den Anbieter übermittelt. Der Kontakt bleibt für beide Seiten privat.
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                setIsContactModalOpen(false);
-                                                setIsMessageSent(false);
-                                            }}
-                                            className="bg-[#2a7f55] hover:bg-[#206040] text-white font-bold py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer"
-                                        >
-                                            Fenster schließen
-                                        </button>
-                                    </motion.div>
-                                ) : (
-                                    <div className="space-y-5">
-                                        <div className="space-y-1">
-                                            <h3 className="font-display font-extrabold text-lg text-black">
-                                                Nachricht an den Anbieter
-                                            </h3>
-                                            <p className="text-xs text-charcoal/50 font-light font-sans">
-                                                Hier kannst du dem Anbieter eine Nachricht senden.
-                                            </p>
-                                        </div>
+                                        Schließen
+                                    </button>
+                                </motion.div>
+                            ) : (
+                                <form onSubmit={handleSendMessage} className="space-y-4 font-sans">
+                                    <div className="space-y-1">
+                                        <h3 className="font-display font-bold text-xl text-charcoal">
+                                            Nachricht an Verkäufer
+                                        </h3>
+                                        <p className="text-[11px] text-charcoal/50">
+                                            Kontaktiere {listing.user?.first_name || 'den Inserenten'} direkt über unser sicheres Campuna-Nachrichtensystem.
+                                        </p>
+                                    </div>
 
-                                        <div className="bg-[#f2f9f5] border border-emerald-500/10 p-3 py-2.5 rounded-xl text-[#1e5c3b] text-[11px] leading-relaxed font-semibold font-sans">
-                                            Der Kontakt bleibt für beide Seiten privat.
-                                        </div>
-
-                                        <div className="space-y-2 font-sans">
-                                            <textarea
-                                                value={contactMessage}
-                                                onChange={(e) => setContactMessage(e.target.value)}
-                                                placeholder="Schreibe hier deine Nachricht..."
-                                                className="w-full h-36 border border-[#eaeaea] rounded-xl p-3.5 text-xs text-charcoal focus:border-[#2a7f55] focus:outline-none focus:ring-1 focus:ring-[#2a7f55] leading-relaxed resize-none font-sans"
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                                        <div className="space-y-1 text-left">
+                                            <label className="text-[10px] font-bold uppercase tracking-wider text-charcoal/60">
+                                                Dein Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={contactForm.sender_name}
+                                                onChange={(e) => setContactForm({ ...contactForm, sender_name: e.target.value })}
+                                                placeholder="Max Mustermann"
+                                                className="w-full bg-sand/30 border border-beige/80 rounded-xl px-3 py-2 text-xs text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#2a7f55]"
                                             />
                                         </div>
-
-                                        <div className="space-y-2.5 font-sans">
-                                            <button
-                                                onClick={async () => {
-                                                    setIsSendingMessage(true);
-                                                    await new Promise(resolve => setTimeout(resolve, 1000));
-                                                    setIsSendingMessage(false);
-                                                    setIsMessageSent(true);
-                                                }}
-                                                disabled={isSendingMessage || !contactMessage.trim()}
-                                                className="w-full bg-[#2a7f55] hover:bg-[#206040] disabled:bg-charcoal/10 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
-                                            >
-                                                {isSendingMessage ? (
-                                                    <>
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                        <span>Wird gesendet...</span>
-                                                    </>
-                                                ) : (
-                                                    <span>Nachricht senden</span>
-                                                )}
-                                            </button>
-
-                                            <span className="block text-center text-[10px] text-charcoal/45 font-medium">
-                                                Antworte in deinem eigenen Tempo.
-                                            </span>
+                                        <div className="space-y-1 text-left">
+                                            <label className="text-[10px] font-bold uppercase tracking-wider text-charcoal/60">
+                                                Deine E-Mail *
+                                            </label>
+                                            <input
+                                                type="email"
+                                                required
+                                                value={contactForm.sender_email}
+                                                onChange={(e) => setContactForm({ ...contactForm, sender_email: e.target.value })}
+                                                placeholder="max@beispiel.de"
+                                                className="w-full bg-sand/30 border border-beige/80 rounded-xl px-3 py-2 text-xs text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#2a7f55]"
+                                            />
                                         </div>
                                     </div>
-                                )}
-                            </div>
 
-                        </motion.div>
-                    </div>
+                                    <div className="space-y-1 text-left">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-charcoal/60">
+                                            Telefonnummer (Optional)
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            value={contactForm.sender_phone}
+                                            onChange={(e) => setContactForm({ ...contactForm, sender_phone: e.target.value })}
+                                            placeholder="+49 170 1234567"
+                                            className="w-full bg-sand/30 border border-beige/80 rounded-xl px-3 py-2 text-xs text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#2a7f55]"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1 text-left">
+                                        <label className="text-[10px] font-bold uppercase tracking-wider text-charcoal/60">
+                                            Deine Nachricht *
+                                        </label>
+                                        <textarea
+                                            required
+                                            rows={4}
+                                            value={contactForm.message}
+                                            onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                                            placeholder="Guten Tag, ich interessiere mich für Ihr Inserat. Ist das Fahrzeug noch verfügbar?..."
+                                            className="w-full bg-sand/30 border border-beige/80 rounded-xl p-3 text-xs text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#2a7f55] resize-none"
+                                        />
+                                    </div>
+
+                                    <div className="pt-2 flex items-center justify-end gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsContactModalOpen(false)}
+                                            className="px-5 py-2.5 rounded-full border border-beige/80 text-charcoal/70 hover:bg-sand text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                                        >
+                                            Abbrechen
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={isSendingMessage}
+                                            className="px-6 py-2.5 rounded-full bg-[#2a7f55] hover:bg-[#206342] text-sand text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+                                        >
+                                            {isSendingMessage ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <span>Nachricht senden</span>
+                                                    <ArrowRight className="w-3.5 h-3.5" />
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    </motion.div>
+
                 )
                 }
             </AnimatePresence >
 
+
             {/* ── Report Modal popup ── */}
-            <AnimatePresence>
+            < AnimatePresence >
                 {isReportModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm">
+                    <motion.div
+                        key="report-modal"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm"
+                    >
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1012,47 +1124,35 @@ export default function ListingDetailPage() {
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="text-center space-y-4 py-8"
+                                        className="py-12 flex flex-col items-center text-center space-y-4 font-sans"
                                     >
-                                        <div className="w-16 h-16 bg-[#e6f4ea] rounded-full flex items-center justify-center mx-auto text-[#137333] shadow">
-                                            <Check className="w-8 h-8 stroke-[3]" />
+                                        <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                            <Check className="w-8 h-8" />
                                         </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-display font-bold text-lg text-black">Meldung gesendet!</h3>
-                                            <p className="text-xs text-charcoal/60 leading-relaxed font-light font-sans text-center">
-                                                Vielen Dank. Dieses Inserat wurde zur Überprüfung gemeldet. Wir prüfen jede Meldung sorgfältig.
-                                            </p>
-                                        </div>
+                                        <h3 className="font-display font-bold text-2xl text-charcoal">Meldung eingegangen</h3>
+                                        <p className="text-xs text-charcoal/60 max-w-sm leading-relaxed">
+                                            Vielen Dank für deine Mithilfe! Unser Moderationsteam prüft diesen Eintrag umgehend nach unseren Community-Richtlinien.
+                                        </p>
                                         <button
                                             onClick={() => {
                                                 setIsReportModalOpen(false);
                                                 setIsReportSent(false);
                                             }}
-                                            className="bg-[#2a7f55] hover:bg-[#206040] text-white font-bold py-2.5 px-6 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                                            className="mt-4 px-6 py-2.5 rounded-full bg-sand text-charcoal hover:bg-beige text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
                                         >
-                                            Fenster schließen
+                                            Schließen
                                         </button>
                                     </motion.div>
                                 ) : (
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 font-sans">
                                         <div className="space-y-1">
                                             <h3 className="font-display font-extrabold text-lg text-black">
                                                 Anzeige melden
                                             </h3>
+                                            <p className="text-xs text-charcoal/60 leading-relaxed font-light font-sans">
+                                                Wenn dir etwas an dieser Anzeige ungewöhnlich oder nicht passend erscheint, kannst du uns hier einen Hinweis geben. Wir prüfen jede Meldung sorgfältig.
+                                            </p>
                                         </div>
-
-                                        {/* Campuna entry image */}
-                                        <div className="aspect-[16/9] w-full rounded-xl overflow-hidden border border-[#eaeaea] shadow-sm bg-white select-none">
-                                            <img
-                                                src={listing.images[0] || '/hero-campuna.webp'}
-                                                alt="Campuna-Eintragsbild"
-                                                className="w-full h-full object-cover"
-                                            />
-                                        </div>
-
-                                        <p className="text-xs text-charcoal/60 leading-relaxed font-light font-sans">
-                                            Wenn dir etwas an dieser Anzeige ungewöhnlich oder nicht passend erscheint, kannst du uns hier einen Hinweis geben. Wir prüfen jede Meldung sorgfältig.
-                                        </p>
 
                                         <div className="space-y-2 font-sans">
                                             <label className="block text-xs font-semibold text-charcoal">
@@ -1090,11 +1190,10 @@ export default function ListingDetailPage() {
                                     </div>
                                 )}
                             </div>
-
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
-            </AnimatePresence>
+            </AnimatePresence >
 
         </div >
     );

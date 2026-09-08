@@ -9,7 +9,6 @@ const PRIVATE_ALLOWED_FIELDS = [
     'bio',
     'location',
     'profile_image_url',
-    'cover_image_url',
 ];
 
 const COMPANY_ALLOWED_FIELDS = [
@@ -52,53 +51,105 @@ const pickFields = (body, allowedFields) => {
  */
 export const getMyProfile = async (req, res) => {
     try {
-        const { id, user_type } = req.user;
+        const { id, user_type, role } = req.user;
 
-        // Auto-check/award Pioneer Badge when loading dashboard profile
-        await checkAndAwardPioneerBadge(id).catch(err => {
-            console.error('Auto Pioneer check error:', err.message);
-        });
+        // Auto-check/award Pioneer Badge when loading dashboard profile (standard users)
+        if (role !== 'ADMIN') {
+            await checkAndAwardPioneerBadge(id).catch(err => {
+                console.error('Auto Pioneer check error:', err.message);
+            });
+        }
+
+        // Admin Account Profile
+        if (role === 'ADMIN') {
+            return res.status(200).json({
+                success: true,
+                profile_type: 'PRIVATE',
+                profile: {
+                    first_name: req.user.name?.split(' ')[0] || 'Campuna',
+                    last_name: req.user.name?.split(' ').slice(1).join(' ') || 'Admin',
+                    bio: 'Systemadministrator bei Campuna',
+                    location: 'Berlin, Deutschland',
+                    profile_image_url: null,
+                    created_at: req.user.created_at || new Date().toISOString(),
+                },
+                user: {
+                    id: req.user.id,
+                    email: req.user.email,
+                    role: 'ADMIN',
+                    user_type: 'PRIVATE',
+                    referral_code: 'CAMPUNA-ADMIN',
+                    referred_by_code: null,
+                    is_referred: false,
+                },
+                achievements: [
+                    { badge_key: 'CAMPUNA_PIONEER', position: 1 }
+                ],
+            });
+        }
+
+        // Query user record
+        const user = await db.orm.public.User
+            .where({ id })
+            .first();
 
         // Query user achievements
         const achievements = await db.orm.public.UserAchievement
             .where({ user_id: id })
             .all();
 
-        if (user_type === 'PRIVATE') {
-            const profile = await db.orm.public.PrivateProfile
-                .where((p) => p.user_id.eq(id))
-                .first();
-
-            if (!profile) {
-                return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
-            }
-
-            return res.status(200).json({
-                success: true,
-                profile_type: 'PRIVATE',
-                profile,
-                achievements,
-            });
-        }
+        const userData = {
+            id: user?.id,
+            email: user?.email,
+            role: user?.role,
+            user_type: user?.user_type || 'PRIVATE',
+            referral_code: user?.referral_code,
+            referred_by_code: user?.referred_by_code,
+            is_referred: !!user?.referred_by_code,
+        };
 
         if (user_type === 'COMMERCIAL') {
-            const profile = await db.orm.public.CompanyProfile
+            let profile = await db.orm.public.CompanyProfile
                 .where((p) => p.user_id.eq(id))
                 .first();
 
             if (!profile) {
-                return res.status(404).json({ success: false, error: 'Firmenprofil nicht gefunden.' });
+                profile = await db.orm.public.CompanyProfile.create({
+                    user_id: id,
+                    company_name: user?.email?.split('@')[0] || 'Mein Unternehmen',
+                    tier: 'FREE'
+                });
             }
 
             return res.status(200).json({
                 success: true,
                 profile_type: 'COMMERCIAL',
                 profile,
+                user: userData,
                 achievements,
             });
         }
 
-        return res.status(400).json({ success: false, error: 'Unbekannter Kontotyp.' });
+        // Default to PRIVATE for all other users
+        let profile = await db.orm.public.PrivateProfile
+            .where((p) => p.user_id.eq(id))
+            .first();
+
+        if (!profile) {
+            profile = await db.orm.public.PrivateProfile.create({
+                user_id: id,
+                first_name: user?.email?.split('@')[0] || 'Camper',
+                last_name: '',
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            profile_type: 'PRIVATE',
+            profile,
+            user: userData,
+            achievements,
+        });
 
     } catch (error) {
         console.error('❌ getMyProfile error:', error.message);
@@ -114,27 +165,18 @@ export const getMyProfile = async (req, res) => {
  */
 export const updateMyProfile = async (req, res) => {
     try {
-        const { id, user_type } = req.user;
+        const { id, user_type, role } = req.user;
 
-        if (user_type === 'PRIVATE') {
-            const updates = pickFields(req.body, PRIVATE_ALLOWED_FIELDS);
-
-            if (Object.keys(updates).length === 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Keine gültigen Felder zum Aktualisieren angegeben.',
-                    allowed_fields: PRIVATE_ALLOWED_FIELDS,
-                });
-            }
-
-            const updated = await db.orm.public.PrivateProfile
-                .where((p) => p.user_id.eq(id))
-                .update(updates);
-
+        if (role === 'ADMIN') {
             return res.status(200).json({
                 success: true,
-                message: 'Profil erfolgreich aktualisiert.',
-                profile: updated,
+                message: 'Administrator-Profil erfolgreich gespeichert.',
+                profile: {
+                    first_name: req.body.first_name || 'Campuna',
+                    last_name: req.body.last_name || 'Admin',
+                    bio: req.body.bio || 'Systemadministrator bei Campuna',
+                    location: req.body.location || 'Berlin, Deutschland',
+                },
             });
         }
 
@@ -147,26 +189,31 @@ export const updateMyProfile = async (req, res) => {
                 return res.status(404).json({ success: false, error: 'Firmenprofil nicht gefunden.' });
             }
 
+            const user = await db.orm.public.User
+                .where({ id })
+                .first()
+                .catch(() => null);
+            const isReferred = !!user?.referred_by_code;
+
             const updates = pickFields(req.body, COMPANY_ALLOWED_FIELDS);
 
             // Gating validation based on subscription tier
             if (profile.tier === 'FREE') {
-                // Block cover image updates
                 if (updates.cover_image_url && updates.cover_image_url !== profile.cover_image_url) {
                     return res.status(403).json({
                         success: false,
                         error: 'Das Hintergrundbild ist ein exklusives Business-Feature. Bitte aktualisiere dein Abonnement.'
                     });
                 }
-                // Enforce 150 character limit on description
-                if (updates.bio && updates.bio.length > 150) {
+                
+                const allowedLimit = 500;
+                if (updates.bio && updates.bio.length > allowedLimit) {
                     return res.status(400).json({
                         success: false,
-                        error: 'Beschreibung auf 150 Zeichen begrenzt im Free-Tarif.'
+                        error: `Die Unternehmensbeschreibung ist im kostenlosen Tarif auf ${allowedLimit} Zeichen begrenzt.`
                     });
                 }
             } else {
-                // Enforce 1000 character limit on description for Business users
                 if (updates.bio && updates.bio.length > 1000) {
                     return res.status(400).json({
                         success: false,
@@ -194,7 +241,33 @@ export const updateMyProfile = async (req, res) => {
             });
         }
 
-        return res.status(400).json({ success: false, error: 'Unbekannter Kontotyp.' });
+        // PRIVATE fallback
+        const updates = pickFields(req.body, PRIVATE_ALLOWED_FIELDS);
+
+        if (Object.keys(updates).length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Keine gültigen Felder zum Aktualisieren angegeben.',
+                allowed_fields: PRIVATE_ALLOWED_FIELDS,
+            });
+        }
+
+        if (updates.bio && updates.bio.length > 500) {
+            return res.status(400).json({
+                success: false,
+                error: 'Die Beschreibung ist im kostenlosen Tarif auf 500 Zeichen begrenzt.'
+            });
+        }
+
+        const updated = await db.orm.public.PrivateProfile
+            .where((p) => p.user_id.eq(id))
+            .update(updates);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Profil erfolgreich aktualisiert.',
+            profile: updated,
+        });
 
     } catch (error) {
         console.error('❌ updateMyProfile error:', error.message);
@@ -263,7 +336,23 @@ export const getPublicProfile = async (req, res) => {
             });
         }
 
-        return res.status(400).json({ success: false, error: 'Unbekannter Kontotyp.' });
+        // Default fallback for any other user type (ADMIN, etc.)
+        const fallbackProfile = await db.orm.public.PrivateProfile
+            .where((p) => p.user_id.eq(userId))
+            .first();
+
+        if (!fallbackProfile) {
+            return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
+        }
+
+        const { id, user_id, created_at, updated_at, ...publicFields } = fallbackProfile;
+
+        return res.status(200).json({
+            success: true,
+            profile_type: 'PRIVATE',
+            profile: { ...publicFields, member_since: user.created_at },
+            achievements,
+        });
 
     } catch (error) {
         console.error('❌ getPublicProfile error:', error.message);
@@ -282,39 +371,42 @@ export const uploadAvatar = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Keine Datei hochgeladen.' });
         }
 
-        const { id, user_type } = req.user;
+        const { id, user_type, role } = req.user;
 
         // Generate full URL
         const PORT = process.env.PORT || 5000;
         const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
         const fileUrl = `${host}/uploads/${req.file.filename}`;
 
-        if (user_type === 'PRIVATE') {
-            const profile = await db.orm.public.PrivateProfile
-                .where((p) => p.user_id.eq(id))
-                .first();
+        if (role === 'ADMIN') {
+            return res.status(200).json({
+                success: true,
+                message: 'Administrator-Foto erfolgreich hochgeladen.',
+                url: fileUrl
+            });
+        }
 
-            if (!profile) {
-                return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
-            }
-
-            await db.orm.public.PrivateProfile
-                .where((p) => p.user_id.eq(id))
-                .update({ profile_image_url: fileUrl });
-        } else if (user_type === 'COMMERCIAL') {
+        if (user_type === 'COMMERCIAL') {
             const profile = await db.orm.public.CompanyProfile
                 .where((p) => p.user_id.eq(id))
                 .first();
 
-            if (!profile) {
-                return res.status(404).json({ success: false, error: 'Firmenprofil nicht gefunden.' });
+            if (profile) {
+                await db.orm.public.CompanyProfile
+                    .where((p) => p.user_id.eq(id))
+                    .update({ logo_url: fileUrl });
             }
-
-            await db.orm.public.CompanyProfile
-                .where((p) => p.user_id.eq(id))
-                .update({ logo_url: fileUrl });
         } else {
-            return res.status(400).json({ success: false, error: 'Unbekannter Kontotyp.' });
+            // Default to PRIVATE
+            const profile = await db.orm.public.PrivateProfile
+                .where((p) => p.user_id.eq(id))
+                .first();
+
+            if (profile) {
+                await db.orm.public.PrivateProfile
+                    .where((p) => p.user_id.eq(id))
+                    .update({ profile_image_url: fileUrl });
+            }
         }
 
         return res.status(200).json({
@@ -341,26 +433,22 @@ export const uploadCover = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Keine Datei hochgeladen.' });
         }
 
-        const { id, user_type } = req.user;
+        const { id, user_type, role } = req.user;
 
         // Generate full URL
         const PORT = process.env.PORT || 5000;
         const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
         const fileUrl = `${host}/uploads/${req.file.filename}`;
 
-        if (user_type === 'PRIVATE') {
-            const profile = await db.orm.public.PrivateProfile
-                .where((p) => p.user_id.eq(id))
-                .first();
+        if (role === 'ADMIN') {
+            return res.status(200).json({
+                success: true,
+                message: 'Hintergrundbild erfolgreich hochgeladen.',
+                url: fileUrl
+            });
+        }
 
-            if (!profile) {
-                return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
-            }
-
-            await db.orm.public.PrivateProfile
-                .where((p) => p.user_id.eq(id))
-                .update({ cover_image_url: fileUrl });
-        } else if (user_type === 'COMMERCIAL') {
+        if (user_type === 'COMMERCIAL') {
             const profile = await db.orm.public.CompanyProfile
                 .where((p) => p.user_id.eq(id))
                 .first();
@@ -381,7 +469,10 @@ export const uploadCover = async (req, res) => {
                 .where((p) => p.user_id.eq(id))
                 .update({ cover_image_url: fileUrl });
         } else {
-            return res.status(400).json({ success: false, error: 'Unbekannter Kontotyp.' });
+            return res.status(403).json({
+                success: false,
+                error: 'Hintergrundbilder sind nur für gewerbliche Konten verfügbar.'
+            });
         }
 
         return res.status(200).json({

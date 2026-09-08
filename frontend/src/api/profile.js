@@ -36,20 +36,37 @@ export const getMyFeatures = () => api.get('/subscriptions/features');
 
 /**
  * POST /api/subscriptions/subscribe
- * @param {string} plan_name — 'FREE' | 'BUSINESS'
- * @param {string} payment_method — 'CREDIT' | 'MANUAL'
- * @param {number} duration_months — default 1
+ * @param {string|object} planOrOptions — 'FREE' | 'BUSINESS' or { plan_name, payment_method, duration_months, billing_details, payment_details }
+ * @param {string} [payment_method='CREDIT_CARD']
+ * @param {number} [duration_months=1]
+ * @param {object} [billing_details={}]
+ * @param {object} [payment_details={}]
  */
-export const subscribeToPlan = (plan_name, payment_method = 'CREDIT', duration_months = 1) =>
-    api.post('/subscriptions/subscribe', { plan_name, payment_method, duration_months });
+export const subscribeToPlan = (planOrOptions, payment_method = 'CREDIT_CARD', duration_months = 1, billing_details = {}, payment_details = {}) => {
+    if (typeof planOrOptions === 'object' && planOrOptions !== null) {
+        return api.post('/subscriptions/subscribe', planOrOptions);
+    }
+    return api.post('/subscriptions/subscribe', {
+        plan_name: planOrOptions,
+        payment_method,
+        duration_months,
+        billing_details,
+        payment_details,
+    });
+};
 
-/** POST /api/subscriptions/cancel — cancel active subscription */
-export const cancelSubscription = () => api.post('/subscriptions/cancel');
+/** POST /api/subscriptions/cancel — cancel active subscription with bank verification details */
+export const cancelSubscription = (details = {}) => api.post('/subscriptions/cancel', details);
+
+/** GET /api/subscriptions/invoices — get user invoices & billing history */
+export const getInvoices = () => api.get('/subscriptions/invoices');
 
 // ─── Credit API ───────────────────────────────────────────────────────────────
 export const getCreditBalance = () => api.get('/credits/balance');
 export const getCreditTransactions = () => api.get('/credits/transactions');
 export const earnSimulatedCredits = () => api.post('/credits/earn-simulated');
+export const spendSimulatedCredits = (amount = 500, description = 'Spotlight-Boost für Inserat (Test)') =>
+    api.post('/credits/spend-simulated', { amount, description });
 
 // ─── Referral API ─────────────────────────────────────────────────────────────
 export const getReferralStats = () => api.get('/referrals/stats');

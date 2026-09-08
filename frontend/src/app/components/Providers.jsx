@@ -24,8 +24,8 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, router }) => {
             .replace(/ß/g, 'ss')
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
-        // Embed user UUID at the end so the details page can look up the real profile
-        router.push(`/provider_details/${nameSlug}-${partner.id}`);
+        // Embed user UUID or name slug at the end so the details page can look up the profile
+        router.push(`/anbieter/${nameSlug}-${partner.id}`);
     };
 
     return (
@@ -196,7 +196,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                         >
                             Auch Anbieter werden
                         </button>
-                        <button onClick={() => router.push('/provider_details/vtmcamping')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest">
+                        <button onClick={() => router.push('/anbieter')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
                             <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
                             <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -245,7 +245,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                         >
                             Auch Anbieter werden
                         </button>
-                        <button onClick={() => router.push('/provider_details/vtmcamping')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest">
+                        <button onClick={() => router.push('/anbieter')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
                             <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
                             <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </button>

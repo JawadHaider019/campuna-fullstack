@@ -10,12 +10,27 @@ export const useAuthStore = create(
             refreshToken: null,
 
             /** Called after successful login */
-            login: (userData, accessToken, refreshToken) =>
-                set({ isLoggedIn: true, user: userData, accessToken, refreshToken }),
+            login: (userData, accessToken, refreshToken) => {
+                set({ isLoggedIn: true, user: userData, accessToken, refreshToken });
+                // Automatically sync offline favorites with the user's account in PostgreSQL
+                try {
+                    import('./useFavoritesStore').then(mod => {
+                        mod.useFavoritesStore.getState().syncWithServer();
+                    });
+                } catch (e) {
+                    console.error('Favorites sync on login error:', e);
+                }
+            },
 
             /** Called on logout */
-            logout: () =>
-                set({ isLoggedIn: false, user: null, accessToken: null, refreshToken: null }),
+            logout: () => {
+                set({ isLoggedIn: false, user: null, accessToken: null, refreshToken: null });
+                try {
+                    import('./useFavoritesStore').then(mod => {
+                        mod.useFavoritesStore.getState().clearFavorites();
+                    });
+                } catch (e) {}
+            },
         }),
         {
             name: 'campuna-auth', // persisted in localStorage

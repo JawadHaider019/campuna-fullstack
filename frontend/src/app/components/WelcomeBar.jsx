@@ -7,13 +7,15 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function WelcomeBar({ isLoggedIn: propIsLoggedIn }) {
+    const [mounted, setMounted] = useState(false);
     const storeIsLoggedIn = useAuthStore((state) => state.isLoggedIn);
-    const isLoggedIn = propIsLoggedIn ?? storeIsLoggedIn;
+    const isLoggedIn = mounted ? (propIsLoggedIn ?? storeIsLoggedIn) : false;
     const [scrolled, setScrolled] = useState(false);
     const [hideOnFooter, setHideOnFooter] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
+        setMounted(true);
         const toggleVisibility = () => {
             if (window.scrollY > 400) {
                 setScrolled(true);

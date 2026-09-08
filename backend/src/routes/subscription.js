@@ -6,6 +6,7 @@ import {
     getMyFeatures,
     subscribe,
     cancelSubscription,
+    getInvoices,
 } from '../controllers/subscription.js';
 
 const router = Router();
@@ -22,6 +23,9 @@ router.get('/my', authenticate, getMySubscription);
 
 // GET /api/subscriptions/features — get feature flags for current user
 router.get('/features', authenticate, getMyFeatures);
+
+// GET /api/subscriptions/invoices — get user invoices & billing history
+router.get('/invoices', authenticate, getInvoices);
 
 // POST /api/subscriptions/subscribe — subscribe to a plan
 router.post('/subscribe', authenticate, subscribe);

@@ -21,7 +21,7 @@ import {
     Package
 } from 'lucide-react';
 import { getPublicProfile } from '@/api/profile';
-import { getListingsByUser } from '@/api/listings';
+import { PROVIDERS } from '@/data';
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
 
@@ -85,12 +85,18 @@ function ListingCard({ item }) {
 
     const handleClick = () => {
         const slug = buildListingSlug(item.title, item.id);
-        router.push(`/listing_details/${slug}`);
+        router.push(`/inserate/${slug}`);
     };
 
     const images = Array.isArray(item.images) && item.images.length > 0
         ? item.images
         : [DEFAULT_COVER];
+
+    const isBoosted = Boolean(
+        item.is_boosted || 
+        (item.boosted_until && new Date(item.boosted_until) > new Date())
+    );
+    const isFeatured = Boolean(item.featured);
 
     return (
         <motion.div
@@ -101,21 +107,39 @@ function ListingCard({ item }) {
             className="group relative flex flex-col bg-white rounded-2xl md:rounded-3xl overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
         >
             {/* 4-Image Grid Preview */}
-            <div className="grid grid-cols-4 gap-0.5 aspect-[16/9] w-full bg-sand/15 overflow-hidden border-b border-forest/5">
-                {images.slice(0, 4).map((img, idx) => (
-                    <div key={idx} className="relative w-full h-full overflow-hidden">
-                        <img
-                            src={img}
-                            alt={`${item.title} preview ${idx + 1}`}
-                            className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-105"
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                        />
-                    </div>
-                ))}
-                {images.length < 4 && Array.from({ length: 4 - images.length }).map((_, i) => (
-                    <div key={i} className="bg-sand/30 w-full h-full" />
-                ))}
+            <div className="relative aspect-[16/9] w-full bg-sand/15 overflow-hidden border-b border-forest/5">
+                <div className="grid grid-cols-4 gap-0.5 w-full h-full">
+                    {images.slice(0, 4).map((img, idx) => (
+                        <div key={idx} className="relative w-full h-full overflow-hidden">
+                            <img
+                                src={img}
+                                alt={`${item.title} preview ${idx + 1}`}
+                                className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-105"
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                            />
+                        </div>
+                    ))}
+                    {images.length < 4 && Array.from({ length: 4 - images.length }).map((_, i) => (
+                        <div key={i} className="bg-sand/30 w-full h-full" />
+                    ))}
+                </div>
+
+                {/* Badges on top left */}
+                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
+                    {isBoosted && (
+                        <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[7px] sm:text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
+                            <span>🚀</span>
+                            <span>BOOSTED</span>
+                        </span>
+                    )}
+                    {isFeatured && (
+                        <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[7px] sm:text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg border border-emerald-400/40 flex items-center gap-1 backdrop-blur-md">
+                            <span>⭐</span>
+                            <span>EMPFOHLEN</span>
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Content */}
@@ -188,79 +212,122 @@ export default function ProviderDetails() {
     const [logoSrc,   setLogoSrc]   = useState(DEFAULT_LOGO);
 
     useEffect(() => {
-        if (!userId) {
-            setNotFound(true);
-            setLoading(false);
-            return;
-        }
-
         let cancelled = false;
+
+        const fallbackToMock = () => {
+            const cleanSlug = rawSlug.toLowerCase();
+            const matchedMock = PROVIDERS.find(p => {
+                const sName = slugifyName(p.name);
+                return (
+                    cleanSlug.includes(sName) ||
+                    sName.includes(cleanSlug) ||
+                    p.id === rawSlug ||
+                    (p.slug && p.slug.includes(cleanSlug))
+                );
+            }) || PROVIDERS[0];
+
+            if (matchedMock) {
+                setProvider({
+                    id:           matchedMock.id,
+                    name:         matchedMock.name,
+                    type:         'Gewerblich',
+                    logo:         matchedMock.logo || DEFAULT_LOGO,
+                    cover:        matchedMock.coverImage || DEFAULT_COVER,
+                    bio:          matchedMock.description || '',
+                    location:     matchedMock.location || 'Deutschland',
+                    email:        'kontakt@' + slugifyName(matchedMock.name) + '.de',
+                    phone:        '+49 (0) 30 1234567',
+                    website:      'https://' + slugifyName(matchedMock.name) + '.de',
+                    instagram:    'https://instagram.com/' + slugifyName(matchedMock.name),
+                    facebook:     'https://facebook.com/' + slugifyName(matchedMock.name),
+                    address:      matchedMock.location ? `${matchedMock.location}, Deutschland` : 'Deutschland',
+                    impressum:    'https://' + slugifyName(matchedMock.name) + '.de/impressum',
+                    memberSince:  '01.01.2024',
+                    isStrategic:  true,
+                    tier:         'BUSINESS',
+                    achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
+                });
+
+                setCoverSrc(matchedMock.coverImage || DEFAULT_COVER);
+                setLogoSrc(matchedMock.logo || DEFAULT_LOGO);
+                setListings([]);
+                setLoading(false);
+                return true;
+            }
+            return false;
+        };
 
         const fetchData = async () => {
             setLoading(true);
-            try {
-                // Fetch profile and listings in parallel
-                const [profileRes, listingsRes] = await Promise.all([
-                    getPublicProfile(userId),
-                    getListingsByUser(userId),
-                ]);
 
-                if (cancelled) return;
+            if (userId) {
+                try {
+                    // Fetch profile and listings in parallel
+                    const [profileRes, listingsRes] = await Promise.all([
+                        getPublicProfile(userId),
+                        getListingsByUser(userId),
+                    ]);
 
-                if (!profileRes.success || !profileRes.data?.profile) {
-                    setNotFound(true);
-                    setLoading(false);
-                    return;
+                    if (cancelled) return;
+
+                    if (profileRes.success && profileRes.data?.profile) {
+                        const p    = profileRes.data.profile;
+                        const type = profileRes.data.profile_type;
+
+                        const name = type === 'COMMERCIAL'
+                            ? (p.company_name || 'Gewerblicher Anbieter')
+                            : (`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Privatverkäufer');
+
+                        const logo  = p.logo_url || p.profile_image_url || DEFAULT_LOGO;
+                        const cover = p.cover_image_url || DEFAULT_COVER;
+
+                        setProvider({
+                            id:           userId,
+                            name,
+                            type:         type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
+                            logo,
+                            cover,
+                            bio:          p.bio || '',
+                            location:     p.location || '',
+                            email:        p.company_email || '',
+                            phone:        p.phone || '',
+                            website:      p.website_url || '',
+                            instagram:    p.instagram_url || '',
+                            facebook:     p.facebook_url || '',
+                            address:      p.company_address || p.location || '',
+                            impressum:    p.privacy_policy_url || '',
+                            memberSince:  formatMemberSince(p.member_since),
+                            isStrategic:  p.is_strategic_partner || false,
+                            tier:         p.tier || 'FREE',
+                            achievements: profileRes.data.achievements || [],
+                        });
+
+                        setCoverSrc(cover);
+                        setLogoSrc(logo);
+
+                        if (listingsRes.success && Array.isArray(listingsRes.data?.listings)) {
+                            setListings(listingsRes.data.listings);
+                        }
+
+                        setLoading(false);
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Error fetching provider details:', err);
                 }
+            }
 
-                const p    = profileRes.data.profile;
-                const type = profileRes.data.profile_type;
-
-                const name = type === 'COMMERCIAL'
-                    ? (p.company_name || 'Gewerblicher Anbieter')
-                    : (`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Privatverkäufer');
-
-                const logo  = p.logo_url || p.profile_image_url || DEFAULT_LOGO;
-                const cover = p.cover_image_url || DEFAULT_COVER;
-
-                setProvider({
-                    id:           userId,
-                    name,
-                    type:         type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
-                    logo,
-                    cover,
-                    bio:          p.bio || '',
-                    location:     p.location || '',
-                    email:        p.company_email || '',
-                    phone:        p.phone || '',
-                    website:      p.website_url || '',
-                    instagram:    p.instagram_url || '',
-                    facebook:     p.facebook_url || '',
-                    address:      p.company_address || p.location || '',
-                    impressum:    p.privacy_policy_url || '',
-                    memberSince:  formatMemberSince(p.member_since),
-                    isStrategic:  p.is_strategic_partner || false,
-                    tier:         p.tier || 'FREE',
-                    achievements: profileRes.data.achievements || [],
-                });
-
-                setCoverSrc(cover);
-                setLogoSrc(logo);
-
-                if (listingsRes.success && Array.isArray(listingsRes.data?.listings)) {
-                    setListings(listingsRes.data.listings);
-                }
-            } catch (err) {
-                console.error('Error fetching provider details:', err);
-                if (!cancelled) setNotFound(true);
-            } finally {
-                if (!cancelled) setLoading(false);
+            // Fallback to mock provider
+            const foundMock = fallbackToMock();
+            if (!foundMock && !cancelled) {
+                setNotFound(true);
+                setLoading(false);
             }
         };
 
         fetchData();
         return () => { cancelled = true; };
-    }, [userId]);
+    }, [userId, rawSlug]);
 
     // ── Loading ──────────────────────────────────────────────────────────────
 
@@ -322,40 +389,132 @@ export default function ProviderDetails() {
                 {/* ── Profile Card ── */}
                 <section className="bg-white rounded-3xl overflow-hidden border border-forest/10 shadow-lg mb-10">
 
-                    {/* Cover */}
-                    <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-sand/20">
-                        <img
-                            src={coverSrc}
-                            alt={`${provider.name} Banner`}
-                            className="w-full h-full object-cover"
-                            onError={() => setCoverSrc(DEFAULT_COVER)}
-                            referrerPolicy="no-referrer"
-                        />
-                        {/* Subtle bottom gradient for readability */}
-                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                    </div>
-
-                    {/* Logo overlap */}
-                    <div className="relative px-6 md:px-12">
-                        <div className="-mt-14 md:-mt-24 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 z-10 select-none">
+                    {/* Cover - Only for Commercial Users */}
+                    {provider.type !== 'Privat' && (
+                        <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-sand/20">
                             <img
-                                src={logoSrc}
-                                alt={`${provider.name} Logo`}
+                                src={coverSrc}
+                                alt={`${provider.name} Banner`}
                                 className="w-full h-full object-cover"
-                                onError={() => setLogoSrc(DEFAULT_LOGO)}
+                                onError={() => setCoverSrc(DEFAULT_COVER)}
                                 referrerPolicy="no-referrer"
                             />
+                            {/* Subtle bottom gradient for readability */}
+                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                         </div>
-                    </div>
+                    )}
 
-                    {/* Info + Actions */}
-                    <div className="px-6 md:px-12 pb-10 pt-4 flex flex-col lg:flex-row justify-between gap-8 items-start">
+                    {/* Private Profile Layout: Logo, Name & Bio in a single row */}
+                    {provider.type === 'Privat' ? (
+                        <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
+                            <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
+                                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
+                                    <img
+                                        src={logoSrc}
+                                        alt={`${provider.name} Logo`}
+                                        className="w-full h-full object-cover"
+                                        onError={() => setLogoSrc(DEFAULT_LOGO)}
+                                        referrerPolicy="no-referrer"
+                                    />
+                                </div>
+                                <div className="space-y-3 flex-1 min-w-0">
+                                    {/* Name */}
+                                    <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
+                                        {provider.name}
+                                    </h1>
 
-                        {/* Left — Info */}
-                        <div className="flex-1 space-y-5 max-w-3xl">
+                                    {/* Location & Member since */}
+                                    <div className="flex flex-wrap items-center gap-4 text-xs text-charcoal/55 font-medium">
+                                        {provider.location && (
+                                            <span className="flex items-center gap-1">
+                                                <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                {provider.location}
+                                            </span>
+                                        )}
+                                        <div className="flex items-center gap-1.5 text-charcoal/85 font-semibold">
+                                            <Calendar className="w-4 h-4 text-gold shrink-0" />
+                                            Mitglied seit {provider.memberSince}
+                                        </div>
+                                    </div>
+
+                                    {/* Contact row */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70 pt-0.5">
+                                        {provider.email && (
+                                            <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                                <Mail className="w-4 h-4 text-gold shrink-0" />
+                                                {provider.email}
+                                            </a>
+                                        )}
+                                        {provider.phone && (
+                                            <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                                <Phone className="w-4 h-4 text-gold shrink-0" />
+                                                {provider.phone}
+                                            </a>
+                                        )}
+                                    </div>
+
+                                    {/* Bio */}
+                                    {provider.bio && (
+                                        <div className="pt-2">
+                                            <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line">
+                                                {provider.bio}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Right Column: Top Right Badges & Bottom Right CTA */}
+                            <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col justify-between items-start lg:items-end gap-6 shrink-0 self-stretch">
+                                {/* Right Top: Badges */}
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sand text-forest border border-beige shadow-sm">
+                                        Privatverkäufer
+                                    </span>
+                                    {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
+                                        <div 
+                                            className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2.5 py-1 text-xs font-bold font-sans shadow-sm cursor-help"
+                                            title="Campuna Pioneer"
+                                        >
+                                            <img 
+                                                src="/pioneer_badge.png" 
+                                                alt="Campuna Pioneer Badge" 
+                                                className="w-4 h-4 rounded-full object-cover border border-gold/30"
+                                            />
+                                            <span>Pioneer</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Right Bottom: CTA */}
+                                <div className="w-full mt-auto pt-2">
+                                    <ProviderStats partner={provider} listingsCount={listings.length} />
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Logo overlap */}
+                            <div className="relative px-6 md:px-12">
+                                <div className="-mt-14 md:-mt-24 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 z-10 select-none">
+                                    <img
+                                        src={logoSrc}
+                                        alt={`${provider.name} Logo`}
+                                        className="w-full h-full object-cover"
+                                        onError={() => setLogoSrc(DEFAULT_LOGO)}
+                                        referrerPolicy="no-referrer"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Info + Actions */}
+                            <div className="px-6 md:px-12 pb-10 pt-4 flex flex-col lg:flex-row justify-between gap-8 items-start">
+
+                                {/* Left — Info */}
+                                <div className="flex-1 space-y-5 max-w-3xl">
 
                             {/* Name + Verified badge */}
-                            <div className="space-y-1.5">
+                            <div className="space-y-2">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
                                         {provider.name}
@@ -366,14 +525,14 @@ export default function ProviderDetails() {
                                     {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
                                         <div 
                                             className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2 py-0.5 text-[10px] font-bold font-sans shadow-sm cursor-help"
-                                            title={`Campuna Pioneer #${provider.achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER').position}`}
+                                            title="Campuna Pioneer"
                                         >
                                             <img 
-                                                src="/pioneer_badge.jpg" 
+                                                src="/pioneer_badge.png" 
                                                 alt="Campuna Pioneer Badge" 
                                                 className="w-4 h-4 rounded-full object-cover border border-gold/30"
                                             />
-                                            <span>Pioneer #{provider.achievements.find(a => a.badge_key === 'CAMPUNA_PIONEER').position}</span>
+                                            <span>Pioneer</span>
                                         </div>
                                     )}
                                     {provider.tier === 'BUSINESS' && (
@@ -388,8 +547,15 @@ export default function ProviderDetails() {
                                     )}
                                 </div>
 
-                                {/* Type + Location */}
-                                <div className="flex items-center gap-4 text-xs text-charcoal/55 font-medium flex-wrap">
+                                {/* Bio (Directly below name, top of address & email, no separate box) */}
+                                {provider.bio && (
+                                    <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line pt-0.5 max-w-2xl">
+                                        {provider.bio}
+                                    </p>
+                                )}
+
+                                {/* Type + Location / Address */}
+                                <div className="flex items-center gap-4 text-xs text-charcoal/55 font-medium flex-wrap pt-1">
                                     <span className="flex items-center gap-1">
                                         <Building2 className="w-3.5 h-3.5 text-gold shrink-0" />
                                         {provider.type}
@@ -422,15 +588,6 @@ export default function ProviderDetails() {
                                     Mitglied seit {provider.memberSince}
                                 </div>
                             </div>
-
-                            {/* Bio */}
-                            {provider.bio && (
-                                <div className="pt-4 border-t border-forest/5">
-                                    <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line">
-                                        {provider.bio}
-                                    </p>
-                                </div>
-                            )}
 
                             {/* Social / Website links */}
                             {hasSocials && (

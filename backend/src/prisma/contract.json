@@ -430,6 +430,13 @@
           },
           "Listing": {
             "fields": {
+              "boosted_until": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
               "category": {
                 "nullable": true,
                 "type": {
@@ -620,6 +627,9 @@
             },
             "storage": {
               "fields": {
+                "boosted_until": {
+                  "column": "boosted_until"
+                },
                 "category": {
                   "column": "category"
                 },
@@ -1769,6 +1779,11 @@
                 }
               ],
               "columns": {
+                "boosted_until": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
                 "category": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -2614,7 +2629,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "1609f66c3e0a807b409ec38f2329a4e9fd36bb6f92705ca633c8ae211ce1ef6b"
+    "storageHash": "4f59754dd90663a949e0ea61dcc20d1016d45cab443b9787f43551adfdd2fc59"
   },
   "execution": {
     "executionHash": "967b95ddeb17386c27a8fa3556b54ac3580a43b05f6a2ba6e9f77413cd673ddf",

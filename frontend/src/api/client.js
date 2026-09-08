@@ -3,7 +3,21 @@ import useAuthStore from '@/store/useAuthStore';
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 async function request(endpoint, options = {}) {
-    const url = `${BASE_URL}${endpoint}`;
+    let url = `${BASE_URL}${endpoint}`;
+
+    // Serialize query params if provided
+    if (options.params && typeof options.params === 'object') {
+        const queryParams = new URLSearchParams();
+        Object.entries(options.params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== '') {
+                queryParams.append(key, String(value));
+            }
+        });
+        const queryString = queryParams.toString();
+        if (queryString) {
+            url += `${url.includes('?') ? '&' : '?'}${queryString}`;
+        }
+    }
 
     // Attach Bearer token if available
     const { accessToken, refreshToken, login, logout, user } = useAuthStore.getState();
@@ -77,6 +91,7 @@ export const api = {
     get:    (endpoint, options) => request(endpoint, { ...options, method: 'GET' }),
     post:   (endpoint, body, options) => request(endpoint, { ...options, method: 'POST', body }),
     put:    (endpoint, body, options) => request(endpoint, { ...options, method: 'PUT', body }),
+    patch:  (endpoint, body, options) => request(endpoint, { ...options, method: 'PATCH', body }),
     delete: (endpoint, options) => request(endpoint, { ...options, method: 'DELETE' }),
 };
 

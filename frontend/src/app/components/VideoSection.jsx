@@ -89,11 +89,14 @@ export default function VideoSection() {
             {/* Cinematic Modal Player */}
             <AnimatePresence>
                 {isPlaying && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-12">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                    <motion.div
+                        key="video-modal"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-12"
+                    >
+                        <div
                             onClick={() => setIsPlaying(false)}
                             className="absolute inset-0 bg-black/98 backdrop-blur-2xl"
                         />
@@ -120,7 +123,7 @@ export default function VideoSection() {
                                 allowFullScreen
                             />
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 

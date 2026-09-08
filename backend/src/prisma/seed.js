@@ -12,9 +12,9 @@ async function seed() {
         has_spotlight: false,
         has_statistics: false,
         has_csv_import: false,
-        description_limit: 150,
+        description_limit: 500,
         is_active: true,
-        description: 'Kostenloser Basiszugang – bis zu 3 aktive Anzeigen, normale Sichtbarkeit.',
+        description: 'Kostenloser Basiszugang – bis zu 3 aktive Anzeigen, 500 Zeichen Unternehmensbeschreibung.',
       },
       {
         name: 'BUSINESS',

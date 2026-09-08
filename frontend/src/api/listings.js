@@ -28,3 +28,14 @@ export const getListingDetail = async (id) => {
 export const getListingsByUser = async (userId) => {
     return api.get(`/listings/user/${userId}`);
 };
+
+/**
+ * POST /api/listings/:id/boost
+ * Boosts a listing using Campuna Credits.
+ * @param {string} id - Listing ID
+ * @param {number} durationDays - 7, 14, or 30 days
+ */
+export const boostListing = async (id, durationDays = 7) => {
+    return api.post(`/listings/${id}/boost`, { durationDays });
+};
+

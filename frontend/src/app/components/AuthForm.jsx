@@ -4,7 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, ChevronRight, ChevronDown, ShieldCheck, Mail } from 'lucide-react';
-import { registerUser, checkVerificationStatus, loginUser } from '@/api/auth';
+import { 
+    registerUser, 
+    checkVerificationStatus, 
+    loginUser,
+    requestPasswordReset,
+    verifyResetOtp,
+    resetPassword
+} from '@/api/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
 
@@ -78,6 +85,7 @@ export default function AuthForm({ initialMode = 'login' }) {
     const [forgotStep, setForgotStep] = useState('email'); // 'email' | 'otp' | 'reset_password' | 'success'
     const [otpCode, setOtpCode] = useState(['', '', '', '', '', '']);
     const [otpError, setOtpError] = useState('');
+    const [resetToken, setResetToken] = useState('');
 
     // Reset password state
     const [newPassword, setNewPassword] = useState('');
@@ -106,6 +114,29 @@ export default function AuthForm({ initialMode = 'login' }) {
         return () => clearInterval(intervalId);
     }, [mode, signupEmail, login, router]);
 
+    const triggerOtpVerification = async (otpToVerify) => {
+        if (!otpToVerify || otpToVerify.length !== 6) return;
+        setLoading(true);
+        setOtpError('');
+        try {
+            const res = await verifyResetOtp(forgotEmail, otpToVerify);
+            setLoading(false);
+            if (res.success && res.data?.reset_token) {
+                setResetToken(res.data.reset_token);
+                setForgotStep('reset_password');
+                toast.success('Code erfolgreich bestätigt!');
+            } else {
+                const err = res.error || 'Ungültiger oder abgelaufener Code.';
+                setOtpError(err);
+                toast.error(err);
+            }
+        } catch (err) {
+            setLoading(false);
+            setOtpError('Fehler beim Überprüfen des Codes.');
+            toast.error('Fehler beim Überprüfen des Codes.');
+        }
+    };
+
     const handleOtpChange = (index, value) => {
         if (!/^\d*$/.test(value)) return;
         const newOtp = [...otpCode];
@@ -116,6 +147,25 @@ export default function AuthForm({ initialMode = 'login' }) {
         if (value && index < 5) {
             const nextInput = document.getElementById(`otp-input-${index + 1}`);
             if (nextInput) nextInput.focus();
+        }
+
+        // Auto-verify if all 6 digits are filled
+        const fullOtp = newOtp.join('');
+        if (fullOtp.length === 6 && !newOtp.includes('')) {
+            triggerOtpVerification(fullOtp);
+        }
+    };
+
+    const handleOtpPaste = (e) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData('text').trim();
+        if (/^\d{6}$/.test(pastedData)) {
+            const digits = pastedData.split('');
+            setOtpCode(digits);
+            setOtpError('');
+            const lastInput = document.getElementById('otp-input-5');
+            if (lastInput) lastInput.focus();
+            triggerOtpVerification(pastedData);
         }
     };
 
@@ -133,14 +183,23 @@ export default function AuthForm({ initialMode = 'login' }) {
         if (mode === 'forgot') {
             if (forgotStep === 'email') {
                 if (!forgotEmail.trim()) {
+                    toast.error('Bitte gib deine E-Mail-Adresse ein.');
                     setLoading(false);
                     return;
                 }
-                setTimeout(() => {
+                try {
+                    const res = await requestPasswordReset(forgotEmail);
                     setLoading(false);
-                    setForgotStep('otp');
-                    toast.success('OTP-Code an deine E-Mail gesendet!');
-                }, 800);
+                    if (res.success) {
+                        setForgotStep('otp');
+                        toast.success('6-stelliger Bestätigungscode wurde per E-Mail gesendet!');
+                    } else {
+                        toast.error(res.error || 'Fehler beim Senden des Codes.');
+                    }
+                } catch (err) {
+                    setLoading(false);
+                    toast.error('Fehler beim Anfordern des Codes.');
+                }
             } else if (forgotStep === 'otp') {
                 const fullOtp = otpCode.join('');
                 if (fullOtp.length < 6) {
@@ -148,12 +207,7 @@ export default function AuthForm({ initialMode = 'login' }) {
                     setOtpError('Bitte gib den vollständigen 6-stelligen Code ein.');
                     return;
                 }
-                // Simulate OTP verification check
-                setTimeout(() => {
-                    setLoading(false);
-                    setForgotStep('reset_password');
-                    toast.success('Code erfolgreich verifiziert!');
-                }, 800);
+                await triggerOtpVerification(fullOtp);
             } else if (forgotStep === 'reset_password') {
                 if (newPassword.length < 8) {
                     setLoading(false);
@@ -165,20 +219,43 @@ export default function AuthForm({ initialMode = 'login' }) {
                     setResetError('Die Passwörter stimmen nicht überein.');
                     return;
                 }
-                setTimeout(() => {
+                try {
+                    const res = await resetPassword(forgotEmail, resetToken, newPassword);
                     setLoading(false);
-                    setLoginEmail(forgotEmail);
-                    setMode('login');
-                    setForgotStep('email');
-                    setOtpCode(['', '', '', '', '', '']);
-                    setNewPassword('');
-                    setConfirmNewPassword('');
-                    setResetError('');
-                    toast.success('Passwort erfolgreich zurückgesetzt!');
-                }, 800);
+                    if (res.success) {
+                        toast.success('Passwort erfolgreich zurückgesetzt! Bitte logge dich ein.');
+                        setLoginEmail(forgotEmail);
+                        setMode('login');
+                        setForgotStep('email');
+                        setOtpCode(['', '', '', '', '', '']);
+                        setNewPassword('');
+                        setConfirmNewPassword('');
+                        setResetToken('');
+                        setResetError('');
+                    } else {
+                        setResetError(res.error || 'Fehler beim Zurücksetzen des Passworts.');
+                        toast.error(res.error || 'Fehler beim Zurücksetzen des Passworts.');
+                    }
+                } catch (err) {
+                    setLoading(false);
+                    setResetError('Ein unerwarteter Fehler ist aufgetreten.');
+                }
             }
         } else if (mode === 'signup') {
+            if (!userType) {
+                setAuthError('Bitte wähle einen Benutzertyp aus (Privat oder Gewerblich).');
+                toast.error('Bitte wähle deinen Benutzertyp aus.');
+                setLoading(false);
+                return;
+            }
+
             if (userType === 'business') {
+                if (!companyName.trim()) {
+                    setAuthError('Bitte gib deinen Firmennamen an.');
+                    toast.error('Firmenname ist für gewerbliche Nutzer erforderlich.');
+                    setLoading(false);
+                    return;
+                }
                 if (websiteUrl) {
                     const trimmedWebsite = websiteUrl.trim();
                     if (!trimmedWebsite.startsWith('https://')) {
@@ -220,9 +297,15 @@ export default function AuthForm({ initialMode = 'login' }) {
             });
             setLoading(false);
             if (response.success) {
-                login(response.data.user, response.data.access_token, response.data.refresh_token);
-                toast.success('Erfolgreich angemeldet!');
-                router.push('/mein-konto');
+                const user = response.data.user;
+                login(user, response.data.access_token, response.data.refresh_token);
+                if (user?.role === 'ADMIN') {
+                    toast.success('Willkommen im Administrationsbereich!');
+                    router.push('/admin');
+                } else {
+                    toast.success('Erfolgreich angemeldet!');
+                    router.push('/mein-konto');
+                }
             } else {
                 const errMsg = response.error || 'Login fehlgeschlagen.';
                 setAuthError(errMsg);
@@ -346,12 +429,14 @@ export default function AuthForm({ initialMode = 'login' }) {
                                         onChange={e => setSignupEmail(e.target.value)} autoComplete="email" />
                                 </div>
 
-                                {/* Benutzertyp */}
+                                {/* Benutzertyp (Erforderlich) */}
                                 <div className="flex flex-col gap-1">
-                                    <label htmlFor="reg-usertype" className={labelCls}>Benutzertyp</label>
+                                    <label htmlFor="reg-usertype" className={labelCls}>
+                                        Benutzertyp <span className="text-gold font-bold">*</span>
+                                    </label>
                                     <SelectField id="reg-usertype" value={userType}
                                         onChange={e => setUserType(e.target.value)}
-                                        options={USER_TYPES} placeholder="Wählen Sie eine Option..." />
+                                        options={USER_TYPES} placeholder="Bitte Nutzertyp wählen" />
                                 </div>
 
                                 {/* Business fields ── shown only when Gewerblicher Nutzer */}
@@ -564,6 +649,7 @@ export default function AuthForm({ initialMode = 'login' }) {
                                                         value={digit}
                                                         onChange={(e) => handleOtpChange(idx, e.target.value)}
                                                         onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                                                        onPaste={handleOtpPaste}
                                                         className="w-11 h-12 text-center text-lg font-mono font-bold bg-white/20 border border-white/50 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-gold/70 transition-all text-white placeholder-white/20"
                                                         placeholder="•"
                                                     />
@@ -599,10 +685,19 @@ export default function AuthForm({ initialMode = 'login' }) {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => {
+                                                onClick={async () => {
                                                     setOtpCode(['', '', '', '', '', '']);
                                                     setOtpError('');
-                                                    toast.success(`Neuer Code an ${forgotEmail} gesendet!`);
+                                                    try {
+                                                        const res = await requestPasswordReset(forgotEmail);
+                                                        if (res.success) {
+                                                            toast.success(`Neuer Code an ${forgotEmail} gesendet!`);
+                                                        } else {
+                                                            toast.error(res.error || 'Fehler beim Senden des Codes.');
+                                                        }
+                                                    } catch {
+                                                        toast.error('Fehler beim erneuten Senden des Codes.');
+                                                    }
                                                 }}
                                                 className="text-gold/80 hover:text-gold font-semibold transition-colors cursor-pointer"
                                             >

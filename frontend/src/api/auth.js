@@ -28,9 +28,29 @@ export const logoutUser = async () => {
     return api.post('/logout');
 };
 
+export const verifyEmailToken = async (token) => {
+    return api.post('/verify-email', { token });
+};
+
+export const requestPasswordReset = async (email) => {
+    return api.post('/forgot-password', { email });
+};
+
+export const verifyResetOtp = async (email, otp) => {
+    return api.post('/verify-reset-otp', { email, otp });
+};
+
+export const resetPassword = async (email, reset_token, new_password) => {
+    return api.post('/reset-password', { email, reset_token, new_password });
+};
+
 export default {
     register: registerUser,
     login: loginUser,
     logout: logoutUser,
     checkVerificationStatus,
+    verifyEmailToken,
+    requestPasswordReset,
+    verifyResetOtp,
+    resetPassword,
 };

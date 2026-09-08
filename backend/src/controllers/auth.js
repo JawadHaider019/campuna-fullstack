@@ -1,13 +1,67 @@
+import 'dotenv/config';
 import { db } from '../prisma/db.js';
+import pool from '../config/database.js';
 import crypto from 'crypto';
 import { checkAndAwardPioneerBadge } from './badge.js';
 import jwt from 'jsonwebtoken';
+import { sendVerificationEmail, sendPasswordResetOtpEmail } from '../services/email.services.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
     throw new Error('FATAL: JWT_SECRET is not defined in environment variables. Set it in your .env file.');
 }
-const VERIFICATION_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const VERIFICATION_EXPIRY_MS = 15 * 60 * 1000; // 15 minutes
+
+// ─── Initialize Dedicated Admins & Password Reset Tables in PostgreSQL ───────────────────────────
+const initAdminsTable = async () => {
+    try {
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS admins (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                name TEXT DEFAULT 'Campuna Admin',
+                role TEXT DEFAULT 'ADMIN',
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                email TEXT NOT NULL,
+                otp_code VARCHAR(6) NOT NULL,
+                reset_token TEXT,
+                is_used BOOLEAN DEFAULT FALSE,
+                expires_at TIMESTAMPTZ NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
+            CREATE INDEX IF NOT EXISTS idx_reset_email ON password_reset_tokens(email);
+        `);
+        console.log('✅ Dedicated admins & password_reset_tokens tables verified in PostgreSQL');
+
+        // Auto-purge any admin rows previously in the users table
+        const rawEnvEmail = process.env.ADMIN_EMAIL || '';
+        const envAdminEmail = rawEnvEmail.replace(/^["']|["']$/g, '').trim().toLowerCase();
+        if (envAdminEmail) {
+            await pool.query(`
+                DELETE FROM company_profiles WHERE company_name = 'Campuna Administration'
+                  OR user_id IN (SELECT id FROM users WHERE role = 'ADMIN' OR email = $1)
+            `, [envAdminEmail]).catch(() => {});
+
+            await pool.query(`
+                DELETE FROM private_profiles 
+                WHERE user_id IN (SELECT id FROM users WHERE role = 'ADMIN' OR email = $1)
+            `, [envAdminEmail]).catch(() => {});
+
+            await pool.query(`
+                DELETE FROM users WHERE role = 'ADMIN' OR email = $1
+            `, [envAdminEmail]).catch(() => {});
+        }
+    } catch (err) {
+        console.error('⚠️ Admins table initialization notice:', err.message);
+    }
+};
+initAdminsTable();
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -29,20 +83,21 @@ const generateReferralCode = () =>
     'CAMP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
 
 /**
- * Issue Access Token (15 min) + Refresh Token (30 days) after login
+ * Issue Access Token (30 days for admin, 7 days for users) + Refresh Token (30 days)
  */
 const generateTokens = (user) => {
     const payload = { id: user.id, email: user.email, role: user.role };
-    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+    const expiresIn = user.role === 'ADMIN' ? '30d' : (process.env.JWT_EXPIRES_IN || '7d');
+    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn });
     const refreshToken = jwt.sign({ id: user.id }, JWT_SECRET + '_refresh', { expiresIn: '30d' });
     return { accessToken, refreshToken };
 };
 
 /**
- * Issue short-lived email verification token (24h) — embedded in verification link
+ * Issue short-lived email verification token (15m) — embedded in verification link
  */
 const generateVerificationToken = (userId) =>
-    jwt.sign({ id: userId, purpose: 'email-verification' }, JWT_SECRET, { expiresIn: '24h' });
+    jwt.sign({ id: userId, purpose: 'email-verification' }, JWT_SECRET, { expiresIn: '15m' });
 
 /**
  * Delete an unverified user and all associated records (profiles, referrals)
@@ -70,6 +125,31 @@ const deleteUnverifiedUser = async (userId) => {
         );
     });
 };
+
+/**
+ * Periodic background job: Purge unverified user accounts older than 15 minutes
+ */
+const cleanupExpiredUnverifiedUsers = async () => {
+    try {
+        const expiredRes = await pool.query(`
+            SELECT id, email FROM users
+            WHERE email_verified = false
+              AND role != 'ADMIN'
+              AND created_at < NOW() - INTERVAL '15 minutes'
+        `);
+
+        for (const u of expiredRes.rows) {
+            console.log(`⏱️ Purging expired unverified user (>15 min): ${u.email} (${u.id})`);
+            await deleteUnverifiedUser(u.id);
+        }
+    } catch (err) {
+        console.error('⚠️ Cleanup unverified users error:', err.message);
+    }
+};
+
+// Run cleanup immediately and then periodically every 2 minutes
+setInterval(cleanupExpiredUnverifiedUsers, 2 * 60 * 1000);
+cleanupExpiredUnverifiedUsers();
 
 // ─── Controllers ────────────────────────────────────────────────────────────
 
@@ -162,8 +242,15 @@ export const register = async (req, res) => {
 
         const verificationToken = generateVerificationToken(result.id);
 
-        // TODO: send verification email
-        // e.g. https://campuna.de/de/email-bestaetigen?token=${verificationToken}
+        // Send verification email via Resend
+        if (process.env.RESEND_API_KEY) {
+            sendVerificationEmail(result.email, verificationToken)
+                .then(() => console.log(`📧 Verification email sent via Resend to ${result.email}`))
+                .catch((err) => console.warn(`⚠️ Warning: Failed to send verification email to ${result.email}:`, err.message));
+        } else {
+            console.log(`ℹ️ [Resend] RESEND_API_KEY not set in .env. Verification token: ${verificationToken}`);
+        }
+
         console.log(`✅ User registered: ${result.email} (ID: ${result.id})`);
 
         return res.status(201).json({
@@ -246,8 +333,60 @@ export const login = async (req, res) => {
             return res.status(400).json({ success: false, error: 'E-Mail und Passwort sind erforderlich.' });
         }
 
+        const inputEmail = normalizeEmail(email);
+        const inputPassword = String(password).trim();
+
+        // 1. Check if login matches .env ADMIN credentials (strip any quotes/spaces)
+        const rawEnvEmail = process.env.ADMIN_EMAIL || '';
+        const rawEnvPass = process.env.ADMIN_PASSWORD || '';
+        const envAdminEmail = rawEnvEmail.replace(/^["']|["']$/g, '').trim().toLowerCase();
+        const envAdminPassword = rawEnvPass.replace(/^["']|["']$/g, '').trim();
+
+        if (envAdminEmail && envAdminPassword && inputEmail === envAdminEmail && inputPassword === envAdminPassword) {
+            console.log(`👑 Admin login matched for ${inputEmail} via dedicated admins table`);
+
+            // Find or provision admin in dedicated 'admins' table
+            let adminResult = await pool.query('SELECT * FROM admins WHERE email = $1', [inputEmail]);
+            let adminRecord = adminResult.rows[0];
+
+            if (!adminRecord) {
+                const insertRes = await pool.query(
+                    `INSERT INTO admins (email, password_hash, name, role)
+                     VALUES ($1, $2, 'Campuna Admin', 'ADMIN')
+                     RETURNING *`,
+                    [inputEmail, hashPassword(inputPassword)]
+                );
+                adminRecord = insertRes.rows[0];
+            } else {
+                await pool.query(
+                    `UPDATE admins SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+                    [hashPassword(inputPassword), adminRecord.id]
+                );
+            }
+
+            const { accessToken, refreshToken } = generateTokens({
+                id: adminRecord.id,
+                email: adminRecord.email,
+                role: 'ADMIN'
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: 'Admin-Login erfolgreich.',
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                user: {
+                    id: adminRecord.id,
+                    email: adminRecord.email,
+                    role: 'ADMIN',
+                    name: adminRecord.name || 'Campuna Admin',
+                },
+            });
+        }
+
+        // 2. Standard user login check
         const user = await db.orm.public.User
-            .where((u) => u.email.eq(normalizeEmail(email)))
+            .where((u) => u.email.eq(inputEmail))
             .first();
 
         // Generic error — don't reveal whether email exists
@@ -265,13 +404,13 @@ export const login = async (req, res) => {
                 await deleteUnverifiedUser(user.id);
                 return res.status(410).json({
                     success: false,
-                    error: 'Deine Registrierung ist abgelaufen (24-Stunden-Frist überschritten). Bitte registriere dich erneut.',
+                    error: 'Deine Registrierung ist nach 15 Minuten abgelaufen. Dein Konto wurde gelöscht. Bitte erstelle dein Konto erneut.',
                 });
             }
             return res.status(403).json({
                 success: false,
                 email_verified: false,
-                error: 'Bitte bestätige deine E-Mail-Adresse, bevor du dich anmeldest.',
+                error: 'Bitte bestätige deine E-Mail-Adresse innerhalb von 15 Minuten, bevor du dich anmeldest.',
             });
         }
 
@@ -374,7 +513,18 @@ export const verifyEmail = async (req, res) => {
         try {
             decoded = jwt.verify(token, JWT_SECRET);
         } catch (err) {
-            return res.status(400).json({ success: false, error: 'Ungültiger oder abgelaufener Verifizierungstoken.' });
+            // Check if token expired
+            if (err.name === 'TokenExpiredError') {
+                const expiredDecoded = jwt.decode(token);
+                if (expiredDecoded?.id) {
+                    await deleteUnverifiedUser(expiredDecoded.id).catch(() => {});
+                }
+                return res.status(410).json({
+                    success: false,
+                    error: 'Der Verifizierungslink ist nach 15 Minuten abgelaufen. Dein Konto wurde gelöscht. Bitte registriere dich erneut.'
+                });
+            }
+            return res.status(400).json({ success: false, error: 'Ungültiger oder abgelaufener Verifizierungslink.' });
         }
 
         if (decoded.purpose !== 'email-verification') {
@@ -386,11 +536,21 @@ export const verifyEmail = async (req, res) => {
             .first();
 
         if (!user) {
-            return res.status(404).json({ success: false, error: 'Benutzer nicht gefunden.' });
+            return res.status(404).json({ success: false, error: 'Benutzerkonto nicht gefunden oder Frist abgelaufen.' });
         }
 
         if (user.email_verified) {
             return res.status(200).json({ success: true, message: 'E-Mail-Adresse ist bereits verifiziert.' });
+        }
+
+        // Check if user was created > 15 minutes ago
+        const isExpired = (Date.now() - new Date(user.created_at).getTime()) > VERIFICATION_EXPIRY_MS;
+        if (isExpired) {
+            await deleteUnverifiedUser(user.id);
+            return res.status(410).json({
+                success: false,
+                error: 'Die 15-Minuten-Frist ist abgelaufen. Dein unvollständiges Konto wurde gelöscht. Bitte registriere dich erneut.'
+            });
         }
 
         // Set email_verified to true
@@ -411,6 +571,205 @@ export const verifyEmail = async (req, res) => {
     } catch (error) {
         console.error('❌ Email verification error:', error.message);
         return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
+    }
+};
+
+/**
+ * POST /api/forgot-password
+ * Generates a 6-digit OTP code, stores it in password_reset_tokens with 15m expiration,
+ * and sends it via Resend email.
+ */
+export const requestPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email || !email.trim()) {
+            return res.status(400).json({ success: false, error: 'E-Mail-Adresse ist erforderlich.' });
+        }
+
+        const normalizedEmail = normalizeEmail(email);
+
+        // Check if user or admin exists
+        const user = await db.orm.public.User
+            .where((u) => u.email.eq(normalizedEmail))
+            .first();
+
+        const adminRes = await pool.query('SELECT id, email FROM admins WHERE LOWER(email) = $1', [normalizedEmail]);
+
+        if (!user && adminRes.rowCount === 0) {
+            // For security, don't leak user existence directly, but return clear feedback
+            return res.status(404).json({
+                success: false,
+                error: 'Kein Konto mit dieser E-Mail-Adresse gefunden.'
+            });
+        }
+
+        // Generate 6-digit OTP code
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Invalidate previous OTPs for this email
+        await pool.query(
+            'UPDATE password_reset_tokens SET is_used = TRUE WHERE LOWER(email) = $1 AND is_used = FALSE',
+            [normalizedEmail]
+        );
+
+        // Save new OTP with 15 minutes expiration
+        await pool.query(
+            `INSERT INTO password_reset_tokens (email, otp_code, expires_at, is_used)
+             VALUES ($1, $2, NOW() + INTERVAL '15 minutes', FALSE)`,
+            [normalizedEmail, otpCode]
+        );
+
+        console.log(`🔑 [Password Reset OTP] Email: ${normalizedEmail} | OTP Code: ${otpCode}`);
+
+        // Send OTP email via Resend
+        if (process.env.RESEND_API_KEY) {
+            sendPasswordResetOtpEmail(normalizedEmail, otpCode)
+                .then(() => console.log(`📧 Password reset OTP sent to ${normalizedEmail}`))
+                .catch((err) => console.warn(`⚠️ Warning: Failed to send OTP email to ${normalizedEmail}:`, err.message));
+        } else {
+            console.log(`ℹ️ [Resend] RESEND_API_KEY not set in .env. Password Reset OTP for ${normalizedEmail}: ${otpCode}`);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Ein 6-stelliger Bestätigungscode wurde an deine E-Mail gesendet.'
+        });
+
+    } catch (error) {
+        console.error('❌ requestPasswordReset error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Anfordern des Bestätigungscodes.' });
+    }
+};
+
+/**
+ * POST /api/verify-reset-otp
+ * Verifies the 6-digit OTP code and returns a temporary reset token.
+ */
+export const verifyResetOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        if (!email || !otp) {
+            return res.status(400).json({ success: false, error: 'E-Mail und Bestätigungscode sind erforderlich.' });
+        }
+
+        const normalizedEmail = normalizeEmail(email);
+        const cleanOtp = otp.toString().trim();
+
+        const tokenRes = await pool.query(
+            `SELECT id, email, otp_code, expires_at, is_used
+             FROM password_reset_tokens
+             WHERE LOWER(email) = $1 AND otp_code = $2 AND is_used = FALSE AND expires_at > NOW()
+             ORDER BY created_at DESC
+             LIMIT 1`,
+            [normalizedEmail, cleanOtp]
+        );
+
+        if (tokenRes.rowCount === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Ungültiger oder abgelaufener Bestätigungscode.'
+            });
+        }
+
+        const record = tokenRes.rows[0];
+
+        // Generate temporary reset token (30m validity)
+        const resetToken = jwt.sign(
+            { id: record.id, email: normalizedEmail, purpose: 'password-reset' },
+            JWT_SECRET,
+            { expiresIn: '30m' }
+        );
+
+        // Update token record with reset_token
+        await pool.query(
+            'UPDATE password_reset_tokens SET reset_token = $1 WHERE id = $2',
+            [resetToken, record.id]
+        );
+
+        return res.status(200).json({
+            success: true,
+            reset_token: resetToken,
+            message: 'Code erfolgreich bestätigt. Du kannst nun dein neues Passwort festlegen.'
+        });
+
+    } catch (error) {
+        console.error('❌ verifyResetOtp error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Überprüfen des Codes.' });
+    }
+};
+
+/**
+ * POST /api/reset-password
+ * Resets user's password using the verified reset_token.
+ */
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, reset_token, new_password } = req.body;
+
+        if (!email || !reset_token || !new_password) {
+            return res.status(400).json({ success: false, error: 'Alle Felder sind erforderlich.' });
+        }
+
+        if (new_password.length < 8) {
+            return res.status(400).json({ success: false, error: 'Das Passwort muss mindestens 8 Zeichen lang sein.' });
+        }
+
+        const normalizedEmail = normalizeEmail(email);
+
+        // Verify JWT reset token
+        let decoded;
+        try {
+            decoded = jwt.verify(reset_token, JWT_SECRET);
+        } catch {
+            return res.status(400).json({ success: false, error: 'Ungültiger oder abgelaufener Reset-Token.' });
+        }
+
+        if (decoded.purpose !== 'password-reset' || normalizeEmail(decoded.email) !== normalizedEmail) {
+            return res.status(400).json({ success: false, error: 'Ungültiger Reset-Token.' });
+        }
+
+        // Check if token in database is valid and not used
+        const tokenRes = await pool.query(
+            `SELECT id FROM password_reset_tokens
+             WHERE LOWER(email) = $1 AND reset_token = $2 AND is_used = FALSE
+             LIMIT 1`,
+            [normalizedEmail, reset_token]
+        );
+
+        if (tokenRes.rowCount === 0) {
+            return res.status(400).json({ success: false, error: 'Dieser Reset-Token wurde bereits verwendet oder ist ungültig.' });
+        }
+
+        const newHash = hashPassword(new_password);
+
+        // Update in users table
+        await pool.query(
+            'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE LOWER(email) = $2',
+            [newHash, normalizedEmail]
+        );
+
+        // Also update in admins table if admin
+        await pool.query(
+            'UPDATE admins SET password_hash = $1, updated_at = NOW() WHERE LOWER(email) = $2',
+            [newHash, normalizedEmail]
+        );
+
+        // Mark reset token as used
+        await pool.query(
+            'UPDATE password_reset_tokens SET is_used = TRUE WHERE id = $1',
+            [tokenRes.rows[0].id]
+        );
+
+        console.log(`✅ Password successfully reset for ${normalizedEmail}`);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Dein Passwort wurde erfolgreich geändert. Du kannst dich jetzt anmelden.'
+        });
+
+    } catch (error) {
+        console.error('❌ resetPassword error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Zurücksetzen des Passworts.' });
     }
 };
 

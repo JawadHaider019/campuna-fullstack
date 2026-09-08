@@ -127,6 +127,7 @@ model Listing {
   type_of_offer    String?
   status           String            @default("REVIEW")
   featured         Boolean           @default(false)
+  boosted_until    TimestamptzString?
   reviewed_by_type String?
   reviewed_by_id   Uuid?
   reviewed_at      TimestamptzString?

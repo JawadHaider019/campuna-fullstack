@@ -1,6 +1,9 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { CATEGORIES } from '@/data';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const CATEGORY_SLUGS = {
     'Camping Zubehör': 'ausrüstung-und-zubehör',
@@ -15,6 +18,9 @@ const CATEGORY_SLUGS = {
 };
 
 export default function Footer() {
+    const user = useAuthStore((state) => state.user);
+    const isAdmin = user?.role === 'ADMIN';
+
     return (
         <footer id="footer" className="bg-sand text-charcoal pt-16 pb-4">
             <div className="max-w-7xl mx-auto px-6 md:px-14">
@@ -55,8 +61,8 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/mein-konto" className="hover:text-forest transition-colors font-[400]">
-                                    Mein Konto
+                                <Link href={isAdmin ? "/admin" : "/mein-konto"} className="hover:text-forest transition-colors font-[400]">
+                                    {isAdmin ? "Admin Portal" : "Mein Konto"}
                                 </Link>
                             </li>
                             <li>
@@ -83,7 +89,7 @@ export default function Footer() {
                                 return (
                                     <li key={cat.id}>
                                         <Link
-                                            href={`/category/${slug}`}
+                                            href={`/kategorie/${slug}`}
                                             className="hover:text-forest transition-colors font-[400]"
                                         >
                                             {cat.name}

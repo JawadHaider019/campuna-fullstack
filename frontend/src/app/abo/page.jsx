@@ -15,8 +15,8 @@ import {
 import { toast } from 'react-hot-toast';
 import {
     Check, X, Zap, Star, FileText,
-    BarChart2, Upload, Loader2, Crown, ArrowRight,
-    AlertTriangle, ChevronDown, Image,
+    BarChart2, Loader2, Crown, ArrowRight,
+    AlertTriangle, ChevronDown, Shield, Sparkles
 } from 'lucide-react';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -24,15 +24,19 @@ import {
 const FEATURE_ROWS = [
     { key: 'listing_limit', label: 'Aktive Anzeigen', icon: FileText, format: (v) => v === -1 ? 'Unbegrenzt' : `${v} Anzeigen` },
     { key: 'description_limit', label: 'Beschreibungslänge', icon: FileText, format: (v) => `${v} Zeichen` },
-    { key: 'has_cover_image', label: 'Hintergrundbild', icon: Image, format: (v) => v },
-    { key: 'has_spotlight', label: 'Spotlight-Sichtbarkeit', icon: Star, format: (v) => v },
+    {
+        key: 'credits',
+        label: 'Campuna Credits',
+        icon: Sparkles,
+        freeValue: '0 CC (100 CC mit Referral)',
+        bizValue: '1.000 CC',
+    },
     { key: 'has_statistics', label: 'Performance-Statistiken', icon: BarChart2, format: (v) => v },
-    { key: 'has_csv_import', label: 'CSV / API-Import', icon: Upload, format: (v) => v },
 ];
 
 const TESTIMONIALS = [
-    { name: 'Camping Müller GmbH', text: 'Mit dem Business-Tarif haben wir unsere Buchungen um 40% gesteigert. Die Spotlight-Platzierung macht einen riesigen Unterschied!', plan: 'Business' },
-    { name: 'Outdoor Reisen Wagner', text: 'Der Import-Export von Anzeigen spart uns jeden Monat Stunden an Arbeit. Absolut empfehlenswert.', plan: 'Business' },
+    { name: 'Camping Müller GmbH', text: 'Mit dem Business-Tarif haben wir unsere Buchungen um 40% gesteigert. Die unbegrenzten Anzeigen machen einen riesigen Unterschied!', plan: 'Business' },
+    { name: 'Outdoor Reisen Wagner', text: 'Die Reichweite und die detaillierten Statistiken haben uns geholfen, stetig neue Kunden zu gewinnen. Absolut empfehlenswert.', plan: 'Business' },
     { name: 'CamperWorld Bayern', text: 'Die Statistiken zeigen uns genau, welche Anzeigen funktionieren. Ein echter Gamechanger für unser Marketing.', plan: 'Business' },
 ];
 
@@ -41,7 +45,6 @@ const FAQ = [
     { q: 'Was passiert mit meinen Anzeigen, wenn ich kündige?', a: 'Deine bestehenden Anzeigen bleiben erhalten, du kannst jedoch keine neuen mehr erstellen, sobald du das kostenlose Limit von 3 Anzeigen erreicht hast.' },
     { q: 'Kann ich monatlich kündigen?', a: 'Ja! Du kannst dein Business-Abonnement jederzeit kündigen. Es läuft noch bis zum Ende des gebuchten Zeitraums.' },
     { q: 'Gibt es einen Rabatt für mehrere Monate?', a: 'Wir arbeiten gerade an Jahresplänen. Melde dich für unseren Newsletter an, um als Erster informiert zu werden.' },
-    { q: 'Ist das Hintergrundbild für alle sichtbar?', a: 'Ja! Dein Cover-Bild wird auf deinem öffentlichen Unternehmensprofil angezeigt und gibt deiner Marke eine professionelle Präsenz auf Campuna.' },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -52,36 +55,7 @@ const FeatureCheck = ({ value, format }) => {
             ? <span className="flex items-center justify-center w-6 h-6 rounded-full bg-forest/10 mx-auto"><Check className="w-3.5 h-3.5 text-forest" /></span>
             : <span className="flex items-center justify-center w-6 h-6 rounded-full bg-charcoal/5 mx-auto"><X className="w-3.5 h-3.5 text-charcoal/25" /></span>;
     }
-    return <span className="text-sm font-semibold text-charcoal font-sans">{format(value)}</span>;
-};
-
-// CSS accordion — no AnimatePresence/motion inside .map()
-const FaqItem = ({ q, a }) => {
-    const [open, setOpen] = useState(false);
-    return (
-        <div className="border border-beige/60 rounded-2xl overflow-hidden">
-            <button
-                onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center justify-between px-5 py-4 text-left bg-white hover:bg-sand/30 transition-colors"
-            >
-                <span className="text-sm font-semibold text-charcoal font-sans pr-4">{q}</span>
-                <span
-                    className="shrink-0 transition-transform duration-200"
-                    style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                >
-                    <ChevronDown className="w-4 h-4 text-charcoal/40" />
-                </span>
-            </button>
-            <div
-                className="overflow-hidden transition-all duration-200 ease-in-out"
-                style={{ maxHeight: open ? '300px' : '0px', opacity: open ? 1 : 0 }}
-            >
-                <p className="px-5 pb-4 pt-1 text-sm text-charcoal/60 font-sans leading-relaxed border-t border-beige/40 bg-sand/20">
-                    {a}
-                </p>
-            </div>
-        </div>
-    );
+    return <span className="text-sm font-semibold text-charcoal font-sans text-center">{format ? format(value) : value}</span>;
 };
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
@@ -99,7 +73,14 @@ export default function AboPage() {
     const [cancelling, setCancelling] = useState(false);
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+    const [openFaqIndex, setOpenFaqIndex] = useState(0);
     const [selectedMonths, setSelectedMonths] = useState(1);
+    const [cancelVerification, setCancelVerification] = useState({
+        account_holder: '',
+        iban_or_card: '',
+        reason: 'Bedarf vorübergehend gedeckt',
+        confirm_clawback: false,
+    });
 
     useEffect(() => { setMounted(true); }, []);
 
@@ -161,14 +142,40 @@ export default function AboPage() {
         }
     };
 
-    const handleCancel = async () => {
+    const handleAutofillCancelBank = () => {
+        setCancelVerification({
+            account_holder: 'MAXIMILIAN SCHNEIDER',
+            iban_or_card: 'DE89 3704 0044 0532 0130 00',
+            reason: 'Bedarf vorübergehend gedeckt',
+            confirm_clawback: true,
+        });
+        toast.success('⚡ Hinterlegte Test-Bankdaten übernommen!', { icon: '💳' });
+    };
+
+    const handleCancel = async (e) => {
+        if (e) e.preventDefault();
+        if (!cancelVerification.account_holder?.trim() || !cancelVerification.iban_or_card?.trim()) {
+            toast.error('Bitte gib den Namen des Kontoinhabers und deine IBAN / Kartennummer zur Bestätigung ein.');
+            return;
+        }
+        if (!cancelVerification.confirm_clawback) {
+            toast.error('Bitte bestätige die Rückbuchung der ungenutzten Credits durch Aktivieren der Checkbox.');
+            return;
+        }
+
         setCancelling(true);
-        const toastId = toast.loading('Abonnement wird gekündigt...');
+        const toastId = toast.loading('Kündigung wird verarbeitet...');
         try {
-            const res = await cancelSubscription();
+            const res = await cancelSubscription(cancelVerification);
             if (res.success) {
-                toast.success('Abonnement erfolgreich gekündigt.', { id: toastId });
+                toast.success(res.message || 'Abonnement erfolgreich gekündigt.', { id: toastId, duration: 5000 });
                 setCancelModalOpen(false);
+                setCancelVerification({
+                    account_holder: '',
+                    iban_or_card: '',
+                    reason: 'Bedarf vorübergehend gedeckt',
+                    confirm_clawback: false,
+                });
                 await reloadSub();
             } else {
                 toast.error(res.error || 'Kündigung fehlgeschlagen.', { id: toastId });
@@ -180,7 +187,7 @@ export default function AboPage() {
         }
     };
 
-    const openUpgrade = () => isLoggedIn ? setUpgradeModalOpen(true) : router.push('/login');
+    const openUpgrade = () => isLoggedIn ? router.push('/abo/kasse') : router.push('/login?redirect=/abo/kasse');
 
     // ── Loading / SSR guard ──
     if (!mounted || loading) {
@@ -206,16 +213,15 @@ export default function AboPage() {
                 <div className="absolute -bottom-12 -left-12 w-72 h-72 rounded-full bg-white/5 blur-3xl pointer-events-none" />
 
                 <div className="relative max-w-4xl mx-auto px-4 text-center">
-                    <span className="inline-flex items-center gap-2 bg-gold/20 text-gold border border-gold/30 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-6">
-                        <Crown className="w-3.5 h-3.5" />
+                    <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block mb-4">
                         Campuna Business
                     </span>
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white font-sans leading-tight mb-4">
+                    <h1 className="font-display text-4xl sm:text-6xl lg:text-7xl font-bold text-white tracking-tight leading-[1.08] mb-6">
                         Mehr Sichtbarkeit.<br />
-                        <span className="text-gold">Mehr Buchungen.</span>
+                        <span className="text-gold font-medium">Mehr Buchungen.</span>
                     </h1>
-                    <p className="text-lg text-white/60 font-sans max-w-xl mx-auto mb-8 leading-relaxed">
-                        Das Business-Abo gibt deinem Unternehmen den professionellen Auftritt, den es verdient — mit unbegrenzten Anzeigen, Spotlight und detaillierten Statistiken.
+                    <p className="font-sans text-sm sm:text-base md:text-lg text-white/70 max-w-2xl mx-auto mb-8 leading-relaxed font-light">
+                        Das Business-Abo gibt deinem Unternehmen den professionellen Auftritt, den es verdient — mit unbegrenzten Anzeigen und detaillierten Statistiken.
                     </p>
 
                     <div>
@@ -228,7 +234,7 @@ export default function AboPage() {
                             <button
                                 id="btn-hero-upgrade"
                                 onClick={openUpgrade}
-                                className="inline-flex items-center gap-2 bg-gold hover:bg-gold-dark text-charcoal font-bold px-8 py-4 rounded-full text-sm uppercase tracking-wider transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                                className="inline-flex items-center gap-2 bg-gold hover:bg-gold-dark text-charcoal font-bold px-8 py-4 rounded-full text-sm uppercase tracking-wider transition-all shadow-lg hover:shadow-xl hover:scale-105 cursor-pointer"
                             >
                                 Jetzt upgraden
                                 <ArrowRight className="w-4 h-4" />
@@ -264,7 +270,7 @@ export default function AboPage() {
                             {isOnBusiness && (
                                 <button
                                     onClick={() => setCancelModalOpen(true)}
-                                    className="text-xs text-red-400 hover:text-red-600 font-sans underline underline-offset-2 transition-colors"
+                                    className="text-xs text-red-400 hover:text-red-600 font-sans underline underline-offset-2 transition-colors cursor-pointer"
                                 >
                                     Kündigen
                                 </button>
@@ -275,11 +281,16 @@ export default function AboPage() {
 
                 {/* ── Pricing Cards ── */}
                 <section>
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl md:text-4xl font-black text-charcoal font-sans mb-3">
+                    <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
+                        <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
+                            Preise & Tarife
+                        </span>
+                        <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-forest">
                             Einfache, transparente Preise
                         </h2>
-                        <p className="text-charcoal/55 font-sans">Starte kostenlos. Wachse mit Business.</p>
+                        <p className="font-sans text-sm sm:text-base text-charcoal/60 max-w-2xl mx-auto leading-relaxed font-light">
+                            Starte kostenlos. Wachse mit Business.
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
@@ -300,7 +311,7 @@ export default function AboPage() {
                             </div>
 
                             <ul className="space-y-3 flex-1 mb-8">
-                                {['Bis zu 3 aktive Anzeigen', 'Basis-Firmenprofil', 'Normale Sichtbarkeit', 'Kontaktformular für Kunden', 'Eigener Referral-Code'].map((f) => (
+                                {['Bis zu 3 aktive Anzeigen', 'Firmenprofil (500 Zeichen)', '0 CC Startguthaben (100 CC mit Referral)', 'Normale Sichtbarkeit', 'Kontaktformular für Kunden', 'Eigener Referral-Code'].map((f) => (
                                     <li key={f} className="flex items-center gap-2.5 text-sm text-charcoal/70 font-sans">
                                         <Check className="w-4 h-4 text-charcoal/30 shrink-0" />
                                         {f}
@@ -333,11 +344,9 @@ export default function AboPage() {
                             <ul className="space-y-3 flex-1 mb-8 relative">
                                 {[
                                     'Unbegrenzte Anzeigen',
+                                    '+ 1.000 Campuna Credits Willkommensbonus',
                                     'Erweitertes Firmenprofil (1000 Zeichen)',
-                                    'Custom Cover-Bild / Banner',
-                                    'Spotlight-Sichtbarkeit im Marktplatz',
                                     'Performance-Statistiken & Analytics',
-                                    'CSV / API-Import für Anzeigen',
                                 ].map((f) => (
                                     <li key={f} className="flex items-center gap-2.5 text-sm text-white/85 font-sans">
                                         <Check className="w-4 h-4 text-gold shrink-0" />
@@ -354,7 +363,7 @@ export default function AboPage() {
                                 <button
                                     id="btn-card-upgrade"
                                     onClick={openUpgrade}
-                                    className="relative w-full py-3 rounded-xl text-center text-xs font-bold uppercase tracking-wider font-sans bg-gold hover:bg-gold-dark text-charcoal transition-all shadow-md hover:shadow-lg hover:scale-[1.02]"
+                                    className="relative w-full py-3 rounded-xl text-center text-xs font-bold uppercase tracking-wider font-sans bg-gold hover:bg-gold-dark text-charcoal transition-all shadow-md hover:shadow-lg hover:scale-[1.02] cursor-pointer"
                                 >
                                     {isLoggedIn ? 'Jetzt upgraden' : 'Registrieren & upgraden'}
                                 </button>
@@ -365,9 +374,16 @@ export default function AboPage() {
 
                 {/* ── Feature Table ── */}
                 <section>
-                    <div className="text-center mb-10">
-                        <h2 className="text-2xl md:text-3xl font-black text-charcoal font-sans mb-2">Detaillierter Vergleich</h2>
-                        <p className="text-charcoal/50 font-sans text-sm">Alle Features auf einen Blick</p>
+                    <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
+                        <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
+                            Feature-Übersicht
+                        </span>
+                        <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-forest">
+                            Detaillierter Vergleich
+                        </h2>
+                        <p className="font-sans text-sm sm:text-base text-charcoal/60 max-w-2xl mx-auto leading-relaxed font-light">
+                            Alle Features auf einen Blick
+                        </p>
                     </div>
 
                     <div className="bg-white rounded-3xl border border-beige/60 overflow-hidden shadow-sm">
@@ -377,9 +393,10 @@ export default function AboPage() {
                             <div className="p-5 text-center text-xs font-bold text-forest uppercase tracking-widest font-sans border-l border-beige/40">Business</div>
                         </div>
 
-                        {FEATURE_ROWS.map(({ key, label, icon: Icon, format }, i) => {
-                            const freeVal = freePlan ? freePlan[key] : undefined;
-                            const bizVal = businessPlan ? businessPlan[key] : undefined;
+                        {FEATURE_ROWS.map((row, i) => {
+                            const { key, label, icon: Icon, format, freeValue, bizValue } = row;
+                            const freeVal = freeValue !== undefined ? freeValue : (freePlan ? freePlan[key] : undefined);
+                            const bizVal = bizValue !== undefined ? bizValue : (businessPlan ? businessPlan[key] : undefined);
                             return (
                                 <div key={key} className={`grid grid-cols-3 ${i < FEATURE_ROWS.length - 1 ? 'border-b border-beige/40' : ''}`}>
                                     <div className="p-5 flex items-center gap-2.5 text-sm font-medium text-charcoal font-sans">
@@ -398,42 +415,18 @@ export default function AboPage() {
                     </div>
                 </section>
 
-                {/* ── Credits Section ── */}
-                {isLoggedIn && !isOnBusiness && (
-                    <section className="bg-gradient-to-r from-gold/10 to-gold/5 rounded-3xl border border-gold/25 p-8">
-                        <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                            <div className="w-16 h-16 rounded-2xl bg-gold/20 flex items-center justify-center shrink-0">
-                                <img src="/coin.png" className="w-9 h-9" alt="CC" />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-lg font-bold text-charcoal font-sans mb-1">Mit Campuna Credits bezahlen</h3>
-                                <p className="text-sm text-charcoal/60 font-sans leading-relaxed">
-                                    Du hast <strong className="text-gold-dark">{creditBalance} CC</strong>. Business kostet <strong>2900 CC / Monat</strong>.{' '}
-                                    {canAffordWithCredits
-                                        ? 'Du hast genug Credits für ein Upgrade!'
-                                        : `Dir fehlen noch ${2900 - creditBalance} CC.`}
-                                </p>
-                            </div>
-                            <div className="flex flex-col gap-2 shrink-0 w-full md:w-auto">
-                                <button
-                                    id="btn-credits-upgrade"
-                                    onClick={() => setUpgradeModalOpen(true)}
-                                    disabled={!canAffordWithCredits}
-                                    className="flex items-center justify-center gap-2 bg-gold hover:bg-gold-dark disabled:opacity-40 disabled:hover:bg-gold text-charcoal font-bold px-6 py-3 rounded-xl text-sm uppercase tracking-wider transition-all"
-                                >
-                                    <img src="/coin.png" className="w-4 h-4" alt="CC" />
-                                    Mit Credits upgraden
-                                </button>
-                            </div>
-                        </div>
-                    </section>
-                )}
-
                 {/* ── Testimonials ── */}
                 <section>
-                    <div className="text-center mb-10">
-                        <h2 className="text-2xl md:text-3xl font-black text-charcoal font-sans mb-2">Was unsere Kunden sagen</h2>
-                        <p className="text-charcoal/50 font-sans text-sm">Echte Erfahrungen von Business-Nutzern</p>
+                    <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
+                        <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
+                            Erfahrungsberichte
+                        </span>
+                        <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-forest">
+                            Was unsere Kunden sagen
+                        </h2>
+                        <p className="font-sans text-sm sm:text-base text-charcoal/60 max-w-2xl mx-auto leading-relaxed font-light">
+                            Echte Erfahrungen von Business-Nutzern
+                        </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -457,13 +450,64 @@ export default function AboPage() {
                 </section>
 
                 {/* ── FAQ ── */}
-                <section>
-                    <div className="text-center mb-10">
-                        <h2 className="text-2xl md:text-3xl font-black text-charcoal font-sans mb-2">Häufige Fragen</h2>
-                        <p className="text-charcoal/50 font-sans text-sm">Alles, was du über das Business-Abo wissen musst</p>
+                <section id="faq">
+                    <div className="text-center max-w-3xl mx-auto mb-8 space-y-3">
+                        <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
+                            Häufig gestellte Fragen
+                        </span>
+                        <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-forest">
+                            Alles, was du über Campuna wissen musst
+                        </h2>
+                        <p className="font-sans text-sm sm:text-base text-charcoal/60 max-w-2xl mx-auto leading-relaxed font-light">
+                            Du hast Fragen zur Buchung, Vermietung oder den Tarifen? Hier findest du die Antworten auf die wichtigsten Fragen.
+                        </p>
                     </div>
-                    <div className="max-w-2xl mx-auto space-y-3">
-                        {FAQ.map((item, i) => <FaqItem key={i} q={item.q} a={item.a} />)}
+
+                    <div className="max-w-4xl mx-auto space-y-4">
+                        {FAQ.map((item, idx) => {
+                            const isOpen = openFaqIndex === idx;
+                            return (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.05, duration: 0.4 }}
+                                    className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isOpen
+                                        ? 'border-gold bg-sand/20 shadow-md'
+                                        : 'border-forest/10 bg-white hover:border-forest/30'
+                                    }`}
+                                >
+                                    <button
+                                        onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                                        className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 focus:outline-none cursor-pointer"
+                                    >
+                                        <span className="font-display text-base sm:text-lg font-bold text-forest leading-snug">
+                                            {item.q}
+                                        </span>
+                                        <div className={`p-2 rounded-full transition-transform duration-300 ${isOpen ? 'rotate-180 bg-gold/10 text-gold' : 'bg-sand text-forest'}`}>
+                                            <ChevronDown className="w-4 h-4" />
+                                        </div>
+                                    </button>
+
+                                    {/* Accordion Animated Body */}
+                                    <AnimatePresence initial={false}>
+                                        {isOpen && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                                            >
+                                                <div className="px-8 md:px-10 pb-6 font-sans text-sm text-charcoal/70 leading-relaxed font-light whitespace-pre-line">
+                                                    {item.a}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </section>
 
@@ -471,17 +515,20 @@ export default function AboPage() {
                 {!isOnBusiness && (
                     <section className="bg-gradient-to-br from-forest to-charcoal rounded-3xl p-10 md:p-16 text-center relative overflow-hidden">
                         <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-gold/10 blur-3xl pointer-events-none" />
-                        <div className="relative">
-                            <h2 className="text-3xl md:text-4xl font-black text-white font-sans mb-4">
+                        <div className="relative max-w-3xl mx-auto space-y-3">
+                            <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
+                                Jetzt durchstarten
+                            </span>
+                            <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-white mb-4">
                                 Bereit durchzustarten?
                             </h2>
-                            <p className="text-white/60 font-sans mb-8 max-w-md mx-auto leading-relaxed">
+                            <p className="font-sans text-sm sm:text-base text-white/70 max-w-md mx-auto leading-relaxed font-light pb-4">
                                 Schließe dich hunderten von Campinganbietern an, die mit Campuna Business wachsen.
                             </p>
                             <button
                                 id="btn-cta-upgrade"
                                 onClick={openUpgrade}
-                                className="inline-flex items-center gap-2 bg-gold hover:bg-gold-dark text-charcoal font-bold px-10 py-4 rounded-full text-sm uppercase tracking-wider transition-all shadow-xl hover:scale-105"
+                                className="inline-flex items-center gap-2 bg-gold hover:bg-gold-dark text-charcoal font-bold px-10 py-4 rounded-full text-sm uppercase tracking-wider transition-all shadow-xl hover:scale-105 cursor-pointer"
                             >
                                 {isLoggedIn ? 'Jetzt upgraden' : 'Kostenlos registrieren'}
                                 <ArrowRight className="w-4 h-4" />
@@ -498,12 +545,14 @@ export default function AboPage() {
             {/* ── Upgrade Modal ── */}
             <AnimatePresence>
                 {upgradeModalOpen && (
-                    <div key="upgrade-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            key="upgrade-backdrop"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                    <motion.div
+                        key="upgrade-modal"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    >
+                        <div
                             onClick={() => !subscribing && setUpgradeModalOpen(false)}
                             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                         />
@@ -600,8 +649,6 @@ export default function AboPage() {
                                             : <><img src="/coin.png" className="w-4 h-4" alt="CC" /> Mit Credits bezahlen</>}
                                     </button>
 
-
-
                                     <button
                                         onClick={() => setUpgradeModalOpen(false)}
                                         disabled={subscribing}
@@ -612,19 +659,21 @@ export default function AboPage() {
                                 </div>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
             {/* ── Cancel Confirmation Modal ── */}
             <AnimatePresence>
                 {cancelModalOpen && (
-                    <div key="cancel-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            key="cancel-backdrop"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
+                    <motion.div
+                        key="cancel-modal"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    >
+                        <div
                             onClick={() => !cancelling && setCancelModalOpen(false)}
                             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                         />
@@ -634,35 +683,105 @@ export default function AboPage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             transition={{ duration: 0.2 }}
-                            className="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-beige/60 relative z-10 p-7 text-center space-y-5"
+                            className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-beige/60 relative z-10 p-6 sm:p-8 text-left space-y-5 max-h-[90vh] overflow-y-auto"
                         >
-                            <div className="w-16 h-16 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mx-auto">
-                                <AlertTriangle className="w-7 h-7 text-red-400" />
+                            <div className="flex items-center justify-between pb-3 border-b border-beige/60">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-red-500 shrink-0">
+                                        <AlertTriangle className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-charcoal font-sans">Abonnement kündigen</h3>
+                                        <p className="text-[11px] text-charcoal/50 font-sans">Sicherheitsverifikation & Bestätigung</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleAutofillCancelBank}
+                                    className="text-[10px] font-bold text-forest bg-forest/5 hover:bg-forest/15 border border-forest/20 px-2.5 py-1.5 rounded-xl transition-all flex items-center gap-1 font-sans cursor-pointer"
+                                    title="Füllt die hinterlegten Test-Bankdaten automatisch ein"
+                                >
+                                    <Sparkles className="w-3 h-3 text-gold-dark" />
+                                    <span>Test-Bankdaten</span>
+                                </button>
                             </div>
-                            <div>
-                                <h3 className="text-xl font-black text-charcoal font-sans mb-2">Abonnement kündigen?</h3>
-                                <p className="text-sm text-charcoal/60 font-sans leading-relaxed">
-                                    Du verlierst den Zugriff auf alle Business-Features. Deine Anzeigen bleiben erhalten, aber du kannst keine neuen mehr über das Limit hinaus erstellen.
+
+                            <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-sans space-y-1">
+                                <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                                    <img src="/coin.png" className="w-4 h-4" alt="CC" />
+                                    <span>Rückbuchung ungenutzter Credits</span>
+                                </div>
+                                <p className="text-[11px] text-amber-800 leading-relaxed">
+                                    Ungenutzte Bonus-Credits aus deinem 1.000 Campuna Credits Willkommenspaket (bis zu {Math.min(1000, Number(creditBalance) || 0).toLocaleString('de-DE')} CC) werden bei der Kündigung automatisch vom CC-Konto abgezogen.
                                 </p>
                             </div>
-                            <div className="flex gap-3">
+
+                            {/* Bank Verification Form */}
+                            <div className="space-y-3 bg-sand/30 border border-beige/80 rounded-2xl p-4">
+                                <div className="flex items-center gap-2 pb-1 border-b border-beige/60 text-xs font-bold text-charcoal/70 uppercase tracking-wider font-sans">
+                                    <Shield className="w-3.5 h-3.5 text-forest" />
+                                    <span>Hinterlegte Zahlungsdaten bestätigen</span>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-charcoal/60 uppercase tracking-wider font-sans">
+                                        Name des Kontoinhabers / Karteninhabers *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={cancelVerification.account_holder}
+                                        onChange={e => setCancelVerification(v => ({ ...v, account_holder: e.target.value }))}
+                                        placeholder="z.B. Maximilian Schneider"
+                                        className="w-full bg-white border border-beige rounded-xl px-3.5 py-2 text-xs text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-sans"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-charcoal/60 uppercase tracking-wider font-sans">
+                                        IBAN oder Kartennummer (Zahlungsmittel) *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={cancelVerification.iban_or_card}
+                                        onChange={e => setCancelVerification(v => ({ ...v, iban_or_card: e.target.value }))}
+                                        placeholder="z.B. DE89 3704 0044 0532 0130 00 oder 4242 4242 4242 4242"
+                                        className="w-full bg-white border border-beige rounded-xl px-3.5 py-2 text-xs text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-mono"
+                                        required
+                                    />
+                                </div>
+
+                                <label className="flex items-start gap-2.5 pt-1 text-[11px] text-charcoal/70 font-sans cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={cancelVerification.confirm_clawback}
+                                        onChange={e => setCancelVerification(v => ({ ...v, confirm_clawback: e.target.checked }))}
+                                        className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
+                                    />
+                                    <span>
+                                        Ich bestätige die Kündigung und die Rückbuchung ungenutzter Credits.
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div className="flex gap-3 pt-2">
                                 <button
                                     onClick={() => setCancelModalOpen(false)}
                                     className="flex-1 py-3 rounded-xl bg-sand hover:bg-beige text-charcoal text-xs font-bold uppercase tracking-wider transition-all font-sans"
                                 >
-                                    Behalten
+                                    Abo behalten
                                 </button>
                                 <button
                                     id="btn-confirm-cancel"
                                     onClick={handleCancel}
-                                    disabled={cancelling}
+                                    disabled={cancelling || !cancelVerification.account_holder?.trim() || !cancelVerification.iban_or_card?.trim() || !cancelVerification.confirm_clawback}
                                     className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider transition-all font-sans"
                                 >
-                                    {cancelling ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Ja, kündigen'}
+                                    {cancelling ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Jetzt kündigen'}
                                 </button>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

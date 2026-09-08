@@ -2,20 +2,29 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, User, Bell } from 'lucide-react';
+import { Menu, X, User, Bell, Heart, ShieldCheck } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import WelcomeBar from './WelcomeBar';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useFavoritesStore } from '@/store/useFavoritesStore';
 
 export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
+  const [mounted, setMounted] = useState(false);
   const storeIsLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  const isLoggedIn = propIsLoggedIn ?? storeIsLoggedIn;
+  const user = useAuthStore((state) => state.user);
+  const isLoggedIn = mounted ? (propIsLoggedIn ?? storeIsLoggedIn) : false;
+  const isAdmin = mounted && isLoggedIn && user?.role === 'ADMIN';
+  const favoriteIds = useFavoritesStore((state) => state.favoriteIds);
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('top');
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isHomepage = pathname === '/';
 
@@ -26,7 +35,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
     { label: 'Spotlight', id: 'campuna-spotlight' },
     { label: 'Entdecke', id: 'tool' },
     { label: 'Ratgeber', id: 'journal' },
-    { label: '⭐ Business', path: '/abo' },
+    { label: 'Abonnement', path: '/abo' },
   ];
 
 
@@ -176,30 +185,70 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                 );
               })}
 
+              {/* Merkzettel / Favoriten Button */}
               <button
-                onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/register')}
-                className="relative flex items-center space-x-2 bg-forest text-sand hover:bg-gold hover:text-forest py-2.5 px-5 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg min-w-[135px] justify-center group ml-2 cursor-pointer"
+                onClick={() => router.push('/favoriten')}
+                aria-label="Merkzettel ansehen"
+                className="relative flex items-center justify-center w-10 h-10 rounded-full border border-forest/15 hover:border-gold bg-white/40 hover:bg-white text-forest hover:text-rose-500 transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer group"
+                title="Gespeicherte Inserate (Merkzettel)"
               >
-                <User className="w-4 h-4 shrink-0" />
-                <div className="relative">
-                  <span className="whitespace-nowrap flex items-center gap-1">
-                    {isLoggedIn ? 'Konto' : 'Einloggen'}
-                    {isLoggedIn && alertCount > 0 && (
-                      <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
-                        <Bell className="w-3.5 h-3.5 shrink-0" />
-                        <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                        </span>
-                      </span>
-                    )}
+                <Heart className={`w-4 h-4 transition-transform group-hover:scale-110 ${mounted && favoriteIds.length > 0 ? 'text-rose-500 fill-rose-500' : ''}`} />
+                {mounted && favoriteIds.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-sm animate-in zoom-in-50">
+                    {favoriteIds.length > 9 ? '9+' : favoriteIds.length}
                   </span>
-                </div>
+                )}
               </button>
+
+              {/* Admin Portal Button or User Account Button */}
+              {isAdmin ? (
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="relative flex items-center space-x-1.5 bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal font-sans text-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 group ml-1 cursor-pointer"
+                  title="Zum Administrationsbereich"
+                >
+                  <ShieldCheck className="w-4 h-4 shrink-0 text-forest" />
+                  <span>Admin Portal</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/register')}
+                  className="relative flex items-center space-x-2 bg-forest text-sand hover:bg-gold hover:text-forest py-2.5 px-5 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg min-w-[135px] justify-center group ml-1 cursor-pointer"
+                >
+                  <User className="w-4 h-4 shrink-0" />
+                  <div className="relative">
+                    <span className="whitespace-nowrap flex items-center gap-1">
+                      {isLoggedIn ? 'Konto' : 'Einloggen'}
+                      {isLoggedIn && alertCount > 0 && (
+                        <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
+                          <Bell className="w-3.5 h-3.5 shrink-0" />
+                          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                          </span>
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </button>
+              )}
             </div>
 
-            {/* Mobile menu trigger */}
-            <div className="flex lg:hidden items-center space-x-4">
+            {/* Mobile menu trigger + mobile heart icon */}
+            <div className="flex lg:hidden items-center space-x-2">
+              <button
+                onClick={() => router.push('/favoriten')}
+                aria-label="Merkzettel ansehen"
+                className="relative p-2 text-forest hover:text-rose-500 focus:outline-none cursor-pointer"
+              >
+                <Heart className={`w-5 h-5 ${mounted && favoriteIds.length > 0 ? 'text-rose-500 fill-rose-500' : ''}`} />
+                {mounted && favoriteIds.length > 0 && (
+                  <span className="absolute top-1 right-1 bg-rose-500 text-white font-bold text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-sm">
+                    {favoriteIds.length > 9 ? '9+' : favoriteIds.length}
+                  </span>
+                )}
+              </button>
+
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="relative p-2 text-forest focus:outline-none cursor-pointer"
@@ -247,37 +296,64 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                   );
                 })}
 
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    router.push('/favoriten');
+                  }}
+                  className="font-sans text-base font-medium text-left transition-colors duration-200 flex items-center justify-between py-1.5 cursor-pointer text-forest hover:text-rose-500"
+                >
+                  <span className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+                    Merkzettel ({mounted ? favoriteIds.length : 0})
+                  </span>
+                </button>
+
                 <hr className="border-forest/10 my-2" />
 
                 <div className="flex flex-col space-y-4">
-                  <button
-                    onClick={() => {
-                      setIsOpen(false);
-                      router.push(isLoggedIn ? '/mein-konto' : '/register');
-                    }}
-                    className="w-full bg-forest text-sand py-3 rounded-full font-sans text-sm font-semibold hover:bg-gold hover:text-forest transition-colors duration-300 shadow-md flex items-center justify-center space-x-2 min-h-[48px] group cursor-pointer"
-                  >
-                    <User className="w-4 h-4 shrink-0" />
-                    <div className="relative">
-                      <span className="whitespace-nowrap flex items-center gap-1">
-                        {isLoggedIn ? 'Konto' : 'Einloggen'}
-                        {isLoggedIn && alertCount > 0 && (
-                          <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
-                            <Bell className="w-3.5 h-3.5 shrink-0" />
-                            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  {isAdmin ? (
+                    <button
+                      onClick={() => {
+                        setIsOpen(false);
+                        router.push('/admin');
+                      }}
+                      className="w-full bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal py-3 rounded-full font-sans text-sm font-bold uppercase tracking-wider transition-colors duration-300 shadow-md flex items-center justify-center space-x-2 min-h-[48px] cursor-pointer"
+                    >
+                      <ShieldCheck className="w-4 h-4 shrink-0 text-forest" />
+                      <span>Admin Portal</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setIsOpen(false);
+                        router.push(isLoggedIn ? '/mein-konto' : '/register');
+                      }}
+                      className="w-full bg-forest text-sand py-3 rounded-full font-sans text-sm font-semibold hover:bg-gold hover:text-forest transition-colors duration-300 shadow-md flex items-center justify-center space-x-2 min-h-[48px] group cursor-pointer"
+                    >
+                      <User className="w-4 h-4 shrink-0" />
+                      <div className="relative">
+                        <span className="whitespace-nowrap flex items-center gap-1">
+                          {isLoggedIn ? 'Konto' : 'Einloggen'}
+                          {isLoggedIn && alertCount > 0 && (
+                            <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
+                              <Bell className="w-3.5 h-3.5 shrink-0" />
+                              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                              </span>
                             </span>
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </button>
+                          )}
+                        </span>
+                      </div>
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
       </nav>
     </>
   );

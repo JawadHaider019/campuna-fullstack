@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { db } from '../prisma/db.js';
+import pool from '../config/database.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -35,6 +36,20 @@ export const authenticate = async (req, res, next) => {
             });
         }
 
+        // Check if token belongs to an admin from the dedicated 'admins' table
+        if (decoded.role === 'ADMIN') {
+            const adminRes = await pool.query('SELECT * FROM admins WHERE id = $1', [decoded.id]);
+            const admin = adminRes.rows[0];
+            if (!admin) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'Administrator nicht gefunden.',
+                });
+            }
+            req.user = admin;
+            return next();
+        }
+
         const user = await db.orm.public.User
             .where((u) => u.id.eq(decoded.id))
             .first();
@@ -60,3 +75,17 @@ export const authenticate = async (req, res, next) => {
         return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
     }
 };
+
+/**
+ * Ensures the authenticated user has the 'ADMIN' role.
+ */
+export const requireAdmin = (req, res, next) => {
+    if (!req.user || req.user.role !== 'ADMIN') {
+        return res.status(403).json({
+            success: false,
+            error: 'Zugriff verweigert. Dieser Bereich ist nur für Administratoren zugänglich.',
+        });
+    }
+    next();
+};
+

@@ -1,0 +1,97 @@
+import api from './client.js';
+
+/**
+ * GET /api/admin/users
+ * Lists users with search, filtering, and pagination.
+ */
+export const getAdminUsers = (params = {}) => {
+    return api.get('/admin/users', { params });
+};
+
+/**
+ * PATCH /api/admin/users/:id/suspend
+ * Toggles a user's suspended status.
+ */
+export const toggleUserSuspension = (userId, is_suspended) => {
+    return api.patch(`/admin/users/${userId}/suspend`, { is_suspended });
+};
+
+/**
+ * PATCH /api/admin/users/:id/role
+ * Changes user role (USER <-> ADMIN).
+ */
+export const updateUserRole = (userId, role) => {
+    return api.patch(`/admin/users/${userId}/role`, { role });
+};
+
+/**
+ * PATCH /api/admin/users/:id/verify-email
+ * Manually verifies user email.
+ */
+export const manuallyVerifyUserEmail = (userId) => {
+    return api.patch(`/admin/users/${userId}/verify-email`);
+};
+
+/**
+ * DELETE /api/admin/users/:id
+ * Permanently deletes user account.
+ */
+export const deleteAdminUser = (userId) => {
+    return api.delete(`/admin/users/${userId}`);
+};
+
+/**
+ * GET /api/admin/listings
+ * Lists listings with filtering, search, and pagination.
+ */
+export const getAdminListings = (params = {}) => {
+    return api.get('/admin/listings', { params });
+};
+
+/**
+ * PATCH /api/admin/listings/:id/status
+ * Moderates listing status (APPROVED, REVIEW, REJECTED, DRAFT).
+ */
+export const updateAdminListingStatus = (listingId, status, reason = '') => {
+    return api.patch(`/admin/listings/${listingId}/status`, { status, reason });
+};
+
+/**
+ * DELETE /api/admin/listings/:id
+ * Permanently deletes listing.
+ */
+export const deleteAdminListing = (listingId) => {
+    return api.delete(`/admin/listings/${listingId}`);
+};
+
+/**
+ * PATCH /api/admin/listings/:id/featured
+ * Toggles featured status for a listing (Campuna recommendation).
+ */
+export const toggleAdminListingFeatured = (listingId, featured) => {
+    return api.patch(`/admin/listings/${listingId}/featured`, { featured });
+};
+
+/**
+ * GET /api/admin/decisions
+ * Lists all AI moderation decisions and analysis scores.
+ */
+export const getAdminDecisions = (params = {}) => {
+    return api.get('/admin/decisions', { params });
+};
+
+/**
+ * POST /api/admin/decisions/:id/simulate-scan
+ * Simulates a new AI scan with customizable score.
+ */
+export const simulateAiScan = (listingId, target_score) => {
+    return api.post(`/admin/decisions/${listingId}/simulate-scan`, { target_score });
+};
+
+/**
+ * POST /api/admin/decisions/:id/admin-decision
+ * Submits manual admin decision (especially for Score 50 borderline listings).
+ */
+export const submitAdminManualDecision = (listingId, decision, notes = '') => {
+    return api.post(`/admin/decisions/${listingId}/admin-decision`, { decision, notes });
+};

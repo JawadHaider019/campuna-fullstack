@@ -17,7 +17,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import PayloadCalculator from './PayloadCalculator';
 import BudgetCalculator from './BudgetCalculator';
-import { BLOG_POSTS, FEATURED_LISTINGS } from '@/data';
+import { BLOG_POSTS } from '@/data';
+import { getAllListings } from '@/api/listings';
 
 const DEFAULT_INSP_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80';
 
@@ -27,6 +28,7 @@ export default function ToolsSection() {
     const [selectedTip, setSelectedTip] = useState(null);
     const [isMobile, setIsMobile] = useState(false);
     const [activeTool, setActiveTool] = useState('payload');
+    const [dbFeatured, setDbFeatured] = useState([]);
 
     useEffect(() => {
         const media = window.matchMedia('(max-width: 640px)');
@@ -36,11 +38,29 @@ export default function ToolsSection() {
         return () => media.removeEventListener('change', listener);
     }, []);
 
+    useEffect(() => {
+        getAllListings().then(res => {
+            if (res.success && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
+                const first = res.data.listings[0];
+                setDbFeatured([{
+                    id: first.id,
+                    title: first.title || 'Camping Angebot',
+                    description: first.description || '',
+                    category: first.category || 'Camping Zubehör',
+                    price: parseFloat(first.price) || 0,
+                    pricePeriod: first.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
+                    images: first.images && first.images.length > 0 ? first.images : [DEFAULT_INSP_IMAGE],
+                    features: [first.condition, first.subcategory].filter(Boolean)
+                }]);
+            }
+        }).catch(() => {});
+    }, []);
+
     const handleTabChange = (tab) => {
         setActiveTab(tab);
     };
 
-    const featured = FEATURED_LISTINGS.slice(0, 1);
+    const featured = dbFeatured;
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -102,7 +122,7 @@ export default function ToolsSection() {
                             {featured.map((insp) => (
                                 <motion.div
                                     key={insp.id}
-                                    onClick={() => router.push(`/listing_details/${insp.id}`)}
+                                    onClick={() => router.push(`/inserate/${insp.id}`)}
                                     className="group bg-white rounded-3xl overflow-hidden border border-forest/5 flex flex-col sm:flex-row cursor-pointer min-h-[280px] w-full relative shadow-sm hover:shadow-xl transition-all duration-300"
                                 >
                                     <div className="relative w-full sm:w-[40%] h-48 sm:h-auto overflow-hidden bg-sand/10">
@@ -147,7 +167,7 @@ export default function ToolsSection() {
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    router.push(`/listing_details/${insp.id}`);
+                                                    router.push(`/inserate/${insp.id}`);
                                                 }}
                                                 className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-forest hover:text-gold transition-colors duration-200 cursor-pointer"
                                             >

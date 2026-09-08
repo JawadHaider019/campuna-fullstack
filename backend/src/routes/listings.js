@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createListing, getMyListings, getAllListings, getListingDetail, getListingsByUser } from '../controllers/listings.js';
+import { createListing, getMyListings, getAllListings, getListingDetail, getListingsByUser, boostListing } from '../controllers/listings.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { uploadMultiple } from '../middleware/upload.js';
 
@@ -19,5 +19,8 @@ router.get('/:id', getListingDetail);
 
 // POST /api/listings → Create listing
 router.post('/', authenticate, uploadMultiple, createListing);
+
+// POST /api/listings/:id/boost → Boost listing with Campuna Credits
+router.post('/:id/boost', authenticate, boostListing);
 
 export default router;
