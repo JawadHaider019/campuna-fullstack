@@ -8,6 +8,15 @@ export const createListing = async (formData) => {
     return api.post('/listings', formData);
 };
 
+/**
+ * Sends multipart form-data to update an existing listing.
+ * @param {string} id - Listing ID
+ * @param {FormData} formData - The form data containing images and listing info.
+ */
+export const updateListing = async (id, formData) => {
+    return api.put(`/listings/${id}`, formData);
+};
+
 export const getMyListings = async () => {
     return api.get('/listings/my');
 };

@@ -2,39 +2,37 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { 
-    Search, 
-    Filter, 
-    CheckCircle2, 
-    XCircle, 
-    Clock, 
-    AlertTriangle, 
-    Eye, 
-    Trash2, 
-    RefreshCw, 
-    Layers, 
-    MapPin, 
-    Tag, 
-    Euro, 
-    Building2, 
-    User, 
-    ExternalLink, 
-    ChevronLeft, 
-    ChevronRight, 
-    LayoutGrid, 
-    ListFilter, 
-    Sparkles, 
-    ShieldCheck, 
+import {
+    Search,
+    Filter,
+    CheckCircle2,
+    XCircle,
+    Clock,
+    AlertTriangle,
+    Eye,
+    Trash2,
+    Layers,
+    MapPin,
+    Tag,
+    Euro,
+    Building2,
+    User,
+    ExternalLink,
+    ChevronLeft,
+    ChevronRight,
+    LayoutGrid,
+    ListFilter,
+    Sparkles,
+    ShieldCheck,
     MoreVertical,
     FileText,
     ArrowUpRight,
     Star,
     Rocket
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    getAdminListings, 
-    updateAdminListingStatus, 
+import {
+    getAdminListings,
+    updateAdminListingStatus,
     deleteAdminListing,
     toggleAdminListingFeatured
 } from '@/api/admin';
@@ -227,157 +225,190 @@ export default function AdminListingsPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-[1600px] mx-auto">
-            
+        <div className="space-y-6 max-w-[1440px] mx-auto pb-10">
+
             {/* ─── Feedback Toast ─── */}
-            <AnimatePresence>
-                {feedbackMessage && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-xs font-bold ${
-                            feedbackMessage.type === 'error'
-                                ? 'bg-rose-50 border-rose-200 text-rose-800'
-                                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            {feedbackMessage && (
+                <div
+                    className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-xs font-bold transition-all duration-300 ${feedbackMessage.type === 'error'
+                        ? 'bg-rose-50 border-rose-200 text-rose-800'
+                        : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                         }`}
-                    >
-                        {feedbackMessage.type === 'error' ? (
-                            <AlertTriangle className="w-4 h-4 text-rose-600" />
-                        ) : (
-                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        )}
-                        <span>{feedbackMessage.msg}</span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                >
+                    {feedbackMessage.type === 'error' ? (
+                        <AlertTriangle className="w-4 h-4 text-rose-600" />
+                    ) : (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    )}
+                    <span>{feedbackMessage.msg}</span>
+                </div>
+            )}
 
             {/* ─── Top Page Header ─── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E8EAEF] pb-5">
-                <div className="space-y-1">
-                    <div className="inline-flex items-center gap-2">
-                        <span className="p-2 rounded-xl bg-forest/10 text-forest">
-                            <Layers className="w-5 h-5" />
-                        </span>
-                        <div>
-                            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight font-display">
-                                Inserate & Moderation
-                            </h1>
-                            <p className="text-xs text-slate-500 font-medium">
-                                Prüfe, verwalte und moderiere alle Inserate auf dem Campuna Marktplatz.
-                            </p>
-                        </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold">
+                        <Layers className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl sm:text-2xl font-black font-sans text-slate-900 tracking-tight">
+                            Inserate
+                        </h1>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            Prüfe, verwalte und moderiere alle Inserate auf dem Campuna Marktplatz.
+                        </p>
                     </div>
                 </div>
 
                 {/* Top Quick Actions & View Switcher */}
                 <div className="flex items-center gap-2">
                     {/* View Switch */}
-                    <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center">
+                    <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center border border-slate-200/60">
                         <button
                             onClick={() => setViewMode('table')}
                             title="Tabellenansicht"
-                            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                                viewMode === 'table' ? 'bg-white text-forest shadow-2xs' : 'text-slate-400 hover:text-slate-700'
-                            }`}
+                            className={`p-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'table' ? 'bg-white text-forest shadow-2xs font-bold' : 'text-slate-400 hover:text-slate-700'
+                                }`}
                         >
                             <ListFilter className="w-4 h-4" />
                         </button>
                         <button
                             onClick={() => setViewMode('grid')}
                             title="Kartenansicht"
-                            className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                                viewMode === 'grid' ? 'bg-white text-forest shadow-2xs' : 'text-slate-400 hover:text-slate-700'
-                            }`}
+                            className={`p-1.5 rounded-lg transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-white text-forest shadow-2xs font-bold' : 'text-slate-400 hover:text-slate-700'
+                                }`}
                         >
                             <LayoutGrid className="w-4 h-4" />
                         </button>
                     </div>
-
-                    {/* Refresh Button */}
-                    <button
-                        onClick={fetchListings}
-                        disabled={loading}
-                        className="px-3.5 py-2 rounded-xl bg-white border border-[#E2E4E8] text-slate-700 text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-2xs cursor-pointer"
-                    >
-                        <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-forest' : 'text-slate-500'}`} />
-                        <span>Aktualisieren</span>
-                    </button>
                 </div>
             </div>
 
-            {/* ─── Top Stats Bento Pills (5 Cards) ─── */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                
-                {/* 1. Gesamt Inserate */}
-                <div className="bg-white border border-[#E8EAEF] rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between">
+            {/* ─── Top Stats Bento Cards (5 Cards matching Dashboard styling) ─── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+
+                {/* 1. Gesamt Inserate (Forest-to-Black Gradient Luxury Card) */}
+                <div
+                    onClick={() => { setStatusFilter('ALL'); setPage(1); }}
+                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[145px] border border-forest/30 cursor-pointer group transition-transform hover:-translate-y-0.5"
+                >
                     <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                            Gesamt Inserate
+                        <span className="text-[11px] font-semibold text-sand/80 uppercase tracking-wider">
+                            Gesamt-Inserate
                         </span>
-                        <Layers className="w-3.5 h-3.5 text-forest" />
+                        <div className="w-6 h-6 rounded-full bg-white/10 text-gold flex items-center justify-center font-bold text-xs group-hover:bg-gold group-hover:text-forest transition-colors">
+                            <ArrowUpRight className="w-3.5 h-3.5" />
+                        </div>
                     </div>
-                    <div className="text-2xl font-black text-slate-900 mt-1">
-                        {summary.totalListings || 0}
+                    <div>
+                        <div className="text-3xl font-extrabold tracking-tight text-white font-sans">
+                            {summary.totalListings || 0}
+                        </div>
+                        <div className="flex items-center justify-between mt-1 pt-2 border-t border-white/10 text-[10px] text-sand/80">
+                            <span className="text-gold font-bold">{summary.approvedCount || 0} Aktiv</span>
+                            <span>{new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(summary.totalActiveValue || 0)}</span>
+                        </div>
                     </div>
                 </div>
 
-                {/* 2. Zur Prüfung (Pending Review) */}
-                <div className={`border rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between transition-all ${
-                    (summary.reviewCount || 0) > 0 
-                        ? 'bg-amber-50/70 border-amber-200' 
-                        : 'bg-white border-[#E8EAEF]'
-                }`}>
+                {/* 2. Zur Prüfung (Pending Review Queue) */}
+                <div
+                    onClick={() => { setStatusFilter('REVIEW'); setPage(1); }}
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                >
                     <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
-                            {(summary.reviewCount || 0) > 0 && (
-                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping inline-block" />
-                            )}
+                        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Zur Prüfung
                         </span>
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        {(summary.reviewCount || 0) > 0 ? (
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                        ) : (
+                            <div className="w-6 h-6 rounded-full bg-[#EBF7EE] text-[#1E7E50] flex items-center justify-center font-bold text-xs">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                            </div>
+                        )}
                     </div>
-                    <div className="text-2xl font-black text-amber-900 mt-1">
-                        {summary.reviewCount || 0}
+                    <div>
+                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                            {summary.reviewCount || 0}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold mt-1">
+                            {(summary.reviewCount || 0) > 0 ? (
+                                <span className="text-amber-600 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" /> Moderation ausstehend
+                                </span>
+                            ) : (
+                                <span className="text-emerald-600 flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3" /> Alles geprüft
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
 
                 {/* 3. Freigegeben (Active) */}
-                <div className="bg-white border border-[#E8EAEF] rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between">
+                <div
+                    onClick={() => { setStatusFilter('APPROVED'); setPage(1); }}
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                >
                     <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Freigegeben
                         </span>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-forest" />
+                        </div>
                     </div>
-                    <div className="text-2xl font-black text-emerald-600 mt-1">
-                        {summary.approvedCount || 0}
+                    <div>
+                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                            {summary.approvedCount || 0}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 font-semibold mt-1">
+                            <span>Live auf dem Marktplatz</span>
+                        </div>
                     </div>
                 </div>
 
                 {/* 4. Abgelehnt */}
-                <div className="bg-white border border-[#E8EAEF] rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between">
+                <div
+                    onClick={() => { setStatusFilter('REJECTED'); setPage(1); }}
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                >
                     <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Abgelehnt
                         </span>
-                        <XCircle className="w-3.5 h-3.5 text-rose-500" />
+                        <div className="w-6 h-6 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
+                            <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                        </div>
                     </div>
-                    <div className="text-2xl font-black text-rose-600 mt-1">
-                        {summary.rejectedCount || 0}
+                    <div>
+                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                            {summary.rejectedCount || 0}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-rose-600 font-semibold mt-1">
+                            <span>Nicht veröffentlicht</span>
+                        </div>
                     </div>
                 </div>
 
-                {/* 5. Gesamtwert Aktiv */}
-                <div className="bg-white border border-[#E8EAEF] rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between col-span-2 sm:col-span-1">
+                {/* 5. Marktwert Aktiv */}
+                <div className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px]">
                     <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Marktwert (Aktiv)
                         </span>
-                        <Euro className="w-3.5 h-3.5 text-gold" />
+                        <div className="w-6 h-6 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs">
+                            <Euro className="w-3.5 h-3.5 text-[#C8A96B]" />
+                        </div>
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1 truncate" title={formatPrice(summary.totalActiveValue, false)}>
-                        {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(summary.totalActiveValue || 0)}
+                    <div>
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 font-sans truncate">
+                            {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(summary.totalActiveValue || 0)}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium mt-1">
+                            <span>Gesamtwert aller</span>
+                        </div>
                     </div>
                 </div>
 
@@ -386,7 +417,7 @@ export default function AdminListingsPage() {
             {/* ─── Search & Filter Bar ─── */}
             <div className="bg-white border border-[#E8EAEF] rounded-2xl p-4 shadow-2xs space-y-3">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-                    
+
                     {/* Search Input */}
                     <div className="relative flex-1 max-w-md">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -412,7 +443,7 @@ export default function AdminListingsPage() {
 
                     {/* Filter Controls */}
                     <div className="flex flex-wrap items-center gap-2">
-                        
+
                         {/* Status Tabs */}
                         <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center text-xs">
                             {[
@@ -427,11 +458,10 @@ export default function AdminListingsPage() {
                                         setStatusFilter(tab.val);
                                         setPage(1);
                                     }}
-                                    className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                                        statusFilter === tab.val
-                                            ? 'bg-white text-slate-900 shadow-2xs'
-                                            : 'text-slate-500 hover:text-slate-800'
-                                    }`}
+                                    className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${statusFilter === tab.val
+                                        ? 'bg-white text-slate-900 shadow-2xs'
+                                        : 'text-slate-500 hover:text-slate-800'
+                                        }`}
                                 >
                                     <span>{tab.label}</span>
                                     {Boolean(tab.count) && tab.count > 0 && (
@@ -531,11 +561,10 @@ export default function AdminListingsPage() {
                                         const isReview = item.status === 'REVIEW';
 
                                         return (
-                                            <tr 
+                                            <tr
                                                 key={item.id}
-                                                className={`hover:bg-[#F9FAFB] transition-colors group ${
-                                                    isReview ? 'bg-amber-50/20' : ''
-                                                }`}
+                                                className={`hover:bg-[#F9FAFB] transition-colors group ${isReview ? 'bg-amber-50/20' : ''
+                                                    }`}
                                             >
                                                 {/* 1. Thumbnail & Title */}
                                                 <td className="py-3.5 px-5">
@@ -574,7 +603,7 @@ export default function AdminListingsPage() {
                                                                     setActiveImageIdx(0);
                                                                     setDetailModalOpen(true);
                                                                 }}
-                                                                className="text-xs font-bold text-slate-900 hover:text-forest transition-colors truncate block text-left cursor-pointer"
+                                                                className="text-xs font-bold text-slate-900 hover:text-forest transition-colors truncate block text-left cursor-pointer w-full max-w-[240px]"
                                                                 title={item.title}
                                                             >
                                                                 {item.title}
@@ -643,17 +672,16 @@ export default function AdminListingsPage() {
                                                 {/* 8. Moderation Actions */}
                                                 <td className="py-3.5 px-5 text-right whitespace-nowrap">
                                                     <div className="inline-flex items-center gap-1">
-                                                        
+
                                                         {/* Feature / Empfehlen Toggle */}
                                                         <button
                                                             onClick={() => handleToggleFeatured(item)}
                                                             disabled={actionLoading}
                                                             title={item.featured ? "Empfehlung entfernen" : "Als Empfohlen (Featured) markieren"}
-                                                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                                                item.featured
-                                                                    ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200'
-                                                                    : 'text-slate-300 hover:text-emerald-700 hover:bg-emerald-50'
-                                                            }`}
+                                                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${item.featured
+                                                                ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200'
+                                                                : 'text-slate-300 hover:text-emerald-700 hover:bg-emerald-50'
+                                                                }`}
                                                         >
                                                             <Star className={`w-4 h-4 ${item.featured ? 'fill-emerald-600' : ''}`} />
                                                         </button>
@@ -721,38 +749,40 @@ export default function AdminListingsPage() {
                     </div>
 
                     {/* Pagination Bar */}
-                    <div className="p-4 border-t border-[#E8EAEF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
-                        <div>
-                            Zeige <span className="font-bold text-slate-800">{listings.length}</span> von{' '}
-                            <span className="font-bold text-slate-800">{pagination.total}</span> Inseraten
+                    {pagination.totalPages > 1 && pagination.total > 10 && (
+                        <div className="p-4 border-t border-[#E8EAEF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+                            <div>
+                                Zeige <span className="font-bold text-slate-800">{listings.length}</span> von{' '}
+                                <span className="font-bold text-slate-800">{pagination.total}</span> Inseraten
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    onClick={() => setPage(Math.max(1, page - 1))}
+                                    disabled={page <= 1 || loading}
+                                    className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                >
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                    <span>Zurück</span>
+                                </button>
+                                <span className="px-3 py-1.5 text-slate-700 font-bold font-mono">
+                                    Seite {page} von {pagination.totalPages || 1}
+                                </span>
+                                <button
+                                    onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+                                    disabled={page >= pagination.totalPages || loading}
+                                    className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                >
+                                    <span>Weiter</span>
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <button
-                                onClick={() => setPage(Math.max(1, page - 1))}
-                                disabled={page <= 1 || loading}
-                                className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
-                            >
-                                <ChevronLeft className="w-3.5 h-3.5" />
-                                <span>Zurück</span>
-                            </button>
-                            <span className="px-3 py-1.5 text-slate-700 font-bold font-mono">
-                                Seite {page} von {pagination.totalPages || 1}
-                            </span>
-                            <button
-                                onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
-                                disabled={page >= pagination.totalPages || loading}
-                                className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
-                            >
-                                <span>Weiter</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-                    </div>
+                    )}
                 </div>
             ) : (
                 /* ─── GRID CARDS VIEW ─── */
                 <div className="space-y-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-4">
                         {loading ? (
                             <div className="col-span-full py-16 text-center">
                                 <div className="w-7 h-7 border-3 border-forest border-t-transparent rounded-full animate-spin mx-auto mb-2" />
@@ -815,7 +845,7 @@ export default function AdminListingsPage() {
                                                         {item.location}
                                                     </span>
                                                 </div>
-                                                <h3 
+                                                <h3
                                                     onClick={() => {
                                                         setSelectedListing(item);
                                                         setActiveImageIdx(0);
@@ -900,383 +930,355 @@ export default function AdminListingsPage() {
                     </div>
 
                     {/* Pagination Bar */}
-                    <div className="bg-white border border-[#E8EAEF] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
-                        <div>
-                            Zeige <span className="font-bold text-slate-800">{listings.length}</span> von{' '}
-                            <span className="font-bold text-slate-800">{pagination.total}</span> Inseraten
+                    {pagination.totalPages > 1 && pagination.total > 10 && (
+                        <div className="bg-white border border-[#E8EAEF] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+                            <div>
+                                Zeige <span className="font-bold text-slate-800">{listings.length}</span> von{' '}
+                                <span className="font-bold text-slate-800">{pagination.total}</span> Inseraten
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    onClick={() => setPage(Math.max(1, page - 1))}
+                                    disabled={page <= 1 || loading}
+                                    className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                >
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                    <span>Zurück</span>
+                                </button>
+                                <span className="px-3 py-1.5 text-slate-700 font-bold font-mono">
+                                    Seite {page} von {pagination.totalPages || 1}
+                                </span>
+                                <button
+                                    onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
+                                    disabled={page >= pagination.totalPages || loading}
+                                    className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                >
+                                    <span>Weiter</span>
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
+                    )}
+                </div>
+            )}
+
+            {/* ─── MODAL: COMPLETE LISTING DETAIL DRAWER ─── */}
+            {detailModalOpen && selectedListing && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
+                >
+                    <div
+                        className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#E8EAEF] flex flex-col transition-transform duration-200"
+                    >
+                        {/* Modal Header */}
+                        <div className="p-5 sm:p-6 border-b border-[#E8EAEF] flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    {renderStatusBadge(selectedListing.status)}
+                                    <span className="text-xs text-slate-400 font-mono">
+                                        ID: {selectedListing.id}
+                                    </span>
+                                </div>
+                                <h2 className="text-base sm:text-lg font-black text-slate-900 line-clamp-1">
+                                    {selectedListing.title}
+                                </h2>
+                            </div>
                             <button
-                                onClick={() => setPage(Math.max(1, page - 1))}
-                                disabled={page <= 1 || loading}
-                                className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                onClick={() => setDetailModalOpen(false)}
+                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
                             >
-                                <ChevronLeft className="w-3.5 h-3.5" />
-                                <span>Zurück</span>
+                                ✕
                             </button>
-                            <span className="px-3 py-1.5 text-slate-700 font-bold font-mono">
-                                Seite {page} von {pagination.totalPages || 1}
-                            </span>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-5 sm:p-6 space-y-6 flex-1">
+
+                            {/* 1. Image Gallery */}
+                            {selectedListing.images?.length > 0 ? (
+                                <div className="space-y-3">
+                                    <div className="relative aspect-video sm:aspect-2/1 bg-slate-900 rounded-2xl overflow-hidden shadow-inner">
+                                        <Image
+                                            src={selectedListing.images[activeImageIdx] || '/logo.webp'}
+                                            alt={selectedListing.title}
+                                            fill
+                                            className="object-contain"
+                                            unoptimized
+                                        />
+                                    </div>
+                                    {selectedListing.images.length > 1 && (
+                                        <div className="flex gap-2 overflow-x-auto pb-1">
+                                            {selectedListing.images.map((img, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setActiveImageIdx(idx)}
+                                                    className={`w-16 h-16 rounded-xl overflow-hidden relative border-2 shrink-0 transition-all cursor-pointer ${activeImageIdx === idx ? 'border-forest ring-2 ring-forest/20' : 'border-transparent opacity-60 hover:opacity-100'
+                                                        }`}
+                                                >
+                                                    <Image
+                                                        src={img}
+                                                        alt={`Bild ${idx + 1}`}
+                                                        fill
+                                                        className="object-cover"
+                                                        unoptimized
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="aspect-video bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 text-xs font-medium">
+                                    Keine Bilder hinterlegt
+                                </div>
+                            )}
+
+                            {/* 2. Key Metadata Grid */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Preis</span>
+                                    <span className="text-base font-black text-forest">
+                                        {formatPrice(selectedListing.price, selectedListing.negotiable)}
+                                    </span>
+                                </div>
+                                <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Kategorie</span>
+                                    <span className="text-xs font-bold text-slate-800">
+                                        {selectedListing.category}
+                                    </span>
+                                </div>
+                                <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Standort</span>
+                                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                                        <MapPin className="w-3 h-3 text-slate-400" />
+                                        {selectedListing.location}
+                                    </span>
+                                </div>
+                                <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Zustand</span>
+                                    <span className="text-xs font-bold text-slate-800">
+                                        {selectedListing.condition || 'Gebraucht'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* 3. Description */}
+                            <div className="space-y-1.5">
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    Beschreibung
+                                </h4>
+                                <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                    {selectedListing.description || 'Keine Beschreibung angegeben.'}
+                                </div>
+                            </div>
+
+                            {/* 4. Seller Information Box */}
+                            <div className="space-y-2">
+                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                    Verkäufer-Details
+                                </h4>
+                                <div className="p-4 bg-slate-50 border border-[#E8EAEF] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-forest text-sand font-bold flex items-center justify-center text-sm">
+                                            {selectedListing.seller?.name?.charAt(0) || 'U'}
+                                        </div>
+                                        <div>
+                                            <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                                                <span>{selectedListing.seller?.name}</span>
+                                                <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${selectedListing.seller?.type === 'COMMERCIAL'
+                                                    ? 'bg-amber-100 text-amber-900'
+                                                    : 'bg-slate-200 text-slate-700'
+                                                    }`}>
+                                                    {selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-slate-500">
+                                                {selectedListing.seller?.email}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {selectedListing.seller?.phone && (
+                                        <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8]">
+                                            📞 {selectedListing.seller.phone}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Modal Actions Footer */}
+                        <div className="p-4 sm:p-5 bg-slate-50 border-t border-[#E8EAEF] flex flex-wrap items-center justify-between gap-3 sticky bottom-0 rounded-b-3xl">
+                            <div className="flex items-center gap-2">
+                                <a
+                                    href={`/inserate/${selectedListing.id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-3.5 py-2 rounded-xl bg-white border border-[#E2E4E8] text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-all"
+                                >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                    Live ansehen
+                                </a>
+
+                                {/* Featured Toggle in Modal */}
+                                <button
+                                    type="button"
+                                    onClick={() => handleToggleFeatured(selectedListing)}
+                                    disabled={actionLoading}
+                                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${selectedListing.featured
+                                        ? 'bg-emerald-700 text-sand hover:bg-emerald-800'
+                                        : 'bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50'
+                                        }`}
+                                >
+                                    <Star className={`w-3.5 h-3.5 ${selectedListing.featured ? 'fill-sand' : ''}`} />
+                                    <span>{selectedListing.featured ? 'Empfohlen (Aktiv)' : 'Als Empfohlen markieren'}</span>
+                                </button>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {selectedListing.status !== 'APPROVED' && (
+                                    <button
+                                        onClick={() => {
+                                            handleStatusUpdate(selectedListing.id, 'APPROVED');
+                                            setDetailModalOpen(false);
+                                        }}
+                                        disabled={actionLoading}
+                                        className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                    >
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        Freigeben
+                                    </button>
+                                )}
+                                {selectedListing.status !== 'REJECTED' && (
+                                    <button
+                                        onClick={() => {
+                                            setListingToReject(selectedListing);
+                                            setRejectModalOpen(true);
+                                            setDetailModalOpen(false);
+                                        }}
+                                        className="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition-all flex items-center gap-1.5 cursor-pointer"
+                                    >
+                                        <XCircle className="w-4 h-4" />
+                                        Ablehnen
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── MODAL: REJECT LISTING WITH REASON ─── */}
+            {rejectModalOpen && listingToReject && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
+                >
+                    <div
+                        className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF] transition-transform duration-200"
+                    >
+                        <div className="flex items-center gap-3 text-rose-600">
+                            <div className="p-3 bg-rose-50 rounded-2xl">
+                                <XCircle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-black text-slate-900">
+                                    Inserat ablehnen
+                                </h3>
+                                <p className="text-xs text-slate-400">
+                                    Status wird auf "Abgelehnt" gesetzt.
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                            Möchtest du das Inserat <strong className="text-slate-900">"{listingToReject.title}"</strong> ablehnen?
+                        </p>
+
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-slate-500 uppercase">
+                                Grund / Feedback (optional):
+                            </label>
+                            <textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="z. B. Unvollständige Angaben, unpassende Fotos, Preisangabe..."
+                                rows={3}
+                                className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-xl p-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2">
                             <button
-                                onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
-                                disabled={page >= pagination.totalPages || loading}
-                                className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                onClick={() => {
+                                    setRejectModalOpen(false);
+                                    setListingToReject(null);
+                                    setRejectionReason('');
+                                }}
+                                disabled={actionLoading}
+                                className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                             >
-                                <span>Weiter</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
+                                Abbrechen
+                            </button>
+                            <button
+                                onClick={() => handleStatusUpdate(listingToReject.id, 'REJECTED', rejectionReason)}
+                                disabled={actionLoading}
+                                className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                            >
+                                {actionLoading ? 'Wird gespeichert...' : 'Inserat ablehnen'}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ─── MODAL: COMPLETE LISTING DETAIL DRAWER ─── */}
-            <AnimatePresence>
-                {detailModalOpen && selectedListing && (
-                    <motion.div
-                        key="detail-modal"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.96 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.96 }}
-                            className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#E8EAEF] flex flex-col"
-                        >
-                            {/* Modal Header */}
-                            <div className="p-5 sm:p-6 border-b border-[#E8EAEF] flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        {renderStatusBadge(selectedListing.status)}
-                                        <span className="text-xs text-slate-400 font-mono">
-                                            ID: {selectedListing.id}
-                                        </span>
-                                    </div>
-                                    <h2 className="text-base sm:text-lg font-black text-slate-900 line-clamp-1">
-                                        {selectedListing.title}
-                                    </h2>
-                                </div>
-                                <button
-                                    onClick={() => setDetailModalOpen(false)}
-                                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-
-                            {/* Modal Body */}
-                            <div className="p-5 sm:p-6 space-y-6 flex-1">
-                                
-                                {/* 1. Image Gallery */}
-                                {selectedListing.images?.length > 0 ? (
-                                    <div className="space-y-3">
-                                        <div className="relative aspect-video sm:aspect-2/1 bg-slate-900 rounded-2xl overflow-hidden shadow-inner">
-                                            <Image
-                                                src={selectedListing.images[activeImageIdx] || '/logo.webp'}
-                                                alt={selectedListing.title}
-                                                fill
-                                                className="object-contain"
-                                                unoptimized
-                                            />
-                                        </div>
-                                        {selectedListing.images.length > 1 && (
-                                            <div className="flex gap-2 overflow-x-auto pb-1">
-                                                {selectedListing.images.map((img, idx) => (
-                                                    <button
-                                                        key={idx}
-                                                        onClick={() => setActiveImageIdx(idx)}
-                                                        className={`w-16 h-16 rounded-xl overflow-hidden relative border-2 shrink-0 transition-all cursor-pointer ${
-                                                            activeImageIdx === idx ? 'border-forest ring-2 ring-forest/20' : 'border-transparent opacity-60 hover:opacity-100'
-                                                        }`}
-                                                    >
-                                                        <Image
-                                                            src={img}
-                                                            alt={`Bild ${idx + 1}`}
-                                                            fill
-                                                            className="object-cover"
-                                                            unoptimized
-                                                        />
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="aspect-video bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 text-xs font-medium">
-                                        Keine Bilder hinterlegt
-                                    </div>
-                                )}
-
-                                {/* 2. Key Metadata Grid */}
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
-                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Preis</span>
-                                        <span className="text-base font-black text-forest">
-                                            {formatPrice(selectedListing.price, selectedListing.negotiable)}
-                                        </span>
-                                    </div>
-                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
-                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Kategorie</span>
-                                        <span className="text-xs font-bold text-slate-800">
-                                            {selectedListing.category}
-                                        </span>
-                                    </div>
-                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
-                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Standort</span>
-                                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                                            <MapPin className="w-3 h-3 text-slate-400" />
-                                            {selectedListing.location}
-                                        </span>
-                                    </div>
-                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
-                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Zustand</span>
-                                        <span className="text-xs font-bold text-slate-800">
-                                            {selectedListing.condition || 'Gebraucht'}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* 3. Description */}
-                                <div className="space-y-1.5">
-                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                        Beschreibung
-                                    </h4>
-                                    <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                        {selectedListing.description || 'Keine Beschreibung angegeben.'}
-                                    </div>
-                                </div>
-
-                                {/* 4. Seller Information Box */}
-                                <div className="space-y-2">
-                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                        Verkäufer-Details
-                                    </h4>
-                                    <div className="p-4 bg-slate-50 border border-[#E8EAEF] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-forest text-sand font-bold flex items-center justify-center text-sm">
-                                                {selectedListing.seller?.name?.charAt(0) || 'U'}
-                                            </div>
-                                            <div>
-                                                <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                                                    <span>{selectedListing.seller?.name}</span>
-                                                    <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${
-                                                        selectedListing.seller?.type === 'COMMERCIAL' 
-                                                            ? 'bg-amber-100 text-amber-900' 
-                                                            : 'bg-slate-200 text-slate-700'
-                                                    }`}>
-                                                        {selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'}
-                                                    </span>
-                                                </div>
-                                                <div className="text-xs text-slate-500">
-                                                    {selectedListing.seller?.email}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {selectedListing.seller?.phone && (
-                                            <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8]">
-                                                📞 {selectedListing.seller.phone}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Modal Actions Footer */}
-                            <div className="p-4 sm:p-5 bg-slate-50 border-t border-[#E8EAEF] flex flex-wrap items-center justify-between gap-3 sticky bottom-0 rounded-b-3xl">
-                                <div className="flex items-center gap-2">
-                                    <a
-                                        href={`/inserate/${selectedListing.id}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="px-3.5 py-2 rounded-xl bg-white border border-[#E2E4E8] text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-all"
-                                    >
-                                        <ExternalLink className="w-3.5 h-3.5" />
-                                        Live ansehen
-                                    </a>
-
-                                    {/* Featured Toggle in Modal */}
-                                    <button
-                                        type="button"
-                                        onClick={() => handleToggleFeatured(selectedListing)}
-                                        disabled={actionLoading}
-                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${
-                                            selectedListing.featured
-                                                ? 'bg-emerald-700 text-sand hover:bg-emerald-800'
-                                                : 'bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50'
-                                        }`}
-                                    >
-                                        <Star className={`w-3.5 h-3.5 ${selectedListing.featured ? 'fill-sand' : ''}`} />
-                                        <span>{selectedListing.featured ? 'Empfohlen (Aktiv)' : 'Als Empfohlen markieren'}</span>
-                                    </button>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    {selectedListing.status !== 'APPROVED' && (
-                                        <button
-                                            onClick={() => {
-                                                handleStatusUpdate(selectedListing.id, 'APPROVED');
-                                                setDetailModalOpen(false);
-                                            }}
-                                            disabled={actionLoading}
-                                            className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-                                        >
-                                            <CheckCircle2 className="w-4 h-4" />
-                                            Freigeben
-                                        </button>
-                                    )}
-                                    {selectedListing.status !== 'REJECTED' && (
-                                        <button
-                                            onClick={() => {
-                                                setListingToReject(selectedListing);
-                                                setRejectModalOpen(true);
-                                                setDetailModalOpen(false);
-                                            }}
-                                            className="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition-all flex items-center gap-1.5 cursor-pointer"
-                                        >
-                                            <XCircle className="w-4 h-4" />
-                                            Ablehnen
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* ─── MODAL: REJECT LISTING WITH REASON ─── */}
-            <AnimatePresence>
-                {rejectModalOpen && listingToReject && (
-                    <motion.div
-                        key="reject-modal"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF]"
-                        >
-                            <div className="flex items-center gap-3 text-rose-600">
-                                <div className="p-3 bg-rose-50 rounded-2xl">
-                                    <XCircle className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-base font-black text-slate-900">
-                                        Inserat ablehnen
-                                    </h3>
-                                    <p className="text-xs text-slate-400">
-                                        Status wird auf "Abgelehnt" gesetzt.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <p className="text-xs text-slate-600 leading-relaxed">
-                                Möchtest du das Inserat <strong className="text-slate-900">"{listingToReject.title}"</strong> ablehnen?
-                            </p>
-
-                            <div className="space-y-1">
-                                <label className="text-[11px] font-bold text-slate-500 uppercase">
-                                    Grund / Feedback (optional):
-                                </label>
-                                <textarea
-                                    value={rejectionReason}
-                                    onChange={(e) => setRejectionReason(e.target.value)}
-                                    placeholder="z. B. Unvollständige Angaben, unpassende Fotos, Preisangabe..."
-                                    rows={3}
-                                    className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-xl p-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-end gap-2 pt-2">
-                                <button
-                                    onClick={() => {
-                                        setRejectModalOpen(false);
-                                        setListingToReject(null);
-                                        setRejectionReason('');
-                                    }}
-                                    disabled={actionLoading}
-                                    className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-                                >
-                                    Abbrechen
-                                </button>
-                                <button
-                                    onClick={() => handleStatusUpdate(listingToReject.id, 'REJECTED', rejectionReason)}
-                                    disabled={actionLoading}
-                                    className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-                                >
-                                    {actionLoading ? 'Wird gespeichert...' : 'Inserat ablehnen'}
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
             {/* ─── MODAL: DELETE CONFIRMATION ─── */}
-            <AnimatePresence>
-                {deleteModalOpen && listingToDelete && (
-                    <motion.div
-                        key="delete-modal"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+            {deleteModalOpen && listingToDelete && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
+                >
+                    <div
+                        className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF] transition-transform duration-200"
                     >
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF]"
-                        >
-                            <div className="flex items-center gap-3 text-rose-600">
-                                <div className="p-3 bg-rose-50 rounded-2xl">
-                                    <Trash2 className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h3 className="text-base font-black text-slate-900">
-                                        Inserat endgültig löschen
-                                    </h3>
-                                    <p className="text-xs text-slate-400">
-                                        Diese Aktion kann nicht rückgängig gemacht werden.
-                                    </p>
-                                </div>
+                        <div className="flex items-center gap-3 text-rose-600">
+                            <div className="p-3 bg-rose-50 rounded-2xl">
+                                <Trash2 className="w-6 h-6" />
                             </div>
-
-                            <p className="text-xs text-slate-600 leading-relaxed">
-                                Bist du sicher, dass du das Inserat <strong className="text-slate-900">"{listingToDelete.title}"</strong> sowie alle zugehörigen Favoriten und Medien unwiderruflich löschen möchtest?
-                            </p>
-
-                            <div className="flex items-center justify-end gap-2 pt-2">
-                                <button
-                                    onClick={() => {
-                                        setDeleteModalOpen(false);
-                                        setListingToDelete(null);
-                                    }}
-                                    disabled={actionLoading}
-                                    className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-                                >
-                                    Abbrechen
-                                </button>
-                                <button
-                                    onClick={handleDeleteListing}
-                                    disabled={actionLoading}
-                                    className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-                                >
-                                    {actionLoading ? 'Wird gelöscht...' : 'Endgültig löschen'}
-                                </button>
+                            <div>
+                                <h3 className="text-base font-black text-slate-900">
+                                    Inserat endgültig löschen
+                                </h3>
+                                <p className="text-xs text-slate-400">
+                                    Diese Aktion kann nicht rückgängig gemacht werden.
+                                </p>
                             </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        </div>
+
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                            Bist du sicher, dass du das Inserat <strong className="text-slate-900">"{listingToDelete.title}"</strong> sowie alle zugehörigen Favoriten und Medien unwiderruflich löschen möchtest?
+                        </p>
+
+                        <div className="flex items-center justify-end gap-2 pt-2">
+                            <button
+                                onClick={() => {
+                                    setDeleteModalOpen(false);
+                                    setListingToDelete(null);
+                                }}
+                                disabled={actionLoading}
+                                className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                            >
+                                Abbrechen
+                            </button>
+                            <button
+                                onClick={handleDeleteListing}
+                                disabled={actionLoading}
+                                className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                            >
+                                {actionLoading ? 'Wird gelöscht...' : 'Endgültig löschen'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

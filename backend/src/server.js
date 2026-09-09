@@ -10,6 +10,19 @@ import subscriptionRoutes from './routes/subscription.js';
 import favoritesRoutes from './routes/favorites.js';
 import adminRoutes from './routes/admin.js';
 import './config/initAdminTable.js';
+import pool from './config/database.js';
+import { seedMarketplaceData } from './config/seedMarketplaceData.js';
+
+// Auto-seed sample marketplace data if DB has fewer than 5 listings
+pool.query('SELECT count(*) FROM listings')
+  .then(res => {
+    const count = parseInt(res.rows[0]?.count || 0, 10);
+    if (count < 5) {
+      console.log('📦 Marketplace listings sparse or empty, seeding authentic German marketplace data...');
+      seedMarketplaceData().catch(e => console.error('Seed error:', e.message));
+    }
+  })
+  .catch(() => {});
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,6 +35,10 @@ app.use('/uploads', express.static('uploads'));
 
 app.get('/', (req, res) => {
   res.send(`API Working on port ${PORT}`);
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.use('/api', authRoutes);

@@ -38,14 +38,36 @@ export const getAdminDecisions = async (req, res) => {
         }
 
         if (filter === 'MANUAL_REVIEW') {
-            // Listings where AI score is borderline (around 50) or status is PENDING manual review
-            conditions.push(`(m.ai_decision = 'MANUAL_REVIEW' OR (m.ai_score >= 31 AND m.ai_score < 75) OR m.status = 'PENDING')`);
-        } else if (filter === 'AUTO_APPROVED') {
-            conditions.push(`(m.ai_decision = 'AUTO_APPROVED' OR m.ai_score >= 75)`);
-        } else if (filter === 'AUTO_REJECTED') {
-            conditions.push(`(m.ai_decision = 'AUTO_REJECTED' OR m.ai_score <= 30)`);
+            // Only listings that are genuinely pending manual review (not yet approved or rejected)
+            conditions.push(`(
+                l.status NOT IN ('APPROVED', 'REJECTED')
+                AND COALESCE(m.status, 'PENDING') NOT IN ('APPROVED', 'APPROVED_BY_ADMIN', 'REJECTED', 'REJECTED_BY_ADMIN')
+                AND (
+                    l.status = 'REVIEW'
+                    OR COALESCE(m.status, 'PENDING') = 'PENDING'
+                    OR m.ai_decision = 'MANUAL_REVIEW'
+                    OR (m.ai_score >= 31 AND m.ai_score < 75)
+                )
+            )`);
+        } else if (filter === 'AUTO_APPROVED' || filter === 'APPROVED') {
+            // All approved listings (both AI auto-approved and manually approved by admin)
+            conditions.push(`(
+                l.status = 'APPROVED'
+                OR COALESCE(m.status, '') IN ('APPROVED', 'APPROVED_BY_ADMIN')
+                OR (l.status NOT IN ('REJECTED', 'REVIEW') AND (m.ai_decision = 'AUTO_APPROVED' OR m.ai_score >= 75))
+            )`);
+        } else if (filter === 'AUTO_REJECTED' || filter === 'REJECTED') {
+            // All rejected listings (both AI auto-rejected and manually rejected by admin)
+            conditions.push(`(
+                l.status = 'REJECTED'
+                OR COALESCE(m.status, '') IN ('REJECTED', 'REJECTED_BY_ADMIN')
+                OR (l.status != 'APPROVED' AND (m.ai_decision = 'AUTO_REJECTED' OR m.ai_score <= 30))
+            )`);
         } else if (filter === 'PENDING') {
-            conditions.push(`m.status = 'PENDING'`);
+            conditions.push(`(
+                l.status NOT IN ('APPROVED', 'REJECTED')
+                AND COALESCE(m.status, 'PENDING') = 'PENDING'
+            )`);
         }
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -94,11 +116,9 @@ export const getAdminDecisions = async (req, res) => {
             ${whereClause}
             ORDER BY 
                 CASE 
-                    WHEN m.status = 'PENDING' OR m.ai_decision = 'MANUAL_REVIEW' THEN 1
-                    WHEN l.status = 'REVIEW' THEN 2
-                    ELSE 3
+                    WHEN l.status NOT IN ('APPROVED', 'REJECTED') AND (m.status = 'PENDING' OR m.ai_decision = 'MANUAL_REVIEW' OR l.status = 'REVIEW') THEN 1
+                    ELSE 2
                 END ASC,
-                m.ai_score ASC,
                 l.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
         `;
@@ -119,9 +139,26 @@ export const getAdminDecisions = async (req, res) => {
         const summaryQuery = `
             SELECT 
                 COUNT(*) as total_processed,
-                COUNT(CASE WHEN m.ai_decision = 'MANUAL_REVIEW' OR (m.ai_score >= 31 AND m.ai_score < 75) OR m.status = 'PENDING' THEN 1 END) as manual_review_count,
-                COUNT(CASE WHEN m.ai_decision = 'AUTO_APPROVED' OR m.ai_score >= 75 THEN 1 END) as auto_approved_count,
-                COUNT(CASE WHEN m.ai_decision = 'AUTO_REJECTED' OR m.ai_score <= 30 THEN 1 END) as auto_rejected_count,
+                COUNT(CASE WHEN (
+                    l.status NOT IN ('APPROVED', 'REJECTED')
+                    AND COALESCE(m.status, 'PENDING') NOT IN ('APPROVED', 'APPROVED_BY_ADMIN', 'REJECTED', 'REJECTED_BY_ADMIN')
+                    AND (
+                        l.status = 'REVIEW'
+                        OR COALESCE(m.status, 'PENDING') = 'PENDING'
+                        OR m.ai_decision = 'MANUAL_REVIEW'
+                        OR (m.ai_score >= 31 AND m.ai_score < 75)
+                    )
+                ) THEN 1 END) as manual_review_count,
+                COUNT(CASE WHEN (
+                    l.status = 'APPROVED'
+                    OR COALESCE(m.status, '') IN ('APPROVED', 'APPROVED_BY_ADMIN')
+                    OR (l.status NOT IN ('REJECTED', 'REVIEW') AND (m.ai_decision = 'AUTO_APPROVED' OR m.ai_score >= 75))
+                ) THEN 1 END) as auto_approved_count,
+                COUNT(CASE WHEN (
+                    l.status = 'REJECTED'
+                    OR COALESCE(m.status, '') IN ('REJECTED', 'REJECTED_BY_ADMIN')
+                    OR (l.status != 'APPROVED' AND (m.ai_decision = 'AUTO_REJECTED' OR m.ai_score <= 30))
+                ) THEN 1 END) as auto_rejected_count,
                 COALESCE(AVG(m.ai_score), 50) as avg_score
             FROM listings l
             LEFT JOIN listing_moderation m ON l.id = m.listing_id

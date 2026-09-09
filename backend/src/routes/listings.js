@@ -1,5 +1,15 @@
 import { Router } from 'express';
-import { createListing, getMyListings, getAllListings, getListingDetail, getListingsByUser, boostListing } from '../controllers/listings.js';
+import {
+    createListing,
+    updateListing,
+    getMyListings,
+    getAllListings,
+    getListingDetail,
+    getListingsByUser,
+    boostListing,
+    importListingsFromCsv,
+    exportListingsToCsv,
+} from '../controllers/listings.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { uploadMultiple } from '../middleware/upload.js';
 
@@ -7,6 +17,9 @@ const router = Router();
 
 // GET /api/listings/my → Retrieve own listings
 router.get('/my', authenticate, getMyListings);
+
+// GET /api/listings/export-csv → Export own listings as CSV
+router.get('/export-csv', authenticate, exportListingsToCsv);
 
 // GET /api/listings/user/:userId → Retrieve all approved listings by a specific user (public)
 router.get('/user/:userId', getListingsByUser);
@@ -17,10 +30,17 @@ router.get('/', getAllListings);
 // GET /api/listings/:id → Retrieve listing detail by ID (public)
 router.get('/:id', getListingDetail);
 
+// POST /api/listings/csv-import → Batch import listings via CSV
+router.post('/csv-import', authenticate, importListingsFromCsv);
+
 // POST /api/listings → Create listing
 router.post('/', authenticate, uploadMultiple, createListing);
+
+// PUT /api/listings/:id → Update listing (requires authentication & re-triggers moderation review)
+router.put('/:id', authenticate, uploadMultiple, updateListing);
 
 // POST /api/listings/:id/boost → Boost listing with Campuna Credits
 router.post('/:id/boost', authenticate, boostListing);
 
 export default router;
+

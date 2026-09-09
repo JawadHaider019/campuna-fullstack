@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 import { db } from '../prisma/db.js';
 import pool from '../config/database.js';
@@ -46,6 +47,7 @@ export const authenticate = async (req, res, next) => {
                     error: 'Administrator nicht gefunden.',
                 });
             }
+            delete admin.password_hash;
             req.user = admin;
             return next();
         }
@@ -68,6 +70,7 @@ export const authenticate = async (req, res, next) => {
             });
         }
 
+        delete user.password_hash;
         req.user = user;
         next();
     } catch (error) {

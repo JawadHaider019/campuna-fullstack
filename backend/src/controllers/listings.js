@@ -502,3 +502,311 @@ export const boostListing = async (req, res) => {
         return res.status(500).json({ success: false, error: 'Fehler beim Boosten des Inserats.' });
     }
 };
+
+/**
+ * PUT /api/listings/:id
+ * Updates an existing listing owned by the authenticated user.
+ * Sets status to 'REVIEW' so it requires admin moderation approval.
+ * Handles preserved existing images + newly uploaded image files.
+ */
+export const updateListing = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { title, price, description, category, subcategory, location, isNegotiable, condition, existing_images } = req.body;
+
+        // 1. Fetch listing and verify ownership
+        const existingRes = await pool.query('SELECT * FROM listings WHERE id = $1', [id]);
+        if (existingRes.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Inserat nicht gefunden.' });
+        }
+
+        const existingListing = existingRes.rows[0];
+        if (existingListing.user_id !== userId && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ success: false, error: 'Keine Berechtigung zum Bearbeiten dieses Inserats.' });
+        }
+
+        // 2. Validate required fields
+        if (!title || !price || !category || !location) {
+            return res.status(400).json({ success: false, error: 'Bitte füllen Sie alle Pflichtfelder aus.' });
+        }
+
+        const parsedPrice = parseInt(price, 10);
+        if (isNaN(parsedPrice)) {
+            return res.status(400).json({ success: false, error: 'Ungültiger Preis angegeben.' });
+        }
+
+        const negotiable = isNegotiable === 'true' || isNegotiable === true;
+
+        // 3. Process existing images kept by user
+        let retainedImages = [];
+        if (existing_images) {
+            if (Array.isArray(existing_images)) {
+                retainedImages = existing_images;
+            } else if (typeof existing_images === 'string') {
+                try {
+                    const parsed = JSON.parse(existing_images);
+                    if (Array.isArray(parsed)) {
+                        retainedImages = parsed;
+                    } else {
+                        retainedImages = [existing_images];
+                    }
+                } catch {
+                    retainedImages = [existing_images];
+                }
+            }
+        }
+
+        // 4. Process new uploaded files
+        const newUploadedUrls = [];
+        if (req.files && req.files.length > 0) {
+            const PORT = process.env.PORT || 5000;
+            const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
+
+            for (const file of req.files) {
+                newUploadedUrls.push(`${host}/uploads/${file.filename}`);
+            }
+        }
+
+        const finalImages = [...retainedImages, ...newUploadedUrls];
+
+        // 5. Generate slug if title changed or if slug missing
+        let slug = existingListing.slug;
+        if (!slug || existingListing.title !== title) {
+            slug = title
+                .toLowerCase()
+                .replace(/ä/g, 'ae')
+                .replace(/ö/g, 'oe')
+                .replace(/ü/g, 'ue')
+                .replace(/ß/g, 'ss')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+        }
+
+        // 6. Update listing: Set status to 'REVIEW' for mandatory moderation approval
+        const updateRes = await pool.query(
+            `UPDATE listings
+             SET title = $1,
+                 slug = $2,
+                 description = $3,
+                 price = $4,
+                 negotiable = $5,
+                 location = $6,
+                 condition = $7,
+                 category = $8,
+                 subcategory = $9,
+                 images = $10,
+                 status = 'REVIEW',
+                 reviewed_by_id = NULL,
+                 reviewed_by_type = NULL,
+                 reviewed_at = NULL,
+                 updated_at = NOW()
+             WHERE id = $11
+             RETURNING *`,
+            [
+                title,
+                slug,
+                description || '',
+                parsedPrice,
+                negotiable,
+                location,
+                condition || 'Gebraucht',
+                category,
+                subcategory || '',
+                finalImages,
+                id
+            ]
+        );
+
+        const updatedListing = updateRes.rows[0];
+
+        // 7. Upsert listing_moderation record to mark status as PENDING review
+        try {
+            await pool.query(
+                `INSERT INTO listing_moderation (
+                    listing_id, ai_score, ai_decision, confidence_score, text_score, image_score, price_score, fraud_risk_score, ai_reasons, status, updated_at
+                ) VALUES (
+                    $1, 50, 'MANUAL_REVIEW', 0.50, 50, 50, 50, 10, '["Inserat wurde vom Verkäufer überarbeitet und erfordert erneute Prüfung."]'::jsonb, 'PENDING', NOW()
+                )
+                ON CONFLICT (listing_id) DO UPDATE SET
+                    status = 'PENDING',
+                    ai_decision = 'MANUAL_REVIEW',
+                    ai_reasons = '["Inserat wurde vom Verkäufer überarbeitet und erfordert erneute Prüfung."]'::jsonb,
+                    admin_notes = NULL,
+                    reviewed_at = NULL,
+                    updated_at = NOW()`,
+                [id]
+            );
+        } catch (modErr) {
+            console.warn('Notice: listing_moderation update on listing edit:', modErr.message);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Inserat erfolgreich aktualisiert. Es befindet sich nun zur Prüfung in der Moderation.',
+            listing: {
+                ...updatedListing,
+                price: parseFloat(updatedListing.price) || 0,
+                images: Array.isArray(updatedListing.images) ? updatedListing.images : []
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ updateListing error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Aktualisieren der Anzeige.' });
+    }
+};
+
+/**
+ * POST /api/listings/csv-import
+ * Batch imports vehicle / equipment listings from parsed CSV data.
+ * Validates plan limits (or allows unlimited for Business subscribers).
+ */
+export const importListingsFromCsv = async (req, res) => {
+    try {
+        const { id: userId } = req.user;
+        const { listings = [] } = req.body;
+
+        if (!Array.isArray(listings) || listings.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Keine Inserate-Daten im CSV-Format gefunden oder Datei ist leer.',
+            });
+        }
+
+        // Check user's subscription features
+        const features = await getUserFeatures(userId);
+        const limit = features.listing_limit; // -1 = unlimited
+
+        // Count current active + pending listings
+        const countRes = await pool.query(
+            `SELECT COUNT(*) as count FROM listings WHERE user_id = $1 AND status IN ('APPROVED', 'REVIEW')`,
+            [userId]
+        );
+        const currentActiveCount = parseInt(countRes.rows[0]?.count || 0, 10);
+
+        if (limit !== -1 && (currentActiveCount + listings.length) > limit) {
+            return res.status(403).json({
+                success: false,
+                error: `Das Kontingent von ${limit} Inseraten reicht nicht für ${listings.length} neue Einträge aus. Bitte upgrade auf den Campuna Business-Tarif für unbegrenzten CSV-Import.`,
+                upgrade_required: true,
+                current_plan: features.plan_name,
+                listing_limit: limit,
+            });
+        }
+
+        const insertedListings = [];
+        const errors = [];
+
+        for (let i = 0; i < listings.length; i++) {
+            const item = listings[i];
+            const title = String(item.title || item.Titel || '').trim();
+            const priceRaw = String(item.price || item.Preis || '0').replace(/[^0-9.]/g, '');
+            const parsedPrice = parseInt(priceRaw, 10) || 0;
+            const category = String(item.category || item.Kategorie || 'Wohnmobile & Camper').trim();
+            const subcategory = String(item.subcategory || item.Unterkategorie || '').trim();
+            const location = String(item.location || item.Standort || 'Deutschland').trim();
+            const description = String(item.description || item.Beschreibung || '').trim();
+            const condition = String(item.condition || item.Zustand || 'Gebraucht').trim();
+            const imageUrls = item.images
+                ? (Array.isArray(item.images) ? item.images : String(item.images).split(';').map(s => s.trim()))
+                : ['https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=600'];
+
+            if (!title) {
+                errors.push(`Zeile ${i + 1}: Titel fehlt.`);
+                continue;
+            }
+
+            const slug = title
+                .toLowerCase()
+                .replace(/ä/g, 'ae')
+                .replace(/ö/g, 'oe')
+                .replace(/ü/g, 'ue')
+                .replace(/ß/g, 'ss')
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '') + `-${Date.now() % 10000}-${i}`;
+
+            const insertRes = await pool.query(
+                `INSERT INTO listings (
+                    user_id, title, slug, description, price, negotiable, location,
+                    condition, category, subcategory, status, featured, boosted_until, images, created_at, updated_at
+                ) VALUES (
+                    $1, $2, $3, $4, $5, false, $6, $7, $8, $9, 'APPROVED', false, NULL, $10, NOW(), NOW()
+                ) RETURNING *`,
+                [
+                    userId,
+                    title,
+                    slug,
+                    description || 'Fahrzeugdetails und Ausstattung auf Anfrage beim Händler.',
+                    parsedPrice,
+                    location,
+                    condition,
+                    category,
+                    subcategory,
+                    imageUrls
+                ]
+            );
+
+            insertedListings.push(insertRes.rows[0]);
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: `Erfolgreich ${insertedListings.length} Inserat${insertedListings.length > 1 ? 'e' : ''} per CSV importiert!`,
+            imported_count: insertedListings.length,
+            listings: insertedListings,
+            errors,
+        });
+
+    } catch (err) {
+        console.error('❌ importListingsFromCsv error:', err.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim CSV-Import der Inserate.' });
+    }
+};
+
+/**
+ * GET /api/listings/export-csv
+ * Exports the authenticated user's listings formatted as CSV.
+ */
+export const exportListingsToCsv = async (req, res) => {
+    try {
+        const { id: userId } = req.user;
+        const result = await pool.query(
+            `SELECT id, title, category, subcategory, price, location, condition, status, created_at 
+             FROM listings 
+             WHERE user_id = $1 
+             ORDER BY created_at DESC`,
+            [userId]
+        );
+
+        const rows = result.rows;
+        const headers = ['ID', 'Titel', 'Kategorie', 'Unterkategorie', 'Preis_EUR', 'Standort', 'Zustand', 'Status', 'Erstellt_Am'];
+        const csvRows = [headers.join(';')];
+
+        for (const r of rows) {
+            const rowValues = [
+                `"${r.id}"`,
+                `"${(r.title || '').replace(/"/g, '""')}"`,
+                `"${(r.category || '').replace(/"/g, '""')}"`,
+                `"${(r.subcategory || '').replace(/"/g, '""')}"`,
+                `"${r.price || 0}"`,
+                `"${(r.location || '').replace(/"/g, '""')}"`,
+                `"${(r.condition || '').replace(/"/g, '""')}"`,
+                `"${r.status || 'REVIEW'}"`,
+                `"${new Date(r.created_at).toISOString().split('T')[0]}"`,
+            ];
+            csvRows.push(rowValues.join(';'));
+        }
+
+        const csvString = '\uFEFF' + csvRows.join('\r\n'); // UTF-8 BOM for Excel
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="campuna_inserate_${new Date().toISOString().split('T')[0]}.csv"`);
+        return res.status(200).send(csvString);
+
+    } catch (err) {
+        console.error('❌ exportListingsToCsv error:', err.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Exportieren der Inserate als CSV.' });
+    }
+};
+

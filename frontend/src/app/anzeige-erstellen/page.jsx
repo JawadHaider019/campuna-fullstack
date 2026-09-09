@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft,
@@ -11,16 +11,16 @@ import {
     MapPin,
     CheckCircle2,
     Info,
-    FileText,
-    Layers,
-    Tag,
     ChevronDown,
     Check,
     Lock,
-    AlertCircle
+    AlertCircle,
+    Loader2,
+    Clock,
+    Pencil
 } from 'lucide-react';
 import { CATEGORIES } from '@/data';
-import { createListing } from '@/api/listings';
+import { createListing, updateListing, getListingDetail } from '@/api/listings';
 import { toast } from 'react-hot-toast';
 
 // Map of subcategories based on categories
@@ -94,21 +94,26 @@ const MOCK_LOCATIONS = [
     'Riegelsberg', 'Waidring', 'Schuby', 'Oberhausen', 'Schkeuditz', 'Neidenau'
 ];
 
-export default function CreateListingPage() {
+function CreateOrEditListingForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const editId = searchParams.get('edit');
+    const isEditMode = Boolean(editId);
+
+    const [loadingListing, setLoadingListing] = useState(isEditMode);
     const [formData, setFormData] = useState({
         title: '',
-        price: '96', // Initial default from requested content
+        price: '96',
         isNegotiable: true,
-        condition: 'Zustand', // Default value
+        condition: 'Zustand',
         description: '',
-        category: 'Camping Zubehör', // Will map to 'Ausrüstung und Zubehör' initially or we can set it
+        category: 'Camping Zubehör',
         subcategory: 'Ausrüstung und Zubehör',
         location: '',
     });
 
+    // Unified images array: { id, url, file: File | null, isExisting: boolean }
     const [images, setImages] = useState([]);
-    const [imageFiles, setImageFiles] = useState([]);
     const [dragActive, setDragActive] = useState(false);
     const [locationSuggestions, setLocationSuggestions] = useState([]);
     const [showLocationDropdown, setShowLocationDropdown] = useState(false);
@@ -120,6 +125,47 @@ export default function CreateListingPage() {
 
     // Suggested values for condition
     const conditions = ['Neu', 'Sehr gut', 'Gut', 'Gebraucht', 'Defekt'];
+
+    // Load initial data if in edit mode
+    useEffect(() => {
+        if (editId) {
+            setLoadingListing(true);
+            getListingDetail(editId)
+                .then((res) => {
+                    const listing = res.data?.listing || res.listing;
+                    if (listing) {
+                        setFormData({
+                            title: listing.title || '',
+                            price: String(listing.price || ''),
+                            isNegotiable: Boolean(listing.negotiable),
+                            condition: listing.condition || 'Gebraucht',
+                            description: listing.description || '',
+                            category: listing.category || 'Camping Zubehör',
+                            subcategory: listing.subcategory || '',
+                            location: listing.location || '',
+                        });
+
+                        const rawImgs = Array.isArray(listing.images) ? listing.images : [];
+                        const formattedImgs = rawImgs.map((url, i) => ({
+                            id: `existing-${i}-${Math.random().toString(36).substr(2, 6)}`,
+                            url,
+                            file: null,
+                            isExisting: true
+                        }));
+                        setImages(formattedImgs);
+                    } else {
+                        toast.error('Inserat konnte nicht geladen werden.');
+                        router.push('/mein-konto');
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to load listing for edit:', err);
+                    toast.error('Fehler beim Laden des Inserats.');
+                    router.push('/mein-konto');
+                })
+                .finally(() => setLoadingListing(false));
+        }
+    }, [editId, router]);
 
     // Handle textual input changes
     const handleInputChange = (e) => {
@@ -203,24 +249,27 @@ export default function CreateListingPage() {
     const addImages = (files) => {
         const maxSize = 5 * 1024 * 1024; // 5MB
         const validImageFiles = files.filter(file => file.type.startsWith('image/'));
-        
+
         const oversizedFiles = validImageFiles.filter(file => file.size > maxSize);
         if (oversizedFiles.length > 0) {
             toast.error('Einige Bilder überschreiten das Limit von 5 MB und wurden nicht hinzugefügt.');
         }
 
         const allowedFiles = validImageFiles.filter(file => file.size <= maxSize);
-        const newImageUrls = allowedFiles.map(file => URL.createObjectURL(file));
-        setImages((prev) => [...prev, ...newImageUrls]);
-        setImageFiles((prev) => [...prev, ...allowedFiles]);
+        const newItems = allowedFiles.map(file => ({
+            id: `new-${Math.random().toString(36).substr(2, 9)}`,
+            url: URL.createObjectURL(file),
+            file: file,
+            isExisting: false
+        }));
+        setImages((prev) => [...prev, ...newItems]);
     };
 
     const removeImage = (indexToRemove) => {
         setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
-        setImageFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
     };
 
-    // Simulated Campuna AI description generator with typewriter typing effect!
+    // Simulated Campuna AI description generator with typewriter typing effect
     const generateAiDescription = () => {
         if (!formData.title.trim()) {
             alert('Bitte geben Sie zuerst einen Titel ein, damit Campuna AI eine Beschreibung erstellen kann.');
@@ -230,14 +279,13 @@ export default function CreateListingPage() {
         setAiGenerating(true);
         setAiProgress(0);
 
-        // Dynamic prompt simulation based on user selected fields
         const titleVal = formData.title;
         const catVal = formData.category;
         const condVal = formData.condition !== 'Zustand' ? formData.condition : 'guten';
         const priceVal = formData.price ? `${formData.price}€` : 'Verhandlungssache';
 
         const sentences = [
-            `Hallo zusammen! Ich verkaufe hier: ${titleVal}.`,
+            `Hallo zusammen! Ich biete hier an: ${titleVal}.`,
             `Der Artikel befindet sich in einem ${condVal.toLowerCase()} Zustand und wurde stets sorgfältig gepflegt und trocken gelagert.`,
             catVal === 'Camping Zubehör'
                 ? `Dieses hochwertige Camping-Zubehör eignet sich hervorragend für den nächsten Urlaub mit dem Caravan oder Zelt. Es bietet genau die Zuverlässigkeit und den Komfort, den man sich auf Reisen wünscht.`
@@ -252,14 +300,13 @@ export default function CreateListingPage() {
                 if (prev >= 100) {
                     clearInterval(progressInterval);
 
-                    // Start Typwriter Effect
                     let currentText = "";
                     let charIndex = 0;
                     let typingInterval = setInterval(() => {
                         if (charIndex < finalDescription.length) {
                             currentText += finalDescription.charAt(charIndex);
-                            setFormData(prev => ({ ...prev, description: currentText }));
-                            charIndex += 2; // Type two chars at a time for snappiness
+                            setFormData(p => ({ ...p, description: currentText }));
+                            charIndex += 2;
                         } else {
                             clearInterval(typingInterval);
                             setAiGenerating(false);
@@ -282,7 +329,7 @@ export default function CreateListingPage() {
             toast.error('Bitte einen Titel eingeben.');
             return;
         }
-        if (!formData.price.trim()) {
+        if (!formData.price.toString().trim()) {
             toast.error('Bitte einen Preis eingeben.');
             return;
         }
@@ -296,7 +343,7 @@ export default function CreateListingPage() {
         }
 
         setSubmitLoading(true);
-        const toastId = toast.loading('Anzeige wird erstellt...');
+        const toastId = toast.loading(isEditMode ? 'Änderungen werden gespeichert...' : 'Anzeige wird erstellt...');
 
         try {
             const data = new FormData();
@@ -309,29 +356,53 @@ export default function CreateListingPage() {
             data.append('subcategory', formData.subcategory || '');
             data.append('location', formData.location);
 
-            // Append images files
-            imageFiles.forEach((file) => {
-                data.append('images', file);
-            });
+            if (isEditMode) {
+                // Kept existing images
+                const existingUrls = images.filter(i => i.isExisting).map(i => i.url);
+                data.append('existing_images', JSON.stringify(existingUrls));
 
-            const res = await createListing(data);
+                // New uploaded files
+                images.filter(i => !i.isExisting && i.file).forEach((item) => {
+                    data.append('images', item.file);
+                });
 
-            if (res.success) {
-                toast.success('Anzeige erfolgreich erstellt!', { id: toastId });
-                setPioneerBadgeInfo(res.data.pioneer_badge_info);
-                setShowSuccessModal(true);
+                const res = await updateListing(editId, data);
+                const isSuccess = res.data?.success || res.success;
+
+                if (isSuccess) {
+                    toast.success('Inserat erfolgreich aktualisiert!', { id: toastId });
+                    setShowSuccessModal(true);
+                } else {
+                    toast.error(res.data?.error || res.error || 'Aktualisierung fehlgeschlagen.', { id: toastId });
+                }
             } else {
-                toast.error(res.error || 'Erstellung fehlgeschlagen.', { id: toastId });
+                // Creation mode: append all files
+                images.forEach((item) => {
+                    if (item.file) {
+                        data.append('images', item.file);
+                    }
+                });
+
+                const res = await createListing(data);
+                const isSuccess = res.data?.success || res.success;
+
+                if (isSuccess) {
+                    toast.success('Anzeige erfolgreich erstellt!', { id: toastId });
+                    setPioneerBadgeInfo(res.data?.pioneer_badge_info || res.pioneer_badge_info);
+                    setShowSuccessModal(true);
+                } else {
+                    toast.error(res.data?.error || res.error || 'Erstellung fehlgeschlagen.', { id: toastId });
+                }
             }
         } catch (err) {
             console.error(err);
-            toast.error('Netzwerkfehler beim Erstellen der Anzeige.', { id: toastId });
+            toast.error(isEditMode ? 'Netzwerkfehler beim Aktualisieren des Inserats.' : 'Netzwerkfehler beim Erstellen der Anzeige.', { id: toastId });
         } finally {
             setSubmitLoading(false);
         }
     };
 
-    // Quick fill helper for testing
+    // Quick fill helper for testing in creation mode
     const handleQuickFill = () => {
         setFormData({
             title: 'Vorzelt Dorema Größe 10, sehr guter Zustand',
@@ -346,38 +417,67 @@ export default function CreateListingPage() {
     };
 
     const displayedPreviewImage = images.length > 0
-        ? images[0]
+        ? images[0].url
         : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
+
+    if (loadingListing) {
+        return (
+            <div className="bg-sand min-h-screen flex flex-col items-center justify-center p-4">
+                <Loader2 className="w-10 h-10 text-forest animate-spin mb-3" />
+                <p className="text-xs font-bold text-forest uppercase tracking-widest">Inserat wird geladen...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-sand min-h-screen py-16 px-4 sm:px-6 lg:px-8">
             {/* Animated Background Gradients */}
             <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-forest/5 to-transparent pointer-events-none" />
 
-            <div className="max-w-7xl mx-auto  pt-10 relative z-10">
+            <div className="max-w-7xl mx-auto pt-10 relative z-10">
 
-                {/* Top Info Banner containing requested content headings */}
+                {/* Top Info Banner */}
                 <div className="mb-6 text-center sm:text-left flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6 pb-6 border-b border-forest/10">
                     <div>
-                        <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-charcoal tracking-tight mb-2">
-                            Erstelle deine Anzeige in unter 2 Minuten
+                        <div className="flex items-center gap-2 mb-2">
+                            <button
+                                type="button"
+                                onClick={() => router.back()}
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-forest/70 hover:text-forest transition-colors cursor-pointer"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                <span>Zurück</span>
+                            </button>
+                        </div>
+                        <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-charcoal tracking-tight mb-2 flex items-center gap-2.5 flex-wrap">
+                            {isEditMode ? (
+                                <>
+                                    <span>Inserat bearbeiten</span>
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                        Modus: Bearbeitung
+                                    </span>
+                                </>
+                            ) : (
+                                'Erstelle deine Anzeige in unter 2 Minuten'
+                            )}
                         </h1>
                         <p className="font-sans text-sm md:text-base text-charcoal/70 font-light">
-                            Verkaufe Dinge, die du nicht mehr nutzt – schnell, einfach und kostenlos
+                            {isEditMode
+                                ? 'Passe die Angaben deines Inserats an. Nach dem Speichern wird das Inserat zur Prüfung eingereicht.'
+                                : 'Verkaufe Dinge, die du nicht mehr nutzt – schnell, einfach und kostenlos'}
                         </p>
                     </div>
+
                     <div className="flex flex-col items-center sm:items-end shrink-0">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-forest/10 text-forest text-xs font-semibold mb-1">
                             <Info className="w-3.5 h-3.5" />
-                            Kostenlos inserieren
+                            {isEditMode ? 'Moderationsprüfung nach Änderung' : 'Kostenlos inserieren'}
                         </span>
                         <span className="font-sans text-[10px] text-charcoal/50">
-                            Du kannst alles später jederzeit bearbeiten
+                            {isEditMode ? 'Erfordert Freigabe durch Moderation' : 'Du kannst alles später jederzeit bearbeiten'}
                         </span>
                     </div>
                 </div>
-
-                {/* Quick Fill Testing Helper Badge */}
 
                 {/* Grid Container split content layout: Form Left, Preview Card Right */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -492,16 +592,22 @@ export default function CreateListingPage() {
                                 {/* Uploaded Previews List */}
                                 {images.length > 0 && (
                                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-3">
-                                        {images.map((url, idx) => (
-                                            <div key={idx} className="relative aspect-square rounded-xl overflow-hidden group shadow-md border border-forest/10">
-                                                <img src={url} alt={`Upload preview ${idx}`} className="w-full h-full object-cover" />
+                                        {images.map((item, idx) => (
+                                            <div key={item.id || idx} className="relative aspect-square rounded-xl overflow-hidden group shadow-md border border-forest/10">
+                                                <img src={item.url} alt={`Upload preview ${idx}`} className="w-full h-full object-cover" />
                                                 <button
                                                     type="button"
                                                     onClick={() => removeImage(idx)}
-                                                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center  transition-opacity duration-200 shadow hover:bg-red-650"
+                                                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center transition-opacity duration-200 shadow hover:bg-red-600 cursor-pointer"
+                                                    title="Bild entfernen"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                 </button>
+                                                {item.isExisting && (
+                                                    <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[8px] font-bold px-1.5 py-0.5 rounded">
+                                                        Gespeichert
+                                                    </span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -549,54 +655,43 @@ export default function CreateListingPage() {
                                         type="button"
                                         onClick={generateAiDescription}
                                         disabled={aiGenerating}
-                                        className={`inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all duration-300 shadow-md ${aiGenerating
-                                            ? 'bg-forest/10 text-forest/50 cursor-not-allowed'
-                                            : 'bg-forest text-white hover:bg-gold hover:text-forest'
-                                            }`}
+                                        className="inline-flex items-center space-x-1.5 text-xs font-bold text-forest hover:text-gold transition-colors duration-200 cursor-pointer disabled:opacity-50"
                                     >
-                                        <Sparkles className={`w-3.5 h-3.5 ${aiGenerating ? 'animate-pulse' : ''}`} />
-                                        Campuna AI
+                                        <Sparkles className="w-3.5 h-3.5" />
+                                        <span>Campuna AI Assistent</span>
                                     </button>
                                 </div>
 
-                                <div className="relative">
-                                    {aiGenerating && (
-                                        <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-10 flex flex-col items-center justify-center p-4">
-                                            <div className="w-48 bg-sand h-2 rounded-full overflow-hidden border border-forest/10 mb-2">
-                                                <div
-                                                    className="bg-forest h-full rounded-full transition-all duration-100 ease-out"
-                                                    style={{ width: `${aiProgress}%` }}
-                                                />
-                                            </div>
-                                            <span className="font-sans text-[10px] font-semibold text-forest animate-pulse uppercase tracking-wider">
-                                                Schreibe Anzeige mit Campuna AI...
-                                            </span>
-                                        </div>
-                                    )}
-                                    <textarea
-                                        id="description"
-                                        name="description"
-                                        rows={6}
-                                        value={formData.description}
-                                        onChange={handleInputChange}
-                                        placeholder="Detaillierte Beschreibung Ihres Angebots"
-                                        className="w-full bg-sand/35 border border-forest/15 rounded-xl px-4 py-3 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-forest/30 focus:border-forest/50 transition-all duration-200 resize-y"
-                                    />
-                                </div>
+                                {/* AI Progress Indicator */}
+                                {aiGenerating && (
+                                    <div className="w-full bg-sand/50 h-1.5 rounded-full overflow-hidden mb-1">
+                                        <motion.div
+                                            className="bg-forest h-full"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${aiProgress}%` }}
+                                            transition={{ duration: 0.2 }}
+                                        />
+                                    </div>
+                                )}
+
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    rows="6"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    placeholder="Beschreibe dein Angebot detailliert. Zustand, Maße, Zubehör, Besonderheiten..."
+                                    className="w-full bg-sand/35 border border-forest/15 rounded-xl p-4 font-sans text-sm focus:outline-none focus:ring-2 focus:ring-forest/30 focus:border-forest/50 transition-all duration-200 resize-y"
+                                />
                             </div>
 
-                            {/* Dynamic Categorization */}
+                            {/* Category & Subcategory Rows */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                                {/* Category Dropdown */}
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <label htmlFor="category" className="font-sans text-xs font-semibold text-forest uppercase tracking-wider block">
                                             Kategorie
                                         </label>
-                                        <span className="font-sans text-[10px] text-charcoal/40 uppercase tracking-widest">
-                                            optional
-                                        </span>
                                     </div>
                                     <div className="relative">
                                         <select
@@ -695,18 +790,29 @@ export default function CreateListingPage() {
                         {/* Publishing Submit details and Button */}
                         <div className="bg-white rounded-3xl p-6 shadow-xl border border-forest/5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="flex items-start gap-2.5 max-w-md">
-                                <Lock className="w-4.5 h-4.5 text-forest/40 shrink-0 mt-0.5" />
-                                <p className="font-sans text-[11px] text-charcoal/50 leading-relaxed">
-                                    Deine Anzeige wird sofort veröffentlicht und ist für die Campuna Camping-Community sichtbar. Du gehst keinerlei Bindung oder Kosten ein.
+                                {isEditMode ? (
+                                    <Clock className="w-4.5 h-4.5 text-amber-600 shrink-0 mt-0.5" />
+                                ) : (
+                                    <Lock className="w-4.5 h-4.5 text-forest/40 shrink-0 mt-0.5" />
+                                )}
+                                <p className="font-sans text-[11px] text-charcoal/60 leading-relaxed">
+                                    {isEditMode
+                                        ? 'Nach dem Speichern wird dein Inserat zur Prüfung eingereicht und nach Freigabe durch die Moderation wieder öffentlich sichtbar.'
+                                        : 'Deine Anzeige wird zur Moderationsprüfung eingereicht und ist nach Freigabe für die Campuna-Community sichtbar.'}
                                 </p>
                             </div>
                             <button
                                 type="submit"
                                 disabled={submitLoading}
-                                className="bg-forest text-sand hover:bg-gold hover:text-forest w-full sm:w-auto px-8 py-4 font-sans font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-65 active:scale-98 shrink-0 flex items-center justify-center gap-2"
+                                className="bg-forest text-sand hover:bg-gold hover:text-forest w-full sm:w-auto px-8 py-4 font-sans font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-65 active:scale-98 shrink-0 flex items-center justify-center gap-2 cursor-pointer"
                             >
                                 {submitLoading ? (
                                     <span className="w-4.5 h-4.5 border-2 border-sand/30 border-t-sand rounded-full animate-spin inline-block" />
+                                ) : isEditMode ? (
+                                    <>
+                                        <Pencil className="w-3.5 h-3.5 text-gold" />
+                                        <span>Änderungen speichern & prüfen lassen</span>
+                                    </>
                                 ) : (
                                     'Anzeige kostenlos veröffentlichen'
                                 )}
@@ -722,16 +828,16 @@ export default function CreateListingPage() {
                                 Anzeigen-Vorschau
                             </h3>
 
-                            <button
-                                type="button"
-                                onClick={handleQuickFill}
-                                className="text-xs bg-forest text-sand hover:bg-gold hover:text-forest font-semibold py-1.5 px-4 rounded-full border border-forest/20 shadow-sm transition-all duration-300"
-                            >
-                                Demo-Daten laden
-                            </button>
-
+                            {!isEditMode && (
+                                <button
+                                    type="button"
+                                    onClick={handleQuickFill}
+                                    className="text-xs bg-forest text-sand hover:bg-gold hover:text-forest font-semibold py-1.5 px-4 rounded-full border border-forest/20 shadow-sm transition-all duration-300 cursor-pointer"
+                                >
+                                    Demo-Daten laden
+                                </button>
+                            )}
                         </div>
-
 
                         {/* Simulated Campuna Marketplace Listing Card */}
                         <div className="bg-white rounded-[24px] overflow-hidden border border-forest/10 shadow-lg select-none flex flex-col">
@@ -764,7 +870,6 @@ export default function CreateListingPage() {
                             {/* Card Content area */}
                             <div className="p-5 flex-1 flex flex-col justify-between min-h-[160px]">
                                 <div>
-
                                     {/* Category breadcrumb */}
                                     <span className="block font-sans text-[8px] uppercase tracking-widest text-gold font-bold mb-1">
                                         {formData.category}
@@ -818,7 +923,9 @@ export default function CreateListingPage() {
                         <div className="bg-forest/5 rounded-2xl p-4 border border-forest/10 space-y-1">
                             <span className="font-sans text-[9px] font-bold text-gold uppercase tracking-widest block">Campuna Tipp</span>
                             <p className="font-sans text-[11px] text-charcoal/70 leading-relaxed">
-                                Beschreibe deinen Artikel möglichst genau. Inserate mit aussagekräftigen Bildern und detailliertem Zustand werden bis zu <strong>4x schneller</strong> verkauft!
+                                {isEditMode
+                                    ? 'Achte bei Änderungen darauf, dass Preis und Beschreibung stimmig bleiben. Unser Moderations-Team prüft eingereichte Aktualisierungen zeitnah.'
+                                    : 'Beschreibe deinen Artikel möglichst genau. Inserate mit aussagekräftigen Bildern und detailliertem Zustand werden bis zu 4x schneller verkauft!'}
                             </p>
                         </div>
 
@@ -851,62 +958,55 @@ export default function CreateListingPage() {
 
                             <div className="space-y-2">
                                 <h3 className="font-display text-2xl font-bold text-charcoal">
-                                    Anzeige veröffentlicht!
+                                    {isEditMode ? 'Inserat zur Prüfung eingereicht!' : 'Anzeige veröffentlicht!'}
                                 </h3>
                                 <p className="font-sans text-sm text-charcoal/60 leading-relaxed">
-                                    Deine Anzeige <strong>"{formData.title}"</strong> wurde erfolgreich erstellt und ist nun auf dem Marktplatz sichtbar.
+                                    {isEditMode
+                                        ? `Deine Änderungen an "${formData.title}" wurden erfolgreich gespeichert. Dein Inserat befindet sich nun zur Überprüfung in unserer Moderation.`
+                                        : `Deine Anzeige "${formData.title}" wurde erfolgreich erstellt und ist nun auf dem Marktplatz sichtbar.`}
                                 </p>
                             </div>
 
-                             {pioneerBadgeInfo && (
-                                 <div className="p-4 rounded-2xl bg-gold/10 border border-gold/20 text-center space-y-1">
-                                     <span className="font-sans text-[10px] font-bold text-gold uppercase tracking-wider block">Pioneer-Programm</span>
-                                     <p className="font-sans text-xs text-charcoal/80 leading-relaxed">
-                                         {pioneerBadgeInfo.badge_unlocked ? (
-                                             <span>🎉 <strong>Glückwunsch!</strong> Du hast das Campuna Pioneer Badge freigeschaltet! 🏆</span>
-                                         ) : (
-                                             <span>
-                                                 Noch <strong>{pioneerBadgeInfo.remaining_for_badge} Inserat{pioneerBadgeInfo.remaining_for_badge > 1 ? 'e' : ''}</strong> einstellen, um das Campuna Pioneer Badge zu erhalten! 🚀
-                                             </span>
-                                         )}
-                                     </p>
-                                 </div>
-                             )}
+                            {pioneerBadgeInfo && (
+                                <div className="p-4 rounded-2xl bg-gold/10 border border-gold/20 text-center space-y-1">
+                                    <span className="font-sans text-[10px] font-bold text-gold uppercase tracking-wider block">Pioneer-Programm</span>
+                                    <p className="font-sans text-xs text-charcoal/80 leading-relaxed">
+                                        {pioneerBadgeInfo.badge_unlocked ? (
+                                            <span>🎉 <strong>Glückwunsch!</strong> Du hast das Campuna Pioneer Badge freigeschaltet! 🏆</span>
+                                        ) : (
+                                            <span>
+                                                Noch <strong>{pioneerBadgeInfo.remaining_for_badge} Inserat{pioneerBadgeInfo.remaining_for_badge > 1 ? 'e' : ''}</strong> einstellen, um das Campuna Pioneer Badge zu erhalten! 🚀
+                                            </span>
+                                        )}
+                                    </p>
+                                </div>
+                            )}
 
-                             <div className="bg-sand/40 rounded-xl p-3 text-xs text-forest/80 font-medium">
-                                 Viel Erfolg beim Verkaufen! 🎉
-                             </div>
+                            <div className="bg-sand/40 rounded-xl p-3 text-xs text-forest/80 font-medium">
+                                {isEditMode ? 'Du kannst den Status jederzeit in deinem Benutzerkonto einsehen.' : 'Viel Erfolg beim Verkaufen! 🎉'}
+                            </div>
 
                             <div className="flex flex-col gap-2">
                                 <button
                                     onClick={() => {
                                         setShowSuccessModal(false);
-                                        router.push('/');
+                                        router.push('/mein-konto');
                                     }}
                                     className="w-full bg-forest text-sand hover:bg-gold hover:text-forest py-3 rounded-xl font-sans font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow cursor-pointer"
                                 >
-                                    Zum Marktplatz
+                                    Zu meinen Inseraten (Mein Konto)
                                 </button>
-                                <button
-                                    onClick={() => {
-                                        setShowSuccessModal(false);
-                                        // Reset form and images
-                                        setFormData({
-                                            title: '',
-                                            price: '',
-                                            isNegotiable: true,
-                                            condition: 'Zustand',
-                                            description: '',
-                                            category: 'Camping Zubehör',
-                                            subcategory: '',
-                                            location: '',
-                                        });
-                                        setImages([]);
-                                    }}
-                                    className="w-full bg-sand hover:bg-forest/10 text-forest py-3 rounded-xl font-sans font-bold text-xs uppercase tracking-wider transition-all duration-300"
-                                >
-                                    Weitere Anzeige erstellen
-                                </button>
+                                {!isEditMode && (
+                                    <button
+                                        onClick={() => {
+                                            setShowSuccessModal(false);
+                                            router.push('/');
+                                        }}
+                                        className="w-full bg-sand hover:bg-forest/10 text-forest py-3 rounded-xl font-sans font-bold text-xs uppercase tracking-wider transition-all duration-300 cursor-pointer"
+                                    >
+                                        Zum Marktplatz
+                                    </button>
+                                )}
                             </div>
 
                         </motion.div>
@@ -914,6 +1014,18 @@ export default function CreateListingPage() {
                 )}
             </AnimatePresence>
 
-        </div >
+        </div>
+    );
+}
+
+export default function CreateListingPage() {
+    return (
+        <Suspense fallback={
+            <div className="bg-sand min-h-screen flex items-center justify-center p-4">
+                <Loader2 className="w-10 h-10 text-forest animate-spin" />
+            </div>
+        }>
+            <CreateOrEditListingForm />
+        </Suspense>
     );
 }

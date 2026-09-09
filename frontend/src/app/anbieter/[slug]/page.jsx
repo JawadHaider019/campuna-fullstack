@@ -21,6 +21,7 @@ import {
     Package
 } from 'lucide-react';
 import { getPublicProfile } from '@/api/profile';
+import { getListingsByUser } from '@/api/listings';
 import { PROVIDERS } from '@/data';
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
@@ -493,10 +494,9 @@ export default function ProviderDetails() {
                             </div>
                         </div>
                     ) : (
-                        <>
-                            {/* Logo overlap */}
-                            <div className="relative px-6 md:px-12">
-                                <div className="-mt-14 md:-mt-24 w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 z-10 select-none">
+                        <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
+                            <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
+                                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
                                     <img
                                         src={logoSrc}
                                         alt={`${provider.name} Logo`}
@@ -505,140 +505,137 @@ export default function ProviderDetails() {
                                         referrerPolicy="no-referrer"
                                     />
                                 </div>
-                            </div>
-
-                            {/* Info + Actions */}
-                            <div className="px-6 md:px-12 pb-10 pt-4 flex flex-col lg:flex-row justify-between gap-8 items-start">
 
                                 {/* Left — Info */}
-                                <div className="flex-1 space-y-5 max-w-3xl">
+                                <div className="flex-1 space-y-5 min-w-0">
+                                    {/* Name + Verified badge */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
+                                                {provider.name}
+                                            </h1>
+                                            <span className="p-1 bg-forest/5 text-forest rounded-full border border-forest/10 inline-flex items-center justify-center shrink-0" title="Verifizierter Campuna-Anbieter">
+                                                <ShieldCheck className="w-4 h-4 text-forest shrink-0 fill-forest/15" />
+                                            </span>
+                                            {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
+                                                <div 
+                                                    className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2 py-0.5 text-[10px] font-bold font-sans shadow-sm cursor-help"
+                                                    title="Campuna Pioneer"
+                                                >
+                                                    <img 
+                                                        src="/pioneer_badge.png" 
+                                                        alt="Campuna Pioneer Badge" 
+                                                        className="w-4 h-4 rounded-full object-cover border border-gold/30"
+                                                    />
+                                                    <span>Pioneer</span>
+                                                </div>
+                                            )}
+                                            {provider.tier === 'BUSINESS' && (
+                                                <span className="px-2.5 py-0.5 bg-gold/10 text-gold border border-gold/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                                    Business
+                                                </span>
+                                            )}
+                                            {provider.isStrategic && (
+                                                <span className="px-2.5 py-0.5 bg-forest/10 text-forest border border-forest/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                                    Strategischer Partner
+                                                </span>
+                                            )}
+                                        </div>
 
-                            {/* Name + Verified badge */}
-                            <div className="space-y-2">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
-                                        {provider.name}
-                                    </h1>
-                                    <span className="p-1 bg-forest/5 text-forest rounded-full border border-forest/10 inline-flex items-center justify-center shrink-0" title="Verifizierter Campuna-Anbieter">
-                                        <ShieldCheck className="w-4 h-4 text-forest shrink-0 fill-forest/15" />
-                                    </span>
-                                    {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
-                                        <div 
-                                            className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2 py-0.5 text-[10px] font-bold font-sans shadow-sm cursor-help"
-                                            title="Campuna Pioneer"
-                                        >
-                                            <img 
-                                                src="/pioneer_badge.png" 
-                                                alt="Campuna Pioneer Badge" 
-                                                className="w-4 h-4 rounded-full object-cover border border-gold/30"
-                                            />
-                                            <span>Pioneer</span>
+                                        {/* Bio (Directly below name, top of address & email, no separate box) */}
+                                        {provider.bio && (
+                                            <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line pt-0.5 max-w-2xl">
+                                                {provider.bio}
+                                            </p>
+                                        )}
+
+                                        {/* Type + Location / Address */}
+                                        <div className="flex items-center gap-4 text-xs text-charcoal/55 font-medium flex-wrap pt-1">
+                                            <span className="flex items-center gap-1">
+                                                <Building2 className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                {provider.type}
+                                            </span>
+                                            {provider.location && (
+                                                <span className="flex items-center gap-1">
+                                                    <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                    {provider.location}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Contact row */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70">
+                                        {provider.email && (
+                                            <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                                <Mail className="w-4 h-4 text-gold shrink-0" />
+                                                {provider.email}
+                                            </a>
+                                        )}
+                                        {provider.phone && (
+                                            <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                                <Phone className="w-4 h-4 text-gold shrink-0" />
+                                                {provider.phone}
+                                            </a>
+                                        )}
+                                        <div className="flex items-center gap-1.5 text-charcoal/85 font-semibold">
+                                            <Calendar className="w-4 h-4 text-gold shrink-0" />
+                                            Mitglied seit {provider.memberSince}
+                                        </div>
+                                    </div>
+
+                                    {/* Social / Website links */}
+                                    {hasSocials && (
+                                        <div className="flex gap-2 pt-1">
+                                            {provider.website && (
+                                                <a href={provider.website} target="_blank" rel="noopener noreferrer"
+                                                    title="Webseite besuchen"
+                                                    className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                                    <Globe className="w-4.5 h-4.5" />
+                                                </a>
+                                            )}
+                                            {provider.instagram && (
+                                                <a href={provider.instagram} target="_blank" rel="noopener noreferrer"
+                                                    title="Instagram"
+                                                    className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                                    <InstagramIcon />
+                                                </a>
+                                            )}
+                                            {provider.facebook && (
+                                                <a href={provider.facebook} target="_blank" rel="noopener noreferrer"
+                                                    title="Facebook"
+                                                    className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                                    <FacebookIcon />
+                                                </a>
+                                            )}
                                         </div>
                                     )}
-                                    {provider.tier === 'BUSINESS' && (
-                                        <span className="px-2.5 py-0.5 bg-gold/10 text-gold border border-gold/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                                            Business
-                                        </span>
-                                    )}
-                                    {provider.isStrategic && (
-                                        <span className="px-2.5 py-0.5 bg-forest/10 text-forest border border-forest/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                                            Strategischer Partner
-                                        </span>
-                                    )}
                                 </div>
+                            </div>
 
-                                {/* Bio (Directly below name, top of address & email, no separate box) */}
-                                {provider.bio && (
-                                    <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line pt-0.5 max-w-2xl">
-                                        {provider.bio}
-                                    </p>
-                                )}
-
-                                {/* Type + Location / Address */}
-                                <div className="flex items-center gap-4 text-xs text-charcoal/55 font-medium flex-wrap pt-1">
-                                    <span className="flex items-center gap-1">
-                                        <Building2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                        {provider.type}
+                            {/* Right — CTA */}
+                            <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col justify-between items-start lg:items-end gap-6 shrink-0 self-stretch">
+                                <div className="w-full">
+                                    <a
+                                        href={`mailto:${contactEmail}?subject=Anfrage%20über%20Campuna`}
+                                        className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <MessageSquare className="w-4 h-4 shrink-0" />
+                                        Anbieter kontaktieren
+                                    </a>
+                                    <span className="block mt-2 text-center text-[10px] text-charcoal/40 font-medium">
+                                        Nachricht direkt senden
                                     </span>
-                                    {provider.location && (
-                                        <span className="flex items-center gap-1">
-                                            <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                                            {provider.location}
-                                        </span>
-                                    )}
                                 </div>
-                            </div>
 
-                            {/* Contact row */}
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70">
-                                {provider.email && (
-                                    <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
-                                        <Mail className="w-4 h-4 text-gold shrink-0" />
-                                        {provider.email}
-                                    </a>
-                                )}
-                                {provider.phone && (
-                                    <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
-                                        <Phone className="w-4 h-4 text-gold shrink-0" />
-                                        {provider.phone}
-                                    </a>
-                                )}
-                                <div className="flex items-center gap-1.5 text-charcoal/85 font-semibold">
-                                    <Calendar className="w-4 h-4 text-gold shrink-0" />
-                                    Mitglied seit {provider.memberSince}
+                                {/* Listing count badge */}
+                                <div className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-forest/15 bg-forest/5 text-forest rounded-full text-xs font-bold">
+                                    <Star className="w-3.5 h-3.5 text-gold fill-gold shrink-0" />
+                                    {listings.length === 1 ? '1 Inserat' : `${listings.length} Inserate`}
                                 </div>
-                            </div>
-
-                            {/* Social / Website links */}
-                            {hasSocials && (
-                                <div className="flex gap-2 pt-1">
-                                    {provider.website && (
-                                        <a href={provider.website} target="_blank" rel="noopener noreferrer"
-                                            title="Webseite besuchen"
-                                            className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
-                                            <Globe className="w-4.5 h-4.5" />
-                                        </a>
-                                    )}
-                                    {provider.instagram && (
-                                        <a href={provider.instagram} target="_blank" rel="noopener noreferrer"
-                                            title="Instagram"
-                                            className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
-                                            <InstagramIcon />
-                                        </a>
-                                    )}
-                                    {provider.facebook && (
-                                        <a href={provider.facebook} target="_blank" rel="noopener noreferrer"
-                                            title="Facebook"
-                                            className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
-                                            <FacebookIcon />
-                                        </a>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right — CTA */}
-                        <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col items-center lg:items-end gap-4 shrink-0">
-                            <div className="w-full">
-                                <a
-                                    href={`mailto:${contactEmail}?subject=Anfrage%20über%20Campuna`}
-                                    className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
-                                >
-                                    <MessageSquare className="w-4 h-4 shrink-0" />
-                                    Anbieter kontaktieren
-                                </a>
-                                <span className="block mt-2 text-center text-[10px] text-charcoal/40 font-medium">
-                                    Nachricht direkt senden
-                                </span>
-                            </div>
-
-                            {/* Listing count badge */}
-                            <div className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-forest/15 bg-forest/5 text-forest rounded-full text-xs font-bold">
-                                <Star className="w-3.5 h-3.5 text-gold fill-gold shrink-0" />
-                                {listings.length === 1 ? '1 Inserat' : `${listings.length} Inserate`}
                             </div>
                         </div>
-                    </div>
+                    )}
                 </section>
 
                 {/* ── Listings Section ── */}

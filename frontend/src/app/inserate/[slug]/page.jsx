@@ -21,10 +21,12 @@ import {
     Lock,
     AlertCircle,
     User,
-    Check
+    Check,
+    Pencil
 } from 'lucide-react';
 import { getListingDetail, getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
+import { useAuthStore } from '@/store/useAuthStore';
 
 function slugifyTitle(title = '') {
     return title
@@ -74,6 +76,7 @@ export default function ListingDetailPage() {
     const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
     const isFavorite = useFavoritesStore((state) => state.isFavorite(listing?.id));
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+    const currentUser = useAuthStore((state) => state.user);
     const [copied, setCopied] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [relatedListings, setRelatedListings] = useState([]);
@@ -145,7 +148,8 @@ export default function ListingDetailPage() {
                                 likesCount: 0,
                                 chatsCount: 0,
                                 condition: apiMatch.condition || 'Sehr gut',
-                                status: apiMatch.status || 'Aktiv'
+                                status: apiMatch.status || 'Aktiv',
+                                user_id: apiMatch.user_id || apiMatch.owner_user_id || apiMatch.seller?.id || null
                             };
                         }
                     } catch (apiErr) {
@@ -197,7 +201,8 @@ export default function ListingDetailPage() {
                                     likesCount: 0,
                                     chatsCount: 0,
                                     condition: match.condition || 'Sehr gut',
-                                    status: match.status || 'Aktiv'
+                                    status: match.status || 'Aktiv',
+                                    user_id: match.user_id || match.owner_user_id || match.seller?.id || null
                                 };
                             }
                         }
@@ -316,6 +321,14 @@ export default function ListingDetailPage() {
     // Detect if this catalog item is flagged "sold" (either "verkauft" in title or status == 'Verkauft')
     const isSold = title.toLowerCase().includes('verkauft') || status.toLowerCase().includes('verkauft');
 
+    const isOwner = Boolean(
+        currentUser && listing && (
+            (listing.user_id && String(currentUser.id) === String(listing.user_id)) ||
+            (listing.owner_user_id && String(currentUser.id) === String(listing.owner_user_id)) ||
+            (listing.ownerUserId && String(currentUser.id) === String(listing.ownerUserId))
+        )
+    );
+
     const displayTitle = title;
 
     const renderSidebarContent = () => (
@@ -372,6 +385,23 @@ export default function ListingDetailPage() {
                     </span>
                 </div>
             </div>
+
+            {/* 0. Owner Quick Action */}
+            {isOwner && (
+                <div className="bg-forest/5 border border-forest/20 rounded-xl p-3.5 text-left mb-2">
+                    <p className="text-[11px] font-bold text-forest mb-2 flex items-center gap-1.5">
+                        <Pencil className="w-3.5 h-3.5" />
+                        Sie sind der Eigentümer
+                    </p>
+                    <Link
+                        href={`/anzeige-erstellen?edit=${listing.id}`}
+                        className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-200 font-sans font-bold py-2.5 px-4 rounded-lg shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        <Pencil className="w-3.5 h-3.5 shrink-0" />
+                        Inserat bearbeiten
+                    </Link>
+                </div>
+            )}
 
             {/* 1. Primary CTA: Contact Seller */}
             <div className="space-y-1.5">
@@ -494,6 +524,32 @@ export default function ListingDetailPage() {
                         </span>
                     </div>
                 </div>
+
+                {/* ── Owner Info Banner (if owner) ── */}
+                {isOwner && (
+                    <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-forest/10 via-emerald-50 to-sand/30 border border-forest/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-forest text-white flex items-center justify-center shrink-0 shadow-sm">
+                                <Pencil className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h3 className="font-display font-bold text-forest text-sm sm:text-base">
+                                    Dies ist Ihr Inserat
+                                </h3>
+                                <p className="text-xs text-charcoal/70">
+                                    Sie können alle Angaben, Bilder und Preise jederzeit bearbeiten.
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href={`/anzeige-erstellen?edit=${listing.id}`}
+                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-forest hover:bg-gold text-white hover:text-forest font-bold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 shadow hover:shadow-md shrink-0 cursor-pointer"
+                        >
+                            <Pencil className="w-4 h-4" />
+                            Inserat bearbeiten
+                        </Link>
+                    </div>
+                )}
 
                 {/* ── Main Listing Header Area ── */}
                 <div className="mb-8">

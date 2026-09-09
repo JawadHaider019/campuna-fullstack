@@ -1,6 +1,30 @@
 import api from './client.js';
 
 /**
+ * GET /api/admin/dashboard-stats
+ * Fetches real-time platform analytics, moderation queue, user counts, and system metrics.
+ */
+export const getAdminDashboardStats = () => {
+    return api.get('/admin/dashboard-stats');
+};
+
+/**
+ * GET /api/admin/export-csv
+ * Downloads all listings and seller information in CSV format.
+ */
+export const exportAdminDataCsv = () => {
+    return api.get('/admin/export-csv', { responseType: 'blob' });
+};
+
+/**
+ * POST /api/admin/batch-ai-scan
+ * Runs batch AI moderation scan on unmoderated listings.
+ */
+export const batchAiModerationScan = () => {
+    return api.post('/admin/batch-ai-scan');
+};
+
+/**
  * GET /api/admin/users
  * Lists users with search, filtering, and pagination.
  */
@@ -95,3 +119,4 @@ export const simulateAiScan = (listingId, target_score) => {
 export const submitAdminManualDecision = (listingId, decision, notes = '') => {
     return api.post(`/admin/decisions/${listingId}/admin-decision`, { decision, notes });
 };
+

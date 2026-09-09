@@ -193,19 +193,10 @@ export const updateMyProfile = async (req, res) => {
                 .where({ id })
                 .first()
                 .catch(() => null);
-            const isReferred = !!user?.referred_by_code;
-
             const updates = pickFields(req.body, COMPANY_ALLOWED_FIELDS);
 
-            // Gating validation based on subscription tier
+            // Bio limit gating based on subscription tier
             if (profile.tier === 'FREE') {
-                if (updates.cover_image_url && updates.cover_image_url !== profile.cover_image_url) {
-                    return res.status(403).json({
-                        success: false,
-                        error: 'Das Hintergrundbild ist ein exklusives Business-Feature. Bitte aktualisiere dein Abonnement.'
-                    });
-                }
-                
                 const allowedLimit = 500;
                 if (updates.bio && updates.bio.length > allowedLimit) {
                     return res.status(400).json({
@@ -455,14 +446,6 @@ export const uploadCover = async (req, res) => {
 
             if (!profile) {
                 return res.status(404).json({ success: false, error: 'Firmenprofil nicht gefunden.' });
-            }
-
-            // Gating: Block cover image uploads for free tier
-            if (profile.tier === 'FREE') {
-                return res.status(403).json({
-                    success: false,
-                    error: 'Das Hintergrundbild ist ein exklusives Business-Feature. Bitte aktualisiere dein Abonnement.'
-                });
             }
 
             await db.orm.public.CompanyProfile

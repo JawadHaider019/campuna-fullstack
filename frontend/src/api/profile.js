@@ -61,6 +61,21 @@ export const cancelSubscription = (details = {}) => api.post('/subscriptions/can
 /** GET /api/subscriptions/invoices — get user invoices & billing history */
 export const getInvoices = () => api.get('/subscriptions/invoices');
 
+/** GET /api/subscriptions/analytics — subscriber KPI performance & visual time-series */
+export const getSubscriptionAnalytics = (period = '30d') => api.get(`/subscriptions/analytics?period=${period}`);
+
+/** GET /api/subscriptions/leads — subscriber customer inquiries/leads pipeline */
+export const getSubscriberLeads = () => api.get('/subscriptions/leads');
+
+/** PATCH /api/subscriptions/leads/:id/status — update lead status & notes */
+export const updateLeadStatus = (leadId, status, notes) => api.patch(`/subscriptions/leads/${leadId}/status`, { status, notes });
+
+/** POST /api/listings/csv-import — batch import vehicle listings */
+export const importListingsCsv = (listings) => api.post('/listings/csv-import', { listings });
+
+/** GET /api/listings/export-csv — export listings as CSV string */
+export const exportListingsCsv = () => api.get('/listings/export-csv');
+
 // ─── Credit API ───────────────────────────────────────────────────────────────
 export const getCreditBalance = () => api.get('/credits/balance');
 export const getCreditTransactions = () => api.get('/credits/transactions');
@@ -91,6 +106,7 @@ export const uploadCover = async (file) => {
     formData.append('image', file);
     return api.post('/profile/me/cover', formData);
 };
+
 
 
 

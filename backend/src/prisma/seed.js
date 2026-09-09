@@ -8,7 +8,7 @@ async function seed() {
         name: 'FREE',
         price_cents: 0,
         listing_limit: 3,
-        has_cover_image: false,
+        has_cover_image: true,
         has_spotlight: false,
         has_statistics: false,
         has_csv_import: false,

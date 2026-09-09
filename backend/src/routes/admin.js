@@ -17,11 +17,21 @@ import {
     simulateAiScan,
     submitAdminManualDecision
 } from '../controllers/adminDecisions.js';
+import {
+    getAdminDashboardStats,
+    exportAdminDataCsv,
+    batchAiModerationScan
+} from '../controllers/adminDashboard.js';
 
 const router = express.Router();
 
 // All admin routes require valid auth + ADMIN role
 router.use(authenticate, requireAdmin);
+
+// Dashboard stats and tools
+router.get('/dashboard-stats', getAdminDashboardStats);
+router.get('/export-csv', exportAdminDataCsv);
+router.post('/batch-ai-scan', batchAiModerationScan);
 
 // User management endpoints
 router.get('/users', getAdminUsers);
@@ -41,3 +51,4 @@ router.post('/decisions/:id/simulate-scan', simulateAiScan);
 router.post('/decisions/:id/admin-decision', submitAdminManualDecision);
 
 export default router;
+

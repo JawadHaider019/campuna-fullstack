@@ -7,6 +7,9 @@ import {
     subscribe,
     cancelSubscription,
     getInvoices,
+    getSubscriptionAnalytics,
+    getSubscriberLeads,
+    updateLeadStatus,
 } from '../controllers/subscription.js';
 
 const router = Router();
@@ -27,6 +30,15 @@ router.get('/features', authenticate, getMyFeatures);
 // GET /api/subscriptions/invoices — get user invoices & billing history
 router.get('/invoices', authenticate, getInvoices);
 
+// GET /api/subscriptions/analytics — subscriber KPI performance & visual time-series
+router.get('/analytics', authenticate, getSubscriptionAnalytics);
+
+// GET /api/subscriptions/leads — subscriber customer inquiries/leads pipeline
+router.get('/leads', authenticate, getSubscriberLeads);
+
+// PATCH /api/subscriptions/leads/:id/status — update lead inquiry status & notes
+router.patch('/leads/:id/status', authenticate, updateLeadStatus);
+
 // POST /api/subscriptions/subscribe — subscribe to a plan
 router.post('/subscribe', authenticate, subscribe);
 
@@ -34,3 +46,4 @@ router.post('/subscribe', authenticate, subscribe);
 router.post('/cancel', authenticate, cancelSubscription);
 
 export default router;
+
