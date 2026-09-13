@@ -126,30 +126,9 @@ const deleteUnverifiedUser = async (userId) => {
     });
 };
 
-/**
- * Periodic background job: Purge unverified user accounts older than 15 minutes
- */
-const cleanupExpiredUnverifiedUsers = async () => {
-    try {
-        const expiredRes = await pool.query(`
-            SELECT id, email FROM users
-            WHERE email_verified = false
-              AND role != 'ADMIN'
-              AND created_at < NOW() - INTERVAL '15 minutes'
-        `);
-
-        for (const u of expiredRes.rows) {
-            console.log(`⏱️ Purging expired unverified user (>15 min): ${u.email} (${u.id})`);
-            await deleteUnverifiedUser(u.id);
-        }
-    } catch (err) {
-        console.error('⚠️ Cleanup unverified users error:', err.message);
-    }
-};
-
-// Run cleanup immediately and then periodically every 2 minutes
-setInterval(cleanupExpiredUnverifiedUsers, 2 * 60 * 1000);
-cleanupExpiredUnverifiedUsers();
+// Periodic cleanup of unverified users disabled: all users are auto-verified
+// const cleanupExpiredUnverifiedUsers = async () => { ... };
+// setInterval(cleanupExpiredUnverifiedUsers, 2 * 60 * 1000);
 
 // ─── Controllers ────────────────────────────────────────────────────────────
 
@@ -204,7 +183,7 @@ export const register = async (req, res) => {
                 user_type: normalizedAccountType,
                 referral_code: generateReferralCode(),
                 referred_by_code: referred_by_code ? referred_by_code.trim().toUpperCase() : null,
-                email_verified: false,
+                email_verified: true,
             });
 
             if (normalizedAccountType === 'PRIVATE') {
@@ -240,29 +219,28 @@ export const register = async (req, res) => {
             return newUser;
         });
 
-        const verificationToken = generateVerificationToken(result.id);
+        // Immediately generate access & refresh tokens
+        const { accessToken, refreshToken } = generateTokens(result);
 
-        // Send verification email via Resend
-        if (process.env.RESEND_API_KEY) {
-            sendVerificationEmail(result.email, verificationToken)
-                .then(() => console.log(`📧 Verification email sent via Resend to ${result.email}`))
-                .catch((err) => console.warn(`⚠️ Warning: Failed to send verification email to ${result.email}:`, err.message));
-        } else {
-            console.log(`ℹ️ [Resend] RESEND_API_KEY not set in .env. Verification token: ${verificationToken}`);
-        }
+        // Check Pioneer badge eligibility
+        await checkAndAwardPioneerBadge(result.id).catch((err) => {
+            console.error('Pioneer check on register error:', err.message);
+        });
 
-        console.log(`✅ User registered: ${result.email} (ID: ${result.id})`);
+        console.log(`✅ User registered and auto-verified: ${result.email} (ID: ${result.id})`);
 
         return res.status(201).json({
             success: true,
-            message: 'Registrierung erfolgreich. Bitte bestätige deine E-Mail-Adresse.',
-            verification_token: verificationToken,
+            message: 'Registrierung erfolgreich.',
+            access_token: accessToken,
+            refresh_token: refreshToken,
             user: {
                 id: result.id,
                 email: result.email,
                 role: result.role,
                 account_type: result.user_type,
                 referral_code: result.referral_code,
+                email_verified: true,
             },
         });
 
@@ -274,7 +252,7 @@ export const register = async (req, res) => {
 
 /**
  * GET /api/verify-status?email=...
- * Polls email verification status. If unverified and > 24h old, the account is deleted.
+ * Returns verification status (always verified).
  */
 export const getVerificationStatus = async (req, res) => {
     try {
@@ -292,25 +270,22 @@ export const getVerificationStatus = async (req, res) => {
         }
 
         if (!user.email_verified) {
-            const isExpired = (Date.now() - new Date(user.created_at).getTime()) > VERIFICATION_EXPIRY_MS;
-            if (isExpired) {
-                await deleteUnverifiedUser(user.id);
-                return res.status(410).json({
-                    success: false,
-                    error: 'Registrierung abgelaufen. Bitte erstelle dein Konto erneut.',
-                });
-            }
+            await db.orm.public.User
+                .where((u) => u.id.eq(user.id))
+                .update({ email_verified: true })
+                .catch(() => {});
         }
 
         return res.status(200).json({
             success: true,
-            email_verified: user.email_verified,
+            email_verified: true,
             user: {
                 id: user.id,
                 email: user.email,
                 role: user.role,
                 account_type: user.user_type,
                 referral_code: user.referral_code,
+                email_verified: true,
             },
         });
 
@@ -322,7 +297,7 @@ export const getVerificationStatus = async (req, res) => {
 
 /**
  * POST /api/login
- * Verifies credentials, checks email_verified and suspension.
+ * Verifies credentials and checks suspension.
  * Issues Access Token (15m) + Refresh Token (30d) on success.
  */
 export const login = async (req, res) => {
@@ -399,19 +374,10 @@ export const login = async (req, res) => {
         }
 
         if (!user.email_verified) {
-            const isExpired = (Date.now() - new Date(user.created_at).getTime()) > VERIFICATION_EXPIRY_MS;
-            if (isExpired) {
-                await deleteUnverifiedUser(user.id);
-                return res.status(410).json({
-                    success: false,
-                    error: 'Deine Registrierung ist nach 15 Minuten abgelaufen. Dein Konto wurde gelöscht. Bitte erstelle dein Konto erneut.',
-                });
-            }
-            return res.status(403).json({
-                success: false,
-                email_verified: false,
-                error: 'Bitte bestätige deine E-Mail-Adresse innerhalb von 15 Minuten, bevor du dich anmeldest.',
-            });
+            await db.orm.public.User
+                .where((u) => u.id.eq(user.id))
+                .update({ email_verified: true })
+                .catch(() => {});
         }
 
         const { accessToken, refreshToken } = generateTokens(user);
@@ -427,6 +393,7 @@ export const login = async (req, res) => {
                 role: user.role,
                 account_type: user.user_type,
                 referral_code: user.referral_code,
+                email_verified: true,
             },
         });
 

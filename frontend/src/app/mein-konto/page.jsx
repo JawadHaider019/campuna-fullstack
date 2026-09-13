@@ -280,6 +280,10 @@ export default function MeinKontoPage() {
         return (achievements || []).find(a => a.badge_key === 'CAMPUNA_PIONEER') || null;
     }, [achievements]);
 
+    const approvedListingsCount = useMemo(() => {
+        return userListings.filter(l => l.status === 'APPROVED').length;
+    }, [userListings]);
+
     const isProfileComplete = useMemo(() => {
         if (!profile) return false;
         if (profileType === 'COMMERCIAL') {
@@ -719,7 +723,7 @@ export default function MeinKontoPage() {
         { id: 'inserate', label: 'Meine Inserate', icon: Rocket, count: userListings.length },
         { id: 'finanzen', label: 'Abonnement', icon: Crown, badge: subDetails.is_business ? 'Business' : 'Free' },
         { id: 'credits', label: 'Campuna Credits', icon: Gift, count: `${Number(creditBalance).toLocaleString('de-DE')} CC` },
-        { id: 'pioneer', label: 'Pioneer Status', icon: Award, highlight: Boolean(pioneerBadge) },
+        { id: 'pioneer', label: pioneerBadge ? `Pioneer #${pioneerBadge.position || '300'}` : 'Badge erhalten', icon: Award, highlight: true },
     ];
 
 
@@ -1238,7 +1242,8 @@ export default function MeinKontoPage() {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setBadgeModalOpen(true)}
-                                                                        className="inline-flex items-center gap-1.5 bg-gold/20 border border-gold/40 text-gold-dark px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider cursor-pointer hover:bg-gold/30 transition-all shadow-xs"
+                                                                        className="inline-flex items-center gap-1.5 bg-gold/20 border border-gold/40 text-gold-dark px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider cursor-pointer hover:bg-gold/30 transition-all shadow-xs"
+                                                                        title="Dein Campuna Pioneer Badge Status"
                                                                     >
                                                                         <Crown className="w-3.5 h-3.5 text-gold-dark" />
                                                                         <span>Pioneer #{pioneerBadge.position || '300'}</span>
@@ -1247,10 +1252,11 @@ export default function MeinKontoPage() {
                                                                     <button
                                                                         type="button"
                                                                         onClick={() => setBadgeModalOpen(true)}
-                                                                        className="inline-flex items-center gap-1 bg-[#faf8f3] border border-beige hover:border-gold text-charcoal/60 px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider cursor-pointer transition-all"
+                                                                        className="inline-flex items-center gap-1.5 bg-gradient-to-r from-gold/20 via-amber-100/80 to-sand border border-gold/50 hover:border-gold text-forest px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider cursor-pointer transition-all hover:scale-105 hover:shadow-md shadow-xs group"
+                                                                        title="Klicke hier, um dir den Campuna Pioneer Badge zu sichern"
                                                                     >
-                                                                        <Award className="w-3.5 h-3.5 text-gold-dark" />
-                                                                        <span>Campuna Pioneer</span>
+                                                                        <Sparkles className="w-3.5 h-3.5 text-gold-dark group-hover:rotate-12 transition-transform" />
+                                                                        <span>Badge erhalten</span>
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -2317,8 +2323,8 @@ export default function MeinKontoPage() {
                                 <div className="space-y-6">
                                     {/* Top Tab Header */}
                                     <TabHeader
-                                        title="Campuna Pioneer Status"
-                                        subtitle="Exklusiver Status & dauerhafte Vorteile für die ersten 300 qualifizierten Campuna Mitglieder"
+                                        title={pioneerBadge ? "Campuna Pioneer Status" : "Campuna Pioneer Badge erhalten"}
+                                        subtitle={pioneerBadge ? "Exklusiver Status & dauerhafte Vorteile für die ersten 300 qualifizierten Campuna Mitglieder" : "Werde einer der ersten 300 Pioniere auf Campuna und sichere dir lebenslange Vorteile für dein Profil & deine Inserate"}
                                         icon={Award}
                                         badge={
                                             pioneerBadge ? (
@@ -2326,8 +2332,8 @@ export default function MeinKontoPage() {
                                                     <Crown className="w-3.5 h-3.5" /> Pioneer #{pioneerBadge.position || '300'}
                                                 </span>
                                             ) : (
-                                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[#faf8f3] text-charcoal/70 border border-beige">
-                                                    In Qualifikation
+                                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gold/15 text-gold-dark border border-gold/30 flex items-center gap-1">
+                                                    <Sparkles className="w-3 h-3 text-gold-dark" /> Badge erhalten (In Qualifikation)
                                                 </span>
                                             )
                                         }
@@ -2384,7 +2390,7 @@ export default function MeinKontoPage() {
 
                                                 <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${userListings.filter(l => l.status === 'APPROVED').length >= 3 ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${approvedListingsCount >= 3 ? 'bg-forest' : 'bg-stone-300'}`}>
                                                             <Check className="w-3.5 h-3.5" />
                                                         </div>
                                                         <div>
@@ -2393,7 +2399,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                     </div>
                                                     <span className="font-black font-mono text-forest">
-                                                        {userListings.filter(l => l.status === 'APPROVED').length} / 3
+                                                        {approvedListingsCount} / 3
                                                     </span>
                                                 </div>
 
@@ -2403,7 +2409,7 @@ export default function MeinKontoPage() {
                                                             <Check className="w-3.5 h-3.5" />
                                                         </div>
                                                         <div>
-                                                            <span className="font-bold text-charcoal block">E-Mail verifiziert</span>
+                                                            <span className="font-bold text-charcoal block">Konto verifiziert</span>
                                                             <span className="text-[11px] text-charcoal/50">Authentifiziertes Benutzerkonto</span>
                                                         </div>
                                                     </div>
@@ -2419,6 +2425,15 @@ export default function MeinKontoPage() {
                                                         <Sparkles className="w-4 h-4 text-gold-dark" />
                                                         <span>Glückwunsch! Du bist Pioneer #{pioneerBadge.position || '1'}</span>
                                                     </div>
+                                                ) : !isProfileComplete ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { setIsEditing(true); setActiveTab('dashboard'); }}
+                                                        className="w-full bg-forest hover:bg-[#004d0a] text-sand py-3 px-5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
+                                                    >
+                                                        <Pencil className="w-4 h-4 text-gold" />
+                                                        <span>Profil jetzt vervollständigen</span>
+                                                    </button>
                                                 ) : (
                                                     <button
                                                         type="button"
@@ -2426,7 +2441,7 @@ export default function MeinKontoPage() {
                                                         className="w-full bg-forest hover:bg-[#004d0a] text-sand py-3 px-5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
                                                     >
                                                         <Plus className="w-4 h-4 text-gold" />
-                                                        <span>Jetzt Inserat schalten & qualifizieren</span>
+                                                        <span>Jetzt Inserat schalten & qualifizieren ({Math.max(0, 3 - approvedListingsCount)} erforderlich)</span>
                                                     </button>
                                                 )}
                                             </div>
@@ -2769,34 +2784,185 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
+                        onClick={() => setBadgeModalOpen(false)}
                     >
                         <motion.div
                             initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.95, y: 20 }}
-                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-beige p-6 space-y-5 text-center"
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-beige p-6 sm:p-7 space-y-5 text-center relative overflow-hidden my-auto"
                         >
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-gold to-sand flex items-center justify-center mx-auto shadow-md border-2 border-beige">
-                                <Crown className="w-8 h-8 text-forest" />
-                            </div>
-
-                            <div>
-                                <h3 className="font-black text-charcoal text-xl">Campuna Pioneer Status</h3>
-                                <p className="text-xs text-charcoal/70 leading-relaxed mt-2">
-                                    {pioneerBadge
-                                        ? `Glückwunsch! Du bist offizieller Campuna Pioneer an Position #${pioneerBadge.position || '1'}. Danke für deine frühe Unterstützung!`
-                                        : 'Fülle dein Profil vollständig aus und erstelle mindestens 3 freigegebene Inserate, um dir einen der ersten 300 Pioneer-Plätze zu sichern.'}
-                                </p>
-                            </div>
-
+                            {/* Close Button */}
                             <button
                                 type="button"
                                 onClick={() => setBadgeModalOpen(false)}
-                                className="w-full bg-forest text-sand hover:bg-[#004d0a] py-2.5 rounded-full text-xs font-black uppercase tracking-wider cursor-pointer shadow-md"
+                                className="absolute top-4 right-4 p-2 rounded-full text-charcoal/40 hover:text-charcoal hover:bg-sand/60 transition-colors cursor-pointer"
+                                title="Schließen"
                             >
-                                Verstanden
+                                <X className="w-4 h-4" />
                             </button>
+
+                            {pioneerBadge ? (
+                                /* ── When User HAS the Badge ── */
+                                <div className="space-y-5">
+                                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-gold via-amber-300 to-sand flex items-center justify-center mx-auto shadow-xl border-4 border-white/80 ring-4 ring-gold/20">
+                                        <Crown className="w-10 h-10 text-forest" />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <span className="inline-flex items-center gap-1.5 bg-gold/20 border border-gold/40 text-gold-dark px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider">
+                                            <Crown className="w-3.5 h-3.5" /> Pioneer #{pioneerBadge.position || '1'}
+                                        </span>
+                                        <h3 className="font-display font-black text-charcoal text-2xl">Campuna Pioneer Mitglied</h3>
+                                        <p className="text-xs sm:text-sm text-charcoal/70 leading-relaxed max-w-md mx-auto">
+                                            Glückwunsch! Du gehörst zu den ersten 300 geprüften Mitgliedern auf Campuna. Dein Profil und all deine Inserate tragen dauerhaft den goldenen Pioneer-Badge.
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-[#faf8f3] rounded-2xl border border-beige p-4 text-left space-y-2.5 text-xs text-charcoal/80">
+                                        <div className="flex items-center gap-2 font-bold text-forest">
+                                            <CheckCircle2 className="w-4 h-4 text-gold-dark shrink-0" />
+                                            <span>Goldener Ehrenbadge auf Profil & Inseraten aktiv</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 font-bold text-forest">
+                                            <CheckCircle2 className="w-4 h-4 text-gold-dark shrink-0" />
+                                            <span>Höhere Sichtbarkeit & Vertrauen im Marktplatz</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 font-bold text-forest">
+                                            <CheckCircle2 className="w-4 h-4 text-gold-dark shrink-0" />
+                                            <span>Lebenslanger Gründerstatus gesichert</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setBadgeModalOpen(false)}
+                                        className="w-full bg-forest text-sand hover:bg-[#004d0a] py-3 rounded-2xl text-xs font-black uppercase tracking-wider cursor-pointer shadow-md transition-all"
+                                    >
+                                        Verstanden
+                                    </button>
+                                </div>
+                            ) : (
+                                /* ── When User DOES NOT have the Badge (Get a Badge) ── */
+                                <div className="space-y-5">
+                                    <div className="relative mx-auto w-20 h-20">
+                                        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-gold via-amber-300 to-sand flex items-center justify-center shadow-xl border-4 border-white/80 ring-4 ring-gold/20">
+                                            <Crown className="w-10 h-10 text-forest" />
+                                        </div>
+                                        <div className="absolute -bottom-1 -right-1 bg-forest text-sand rounded-full p-1 border-2 border-white shadow-sm">
+                                            <Sparkles className="w-3.5 h-3.5 text-gold" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <span className="inline-flex items-center gap-1.5 bg-gold/15 text-gold-dark border border-gold/30 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                            <Sparkles className="w-3 h-3 text-gold-dark" /> Limitiert auf die ersten 300 Mitglieder
+                                        </span>
+                                        <h3 className="font-display font-black text-charcoal text-xl sm:text-2xl">
+                                            Campuna Pioneer Badge erhalten
+                                        </h3>
+                                        <p className="text-xs text-charcoal/70 leading-relaxed max-w-md mx-auto">
+                                            Sichere dir das exklusive Campuna Pioneer Abzeichen für maximales Vertrauen bei Interessenten und dauerhaft bevorzugte Platzierung deiner Inserate.
+                                        </p>
+                                    </div>
+
+                                    {/* Advantages summary */}
+                                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                                        <div className="p-2.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
+                                            <Crown className="w-4 h-4 text-gold-dark mx-auto" />
+                                            <span className="font-bold text-[11px] text-charcoal block leading-tight">Goldener Badge</span>
+                                            <span className="text-[9px] text-charcoal/50 block">Auf Profil & Anzeigen</span>
+                                        </div>
+                                        <div className="p-2.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
+                                            <Rocket className="w-4 h-4 text-gold-dark mx-auto" />
+                                            <span className="font-bold text-[11px] text-charcoal block leading-tight">Mehr Reichweite</span>
+                                            <span className="text-[9px] text-charcoal/50 block">Höhere Sichtbarkeit</span>
+                                        </div>
+                                        <div className="p-2.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
+                                            <Award className="w-4 h-4 text-gold-dark mx-auto" />
+                                            <span className="font-bold text-[11px] text-charcoal block leading-tight">100% Kostenlos</span>
+                                            <span className="text-[9px] text-charcoal/50 block">Dauerhafter Status</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Live Qualification Steps */}
+                                    <div className="bg-[#faf8f3] rounded-2xl border border-beige p-3.5 space-y-2 text-left text-xs">
+                                        <div className="flex items-center justify-between font-bold text-charcoal pb-1.5 border-b border-beige/60">
+                                            <span>Deine Qualifikation:</span>
+                                            <span className="text-forest font-mono text-[11px]">
+                                                {(isProfileComplete ? 1 : 0) + (approvedListingsCount >= 3 ? 1 : 0)} / 2 Kriterien
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between py-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${isProfileComplete ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                    <Check className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-[11px] font-medium text-charcoal">Profil vollständig ausgefüllt</span>
+                                            </div>
+                                            <span className={`text-[10px] font-black uppercase ${isProfileComplete ? 'text-emerald-600' : 'text-charcoal/40'}`}>
+                                                {isProfileComplete ? 'Erledigt' : 'Ausstehend'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex items-center justify-between py-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${approvedListingsCount >= 3 ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                    <Check className="w-3 h-3" />
+                                                </div>
+                                                <span className="text-[11px] font-medium text-charcoal">Mindestens 3 freigegebene Inserate</span>
+                                            </div>
+                                            <span className={`text-[10px] font-black font-mono ${approvedListingsCount >= 3 ? 'text-emerald-600' : 'text-forest'}`}>
+                                                {approvedListingsCount} / 3
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="space-y-2 pt-1">
+                                        {!isProfileComplete ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setBadgeModalOpen(false);
+                                                    setIsEditing(true);
+                                                    setActiveTab('dashboard');
+                                                }}
+                                                className="w-full bg-forest text-sand hover:bg-[#004d0a] py-3 rounded-2xl text-xs font-black uppercase tracking-wider cursor-pointer shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                                            >
+                                                <Pencil className="w-4 h-4 text-gold" />
+                                                <span>Profil jetzt vervollständigen</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setBadgeModalOpen(false);
+                                                    handleCreateListingClick();
+                                                }}
+                                                className="w-full bg-forest text-sand hover:bg-[#004d0a] py-3 rounded-2xl text-xs font-black uppercase tracking-wider cursor-pointer shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+                                            >
+                                                <Plus className="w-4 h-4 text-gold" />
+                                                <span>Jetzt Inserat aufgeben ({Math.max(0, 3 - approvedListingsCount)} erforderlich)</span>
+                                            </button>
+                                        )}
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setBadgeModalOpen(false);
+                                                setActiveTab('pioneer');
+                                            }}
+                                            className="w-full bg-[#faf8f3] text-charcoal/70 hover:bg-sand border border-beige py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider cursor-pointer transition-all"
+                                        >
+                                            Alle Pioneer-Details & Status ansehen
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </motion.div>
                     </motion.div>
                 )}

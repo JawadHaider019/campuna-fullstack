@@ -282,8 +282,22 @@ export default function AuthForm({ initialMode = 'login' }) {
             const response = await registerUser(userData);
             setLoading(false);
             if (response.success) {
-                toast.success('Konto erfolgreich erstellt!');
-                setMode('verify-email');
+                const user = response.data?.user;
+                const accessToken = response.data?.access_token;
+                const refreshToken = response.data?.refresh_token;
+
+                if (user && accessToken) {
+                    login(user, accessToken, refreshToken);
+                    toast.success('Registrierung erfolgreich! Willkommen bei Campuna.');
+                    if (user?.role === 'ADMIN') {
+                        router.push('/admin');
+                    } else {
+                        router.push('/mein-konto');
+                    }
+                } else {
+                    toast.success('Konto erfolgreich erstellt!');
+                    setMode('login');
+                }
             } else {
                 const errMsg = response.error || 'Registrierung fehlgeschlagen.';
                 setAuthError(errMsg);
@@ -310,12 +324,6 @@ export default function AuthForm({ initialMode = 'login' }) {
                 const errMsg = response.error || 'Login fehlgeschlagen.';
                 setAuthError(errMsg);
                 toast.error(errMsg);
-
-                // If account exists but email is unverified, transition to verification card screen
-                if (response.status === 403) {
-                    setSignupEmail(loginEmail);
-                    setMode('verify-email');
-                }
             }
         }
     };
