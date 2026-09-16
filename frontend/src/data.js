@@ -1,3 +1,7 @@
+import { STATIC_USERS, STATIC_LISTINGS } from './data/staticMarketplaceData';
+
+export { STATIC_USERS, STATIC_LISTINGS };
+
 export const CATEGORIES = [
   {
     id: '1',
@@ -138,6 +142,8 @@ export const CATEGORIES = [
 ];
 
 export const FEATURED_LISTINGS = [
+  ...STATIC_LISTINGS,
+
   {
     id: 'lst_1',
     title: 'VW T6 Camper Van Bulli, G...',
@@ -597,6 +603,19 @@ export const FEATURED_LISTINGS = [
 ];
 
 export const PROVIDERS = [
+  ...STATIC_USERS.map(u => ({
+    id: u.id,
+    name: u.name,
+    logo: u.logo,
+    coverImage: u.coverImage,
+    description: u.description,
+    slug: u.slug,
+    listingsCount: u.listingsCount,
+    rating: u.rating,
+    location: u.location,
+    verified: u.verified,
+    sellerType: u.sellerType
+  })),
   {
     id: 'prov_1',
     name: 'VTMCAMPING',

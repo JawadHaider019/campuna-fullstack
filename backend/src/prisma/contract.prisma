@@ -40,6 +40,8 @@ model User {
   buyer_conversations  Conversation[]    @relation("BuyerConversations")
   seller_conversations Conversation[]    @relation("SellerConversations")
   sent_messages       Message[]         @relation("UserSentMessages")
+  submitted_reports   ListingReport[]   @relation("ReporterUser")
+  reviewed_reports    ListingReport[]   @relation("ReportReviewer")
 
   @@map("users")
 }
@@ -142,8 +144,30 @@ model Listing {
   user             User              @relation("ListingOwner", fields: [user_id], references: [id], onDelete: Cascade)
   reviewer         User?             @relation("ListingReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
   conversations    Conversation[]
+  reports          ListingReport[]
 
   @@map("listings")
+}
+
+model ListingReport {
+  id             Uuid              @id @default(uuid())
+  listing_id     Uuid
+  reporter_id    Uuid
+  reason         String
+  description    String?
+  status         String            @default("PENDING")
+  reviewed_by_id Uuid?
+  reviewed_at    TimestamptzString?
+  admin_note     String?
+  created_at     TimestamptzString @default(now())
+  updated_at     TimestamptzString @default(now())
+
+  listing        Listing           @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+  reporter       User              @relation("ReporterUser", fields: [reporter_id], references: [id], onDelete: Cascade)
+  reviewer       User?             @relation("ReportReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+
+  @@unique([listing_id, reporter_id])
+  @@map("listing_reports")
 }
 
 model Conversation {

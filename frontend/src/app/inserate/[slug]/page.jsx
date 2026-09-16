@@ -22,12 +22,20 @@ import {
     AlertCircle,
     User,
     Check,
-    Pencil
+    Pencil,
+    ShieldAlert,
+    AlertTriangle,
+    Ban,
+    Image as ImageIcon,
+    Folder,
+    Clock,
+    ChevronDown
 } from 'lucide-react';
-import { getListingDetail, getAllListings } from '@/api/listings';
+import { getListingDetail, getAllListings, reportListing } from '@/api/listings';
 import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { STATIC_LISTINGS } from '@/data';
 import { toast } from 'react-hot-toast';
 
 function slugifyTitle(title = '') {
@@ -68,6 +76,58 @@ function formatLocation(location) {
     return 'Deutschland';
 }
 
+const REPORT_REASONS = [
+    {
+        id: 'SCAM',
+        icon: Flag,
+        colorClass: 'text-rose-600 bg-rose-50 border-rose-200',
+        label: 'Betrug / Scam',
+        desc: 'Verdacht auf Fake-Profil, Betrug oder Vorkasse-Aufforderung'
+    },
+    {
+        id: 'FALSE_INFORMATION',
+        icon: AlertTriangle,
+        colorClass: 'text-amber-600 bg-amber-50 border-amber-200',
+        label: 'Falsche Angaben',
+        desc: 'Preis, Kilometerstand, Baujahr oder Zustand stimmen nicht'
+    },
+    {
+        id: 'PROHIBITED_CONTENT',
+        icon: Ban,
+        colorClass: 'text-purple-600 bg-purple-50 border-purple-200',
+        label: 'Unzulässiger Inhalt',
+        desc: 'Verstoß gegen Campuna-Richtlinien oder geltendes Recht'
+    },
+    {
+        id: 'INAPPROPRIATE_IMAGE',
+        icon: ImageIcon,
+        colorClass: 'text-pink-600 bg-pink-50 border-pink-200',
+        label: 'Unangemessene Bilder',
+        desc: 'Anstößige Fotos, Urheberrechtsverletzung oder fremde Bilder'
+    },
+    {
+        id: 'WRONG_CATEGORY',
+        icon: Folder,
+        colorClass: 'text-blue-600 bg-blue-50 border-blue-200',
+        label: 'Falsche Kategorie',
+        desc: 'Inserat gehört in eine andere Kategorie'
+    },
+    {
+        id: 'NO_LONGER_AVAILABLE',
+        icon: Clock,
+        colorClass: 'text-slate-600 bg-slate-100 border-slate-200',
+        label: 'Nicht mehr verfügbar',
+        desc: 'Fahrzeug oder Zubehör bereits verkauft oder nicht mehr erhältlich'
+    },
+    {
+        id: 'OTHER',
+        icon: MessageSquare,
+        colorClass: 'text-slate-700 bg-slate-100 border-slate-200',
+        label: 'Sonstiges',
+        desc: 'Anderer wichtiger Hinweis an das Campuna-Team'
+    }
+];
+
 export default function ListingDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -98,7 +158,9 @@ export default function ListingDetailPage() {
 
     // Report Modal States
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [reportReason, setReportReason] = useState("");
+    const [reportReasonCategory, setReportReasonCategory] = useState('SCAM');
+    const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
+    const [reportDescription, setReportDescription] = useState('');
     const [isSendingReport, setIsSendingReport] = useState(false);
     const [isReportSent, setIsReportSent] = useState(false);
 
@@ -252,13 +314,36 @@ export default function ListingDetailPage() {
                     }
                 }
 
+                // 3. If still not found, check static marketplace fixtures
+                if (!foundListing && STATIC_LISTINGS && STATIC_LISTINGS.length > 0) {
+                    const decodedSlug = slug.toLowerCase();
+                    const staticMatch = STATIC_LISTINGS.find(item => {
+                        const titleSlug = slugifyTitle(item.title);
+                        return (
+                            item.id?.toLowerCase() === decodedSlug ||
+                            item.slug?.toLowerCase() === decodedSlug ||
+                            titleSlug === decodedSlug ||
+                            item.id === listingId ||
+                            decodedSlug.includes(item.id?.toLowerCase())
+                        );
+                    });
+
+                    if (staticMatch) {
+                        foundListing = {
+                            ...staticMatch,
+                            displayLocation: staticMatch.location || 'Deutschland',
+                            user_id: staticMatch.seller_user_id || staticMatch.seller?.id || null
+                        };
+                    }
+                }
+
                 if (active && foundListing) {
                     setListing(foundListing);
                     setActiveImageIdx(0);
 
-                    // Fetch related listings from database
+                    // Fetch related listings from database or fallback to static
                     getAllListings().then(res => {
-                        if (res.success && active) {
+                        if (res.success && active && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
                             const dbListings = res.data.listings || [];
                             const mapped = dbListings.map(l => ({
                                 id: l.id,
@@ -271,9 +356,15 @@ export default function ListingDetailPage() {
                             }));
                             const related = mapped.filter(item => item.id !== foundListing.id);
                             setRelatedListings(related);
+                        } else if (active) {
+                            const related = STATIC_LISTINGS.filter(item => item.id !== foundListing.id);
+                            setRelatedListings(related);
                         }
                     }).catch(err => {
-                        console.error("Error loading related listings:", err);
+                        if (active) {
+                            const related = STATIC_LISTINGS.filter(item => item.id !== foundListing.id);
+                            setRelatedListings(related);
+                        }
                     });
                 }
             } catch (err) {
@@ -308,7 +399,47 @@ export default function ListingDetailPage() {
     };
 
     const handleReportListing = () => {
+        if (!currentUser) {
+            toast.error('Bitte melde dich an, um ein Inserat zu melden.');
+            router.push(`/login?returnUrl=/inserate/${encodeURIComponent(slug)}`);
+            return;
+        }
+        if (isOwner) {
+            toast.error('Du kannst deine eigene Anzeige nicht melden.');
+            return;
+        }
+        setIsReportSent(false);
         setIsReportModalOpen(true);
+    };
+
+    const handleSendReport = async (e) => {
+        if (e) e.preventDefault();
+        if (!reportReasonCategory) {
+            toast.error('Bitte wähle einen Grund für die Meldung aus.');
+            return;
+        }
+        if (!listing?.id) return;
+
+        setIsSendingReport(true);
+        try {
+            const res = await reportListing(listing.id, {
+                reason: reportReasonCategory,
+                description: reportDescription ? reportDescription.trim() : ''
+            });
+
+            if (res.data?.success || res.success) {
+                setIsReportSent(true);
+                toast.success('Meldung erfolgreich übermittelt.');
+            } else {
+                toast.error(res.data?.error || res.error || 'Fehler beim Senden der Meldung.');
+            }
+        } catch (err) {
+            console.error('Error submitting report:', err);
+            const errMsg = err.response?.data?.error || err.message || 'Fehler beim Senden der Meldung.';
+            toast.error(errMsg);
+        } finally {
+            setIsSendingReport(false);
+        }
     };
 
     if (loading) {
@@ -537,14 +668,6 @@ export default function ListingDetailPage() {
                             <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[10px] sm:text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-md border border-yellow-100/90 flex items-center gap-1.5">
                                 <span>🚀</span>
                                 <span>BOOSTED</span>
-                            </span>
-                        )}
-
-                        {/* ⭐ Featured / Empfohlen Badge */}
-                        {listing.featured && (
-                            <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-md border border-emerald-400/40 flex items-center gap-1.5">
-                                <span>⭐</span>
-                                <span>EMPFOHLEN VON CAMPUNA</span>
                             </span>
                         )}
 
@@ -1131,7 +1254,7 @@ export default function ListingDetailPage() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-xl w-full flex flex-col relative text-left max-h-[90vh]"
+                            className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-xl w-full flex flex-col relative text-left max-h-[92vh]"
                         >
                             {/* Close Button */}
                             <button
@@ -1145,82 +1268,170 @@ export default function ListingDetailPage() {
                             </button>
 
                             {/* Scrollable Content Container */}
-                            <div className="bg-[#fcfbf9] p-6 flex flex-col gap-5 overflow-y-auto">
+                            <div className="bg-[#fcfbf9] p-5 sm:p-7 flex flex-col gap-5 overflow-y-auto">
                                 {isReportSent ? (
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="py-12 flex flex-col items-center text-center space-y-4 font-sans"
+                                        className="py-10 flex flex-col items-center text-center space-y-4 font-sans"
                                     >
-                                        <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                        <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
                                             <Check className="w-8 h-8" />
                                         </div>
                                         <h3 className="font-display font-bold text-2xl text-charcoal">Meldung eingegangen</h3>
-                                        <p className="text-xs text-charcoal/60 max-w-sm leading-relaxed">
-                                            Vielen Dank für deine Mithilfe! Unser Moderationsteam prüft diesen Eintrag umgehend nach unseren Community-Richtlinien.
+                                        <p className="text-xs sm:text-sm text-charcoal/70 max-w-sm leading-relaxed">
+                                            Vielen Dank für deine Mithilfe! Unser Moderationsteam prüft dieses Angebot sorgfältig nach unseren Community-Richtlinien.
                                         </p>
                                         <button
                                             onClick={() => {
                                                 setIsReportModalOpen(false);
                                                 setIsReportSent(false);
                                             }}
-                                            className="mt-4 px-6 py-2.5 rounded-full bg-sand text-charcoal hover:bg-beige text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                                            className="mt-4 px-7 py-3 rounded-full bg-forest text-sand hover:bg-forest/90 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
                                         >
                                             Schließen
                                         </button>
                                     </motion.div>
                                 ) : (
-                                    <div className="space-y-4 font-sans">
+                                    <form onSubmit={handleSendReport} className="space-y-4 font-sans">
                                         <div className="space-y-1">
-                                            <h3 className="font-display font-extrabold text-lg text-black">
-                                                Anzeige melden
-                                            </h3>
-                                            <p className="text-xs text-charcoal/60 leading-relaxed font-light font-sans">
-                                                Wenn dir etwas an dieser Anzeige ungewöhnlich oder nicht passend erscheint, kannst du uns hier einen Hinweis geben. Wir prüfen jede Meldung sorgfältig.
+                                            <div className="flex items-center gap-2">
+                                                <span className="p-1.5 rounded-xl bg-amber-500/10 text-amber-700">
+                                                    <Flag className="w-4 h-4" />
+                                                </span>
+                                                <h3 className="font-display font-extrabold text-lg text-charcoal">
+                                                    Anzeige melden
+                                                </h3>
+                                            </div>
+                                            <p className="text-xs text-charcoal/60 leading-relaxed font-sans">
+                                                Warum möchtest du dieses Angebot ({listing?.title}) melden? Bitte wähle den passenden Grund aus:
                                             </p>
                                         </div>
 
-                                        <div className="space-y-2 font-sans">
-                                            <label className="block text-xs font-semibold text-charcoal">
-                                                Was ist dir an dieser Anzeige aufgefallen?
+                                        {/* Reason Selector Dropdown with React Icons */}
+                                        <div className="space-y-1.5">
+                                            <label className="block text-xs font-bold text-charcoal">
+                                                Grund der Meldung auswählen <span className="text-rose-600">*</span>
+                                            </label>
+                                            <div className="relative">
+                                                {(() => {
+                                                    const selectedReason = REPORT_REASONS.find(r => r.id === reportReasonCategory) || REPORT_REASONS[0];
+                                                    const SelectedIcon = selectedReason.icon;
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsReportDropdownOpen(!isReportDropdownOpen)}
+                                                            className="w-full bg-white border border-beige/90 rounded-2xl p-3 text-xs text-charcoal flex items-center justify-between gap-3 focus:outline-none focus:border-forest focus:ring-1 focus:ring-forest cursor-pointer hover:bg-sand/20 transition-all shadow-2xs text-left"
+                                                        >
+                                                            <div className="flex items-center gap-3 min-w-0">
+                                                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs ${selectedReason.colorClass}`}>
+                                                                    <SelectedIcon className="w-4 h-4 shrink-0" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <span className="font-display font-bold text-xs text-charcoal block truncate">
+                                                                        {selectedReason.label}
+                                                                    </span>
+                                                                    <span className="text-[11px] text-charcoal/50 leading-snug block truncate">
+                                                                        {selectedReason.desc}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <ChevronDown className={`w-4 h-4 text-charcoal/40 shrink-0 transition-transform ${isReportDropdownOpen ? 'rotate-180' : ''}`} />
+                                                        </button>
+                                                    );
+                                                })()}
+
+                                                {/* Dropdown Options List */}
+                                                {isReportDropdownOpen && (
+                                                    <div className="absolute left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-beige shadow-2xl p-1.5 z-50 max-h-[260px] overflow-y-auto space-y-1">
+                                                        {REPORT_REASONS.map((reason) => {
+                                                            const isSelected = reportReasonCategory === reason.id;
+                                                            const IconComponent = reason.icon;
+                                                            return (
+                                                                <button
+                                                                    key={reason.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setReportReasonCategory(reason.id);
+                                                                        setIsReportDropdownOpen(false);
+                                                                    }}
+                                                                    className={`w-full p-2.5 rounded-xl text-left transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                                                        isSelected
+                                                                            ? 'bg-forest/10 text-forest font-bold'
+                                                                            : 'hover:bg-sand/30 text-charcoal'
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center gap-2.5 min-w-0">
+                                                                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border ${reason.colorClass}`}>
+                                                                            <IconComponent className="w-3.5 h-3.5 shrink-0" />
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <span className="text-xs font-bold block truncate">
+                                                                                {reason.label}
+                                                                            </span>
+                                                                            <span className="text-[10px] text-charcoal/50 leading-snug block truncate">
+                                                                                {reason.desc}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+                                                                    {isSelected && <Check className="w-4 h-4 text-forest shrink-0" />}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Message / Description */}
+                                        <div className="space-y-1.5 pt-1">
+                                            <label className="block text-xs font-bold text-charcoal">
+                                                Deine Nachricht / Details zum Problem <span className="text-charcoal/40 font-normal">(optional)</span>
                                             </label>
                                             <textarea
-                                                value={reportReason}
-                                                onChange={(e) => setReportReason(e.target.value)}
-                                                placeholder="Schreibe hier deine Anmerkungen..."
-                                                className="w-full h-32 border border-[#eaeaea] rounded-xl p-3.5 text-xs text-charcoal focus:border-[#2a7f55] focus:outline-none focus:ring-1 focus:ring-[#2a7f55] leading-relaxed resize-none font-sans bg-white"
+                                                rows={3}
+                                                value={reportDescription}
+                                                onChange={(e) => setReportDescription(e.target.value)}
+                                                placeholder="Beschreibe bitte kurz, was dir aufgefallen ist (z.B. falsche Angaben, Betrugsverdacht, Fahrzeug bereits verkauft)..."
+                                                className="w-full bg-white border border-beige rounded-2xl p-3 text-xs text-charcoal placeholder:text-charcoal/40 focus:border-forest focus:outline-none focus:ring-1 focus:ring-forest leading-relaxed resize-none font-sans"
                                             />
                                         </div>
 
-                                        <div className="space-y-2.5 font-sans pt-2">
+                                        {/* Action Buttons */}
+                                        <div className="flex items-center justify-end gap-3 pt-2">
                                             <button
-                                                onClick={async () => {
-                                                    setIsSendingReport(true);
-                                                    await new Promise(resolve => setTimeout(resolve, 1000));
-                                                    setIsSendingReport(false);
-                                                    setIsReportSent(true);
-                                                }}
-                                                disabled={isSendingReport || !reportReason.trim()}
-                                                className="w-full bg-[#2a7f55] hover:bg-[#206040] disabled:bg-charcoal/10 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
+                                                type="button"
+                                                onClick={() => setIsReportModalOpen(false)}
+                                                className="px-5 py-2.5 rounded-full border border-beige text-charcoal/70 hover:bg-sand/40 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                                            >
+                                                Abbrechen
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                disabled={isSendingReport}
+                                                className="px-6 py-2.5 rounded-full bg-forest hover:bg-gold text-sand hover:text-forest disabled:opacity-50 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
                                             >
                                                 {isSendingReport ? (
                                                     <>
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                        <span>Wird gesendet...</span>
+                                                        <div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                                        <span>Wird übermittelt...</span>
                                                     </>
                                                 ) : (
-                                                    <span>Hinweis senden</span>
+                                                    <>
+                                                        <Flag className="w-3.5 h-3.5" />
+                                                        <span>Meldung absenden</span>
+                                                    </>
                                                 )}
                                             </button>
                                         </div>
-                                    </div>
+                                    </form>
                                 )}
                             </div>
                         </motion.div>
                     </motion.div>
                 )}
-            </AnimatePresence >
+            </AnimatePresence>
 
-        </div >
+        </div>
     );
 }

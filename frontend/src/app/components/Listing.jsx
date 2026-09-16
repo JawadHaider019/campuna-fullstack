@@ -6,6 +6,7 @@ import { Heart, MapPin, ShieldCheck, Eye, ArrowRight, ChevronLeft, ChevronRight 
 import { useRouter } from 'next/navigation';
 import { getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
+import { STATIC_LISTINGS } from '@/data';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
 
@@ -127,18 +128,14 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
                             </span>
                         )}
 
-                        {/* ⭐ Featured / Empfohlen Badge */}
-                        {item.featured && (
-                            <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-emerald-400/40 flex items-center gap-1 backdrop-blur-md">
-                                <span>⭐</span>
-                                <span>EMPFOHLEN</span>
-                            </span>
-                        )}
-
                         {/* Seller Type Badge */}
-                        <span className="bg-forest/90 text-white text-[8px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1">
+                        <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1 ${
+                            (item.sellerType === 'Gewerblich' || item.listing_user_type === 'Gewerblich')
+                                ? 'bg-[#0B3B24] text-white border border-emerald-400/30'
+                                : 'bg-[#107C41] text-white border border-emerald-300/30'
+                        }`}>
                             <ShieldCheck className="w-2.5 h-2.5 text-white" />
-                            {item.sellerType}
+                            <span>{(item.sellerType || item.listing_user_type || 'Privat').toUpperCase()}</span>
                         </span>
                     </div>
 
@@ -267,7 +264,10 @@ export default function Listing({
         if (propListings && propListings.length > 0) {
             return propListings;
         }
-        return apiListings;
+        if (apiListings && apiListings.length > 0) {
+            return apiListings;
+        }
+        return STATIC_LISTINGS;
     }, [apiListings, propListings]);
 
     const filteredListings = useMemo(() => {
@@ -457,15 +457,24 @@ export default function Listing({
 
                         {/* Row 1 */}
                         {row1Listings.length > 0 && (
-                            <div className="relative overflow-hidden pb-1 cursor-grab active:cursor-grabbing" ref={rowRef1}>
+                            <div 
+                                className="relative overflow-hidden pb-1 cursor-grab active:cursor-grabbing" 
+                                ref={rowRef1}
+                                onMouseEnter={() => { isHoveredRef1.current = true; }}
+                                onMouseLeave={() => { isHoveredRef1.current = false; }}
+                                onPointerEnter={() => { isHoveredRef1.current = true; }}
+                                onPointerLeave={() => { isHoveredRef1.current = false; }}
+                            >
                                 <motion.div
                                     drag="x"
                                     dragConstraints={{ right: 0, left: -rowConstraints1 }}
                                     style={{ x: x1 }}
-                                    onDragStart={() => { isDraggingRef1.current = true; }}
+                                    onDragStart={() => { isDraggingRef1.current = true; isHoveredRef1.current = true; }}
                                     onDragEnd={() => { isDraggingRef1.current = false; }}
                                     onMouseEnter={() => { isHoveredRef1.current = true; }}
                                     onMouseLeave={() => { isHoveredRef1.current = false; }}
+                                    onPointerEnter={() => { isHoveredRef1.current = true; }}
+                                    onPointerLeave={() => { isHoveredRef1.current = false; }}
                                     className="flex gap-5 w-max"
                                 >
                                     {row1Listings.map((item, idx) => (
@@ -481,15 +490,24 @@ export default function Listing({
 
                         {/* Row 2 */}
                         {row2Listings.length > 0 && (
-                            <div className="relative overflow-hidden pb-1 cursor-grab active:cursor-grabbing" ref={rowRef2}>
+                            <div 
+                                className="relative overflow-hidden pb-1 cursor-grab active:cursor-grabbing" 
+                                ref={rowRef2}
+                                onMouseEnter={() => { isHoveredRef2.current = true; }}
+                                onMouseLeave={() => { isHoveredRef2.current = false; }}
+                                onPointerEnter={() => { isHoveredRef2.current = true; }}
+                                onPointerLeave={() => { isHoveredRef2.current = false; }}
+                            >
                                 <motion.div
                                     drag="x"
                                     dragConstraints={{ right: 0, left: -rowConstraints2 }}
                                     style={{ x: x2 }}
-                                    onDragStart={() => { isDraggingRef2.current = true; }}
+                                    onDragStart={() => { isDraggingRef2.current = true; isHoveredRef2.current = true; }}
                                     onDragEnd={() => { isDraggingRef2.current = false; }}
                                     onMouseEnter={() => { isHoveredRef2.current = true; }}
                                     onMouseLeave={() => { isHoveredRef2.current = false; }}
+                                    onPointerEnter={() => { isHoveredRef2.current = true; }}
+                                    onPointerLeave={() => { isHoveredRef2.current = false; }}
                                     className="flex gap-5 w-max"
                                 >
                                     {row2Listings.map((item, idx) => (

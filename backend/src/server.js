@@ -12,6 +12,7 @@ import adminRoutes from './routes/admin.js';
 import conversationRoutes from './routes/conversations.js';
 import './config/initAdminTable.js';
 import './config/initChatTables.js';
+import './config/initReportsTable.js';
 import pool from './config/database.js';
 import { seedMarketplaceData } from './config/seedMarketplaceData.js';
 

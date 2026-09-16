@@ -10,6 +10,7 @@ import {
     importListingsFromCsv,
     exportListingsToCsv,
 } from '../controllers/listings.js';
+import { createListingReport } from '../controllers/listingReports.js';
 import { authenticate, optionalAuthenticate } from '../middleware/authenticate.js';
 import { uploadMultiple } from '../middleware/upload.js';
 
@@ -41,6 +42,9 @@ router.put('/:id', authenticate, uploadMultiple, updateListing);
 
 // POST /api/listings/:id/boost → Boost listing with Campuna Credits
 router.post('/:id/boost', authenticate, boostListing);
+
+// POST /api/listings/:id/reports → Report a listing
+router.post('/:id/reports', authenticate, createListingReport);
 
 export default router;
 

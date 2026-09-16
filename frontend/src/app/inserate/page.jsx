@@ -15,7 +15,7 @@ import {
     Filter
 } from 'lucide-react';
 import { getAllListings } from '@/api/listings';
-import { CATEGORIES } from '@/data';
+import { CATEGORIES, STATIC_LISTINGS } from '@/data';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 
@@ -394,18 +394,14 @@ function ListingCard({ item }) {
                             </span>
                         )}
 
-                        {/* ⭐ Featured / Empfohlen Badge */}
-                        {isFeatured && (
-                            <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[7.5px] md:text-[8.5px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-emerald-400/40 flex items-center gap-1 backdrop-blur-md">
-                                <span>⭐</span>
-                                <span>EMPFOHLEN</span>
-                            </span>
-                        )}
-
                         {/* Seller Type Badge */}
-                        <span className="bg-forest/90 flex items-center gap-1 justify-center text-white text-[7.5px] md:text-[8px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md backdrop-blur-md pointer-events-none">
+                        <span className={`flex items-center gap-1 justify-center text-white text-[7.5px] md:text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md backdrop-blur-md pointer-events-none ${
+                            (item.listing_user_type === 'Gewerblich' || item.seller?.type === 'Gewerblich')
+                                ? 'bg-[#0B3B24] text-white border border-emerald-400/30'
+                                : 'bg-[#107C41] text-white border border-emerald-300/30'
+                        }`}>
                             <ShieldCheck className="w-2.5 h-2.5 text-white shrink-0" />
-                            {item.listing_user_type || item.seller?.type || 'Privat'}
+                            <span>{(item.listing_user_type || item.seller?.type || 'Privat').toUpperCase()}</span>
                         </span>
                     </div>
 
@@ -585,13 +581,15 @@ function ListingsContent() {
             try {
                 const res = await getAllListings();
                 let list = [];
-                if (res.success && Array.isArray(res.data?.listings)) {
+                if (res.success && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
                     list = res.data.listings.map(mapListing).filter(Boolean);
+                } else {
+                    list = STATIC_LISTINGS.map(mapListing).filter(Boolean);
                 }
                 if (active) setListings(list);
             } catch (err) {
                 console.error("Error fetching listings from database:", err);
-                if (active) setListings([]);
+                if (active) setListings(STATIC_LISTINGS.map(mapListing).filter(Boolean));
             } finally {
                 if (active) setLoading(false);
             }

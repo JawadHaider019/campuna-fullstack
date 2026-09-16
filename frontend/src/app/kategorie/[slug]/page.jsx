@@ -274,14 +274,6 @@ function ListingCard({ item }) {
                             </span>
                         )}
 
-                        {/* ⭐ Featured / Empfohlen Badge */}
-                        {isFeatured && (
-                            <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[7px] sm:text-[8px] font-bold uppercase tracking-wider px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg border border-emerald-400/40 flex items-center gap-1 backdrop-blur-md">
-                                <span>⭐</span>
-                                <span>EMPFOHLEN</span>
-                            </span>
-                        )}
-
                         {/* Seller Type Badge */}
                         <span className="bg-forest/90 flex items-center gap-0.5 sm:gap-1 justify-center text-white text-[7px] sm:text-[8px] font-semibold uppercase tracking-widest px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-md backdrop-blur-md pointer-events-none">
                             <ShieldCheck className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-white" />

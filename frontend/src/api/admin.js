@@ -120,3 +120,27 @@ export const submitAdminManualDecision = (listingId, decision, notes = '') => {
     return api.post(`/admin/decisions/${listingId}/admin-decision`, { decision, notes });
 };
 
+/**
+ * GET /api/admin/reports
+ * Lists all user reports on listings with filters and counts.
+ */
+export const getAdminReports = (params = {}) => {
+    return api.get('/admin/reports', { params });
+};
+
+/**
+ * GET /api/admin/reports/:id
+ * Retrieves full report details and report history on a listing.
+ */
+export const getAdminReportDetail = (reportId) => {
+    return api.get(`/admin/reports/${reportId}`);
+};
+
+/**
+ * PATCH /api/admin/reports/:id
+ * Updates report status (REVIEWED, DISMISSED), admin note, and optional listing/user actions.
+ */
+export const updateAdminReport = (reportId, data) => {
+    return api.patch(`/admin/reports/${reportId}`, data);
+};
+

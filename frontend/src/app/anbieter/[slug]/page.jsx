@@ -26,7 +26,7 @@ import {
 import { getPublicProfile } from '@/api/profile';
 import { getListingsByUser } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
-import { PROVIDERS } from '@/data';
+import { PROVIDERS, STATIC_USERS, STATIC_LISTINGS } from '@/data';
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
 
@@ -212,14 +212,6 @@ const ListingCard = React.memo(({ item: rawItem }) => {
                             </span>
                         )}
 
-                        {/* ⭐ Featured / Empfohlen Badge */}
-                        {item.featured && (
-                            <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-emerald-400/40 flex items-center gap-1 backdrop-blur-md">
-                                <span>⭐</span>
-                                <span>EMPFOHLEN</span>
-                            </span>
-                        )}
-
                         {/* Seller Type Badge */}
                         <span className="bg-forest/90 text-white text-[8px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1">
                             <ShieldCheck className="w-2.5 h-2.5 text-white" />
@@ -352,6 +344,54 @@ export default function ProviderDetails() {
 
         const fallbackToMock = () => {
             const cleanSlug = rawSlug.toLowerCase();
+            
+            // Check in STATIC_USERS first
+            const matchedStaticUser = STATIC_USERS.find(u => {
+                const sName = slugifyName(u.name);
+                const sSlug = slugifyName(u.slug || '');
+                return (
+                    cleanSlug === u.id ||
+                    cleanSlug === sSlug ||
+                    cleanSlug.includes(sName) ||
+                    sName.includes(cleanSlug)
+                );
+            });
+
+            if (matchedStaticUser) {
+                setProvider({
+                    id:           matchedStaticUser.id,
+                    name:         matchedStaticUser.name,
+                    type:         matchedStaticUser.sellerType || (matchedStaticUser.account_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'),
+                    logo:         matchedStaticUser.logo || DEFAULT_LOGO,
+                    cover:        matchedStaticUser.coverImage || DEFAULT_COVER,
+                    bio:          matchedStaticUser.description || '',
+                    location:     matchedStaticUser.location || 'Deutschland',
+                    email:        matchedStaticUser.email || ('kontakt@' + slugifyName(matchedStaticUser.name) + '.de'),
+                    phone:        matchedStaticUser.phone || '+49 (0) 30 1234567',
+                    website:      matchedStaticUser.website || ('https://' + slugifyName(matchedStaticUser.name) + '.de'),
+                    instagram:    'https://instagram.com/' + slugifyName(matchedStaticUser.name),
+                    facebook:     'https://facebook.com/' + slugifyName(matchedStaticUser.name),
+                    address:      matchedStaticUser.address || matchedStaticUser.location || 'Deutschland',
+                    impressum:    'https://' + slugifyName(matchedStaticUser.name) + '.de/impressum',
+                    memberSince:  formatMemberSince(matchedStaticUser.memberSince),
+                    isStrategic:  matchedStaticUser.account_type === 'COMMERCIAL',
+                    tier:         matchedStaticUser.account_type === 'COMMERCIAL' ? 'BUSINESS' : 'FREE',
+                    achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
+                });
+
+                setCoverSrc(matchedStaticUser.coverImage || DEFAULT_COVER);
+                setLogoSrc(matchedStaticUser.logo || DEFAULT_LOGO);
+
+                // Find user's assigned listings from static marketplace dataset
+                const userListings = STATIC_LISTINGS.filter(l => 
+                    l.seller_user_id === matchedStaticUser.id || 
+                    l.seller?.name?.toLowerCase() === matchedStaticUser.name.toLowerCase()
+                );
+                setListings(userListings);
+                setLoading(false);
+                return true;
+            }
+
             const matchedMock = PROVIDERS.find(p => {
                 const sName = slugifyName(p.name);
                 return (
@@ -366,7 +406,7 @@ export default function ProviderDetails() {
                 setProvider({
                     id:           matchedMock.id,
                     name:         matchedMock.name,
-                    type:         'Gewerblich',
+                    type:         matchedMock.sellerType || 'Gewerblich',
                     logo:         matchedMock.logo || DEFAULT_LOGO,
                     cover:        matchedMock.coverImage || DEFAULT_COVER,
                     bio:          matchedMock.description || '',
@@ -386,7 +426,11 @@ export default function ProviderDetails() {
 
                 setCoverSrc(matchedMock.coverImage || DEFAULT_COVER);
                 setLogoSrc(matchedMock.logo || DEFAULT_LOGO);
-                setListings([]);
+
+                const userListings = STATIC_LISTINGS.filter(l => 
+                    l.seller?.name?.toLowerCase() === matchedMock.name.toLowerCase()
+                );
+                setListings(userListings);
                 setLoading(false);
                 return true;
             }

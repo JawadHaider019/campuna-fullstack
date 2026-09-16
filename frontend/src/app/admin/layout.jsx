@@ -12,7 +12,8 @@ import {
     Home,
     Menu,
     X,
-    Sparkles
+    Sparkles,
+    Flag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminDashboardStats } from '@/api/admin';
@@ -23,6 +24,7 @@ export default function AdminLayout({ children }) {
     const [mounted, setMounted] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
+    const [pendingReportsCount, setPendingReportsCount] = useState(0);
 
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const user = useAuthStore((state) => state.user);
@@ -43,13 +45,18 @@ export default function AdminLayout({ children }) {
         }
     }, [mounted, isLoggedIn, user, router]);
 
-    // Load review queue count for live badge
+    // Load review queue & report count for live badges
     useEffect(() => {
         if (mounted && isLoggedIn && user?.role === 'ADMIN') {
             getAdminDashboardStats()
                 .then(res => {
-                    if (res.data?.success && res.data.stats?.listings?.review) {
-                        setPendingCount(res.data.stats.listings.review);
+                    if (res.data?.success) {
+                        if (res.data.stats?.listings?.review !== undefined) {
+                            setPendingCount(res.data.stats.listings.review);
+                        }
+                        if (res.data.stats?.reports?.pending !== undefined) {
+                            setPendingReportsCount(res.data.stats.reports.pending);
+                        }
                     }
                 })
                 .catch(() => { });
@@ -59,11 +66,18 @@ export default function AdminLayout({ children }) {
     const menuItems = [
         { label: 'Dashboard', path: '/admin', icon: Hexagon },
         {
-            label: 'Inserate ',
+            label: 'Inserate',
             path: '/admin/inserate',
             icon: BarChart3,
             badge: pendingCount > 0 ? String(pendingCount) : null,
             badgeColor: 'bg-amber-500 text-slate-900 font-black'
+        },
+        {
+            label: 'Meldungen 🚩',
+            path: '/admin/meldungen',
+            icon: Flag,
+            badge: pendingReportsCount > 0 ? String(pendingReportsCount) : null,
+            badgeColor: 'bg-rose-500 text-white font-black'
         },
         { label: 'KI-Entscheidungen', path: '/admin/entscheidungen', icon: Sparkles, badge: 'KI' },
         { label: 'Benutzerverwaltung', path: '/admin/benutzer', icon: Users },

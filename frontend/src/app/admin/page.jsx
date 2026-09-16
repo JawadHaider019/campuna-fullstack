@@ -28,7 +28,8 @@ import {
     Zap,
     ExternalLink,
     Filter,
-    ArrowRight
+    ArrowRight,
+    Flag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -170,8 +171,8 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            {/* ─── Row 1: 5 Primary Bento KPI Cards ─── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* ─── Row 1: 6 Primary Bento KPI Cards ─── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
 
                 {/* 1. Gesamt-Inserate & Marktwert (Forest Highlight Card) */}
                 <div
@@ -221,7 +222,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-1.5 text-[11px] font-bold mt-1">
                             {(stats?.listings?.review || 0) > 0 ? (
                                 <span className="text-amber-600 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> Prüfung ausstehend
+                                    <Clock className="w-3 h-3" /> Prüfung nötig
                                 </span>
                             ) : (
                                 <span className="text-emerald-600 flex items-center gap-1">
@@ -232,7 +233,42 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* 3. Campuna Pioneer Club (Live / 300) */}
+                {/* 3. Meldungen 🚩 (Offene Benutzermeldungen) */}
+                <div
+                    onClick={() => router.push('/admin/meldungen')}
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                >
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                            Meldungen 🚩
+                        </span>
+                        {(stats?.reports?.pending || 0) > 0 ? (
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                        ) : (
+                            <div className="w-6 h-6 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
+                                <Flag className="w-3.5 h-3.5" />
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                            {loading ? '...' : (stats?.reports?.pending || 0)}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold mt-1">
+                            {(stats?.reports?.pending || 0) > 0 ? (
+                                <span className="text-rose-600 flex items-center gap-1">
+                                    <AlertTriangle className="w-3 h-3" /> Zu prüfen
+                                </span>
+                            ) : (
+                                <span className="text-emerald-600 flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3" /> Keine Meldungen
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. Campuna Pioneer Club (Live / 300) */}
                 <div
                     onClick={() => router.push('/admin/benutzer')}
                     className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
@@ -264,7 +300,7 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* 4. Monetarisierung & Business Tier */}
+                {/* 5. Monetarisierung & Business Tier */}
                 <div
                     onClick={() => router.push('/admin/benutzer?type=COMMERCIAL')}
                     className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
@@ -288,7 +324,7 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* 5. Benutzer & Händler */}
+                {/* 6. Benutzer & Händler */}
                 <div
                     onClick={() => router.push('/admin/benutzer')}
                     className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"

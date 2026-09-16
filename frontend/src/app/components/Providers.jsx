@@ -212,15 +212,24 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                     )}
 
                     {providersList.length > 0 && (
-                        <div className={`relative overflow-x-hidden ${shouldSlide ? 'cursor-grab active:cursor-grabbing' : ''}`} ref={rowRef}>
+                        <div 
+                            className={`relative overflow-x-hidden ${shouldSlide ? 'cursor-grab active:cursor-grabbing' : ''}`} 
+                            ref={rowRef}
+                            onMouseEnter={() => { isHoveredRef.current = true; }}
+                            onMouseLeave={() => { isHoveredRef.current = false; }}
+                            onPointerEnter={() => { isHoveredRef.current = true; }}
+                            onPointerLeave={() => { isHoveredRef.current = false; }}
+                        >
                             <motion.div
                                 drag={shouldSlide ? "x" : false}
                                 dragConstraints={shouldSlide ? { right: 0, left: -constraints } : { right: 0, left: 0 }}
                                 style={shouldSlide ? { x } : { x: 0 }}
-                                onDragStart={() => { isDraggingRef.current = true; }}
+                                onDragStart={() => { isDraggingRef.current = true; isHoveredRef.current = true; }}
                                 onDragEnd={() => { isDraggingRef.current = false; }}
                                 onMouseEnter={() => { isHoveredRef.current = true; }}
                                 onMouseLeave={() => { isHoveredRef.current = false; }}
+                                onPointerEnter={() => { isHoveredRef.current = true; }}
+                                onPointerLeave={() => { isHoveredRef.current = false; }}
                                 className={shouldSlide 
                                     ? "flex gap-4 w-max px-4 sm:px-16 md:px-32 py-4 sm:py-6" 
                                     : "flex gap-4 justify-center w-full py-4 sm:py-6"

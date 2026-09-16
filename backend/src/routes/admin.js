@@ -22,6 +22,11 @@ import {
     exportAdminDataCsv,
     batchAiModerationScan
 } from '../controllers/adminDashboard.js';
+import {
+    getAdminReports,
+    getAdminReportDetail,
+    updateAdminReportStatus
+} from '../controllers/listingReports.js';
 
 const router = express.Router();
 
@@ -32,6 +37,11 @@ router.use(authenticate, requireAdmin);
 router.get('/dashboard-stats', getAdminDashboardStats);
 router.get('/export-csv', exportAdminDataCsv);
 router.post('/batch-ai-scan', batchAiModerationScan);
+
+// Reports moderation endpoints
+router.get('/reports', getAdminReports);
+router.get('/reports/:id', getAdminReportDetail);
+router.patch('/reports/:id', updateAdminReportStatus);
 
 // User management endpoints
 router.get('/users', getAdminUsers);

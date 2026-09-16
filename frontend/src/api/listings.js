@@ -48,3 +48,13 @@ export const boostListing = async (id, durationDays = 7) => {
     return api.post(`/listings/${id}/boost`, { durationDays });
 };
 
+/**
+ * POST /api/listings/:id/reports
+ * Reports a listing with reason and description.
+ * @param {string} id - Listing ID
+ * @param {{ reason: string, description?: string }} data
+ */
+export const reportListing = async (id, data) => {
+    return api.post(`/listings/${id}/reports`, data);
+};
+

@@ -62,6 +62,16 @@ export const getAdminDashboardStats = async (req, res) => {
             FROM listing_moderation;
         `;
 
+        // 5b. Listing Reports Stats
+        const reportsStatsQuery = `
+            SELECT 
+                COUNT(*)::int as total_reports,
+                COUNT(CASE WHEN status = 'PENDING' THEN 1 END)::int as pending_reports,
+                COUNT(CASE WHEN status = 'REVIEWED' THEN 1 END)::int as reviewed_reports,
+                COUNT(CASE WHEN status = 'DISMISSED' THEN 1 END)::int as dismissed_reports
+            FROM listing_reports;
+        `;
+
         // 6. Category Breakdown (Top 6 categories)
         const categoryStatsQuery = `
             SELECT 
@@ -181,6 +191,7 @@ export const getAdminDashboardStats = async (req, res) => {
             businessRes,
             pioneerRes,
             aiRes,
+            reportsRes,
             categoryRes,
             dailyActivityRes,
             pendingQueueRes,
@@ -192,6 +203,7 @@ export const getAdminDashboardStats = async (req, res) => {
             pool.query(businessStatsQuery),
             pool.query(pioneerStatsQuery),
             pool.query(aiStatsQuery),
+            pool.query(reportsStatsQuery).catch(() => ({ rows: [{ total_reports: 0, pending_reports: 0, reviewed_reports: 0, dismissed_reports: 0 }] })),
             pool.query(categoryStatsQuery),
             pool.query(dailyActivityQuery),
             pool.query(pendingQueueQuery),
@@ -206,6 +218,7 @@ export const getAdminDashboardStats = async (req, res) => {
         const businessStats = businessRes.rows[0] || {};
         const pioneerStats = pioneerRes.rows[0] || {};
         const aiStats = aiRes.rows[0] || {};
+        const reportStats = reportsRes.rows[0] || {};
         const creditStats = creditRes.rows[0] || {};
 
         const totalListings = parseInt(listingStats.total_listings || 0, 10);
@@ -336,6 +349,12 @@ export const getAdminDashboardStats = async (req, res) => {
                     autoRejected: parseInt(aiStats.auto_rejected_count || 0, 10),
                     manualReview: parseInt(aiStats.manual_review_count || 0, 10),
                     avgScore: Math.round(parseFloat(aiStats.avg_ai_score || 0))
+                },
+                reports: {
+                    total: parseInt(reportStats.total_reports || 0, 10),
+                    pending: parseInt(reportStats.pending_reports || 0, 10),
+                    reviewed: parseInt(reportStats.reviewed_reports || 0, 10),
+                    dismissed: parseInt(reportStats.dismissed_reports || 0, 10)
                 },
                 categories,
                 dailyActivity: dailyActivityRes.rows,
