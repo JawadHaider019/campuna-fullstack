@@ -26,6 +26,10 @@ import { logoutUser } from '@/api/auth';
 import { toast } from 'react-hot-toast';
 import CoinIcon from '@/app/components/CoinIcon';
 import UserDashboard from './components/UserDashboard';
+import AccountChatTab from './components/AccountChatTab';
+import AccountFavoritesTab from './components/AccountFavoritesTab';
+import { useChatStore } from '@/store/useChatStore';
+import { useFavoritesStore } from '@/store/useFavoritesStore';
 
 
 import {
@@ -35,7 +39,7 @@ import {
     Crown, Calendar, ArrowRight, Receipt, Download, Printer, CreditCard,
     Rocket, Eye, LayoutDashboard, Gift, Users, CheckCircle2, Zap, ExternalLink,
     Clock, TrendingUp, Bell, Search, ShieldCheck, Compass, CheckCircle, Pencil, Send,
-    FileSpreadsheet
+    FileSpreadsheet, MessageSquare, Heart, Trash2
 } from 'lucide-react';
 
 
@@ -388,6 +392,13 @@ export default function MeinKontoPage() {
         }
     };
 
+    const unreadMessagesCount = useChatStore((state) => state.unreadCount);
+    const fetchUnreadCount = useChatStore((state) => state.fetchUnreadCount);
+    const favoriteListings = useFavoritesStore((state) => state.favoriteListings);
+    const favoriteIds = useFavoritesStore((state) => state.favoriteIds);
+    const fetchFavorites = useFavoritesStore((state) => state.fetchFavorites);
+    const favoriteCount = favoriteListings.length > 0 ? favoriteListings.length : favoriteIds.length;
+
     useEffect(() => {
         if (mounted && isLoggedIn) {
             if (user?.role === 'ADMIN') {
@@ -395,10 +406,40 @@ export default function MeinKontoPage() {
                 return;
             }
             loadAllAccountData();
+            fetchUnreadCount();
+            fetchFavorites();
+
+            // Check if tab is requested via query param (e.g., ?tab=nachrichten or ?tab=favoriten)
+            if (typeof window !== 'undefined') {
+                const params = new URLSearchParams(window.location.search);
+                const requestedTab = params.get('tab');
+                if (['nachrichten', 'messages', 'chat'].includes(requestedTab)) {
+                    setActiveTab('nachrichten');
+                } else if (['favoriten', 'merkzettel', 'favorites'].includes(requestedTab)) {
+                    setActiveTab('favoriten');
+                }
+            }
         }
-    }, [mounted, isLoggedIn, user]);
+    }, [mounted, isLoggedIn, user, fetchUnreadCount, fetchFavorites]);
 
     // ─── Actions ──────────────────────────────────────────────────────────────
+
+    const handleTabChange = (tabId) => {
+        setActiveTab(tabId);
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            if (tabId === 'dashboard') {
+                url.searchParams.delete('tab');
+                url.searchParams.delete('id');
+            } else {
+                url.searchParams.set('tab', tabId);
+                if (tabId !== 'nachrichten') {
+                    url.searchParams.delete('id');
+                }
+            }
+            window.history.replaceState(null, '', url.toString());
+        }
+    };
 
     const handleCreateListingClick = () => {
         const limit = 3;
@@ -721,6 +762,20 @@ export default function MeinKontoPage() {
         ] : []),
         { id: 'dashboard', label: subDetails.is_business ? 'Mein Profil' : 'Mein Profil & Übersicht', icon: User },
         { id: 'inserate', label: 'Meine Inserate', icon: Rocket, count: userListings.length },
+        {
+            id: 'nachrichten',
+            label: 'Nachrichten',
+            icon: MessageSquare,
+            count: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
+            badge: unreadMessagesCount > 0 ? `${unreadMessagesCount} neu` : undefined,
+            highlight: unreadMessagesCount > 0,
+        },
+        {
+            id: 'favoriten',
+            label: 'Merkzettel',
+            icon: Heart,
+            count: favoriteCount > 0 ? favoriteCount : undefined,
+        },
         { id: 'finanzen', label: 'Abonnement', icon: Crown, badge: subDetails.is_business ? 'Business' : 'Free' },
         { id: 'credits', label: 'Campuna Credits', icon: Gift, count: `${Number(creditBalance).toLocaleString('de-DE')} CC` },
         { id: 'pioneer', label: pioneerBadge ? `Pioneer #${pioneerBadge.position || '300'}` : 'Badge erhalten', icon: Award, highlight: true },
@@ -828,7 +883,7 @@ export default function MeinKontoPage() {
                         return (
                             <button
                                 key={item.id}
-                                onClick={() => setActiveTab(item.id)}
+                                onClick={() => handleTabChange(item.id)}
                                 className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-xs ${isActive
                                     ? 'bg-forest text-sand shadow-sm shadow-forest/20 font-black'
                                     : 'bg-white text-charcoal/70 hover:bg-[#faf8f3] border border-beige'
@@ -876,7 +931,7 @@ export default function MeinKontoPage() {
                                     return (
                                         <button
                                             key={item.id}
-                                            onClick={() => setActiveTab(item.id)}
+                                            onClick={() => handleTabChange(item.id)}
                                             className={`w-full flex items-center justify-between px-3 py-2.5 rounded-r-3xl text-xs font-semibold transition-all duration-200 cursor-pointer ${isActive
                                                 ? 'bg-gold text-forest font-bold shadow-md shadow-gold/20'
                                                 : 'text-sand/75 hover:text-white hover:bg-white/10 font-medium'
@@ -1585,6 +1640,39 @@ export default function MeinKontoPage() {
                                         </div>
                                     </div>
                                 </div>
+                            )}
+
+                            {/* ═════════════════════════════════════════════════════════════
+                                TAB: NACHRICHTEN & KONTAKT-ANFRAGEN (CHAT SYSTEM)
+                               ═════════════════════════════════════════════════════════════ */}
+                            {activeTab === 'nachrichten' && (
+                                <div className="space-y-6">
+                                    <TabHeader
+                                        title="Nachrichten & Anfragen"
+                                        subtitle="Kommuniziere in Echtzeit mit Käufern und Verkäufern zu Campuna Inseraten"
+                                        icon={MessageSquare}
+                                        badge={
+                                            unreadMessagesCount > 0 ? (
+                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-forest text-sand border border-gold/40 shadow-xs">
+                                                    {unreadMessagesCount} {unreadMessagesCount === 1 ? 'neue Nachricht' : 'neue Nachrichten'}
+                                                </span>
+                                            ) : null
+                                        }
+                                    />
+                                    <AccountChatTab
+                                        currentUser={user}
+                                        onNavigateToListings={() => setActiveTab('inserate')}
+                                    />
+                                </div>
+                            )}
+
+                            {/* ═════════════════════════════════════════════════════════════
+                                TAB: MERKZETTEL / FAVORITEN
+                               ═════════════════════════════════════════════════════════════ */}
+                            {activeTab === 'favoriten' && (
+                                <AccountFavoritesTab
+                                    onNavigateToListings={() => setActiveTab('inserate')}
+                                />
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════

@@ -23,8 +23,10 @@ async function main() {
     `);
     console.log('✅ admins table created/verified');
 
-    // Ensure all columns exist on listings table
+    // Ensure all columns and defaults exist on listings table
     await pool.query(`
+        CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+        ALTER TABLE listings ALTER COLUMN id SET DEFAULT gen_random_uuid();
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT FALSE;
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS boosted_until TIMESTAMPTZ;
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS reviewed_by_type TEXT;

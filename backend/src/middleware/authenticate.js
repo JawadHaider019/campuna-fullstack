@@ -92,3 +92,59 @@ export const requireAdmin = (req, res, next) => {
     next();
 };
 
+/**
+ * Optional authentication middleware:
+ * If an Authorization header is provided, verifies token and attaches req.user.
+ * If no token or invalid token is provided, proceeds normally with req.user = null.
+ */
+export const optionalAuthenticate = async (req, res, next) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.startsWith('Bearer ')
+            ? authHeader.slice(7)
+            : null;
+
+        if (!token) {
+            req.user = null;
+            return next();
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+        } catch {
+            req.user = null;
+            return next();
+        }
+
+        if (decoded.role === 'ADMIN') {
+            const adminRes = await pool.query('SELECT * FROM admins WHERE id = $1', [decoded.id]);
+            const admin = adminRes.rows[0];
+            if (admin) {
+                delete admin.password_hash;
+                req.user = admin;
+            } else {
+                req.user = null;
+            }
+            return next();
+        }
+
+        const user = await db.orm.public.User
+            .where((u) => u.id.eq(decoded.id))
+            .first();
+
+        if (user && !user.is_suspended) {
+            delete user.password_hash;
+            req.user = user;
+        } else {
+            req.user = null;
+        }
+
+        return next();
+    } catch {
+        req.user = null;
+        return next();
+    }
+};
+
+

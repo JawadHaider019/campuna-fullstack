@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -18,10 +18,14 @@ import {
     Phone,
     ArrowLeft,
     Building2,
-    Package
+    Package,
+    Heart,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import { getPublicProfile } from '@/api/profile';
 import { getListingsByUser } from '@/api/listings';
+import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { PROVIDERS } from '@/data';
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
@@ -78,20 +82,46 @@ function formatMemberSince(dateStr) {
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80';
 const DEFAULT_LOGO  = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
 
-// ─── Listing Card ─────────────────────────────────────────────────────────────
+// ─── Normalizer & Listing Card (Matches Home Page ListingCard) ─────────────────
 
-function ListingCard({ item }) {
-    const router = useRouter();
+function normalizeListing(item) {
+    if (!item) return null;
 
-    const handleClick = () => {
-        const slug = buildListingSlug(item.title, item.id);
-        router.push(`/inserate/${slug}`);
-    };
+    const id = item.id || item._id || String(Math.random());
+    const title = item.title || item.description || "Camping Angebot";
+    const category = item.category || item.Category || 'Camping Zubehör';
+    const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+    const pricePeriod = item.pricePeriod || 'Preis';
+    const location = item.location || "Deutschland";
+    const slug = item.slug || buildListingSlug(title, id);
 
-    const images = Array.isArray(item.images) && item.images.length > 0
-        ? item.images
-        : [DEFAULT_COVER];
+    let images = [];
+    if (Array.isArray(item.images) && item.images.length > 0) {
+        images = item.images;
+    } else if (typeof item.images === 'string') {
+        images = [item.images];
+    } else if (item["Main Image"]) {
+        images = [item["Main Image"]];
+    }
+    if (images.length === 0) {
+        images = [DEFAULT_IMAGE];
+    }
+
+    const sellerType = item.seller?.type || item.listing_user_type || 'Gewerblich';
+
+    let features = [];
+    if (Array.isArray(item.features) && item.features.length > 0) {
+        features = item.features;
+    } else {
+        if (item.condition) features.push(item.condition);
+        if (item.subcategory) features.push(item.subcategory);
+        if (item.category && !features.includes(item.category)) features.push(item.category);
+    }
+    if (features.length === 0) {
+        features = ['Camping'];
+    }
 
     const isBoosted = Boolean(
         item.is_boosted || 
@@ -99,83 +129,188 @@ function ListingCard({ item }) {
     );
     const isFeatured = Boolean(item.featured);
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            onClick={handleClick}
-            className="group relative flex flex-col bg-white rounded-2xl md:rounded-3xl overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 cursor-pointer h-full"
-        >
-            {/* 4-Image Grid Preview */}
-            <div className="relative aspect-[16/9] w-full bg-sand/15 overflow-hidden border-b border-forest/5">
-                <div className="grid grid-cols-4 gap-0.5 w-full h-full">
-                    {images.slice(0, 4).map((img, idx) => (
-                        <div key={idx} className="relative w-full h-full overflow-hidden">
-                            <img
-                                src={img}
-                                alt={`${item.title} preview ${idx + 1}`}
-                                className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-105"
-                                loading="lazy"
-                                referrerPolicy="no-referrer"
-                            />
-                        </div>
-                    ))}
-                    {images.length < 4 && Array.from({ length: 4 - images.length }).map((_, i) => (
-                        <div key={i} className="bg-sand/30 w-full h-full" />
-                    ))}
-                </div>
+    return {
+        id,
+        slug,
+        title,
+        category,
+        price,
+        pricePeriod,
+        location,
+        images,
+        sellerType,
+        features,
+        featured: isFeatured,
+        boosted_until: item.boosted_until,
+        is_boosted: isBoosted
+    };
+}
 
-                {/* Badges on top left */}
-                <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
-                    {isBoosted && (
-                        <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[7px] sm:text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
-                            <span>🚀</span>
-                            <span>BOOSTED</span>
+const ListingCard = React.memo(({ item: rawItem }) => {
+    const router = useRouter();
+    const item = useMemo(() => normalizeListing(rawItem), [rawItem]);
+    const isFavorite = useFavoritesStore((state) => state.isFavorite(item?.id));
+    const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+    const [imgSrc, setImgSrc] = useState(item?.images[0] || DEFAULT_IMAGE);
+    const tagsRef = useRef(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const checkScroll = useCallback(() => {
+        if (tagsRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = tagsRef.current;
+            setCanScrollLeft(scrollLeft > 2);
+            setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 2);
+        }
+    }, []);
+
+    useEffect(() => {
+        checkScroll();
+        const timer = setTimeout(checkScroll, 200);
+        window.addEventListener('resize', checkScroll);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, [item?.features, checkScroll]);
+
+    if (!item) return null;
+
+    const scrollTags = (e, direction) => {
+        e.stopPropagation();
+        if (tagsRef.current) {
+            const scrollAmount = direction === 'left' ? -90 : 90;
+            tagsRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    };
+
+    const handleCardClick = () => {
+        router.push(`/inserate/${item.slug}`);
+    };
+
+    return (
+        <div
+            onClick={handleCardClick}
+            className="listing-card group relative w-full flex flex-col h-full bg-white rounded-[24px] overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 select-none cursor-pointer"
+        >
+            <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
+                <img
+                    src={imgSrc}
+                    alt={item.title}
+                    className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
+                    loading="lazy"
+                    onError={() => setImgSrc(DEFAULT_IMAGE)}
+                />
+                {/* Top Badges */}
+                <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap pointer-events-none">
+                        {/* 🚀 Boosted Badge */}
+                        {item.is_boosted && (
+                            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
+                                <span>🚀</span>
+                                <span>BOOSTED</span>
+                            </span>
+                        )}
+
+                        {/* ⭐ Featured / Empfohlen Badge */}
+                        {item.featured && (
+                            <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-emerald-400/40 flex items-center gap-1 backdrop-blur-md">
+                                <span>⭐</span>
+                                <span>EMPFOHLEN</span>
+                            </span>
+                        )}
+
+                        {/* Seller Type Badge */}
+                        <span className="bg-forest/90 text-white text-[8px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1">
+                            <ShieldCheck className="w-2.5 h-2.5 text-white" />
+                            {item.sellerType}
                         </span>
-                    )}
-                    {isFeatured && (
-                        <span className="bg-gradient-to-r from-forest via-[#0d592a] to-emerald-800 text-sand text-[7px] sm:text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-lg border border-emerald-400/40 flex items-center gap-1 backdrop-blur-md">
-                            <span>⭐</span>
-                            <span>EMPFOHLEN</span>
-                        </span>
-                    )}
+                    </div>
+
+                    <button
+                        type="button"
+                        aria-label={isFavorite ? "Von Merkzettel entfernen" : "Auf den Merkzettel"}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(item);
+                        }}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-md cursor-pointer pointer-events-auto shrink-0 ${isFavorite
+                            ? 'bg-rose-500 text-white hover:bg-rose-600 scale-110'
+                            : 'bg-white/80 hover:bg-white text-forest hover:text-rose-500 hover:scale-110'
+                            }`}
+                    >
+                        <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current text-white' : ''}`} />
+                    </button>
+                </div>
+                <div className="absolute bottom-4 right-0 inset-x-4 flex items-center justify-end pointer-events-none text-white/90 z-10">
+                    <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full text-[9px] flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-gold shrink-0" />
+                        <span>{item.location}</span>
+                    </div>
+                </div>
+                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none z-10">
+                    <div className="bg-white text-forest px-5 py-3 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center space-x-2 shadow-lg scale-95 group-hover:scale-100 transition-all duration-300">
+                        <Eye className="w-4 h-4" />
+                        <span>Inserat ansehen</span>
+                    </div>
                 </div>
             </div>
-
-            {/* Content */}
-            <div className="p-4 flex flex-col flex-1 justify-between gap-4">
-                <h3 className="font-display text-xs sm:text-sm md:text-base font-bold text-black group-hover:text-gold transition-colors duration-200 line-clamp-2 leading-snug">
-                    {item.title}
-                </h3>
-
+            <div className="p-4 flex flex-col flex-1 justify-between">
                 <div>
-                    <div className="flex items-center justify-between pb-3 border-b border-forest/5">
-                        <div>
-                            <span className="block text-[8px] md:text-[9px] uppercase tracking-widest text-charcoal/40 font-mono leading-none mb-1">Preis</span>
-                            <span className="font-display text-xs sm:text-base font-extrabold text-forest">
-                                {Number(item.price).toLocaleString('de-DE')} €
-                                {item.negotiable && <span className="text-[10px] font-normal text-charcoal/50 ml-1">(VB)</span>}
-                            </span>
+                    <h3 className="font-display text-md font-semibold text-black group-hover:text-gold transition-colors duration-200 mb-2 line-clamp-1">
+                        {item.title}
+                    </h3>
+                    <div className="relative group/tags mb-2" onClick={(e) => e.stopPropagation()}>
+                        {canScrollLeft && (
+                            <button
+                                type="button"
+                                onClick={(e) => scrollTags(e, 'left')}
+                                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-4 h-4 bg-white/90 hover:bg-white text-forest shadow rounded-full flex items-center justify-center border border-forest/10 transition-all duration-200"
+                                aria-label="Scroll tags left"
+                            >
+                                <ChevronLeft className="w-2.5 h-2.5" />
+                            </button>
+                        )}
+                        <div
+                            ref={tagsRef}
+                            onScroll={checkScroll}
+                            className="flex overflow-x-auto gap-1.5 no-scrollbar scroll-smooth"
+                        >
+                            {item.features.map((feat, idx) => (
+                                <span
+                                    key={idx}
+                                    className="text-[10px] text-charcoal/60 bg-sand px-2 py-1 rounded-md border border-forest/5 whitespace-nowrap shrink-0 select-none"
+                                >
+                                    {feat}
+                                </span>
+                            ))}
                         </div>
-                        {item.location && (
-                            <div className="flex items-center gap-0.5 text-stone-500 text-[10px] sm:text-xs">
-                                <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                                <span>{formatLocation(item.location).split(',')[0]}</span>
-                            </div>
+                        {canScrollRight && (
+                            <button
+                                type="button"
+                                onClick={(e) => scrollTags(e, 'right')}
+                                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-4 h-4 bg-white/90 hover:bg-white text-forest shadow rounded-full flex items-center justify-center border border-forest/10 transition-all duration-200"
+                                aria-label="Scroll tags right"
+                            >
+                                <ChevronRight className="w-2.5 h-2.5" />
+                            </button>
                         )}
                     </div>
-                    <div className="pt-3 flex justify-center">
-                        <span className="w-full bg-white hover:bg-sand/30 border border-forest/10 py-2 rounded-xl text-[10px] sm:text-xs font-semibold tracking-wider text-forest flex items-center justify-center gap-1.5 transition-colors duration-300">
-                            <Eye className="w-3.5 h-3.5 text-forest/70" />
-                            Angebot ansehen
-                        </span>
-                    </div>
+                </div>
+                <div className="pt-2 border-t border-forest/5 flex items-center justify-between">
+                    <span className="block text-[10px] uppercase tracking-widest text-charcoal/40 font-mono">
+                        {item.pricePeriod}
+                    </span>
+                    <span className="font-display text-lg font-bold text-forest">
+                        {item.price.toLocaleString('de-DE')} €
+                    </span>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
-}
+});
+
+ListingCard.displayName = 'ListingCard';
 
 // ─── Empty Listings State ─────────────────────────────────────────────────────
 
@@ -653,9 +788,9 @@ export default function ProviderDetails() {
                     {listings.length === 0 ? (
                         <EmptyListings providerName={provider.name} />
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
                             {listings.map((item) => (
-                                <div key={item.id} className="h-full">
+                                <div key={item.id} className="h-full flex justify-center">
                                     <ListingCard item={item} />
                                 </div>
                             ))}

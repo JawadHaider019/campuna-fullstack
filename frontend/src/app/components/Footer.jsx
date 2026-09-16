@@ -66,6 +66,11 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
+                                <Link href="/abo" className="hover:text-forest transition-colors font-[400]">
+                                    Abonnement
+                                </Link>
+                            </li>
+                            <li>
                                 <Link href="/uber_campuna" className="hover:text-forest transition-colors font-[400]">
                                     Über uns
                                 </Link>

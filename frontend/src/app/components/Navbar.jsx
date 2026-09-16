@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, User, Bell, Heart, ShieldCheck } from 'lucide-react';
+import { Menu, X, User, Bell, ShieldCheck } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import WelcomeBar from './WelcomeBar';
 import { useAuthStore } from '@/store/useAuthStore';
-import { useFavoritesStore } from '@/store/useFavoritesStore';
 
 export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
   const [mounted, setMounted] = useState(false);
@@ -15,7 +14,6 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
   const user = useAuthStore((state) => state.user);
   const isLoggedIn = mounted ? (propIsLoggedIn ?? storeIsLoggedIn) : false;
   const isAdmin = mounted && isLoggedIn && user?.role === 'ADMIN';
-  const favoriteIds = useFavoritesStore((state) => state.favoriteIds);
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('top');
@@ -35,7 +33,6 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
     { label: 'Spotlight', id: 'campuna-spotlight' },
     { label: 'Entdecke', id: 'tool' },
     { label: 'Ratgeber', id: 'journal' },
-    { label: 'Abonnement', path: '/abo' },
   ];
 
 
@@ -185,21 +182,6 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                 );
               })}
 
-              {/* Merkzettel / Favoriten Button */}
-              <button
-                onClick={() => router.push('/favoriten')}
-                aria-label="Merkzettel ansehen"
-                className="relative flex items-center justify-center w-10 h-10 rounded-full border border-forest/15 hover:border-gold bg-white/40 hover:bg-white text-forest hover:text-rose-500 transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer group"
-                title="Gespeicherte Inserate (Merkzettel)"
-              >
-                <Heart className={`w-4 h-4 transition-transform group-hover:scale-110 ${mounted && favoriteIds.length > 0 ? 'text-rose-500 fill-rose-500' : ''}`} />
-                {mounted && favoriteIds.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center shadow-sm animate-in zoom-in-50">
-                    {favoriteIds.length > 9 ? '9+' : favoriteIds.length}
-                  </span>
-                )}
-              </button>
-
               {/* Admin Portal Button or User Account Button */}
               {isAdmin ? (
                 <button
@@ -234,21 +216,8 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
               )}
             </div>
 
-            {/* Mobile menu trigger + mobile heart icon */}
-            <div className="flex lg:hidden items-center space-x-2">
-              <button
-                onClick={() => router.push('/favoriten')}
-                aria-label="Merkzettel ansehen"
-                className="relative p-2 text-forest hover:text-rose-500 focus:outline-none cursor-pointer"
-              >
-                <Heart className={`w-5 h-5 ${mounted && favoriteIds.length > 0 ? 'text-rose-500 fill-rose-500' : ''}`} />
-                {mounted && favoriteIds.length > 0 && (
-                  <span className="absolute top-1 right-1 bg-rose-500 text-white font-bold text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center shadow-sm">
-                    {favoriteIds.length > 9 ? '9+' : favoriteIds.length}
-                  </span>
-                )}
-              </button>
-
+            {/* Mobile menu trigger */}
+            <div className="flex lg:hidden items-center space-x-1 sm:space-x-2">
               <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="relative p-2 text-forest focus:outline-none cursor-pointer"
@@ -295,19 +264,6 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                     </button>
                   );
                 })}
-
-                <button
-                  onClick={() => {
-                    setIsOpen(false);
-                    router.push('/favoriten');
-                  }}
-                  className="font-sans text-base font-medium text-left transition-colors duration-200 flex items-center justify-between py-1.5 cursor-pointer text-forest hover:text-rose-500"
-                >
-                  <span className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-                    Merkzettel ({mounted ? favoriteIds.length : 0})
-                  </span>
-                </button>
 
                 <hr className="border-forest/10 my-2" />
 

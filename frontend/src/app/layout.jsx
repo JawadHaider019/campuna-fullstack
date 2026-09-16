@@ -17,8 +17,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="de" className="h-full antialiased font-sans" data-scroll-behavior="smooth">
-      <body className="min-h-full flex flex-col bg-white text-charcoal">
+    <html lang="de" className="h-full antialiased font-sans" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col bg-white text-charcoal" suppressHydrationWarning>
         <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
         <AppShell>{children}</AppShell>
       </body>

@@ -37,6 +37,9 @@ model User {
   listings            Listing[]         @relation("ListingOwner")
   reviewed_listings   Listing[]         @relation("ListingReviewer")
   achievements        UserAchievement[]
+  buyer_conversations  Conversation[]    @relation("BuyerConversations")
+  seller_conversations Conversation[]    @relation("SellerConversations")
+  sent_messages       Message[]         @relation("UserSentMessages")
 
   @@map("users")
 }
@@ -138,8 +141,40 @@ model Listing {
   // Relations
   user             User              @relation("ListingOwner", fields: [user_id], references: [id], onDelete: Cascade)
   reviewer         User?             @relation("ListingReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+  conversations    Conversation[]
 
   @@map("listings")
+}
+
+model Conversation {
+  id         Uuid              @id @default(uuid())
+  listing_id Uuid
+  buyer_id   Uuid
+  seller_id  Uuid
+  created_at TimestamptzString @default(now())
+  updated_at TimestamptzString @default(now())
+
+  listing    Listing           @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+  buyer      User              @relation("BuyerConversations", fields: [buyer_id], references: [id], onDelete: Cascade)
+  seller     User              @relation("SellerConversations", fields: [seller_id], references: [id], onDelete: Cascade)
+  messages   Message[]
+
+  @@unique([listing_id, buyer_id])
+  @@map("conversations")
+}
+
+model Message {
+  id              Uuid              @id @default(uuid())
+  conversation_id Uuid
+  sender_id       Uuid
+  content         String
+  is_read         Boolean           @default(false)
+  created_at      TimestamptzString @default(now())
+
+  conversation    Conversation      @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+  sender          User              @relation("UserSentMessages", fields: [sender_id], references: [id], onDelete: Cascade)
+
+  @@map("messages")
 }
 
 model Plan {

@@ -10,7 +10,7 @@ import {
     importListingsFromCsv,
     exportListingsToCsv,
 } from '../controllers/listings.js';
-import { authenticate } from '../middleware/authenticate.js';
+import { authenticate, optionalAuthenticate } from '../middleware/authenticate.js';
 import { uploadMultiple } from '../middleware/upload.js';
 
 const router = Router();
@@ -27,8 +27,8 @@ router.get('/user/:userId', getListingsByUser);
 // GET /api/listings → Retrieve all approved listings (public)
 router.get('/', getAllListings);
 
-// GET /api/listings/:id → Retrieve listing detail by ID (public)
-router.get('/:id', getListingDetail);
+// GET /api/listings/:id → Retrieve listing detail by ID or Slug (public if approved, creator/admin if unapproved)
+router.get('/:id', optionalAuthenticate, getListingDetail);
 
 // POST /api/listings/csv-import → Batch import listings via CSV
 router.post('/csv-import', authenticate, importListingsFromCsv);

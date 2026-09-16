@@ -33,9 +33,9 @@ export default function FavoritesPage() {
     useEffect(() => {
         setMounted(true);
         if (isLoggedIn) {
-            fetchFavorites();
+            router.replace('/mein-konto?tab=favoriten');
         }
-    }, [isLoggedIn, fetchFavorites]);
+    }, [isLoggedIn, router]);
 
     const count = mounted ? (favoriteListings.length > 0 ? favoriteListings.length : favoriteIds.length) : 0;
 

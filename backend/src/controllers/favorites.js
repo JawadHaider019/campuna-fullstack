@@ -53,7 +53,7 @@ export const getFavorites = async (req, res) => {
             FROM favorites f
             JOIN listings l ON f.listing_id = l.id
             LEFT JOIN users u ON l.user_id = u.id
-            WHERE f.user_id = $1
+            WHERE f.user_id = $1 AND (l.status = 'APPROVED' OR l.user_id = $1)
             ORDER BY f.created_at DESC`,
             [userId]
         );

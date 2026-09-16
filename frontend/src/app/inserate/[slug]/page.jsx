@@ -25,8 +25,10 @@ import {
     Pencil
 } from 'lucide-react';
 import { getListingDetail, getAllListings } from '@/api/listings';
+import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { toast } from 'react-hot-toast';
 
 function slugifyTitle(title = '') {
     return title
@@ -89,17 +91,56 @@ export default function ListingDetailPage() {
         }
     };
 
-    // Contact Modal States
+    // Contact / Chat Modal States
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-    const [contactMessage, setContactMessage] = useState("");
+    const [contactMessage, setContactMessage] = useState("Guten Tag, ich interessiere mich für Ihr Inserat. Ist das Angebot noch verfügbar?");
     const [isSendingMessage, setIsSendingMessage] = useState(false);
-    const [isMessageSent, setIsMessageSent] = useState(false);
 
     // Report Modal States
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [reportReason, setReportReason] = useState("");
     const [isSendingReport, setIsSendingReport] = useState(false);
     const [isReportSent, setIsReportSent] = useState(false);
+
+    const handleOpenContactModal = () => {
+        if (!currentUser) {
+            toast.error('Bitte melde dich an, um eine Nachricht zu senden.');
+            router.push(`/login?returnUrl=/inserate/${encodeURIComponent(slug)}`);
+            return;
+        }
+        if (isOwner) {
+            toast.error('Du bist der Eigentümer dieses Inserats.');
+            return;
+        }
+        setIsContactModalOpen(true);
+    };
+
+    const handleSendDirectMessage = async (e) => {
+        if (e) e.preventDefault();
+        if (!contactMessage || !contactMessage.trim()) {
+            toast.error('Bitte gib eine Nachricht ein.');
+            return;
+        }
+        if (!listing?.id) return;
+
+        setIsSendingMessage(true);
+        try {
+            const res = await createOrGetConversation(listing.id, contactMessage.trim());
+            const convId = res.conversation_id || res.data?.conversation_id;
+            if (res.success && convId) {
+                toast.success('Unterhaltung gestartet!');
+                setIsContactModalOpen(false);
+                router.push(`/mein-konto?tab=nachrichten&id=${encodeURIComponent(convId)}`);
+            } else {
+                toast.error(res.error || res.message || 'Fehler beim Senden der Nachricht.');
+            }
+        } catch (err) {
+            console.error('Error starting chat:', err);
+            toast.error(err.response?.data?.error || err.message || 'Fehler beim Starten der Unterhaltung.');
+        } finally {
+            setIsSendingMessage(false);
+        }
+    };
 
     const listingId = parseListingId(slug);
 
@@ -287,7 +328,7 @@ export default function ListingDetailPage() {
                 <AlertCircle className="w-16 h-16 text-yellow-600 mb-4 animate-bounce" />
                 <h1 className="font-display text-2xl font-bold text-charcoal mb-2">Inserat nicht gefunden</h1>
                 <p className="text-sm text-charcoal/60 mb-6 text-center max-w-md">
-                    Das gesuchte Inserat existiert leider nicht mehr oder wurde gelöscht.
+                    Das gesuchte Inserat existiert leider nicht, wurde gelöscht oder befindet sich noch in redaktioneller Prüfung.
                 </p>
                 <button
                     onClick={() => router.push('/')}
@@ -415,7 +456,7 @@ export default function ListingDetailPage() {
                 ) : (
                     <>
                         <button
-                            onClick={() => setIsContactModalOpen(true)}
+                            onClick={handleOpenContactModal}
                             className="w-full bg-[#2a7f55] hover:bg-[#206040] text-white transition-colors duration-300 font-sans font-bold py-3.5 px-6 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                         >
                             <MessageSquare className="w-4 h-4 shrink-0" />
@@ -516,14 +557,34 @@ export default function ListingDetailPage() {
                         <span className="bg-sand text-forest border border-forest/15 text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full">
                             Zustand: {condition}
                         </span>
-                        <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border ${status.toLowerCase() === 'aktiv'
-                            ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
-                            : 'bg-amber-500/10 text-amber-700 border-amber-500/20'
+                        <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border ${
+                            status === 'APPROVED' || status.toLowerCase() === 'aktiv'
+                                ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
+                                : status === 'REVIEW'
+                                ? 'bg-amber-500/10 text-amber-800 border-amber-500/30'
+                                : 'bg-rose-500/10 text-rose-700 border-rose-500/20'
                             }`}>
-                            Status: {isSold ? 'Verkauft' : status}
+                            Status: {isSold ? 'Verkauft' : status === 'REVIEW' ? 'In Prüfung' : status === 'APPROVED' ? 'Aktiv' : status}
                         </span>
                     </div>
                 </div>
+
+                {/* ── Unapproved / Moderation Review Notice Banner ── */}
+                {listing.status && listing.status !== 'APPROVED' && (
+                    <div className="mb-6 p-4 sm:p-5 bg-amber-50 border border-amber-300 rounded-2xl flex items-start sm:items-center gap-3.5 shadow-sm text-amber-900">
+                        <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                            <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-display font-bold text-sm sm:text-base text-amber-900">
+                                Inserat in Prüfung ({listing.status === 'REVIEW' ? 'Wartet auf Freigabe' : listing.status})
+                            </h3>
+                            <p className="text-xs text-amber-800/90 mt-0.5">
+                                Dieses Inserat ist derzeit <strong>nur für Sie</strong> (und Administratoren) sichtbar. Es wird erst nach redaktioneller Freigabe öffentlich für alle Nutzer angezeigt.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 {/* ── Owner Info Banner (if owner) ── */}
                 {isOwner && (
@@ -928,227 +989,136 @@ export default function ListingDetailPage() {
                 )}
             </AnimatePresence>
 
-            {/* ── Contact Modal popup ── */}
+            {/* ── Contact / Chat Modal popup ── */}
             <AnimatePresence>
                 {isContactModalOpen && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-2xl w-full flex flex-col relative text-left max-h-[90vh]"
+                        key="contact-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm"
                     >
-                        <div className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-xl w-full flex flex-col relative text-left"
+                        >
                             {/* Close Button */}
                             <button
-                                onClick={() => {
-                                    setIsContactModalOpen(false);
-                                    setIsMessageSent(false);
-                                }}
-                                className="absolute top-4 right-4 text-charcoal/45 hover:text-charcoal bg-white/90 hover:bg-white p-2 rounded-full transition-all shadow-sm hover:shadow z-25 cursor-pointer"
+                                onClick={() => setIsContactModalOpen(false)}
+                                className="absolute top-4 right-4 text-charcoal/45 hover:text-charcoal bg-sand/40 hover:bg-sand p-2 rounded-full transition-all shadow-sm z-20 cursor-pointer"
                             >
                                 <X className="w-5 h-5" />
                             </button>
 
-                            {/* Product Summary Card content container with custom vertical scroll */}
-                            <div className="bg-[#fcfbf9] p-6 flex flex-col justify-between overflow-y-auto">
-                                <div className="space-y-3">
-                                    <span className="inline-block bg-[#2a7f55]/10 text-[#2a7f55] text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md font-sans">
-                                        Inserat Details
+                            {/* Listing Header Snippet */}
+                            <div className="bg-sand/30 border-b border-forest/10 p-5 flex items-center gap-4">
+                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-forest/5 border border-forest/10 shrink-0">
+                                    <img
+                                        src={listing.images[0] || '/hero-campuna.webp'}
+                                        alt={listing.title}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <span className="text-[10px] font-bold text-forest uppercase tracking-wider block truncate">
+                                        {seller.name} ({seller.type})
                                     </span>
-
-                                    {/* Campuna entry image */}
-                                    <div className="aspect-[16/9] w-full rounded-xl overflow-hidden border border-[#eaeaea] shadow-sm bg-white select-none">
-                                        <img
-                                            src={listing.images[0] || '/hero-campuna.webp'}
-                                            alt="Campuna-Eintragsbild"
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-
-                                    {/* Dynamic Title, Specs & Price */}
-                                    <div className="space-y-3">
-                                        <h4 className="font-display font-bold text-sm text-black leading-tight">
-                                            {listing.title}
-                                        </h4>
-                                        <div className="text-[11px] text-charcoal/60 space-y-1.5 font-sans leading-relaxed border-t border-[#eaeaea] pt-3">
-                                            {anzeigeNr === 'CP-1067' ? (
-                                                <>
-                                                    <p>• Ez.: 2008</p>
-                                                    <p>• Gesamtgewicht: 2.000 kg</p>
-                                                    <p>• 7 Schlafplätze</p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <p>• Ez.: 02/2023</p>
-                                                    <p>• 63000 km</p>
-                                                    <p>• Citroen, 140 PS, 6-Gang-Schalter</p>
-                                                    <p>• L/B/H 696/232/292 cm</p>
-                                                    <p>• 3.500 kg zul. Gesamtgewicht</p>
-                                                    <p>• 4 Sitzplätze (im Fahrbetrieb)</p>
-                                                    <p>• 4 Schlafplätze, Einzelbetten, Hubbett</p>
-                                                    <p>• großer Kühlschrank, Gefrierschrank</p>
-                                                    <p>• geräumiges Schwenkbad</p>
-                                                    <p>• Markise, Rückfahrkamera</p>
-                                                    <p>• Sat-TV-Anlage, Fahrradträger</p>
-                                                    <p>• große Heckgarage</p>
-                                                    <p>• Fahrzeug aus Vermietung</p>
-                                                    <p>• sofort verfügbar, MwSt. ausweisbar</p>
-                                                    <p className="text-[#2a7f55] font-semibold mt-1">
-                                                        • andere Kauf- und Mietfahrzeuge unter: www.duemmermobile.de
-                                                    </p>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 font-sans">
-                                        <span className="bg-white px-2 py-1 rounded border border-gray-100 shadow-2xs font-semibold">
-                                            {listing.category?.name || 'Kategorie'}
+                                    <h4 className="font-display font-bold text-sm text-charcoal truncate">
+                                        {listing.title}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="font-display font-extrabold text-forest text-base">
+                                            {price.toLocaleString('de-DE')} €
                                         </span>
-                                        {listing.condition && (
-                                            <span className="bg-white px-2 py-1 rounded border border-gray-100 shadow-2xs font-semibold">
-                                                {listing.condition}
+                                        {displayLocation && (
+                                            <span className="text-[11px] text-charcoal/60 flex items-center gap-0.5 truncate">
+                                                <MapPin className="w-3 h-3 text-forest" />
+                                                {displayLocation}
                                             </span>
                                         )}
-                                        {listing.location && (
-                                            <span className="bg-white px-2 py-1 rounded border border-gray-100 shadow-2xs font-semibold">
-                                                {listing.location}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="font-display font-black text-xl text-[#2a7f55]">
-                                        {listing.price_formatted || (listing.price ? `€ ${Number(listing.price).toLocaleString('de-DE')}` : 'Auf Anfrage')}
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Dynamic Messaging Form Body or Success Message */}
-                        <div className="p-6 md:p-8 flex-1 flex flex-col justify-center">
-                            {isMessageSent ? (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="py-12 flex flex-col items-center text-center space-y-4 font-sans"
-                                >
-                                    <div className="w-16 h-16 rounded-full bg-[#2a7f55]/10 text-[#2a7f55] flex items-center justify-center">
-                                        <Check className="w-8 h-8" />
-                                    </div>
-                                    <h3 className="font-display font-bold text-2xl text-charcoal">Nachricht übermittelt!</h3>
-                                    <p className="text-xs text-charcoal/60 max-w-sm leading-relaxed">
-                                        Deine Anfrage wurde direkt an den Verkäufer weitergeleitet. Du erhältst eine Kopie sowie die Antwort per E-Mail.
+                            {/* Chat Form Body */}
+                            <form onSubmit={handleSendDirectMessage} className="p-6 space-y-4 font-sans">
+                                <div>
+                                    <label className="block text-xs font-bold text-charcoal mb-1">
+                                        Nachricht an {seller.name}
+                                    </label>
+                                    <p className="text-[11px] text-charcoal/60 mb-3">
+                                        Starte eine direkte Unterhaltung. Deine Nachricht wird sicher über das Campuna-Nachrichtensystem zugestellt.
                                     </p>
+
+                                    {/* Quick Preset Chips */}
+                                    <div className="flex flex-wrap gap-1.5 mb-3">
+                                        {[
+                                            'Ist das Angebot noch verfügbar?',
+                                            'Ich möchte einen Besichtigungstermin vereinbaren.',
+                                            'Ist der Preis verhandelbar?'
+                                        ].map((preset) => (
+                                            <button
+                                                key={preset}
+                                                type="button"
+                                                onClick={() => setContactMessage(preset)}
+                                                className={`text-[11px] px-3 py-1.5 rounded-full border transition-all cursor-pointer text-left ${
+                                                    contactMessage === preset
+                                                        ? 'bg-forest text-sand border-forest font-semibold shadow-xs'
+                                                        : 'bg-white hover:bg-sand/40 border-forest/15 text-charcoal/80'
+                                                }`}
+                                            >
+                                                {preset}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <textarea
+                                        required
+                                        rows={4}
+                                        value={contactMessage}
+                                        onChange={(e) => setContactMessage(e.target.value)}
+                                        placeholder="Schreibe deine Nachricht an den Verkäufer..."
+                                        className="w-full bg-sand/20 border border-forest/20 rounded-2xl p-3.5 text-xs text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-forest focus:ring-1 focus:ring-forest resize-none leading-relaxed"
+                                    />
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-end gap-3">
                                     <button
-                                        onClick={() => {
-                                            setIsContactModalOpen(false);
-                                            setIsMessageSent(false);
-                                        }}
-                                        className="mt-4 px-6 py-2.5 rounded-full bg-sand text-charcoal hover:bg-beige text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                                        type="button"
+                                        onClick={() => setIsContactModalOpen(false)}
+                                        className="px-5 py-2.5 rounded-full border border-forest/20 text-charcoal/70 hover:bg-sand/40 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
                                     >
-                                        Schließen
+                                        Abbrechen
                                     </button>
-                                </motion.div>
-                            ) : (
-                                <form onSubmit={handleSendMessage} className="space-y-4 font-sans">
-                                    <div className="space-y-1">
-                                        <h3 className="font-display font-bold text-xl text-charcoal">
-                                            Nachricht an Verkäufer
-                                        </h3>
-                                        <p className="text-[11px] text-charcoal/50">
-                                            Kontaktiere {listing.user?.first_name || 'den Inserenten'} direkt über unser sicheres Campuna-Nachrichtensystem.
-                                        </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                                        <div className="space-y-1 text-left">
-                                            <label className="text-[10px] font-bold uppercase tracking-wider text-charcoal/60">
-                                                Dein Name *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={contactForm.sender_name}
-                                                onChange={(e) => setContactForm({ ...contactForm, sender_name: e.target.value })}
-                                                placeholder="Max Mustermann"
-                                                className="w-full bg-sand/30 border border-beige/80 rounded-xl px-3 py-2 text-xs text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#2a7f55]"
-                                            />
-                                        </div>
-                                        <div className="space-y-1 text-left">
-                                            <label className="text-[10px] font-bold uppercase tracking-wider text-charcoal/60">
-                                                Deine E-Mail *
-                                            </label>
-                                            <input
-                                                type="email"
-                                                required
-                                                value={contactForm.sender_email}
-                                                onChange={(e) => setContactForm({ ...contactForm, sender_email: e.target.value })}
-                                                placeholder="max@beispiel.de"
-                                                className="w-full bg-sand/30 border border-beige/80 rounded-xl px-3 py-2 text-xs text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#2a7f55]"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-1 text-left">
-                                        <label className="text-[10px] font-bold uppercase tracking-wider text-charcoal/60">
-                                            Telefonnummer (Optional)
-                                        </label>
-                                        <input
-                                            type="tel"
-                                            value={contactForm.sender_phone}
-                                            onChange={(e) => setContactForm({ ...contactForm, sender_phone: e.target.value })}
-                                            placeholder="+49 170 1234567"
-                                            className="w-full bg-sand/30 border border-beige/80 rounded-xl px-3 py-2 text-xs text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#2a7f55]"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1 text-left">
-                                        <label className="text-[10px] font-bold uppercase tracking-wider text-charcoal/60">
-                                            Deine Nachricht *
-                                        </label>
-                                        <textarea
-                                            required
-                                            rows={4}
-                                            value={contactForm.message}
-                                            onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                                            placeholder="Guten Tag, ich interessiere mich für Ihr Inserat. Ist das Fahrzeug noch verfügbar?..."
-                                            className="w-full bg-sand/30 border border-beige/80 rounded-xl p-3 text-xs text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:border-[#2a7f55] resize-none"
-                                        />
-                                    </div>
-
-                                    <div className="pt-2 flex items-center justify-end gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsContactModalOpen(false)}
-                                            className="px-5 py-2.5 rounded-full border border-beige/80 text-charcoal/70 hover:bg-sand text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
-                                        >
-                                            Abbrechen
-                                        </button>
-                                        <button
-                                            type="submit"
-                                            disabled={isSendingMessage}
-                                            className="px-6 py-2.5 rounded-full bg-[#2a7f55] hover:bg-[#206342] text-sand text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
-                                        >
-                                            {isSendingMessage ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <>
-                                                    <span>Nachricht senden</span>
-                                                    <ArrowRight className="w-3.5 h-3.5" />
-                                                </>
-                                            )}
-                                        </button>
-                                    </div>
-                                </form>
-                            )}
-                        </div>
+                                    <button
+                                        type="submit"
+                                        disabled={isSendingMessage || !contactMessage.trim()}
+                                        className="px-6 py-2.5 rounded-full bg-forest hover:bg-gold text-white hover:text-forest text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                                    >
+                                        {isSendingMessage ? (
+                                            <>
+                                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                <span>Wird gesendet...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MessageSquare className="w-3.5 h-3.5" />
+                                                <span>Nachricht senden</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
                     </motion.div>
-
-                )
-                }
-            </AnimatePresence >
-
+                )}
+            </AnimatePresence>
 
             {/* ── Report Modal popup ── */}
-            < AnimatePresence >
+            <AnimatePresence>
                 {isReportModalOpen && (
                     <motion.div
                         key="report-modal"

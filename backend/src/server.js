@@ -9,7 +9,9 @@ import listingRoutes from './routes/listings.js';
 import subscriptionRoutes from './routes/subscription.js';
 import favoritesRoutes from './routes/favorites.js';
 import adminRoutes from './routes/admin.js';
+import conversationRoutes from './routes/conversations.js';
 import './config/initAdminTable.js';
+import './config/initChatTables.js';
 import pool from './config/database.js';
 import { seedMarketplaceData } from './config/seedMarketplaceData.js';
 
@@ -48,6 +50,7 @@ app.use('/api/referrals', referralRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/favorites', favoritesRoutes);
+app.use('/api/conversations', conversationRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Global error handling middleware (handles Multer errors and others)
@@ -89,9 +92,11 @@ const server = app.listen(PORT, () => {
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`⚠️ Port ${PORT} is already in use.`);
+    console.error(`❌ Port ${PORT} is already in use by another process. Please close that process first.`);
+    process.exit(1);
   } else {
     console.error('Server error:', err);
+    process.exit(1);
   }
 });
 

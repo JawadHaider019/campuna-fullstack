@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import { db } from '../prisma/db.js';
 import { getUserFeatures } from './subscription.js';
+import crypto from 'crypto';
 
 /**
  * POST /api/listings
@@ -67,15 +68,18 @@ export const createListing = async (req, res) => {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
 
+        const listingId = crypto.randomUUID();
+
         // 6. Create Listing in single table
         const insertRes = await pool.query(
             `INSERT INTO listings (
-                user_id, title, slug, description, price, negotiable, location,
+                id, user_id, title, slug, description, price, negotiable, location,
                 condition, category, subcategory, status, featured, boosted_until, images, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'REVIEW', false, NULL, $11, NOW(), NOW()
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'REVIEW', false, NULL, $12, NOW(), NOW()
             ) RETURNING *`,
             [
+                listingId,
                 id,
                 title,
                 slug,
@@ -91,6 +95,26 @@ export const createListing = async (req, res) => {
         );
 
         const listing = insertRes.rows[0];
+
+        // 7. Insert initial listing_moderation record
+        try {
+            await pool.query(
+                `INSERT INTO listing_moderation (
+                    id, listing_id, ai_score, ai_decision, confidence_score,
+                    text_score, image_score, price_score, fraud_risk_score,
+                    ai_reasons, status, created_at, updated_at
+                ) VALUES (
+                    $1, $2, 50, 'MANUAL_REVIEW', 0.50,
+                    60, 60, 60, 15,
+                    '["Neues Inserat eingereicht - wartet auf manuelle Prüfung."]'::jsonb,
+                    'PENDING', NOW(), NOW()
+                ) ON CONFLICT (listing_id) DO NOTHING`,
+                [crypto.randomUUID(), listing.id]
+            );
+        } catch (modErr) {
+            console.warn('Notice: initial listing_moderation creation:', modErr.message);
+        }
+
         const remainingForBadge = Math.max(0, 3 - (activeCount + 1));
         const badgeUnlocked = (activeCount + 1) >= 3;
 
@@ -282,6 +306,19 @@ export const getListingDetail = async (req, res) => {
         }
 
         const listing = result.rows[0];
+
+        // Access Control: Non-approved listings are strictly visible ONLY to the creator (owner) and admins
+        if (listing.status !== 'APPROVED') {
+            const isOwner = req.user && (String(req.user.id).toLowerCase() === String(listing.user_id).toLowerCase());
+            const isAdmin = req.user && (req.user.role === 'ADMIN');
+
+            if (!isOwner && !isAdmin) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Inserat nicht gefunden oder noch nicht freigegeben.'
+                });
+            }
+        }
 
         // Retrieve profile details based on account type
         const userRes = await pool.query('SELECT user_type, role, email FROM users WHERE id = $1', [listing.user_id]);
@@ -726,14 +763,17 @@ export const importListingsFromCsv = async (req, res) => {
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/^-+|-+$/g, '') + `-${Date.now() % 10000}-${i}`;
 
+            const listingId = crypto.randomUUID();
+
             const insertRes = await pool.query(
                 `INSERT INTO listings (
-                    user_id, title, slug, description, price, negotiable, location,
+                    id, user_id, title, slug, description, price, negotiable, location,
                     condition, category, subcategory, status, featured, boosted_until, images, created_at, updated_at
                 ) VALUES (
-                    $1, $2, $3, $4, $5, false, $6, $7, $8, $9, 'APPROVED', false, NULL, $10, NOW(), NOW()
+                    $1, $2, $3, $4, $5, $6, false, $7, $8, $9, $10, 'APPROVED', false, NULL, $11, NOW(), NOW()
                 ) RETURNING *`,
                 [
+                    listingId,
                     userId,
                     title,
                     slug,
