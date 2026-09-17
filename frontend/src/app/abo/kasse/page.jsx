@@ -150,7 +150,7 @@ export default function CheckoutBillingPage() {
 
     const priceInfo = getPricing();
 
-    // ⚡ 1-Click Dummy Data Autofill
+    // 1-Click Dummy Data Autofill
     const handleAutofillDummy = () => {
         setBillingDetails({
             company_name: 'AlpenCamp Bayern GmbH',
@@ -173,7 +173,7 @@ export default function CheckoutBillingPage() {
             iban: 'DE89 3704 0044 0532 0130 00',
             bic: 'GENODEF1M01',
         });
-        toast.success('⚡ Dummy-Testdaten erfolgreich ausgefüllt!', { icon: '✨' });
+        toast.success('Dummy-Testdaten erfolgreich ausgefüllt!');
     };
 
     // Format Card Number input with spaces
@@ -267,7 +267,7 @@ export default function CheckoutBillingPage() {
                     billing_name: `${billingDetails.first_name} ${billingDetails.last_name}`,
                     company_name: billingDetails.company_name,
                 });
-                toast.success('🎉 Business-Abonnement erfolgreich aktiviert!');
+                toast.success('Business-Abonnement erfolgreich aktiviert!');
             } else {
                 toast.error(res.error || 'Zahlung fehlgeschlagen. Bitte prüfe deine Eingaben.');
                 setIsProcessing(false);
@@ -323,7 +323,7 @@ export default function CheckoutBillingPage() {
                         title="Füllt automatisch realistische Dummy-Daten für Rechnungsadresse und Zahlung ein"
                     >
                         <Sparkles className="w-4 h-4 text-gold-dark" />
-                        <span>⚡ Test-Daten einfügen</span>
+                        <span>Test-Daten einfügen</span>
                     </button>
                 </div>
             </div>

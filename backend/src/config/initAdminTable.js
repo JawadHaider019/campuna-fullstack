@@ -77,22 +77,23 @@ async function main() {
         console.log('✅ Admin password hash updated in admins table');
     }
 
-    console.log('3. Purging historical admin records from users table...');
+    console.log('3. Synchronizing admin record to users and company_profiles tables...');
     await pool.query(`
-        DELETE FROM company_profiles WHERE company_name = 'Campuna Administration'
-          OR user_id IN (SELECT id FROM users WHERE role = 'ADMIN' OR email = $1)
-    `, [adminEmail]).catch(() => {});
+        INSERT INTO users (id, email, password_hash, role, user_type, email_verified, is_suspended, created_at, updated_at)
+        VALUES ($1, $2, $3, 'ADMIN', 'COMMERCIAL', TRUE, FALSE, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, role = 'ADMIN', user_type = 'COMMERCIAL', email_verified = TRUE;
+    `, [existing.rows[0]?.id || (await pool.query('SELECT id FROM admins WHERE email = $1', [adminEmail])).rows[0]?.id, adminEmail, hashPassword(adminPass)]).catch((err) => console.log('Notice on users sync:', err.message));
 
-    await pool.query(`
-        DELETE FROM private_profiles 
-        WHERE user_id IN (SELECT id FROM users WHERE role = 'ADMIN' OR email = $1)
-    `, [adminEmail]).catch(() => {});
+    const finalAdminId = existing.rows[0]?.id || (await pool.query('SELECT id FROM admins WHERE email = $1', [adminEmail])).rows[0]?.id;
+    if (finalAdminId) {
+        await pool.query(`
+            INSERT INTO company_profiles (user_id, company_name, updated_at)
+            VALUES ($1, 'Campuna Official', NOW())
+            ON CONFLICT (user_id) DO NOTHING;
+        `, [finalAdminId]).catch((err) => console.log('Notice on company_profiles sync:', err.message));
+    }
 
-    await pool.query(`
-        DELETE FROM users WHERE role = 'ADMIN' OR email = $1
-    `, [adminEmail]).catch(() => {});
-
-    console.log('✅ Admin successfully removed from users table');
+    console.log('✅ Admin successfully synchronized into users and company_profiles tables');
 
     const checkAdmins = await pool.query('SELECT id, email, name, role FROM admins');
     console.log('📊 Current admins table rows:', checkAdmins.rows.length);

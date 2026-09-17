@@ -113,7 +113,7 @@ function VerifyEmailContent() {
                             <CheckCircle2 className="w-9 h-9" />
                         </div>
                         <h2 className="text-2xl font-black text-charcoal tracking-tight">
-                            Erfolgreich bestätigt! 🎉
+                            Erfolgreich bestätigt!
                         </h2>
                         <p className="text-xs text-slate-600 leading-relaxed max-w-sm mx-auto">
                             {message} Du kannst dich jetzt direkt in dein Campuna-Konto einloggen.

@@ -85,7 +85,7 @@ export const sendVerificationEmail = async (email, verificationToken) => {
         </div>
 
         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 24px;">
-          <h2 style="color: #0f172a; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Willkommen bei Campuna! 👋</h2>
+          <h2 style="color: #0f172a; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Willkommen bei Campuna!</h2>
           <p style="color: #334155; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
             Vielen Dank für deine Registrierung. Bitte bestätige deine E-Mail-Adresse innerhalb von <strong>15 Minuten</strong>, um dein Konto zu aktivieren:
           </p>
@@ -108,7 +108,7 @@ export const sendVerificationEmail = async (email, verificationToken) => {
               E-Mail-Adresse bestätigen &rarr;
             </a>
             <p style="color: #64748b; font-size: 12px; margin-top: 12px;">
-              ⏱️ Dieser Bestätigungslink ist 15 Minuten lang gültig.
+              Dieser Bestätigungslink ist 15 Minuten lang gültig.
             </p>
           </div>
         </div>
@@ -151,7 +151,7 @@ export const sendPasswordResetOtpEmail = async (email, otpCode) => {
         </div>
 
         <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; margin-bottom: 24px;">
-          <h2 style="color: #0f172a; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Passwort zurücksetzen 🔐</h2>
+          <h2 style="color: #0f172a; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 12px;">Passwort zurücksetzen</h2>
           <p style="color: #334155; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
             Wir haben eine Anfrage zum Zurücksetzen deines Passworts erhalten. Verwende diesen 6-stelligen Bestätigungscode, um fortzufahren:
           </p>

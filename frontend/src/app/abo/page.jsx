@@ -129,7 +129,7 @@ export default function AboPage() {
         try {
             const res = await subscribeToPlan('BUSINESS', 'CREDIT', selectedMonths);
             if (res.success) {
-                toast.success(`Business-Tarif für ${selectedMonths} Monat${selectedMonths > 1 ? 'e' : ''} aktiviert! 🎉`, { id: toastId });
+                toast.success(`Business-Tarif für ${selectedMonths} Monat${selectedMonths > 1 ? 'e' : ''} aktiviert!`, { id: toastId });
                 setUpgradeModalOpen(false);
                 await reloadSub();
             } else {
@@ -149,7 +149,7 @@ export default function AboPage() {
             reason: 'Bedarf vorübergehend gedeckt',
             confirm_clawback: true,
         });
-        toast.success('⚡ Hinterlegte Test-Bankdaten übernommen!', { icon: '💳' });
+        toast.success('Hinterlegte Test-Bankdaten übernommen!');
     };
 
     const handleCancel = async (e) => {
@@ -254,7 +254,7 @@ export default function AboPage() {
                         </div>
                         <div className="flex-1">
                             <h2 className="font-bold text-charcoal font-sans text-sm">
-                                {isOnBusiness ? '✓ Business-Tarif aktiv' : 'Du nutzt aktuell den kostenlosen Tarif'}
+                                {isOnBusiness ? 'Business-Tarif aktiv' : 'Du nutzt aktuell den kostenlosen Tarif'}
                             </h2>
                             <p className="text-xs text-charcoal/55 font-sans mt-0.5">
                                 {isOnBusiness
@@ -320,7 +320,7 @@ export default function AboPage() {
                             </ul>
 
                             <div className={`w-full py-3 rounded-xl text-center text-xs font-bold uppercase tracking-wider font-sans ${!isOnBusiness && isLoggedIn ? 'bg-charcoal/5 text-charcoal/40' : 'bg-sand text-charcoal/40'}`}>
-                                {!isOnBusiness && isLoggedIn ? '✓ Aktueller Tarif' : 'Kostenlos starten'}
+                                {!isOnBusiness && isLoggedIn ? 'Aktueller Tarif' : 'Kostenlos starten'}
                             </div>
                         </div>
 
@@ -357,7 +357,7 @@ export default function AboPage() {
 
                             {isOnBusiness && isLoggedIn ? (
                                 <div className="relative w-full py-3 rounded-xl text-center text-xs font-bold uppercase tracking-wider font-sans bg-white/10 text-white border border-white/20">
-                                    ✓ Aktueller Tarif
+                                    Aktueller Tarif
                                 </div>
                             ) : (
                                 <button

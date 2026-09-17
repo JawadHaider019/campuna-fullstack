@@ -25,7 +25,8 @@ import {
     ChevronLeft,
     ChevronRight,
     HelpCircle,
-    ExternalLink
+    ExternalLink,
+    Phone
 } from 'lucide-react';
 import {
     getAdminDecisions,
@@ -240,7 +241,7 @@ export default function AdminDecisionsPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-[1440px] mx-auto pb-10">
+        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
 
             {/* ─── Feedback Toast ─── */}
             {feedbackMessage && (
@@ -443,13 +444,13 @@ export default function AdminDecisionsPage() {
                         {[
                             { label: 'Alle Entscheidungen', val: 'ALL' },
                             {
-                                label: '⚠️ Manuelle Prüfung (~50)',
+                                label: 'Manuelle Prüfung (~50)',
                                 val: 'MANUAL_REVIEW',
                                 count: summary.manualReviewCount,
                                 highlight: true
                             },
-                            { label: '🟢 KI-Freigegeben (≥75)', val: 'AUTO_APPROVED' },
-                            { label: '🔴 KI-Abgelehnt (≤30)', val: 'AUTO_REJECTED' },
+                            { label: 'KI-Freigegeben (≥75)', val: 'AUTO_APPROVED' },
+                            { label: 'KI-Abgelehnt (≤30)', val: 'AUTO_REJECTED' },
                         ].map((tab) => (
                             <button
                                 key={tab.val}
@@ -580,7 +581,7 @@ export default function AdminDecisionsPage() {
                                                 </span>
                                                 <ul className="list-disc list-inside space-y-0.5 break-words">
                                                     {item.ai.reasons.map((r, idx) => (
-                                                        <li key={`${item.id}-reason-${idx}`} className={`truncate ${r.includes('👉') ? 'text-amber-900 font-bold' : ''}`} title={r}>
+                                                        <li key={`${item.id}-reason-${idx}`} className="truncate" title={r}>
                                                             {r}
                                                         </li>
                                                     ))}
@@ -670,7 +671,7 @@ export default function AdminDecisionsPage() {
                                                 <span className="text-slate-400 font-semibold">Status im Marktplatz:</span>
                                                 <span className={`font-bold ${item.listing_status === 'APPROVED' ? 'text-emerald-700' : 'text-rose-700'
                                                     }`}>
-                                                    {item.listing_status === 'APPROVED' ? '✓ Aktiv / Freigegeben' : '✗ Abgelehnt'}
+                                                    {item.listing_status === 'APPROVED' ? 'Aktiv / Freigegeben' : 'Abgelehnt'}
                                                 </span>
                                             </div>
                                         )}
@@ -729,9 +730,9 @@ export default function AdminDecisionsPage() {
                                         selectedDecision.listing_status === 'REJECTED' ? 'bg-rose-100 text-rose-800' :
                                         'bg-amber-100 text-amber-800'
                                     }`}>
-                                        {selectedDecision.listing_status === 'APPROVED' ? '✓ Aktiv' :
-                                        selectedDecision.listing_status === 'REJECTED' ? '✗ Abgelehnt' :
-                                        '⏳ In Prüfung'}
+                                        {selectedDecision.listing_status === 'APPROVED' ? 'Aktiv' :
+                                        selectedDecision.listing_status === 'REJECTED' ? 'Abgelehnt' :
+                                        'In Prüfung'}
                                     </span>
                                     <span className="text-xs text-slate-400 font-mono">
                                         ID: {selectedDecision.id}
@@ -933,8 +934,9 @@ export default function AdminDecisionsPage() {
                                     </div>
 
                                     {selectedDecision.seller?.phone && (
-                                        <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8]">
-                                            📞 {selectedDecision.seller.phone}
+                                        <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8] flex items-center gap-2">
+                                            <Phone className="w-3.5 h-3.5 text-slate-500" />
+                                            <span>{selectedDecision.seller.phone}</span>
                                         </div>
                                     )}
                                 </div>

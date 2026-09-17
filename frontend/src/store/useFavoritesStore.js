@@ -39,7 +39,6 @@ export const useFavoritesStore = create(
                     }));
                     toast.success('Inserat aus Merkzettel entfernt', {
                         id: `fav-${id}`,
-                        icon: '💔',
                         duration: 2500
                     });
 
@@ -60,7 +59,6 @@ export const useFavoritesStore = create(
                     }));
                     toast.success('Auf Merkzettel gespeichert', {
                         id: `fav-${id}`,
-                        icon: '❤️',
                         duration: 2500
                     });
 
@@ -135,8 +133,7 @@ export const useFavoritesStore = create(
                     favoriteListings: state.favoriteListings.filter(l => String(l.id) !== strId)
                 }));
                 toast.success('Inserat aus Merkzettel entfernt', {
-                    id: `fav-remove-${strId}`,
-                    icon: '💔'
+                    id: `fav-remove-${strId}`
                 });
 
                 const isLoggedIn = useAuthStore.getState().isLoggedIn;

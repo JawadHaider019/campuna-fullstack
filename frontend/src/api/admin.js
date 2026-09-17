@@ -144,3 +144,35 @@ export const updateAdminReport = (reportId, data) => {
     return api.patch(`/admin/reports/${reportId}`, data);
 };
 
+/**
+ * GET /api/admin/broadcasts
+ * Lists all broadcast announcements with read metrics & engagement stats.
+ */
+export const getAdminBroadcasts = (params = {}) => {
+    return api.get('/admin/broadcasts', { params });
+};
+
+/**
+ * POST /api/admin/broadcasts
+ * Creates and publishes a new system broadcast.
+ */
+export const createAdminBroadcast = (data) => {
+    return api.post('/admin/broadcasts', data);
+};
+
+/**
+ * PATCH /api/admin/broadcasts/:id
+ * Updates an existing broadcast.
+ */
+export const updateAdminBroadcast = (id, data) => {
+    return api.patch(`/admin/broadcasts/${id}`, data);
+};
+
+/**
+ * DELETE /api/admin/broadcasts/:id
+ * Permanently deletes a broadcast.
+ */
+export const deleteAdminBroadcast = (id) => {
+    return api.delete(`/admin/broadcasts/${id}`);
+};
+

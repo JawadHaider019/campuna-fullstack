@@ -45,7 +45,24 @@ export const createOrGetConversation = async (req, res) => {
         const listing = listingRes.rows[0];
         const sellerId = listing.user_id;
 
-        // 2. Prevent messaging own listing
+        // 2. Check if listing is active/approved
+        if (listing.status !== 'APPROVED') {
+            return res.status(400).json({
+                success: false,
+                error: 'Dieses Inserat ist derzeit nicht freigegeben oder wurde gesperrt.'
+            });
+        }
+
+        // 3. Check if seller is suspended
+        const sellerCheck = await pool.query('SELECT is_suspended FROM users WHERE id = $1', [sellerId]);
+        if (sellerCheck.rowCount > 0 && sellerCheck.rows[0].is_suspended) {
+            return res.status(400).json({
+                success: false,
+                error: 'Dieser Verkäufer ist derzeit gesperrt. Kontaktaufnahme ist nicht möglich.'
+            });
+        }
+
+        // 4. Prevent messaging own listing
         if (String(buyerId).toLowerCase() === String(sellerId).toLowerCase()) {
             return res.status(400).json({
                 success: false,
@@ -468,6 +485,16 @@ export const sendMessage = async (req, res) => {
 
         if (!isBuyer && !isSeller) {
             return res.status(403).json({ success: false, error: 'Keine Berechtigung zum Senden in dieser Unterhaltung.' });
+        }
+
+        // Check if recipient is suspended
+        const recipientId = isBuyer ? conv.seller_id : conv.buyer_id;
+        const recipientCheck = await pool.query('SELECT is_suspended FROM users WHERE id = $1', [recipientId]);
+        if (recipientCheck.rowCount > 0 && recipientCheck.rows[0].is_suspended) {
+            return res.status(400).json({
+                success: false,
+                error: 'Der Empfänger ist derzeit gesperrt. Nachrichten können nicht gesendet werden.'
+            });
         }
 
         // 2. Insert message with server-determined sender_id

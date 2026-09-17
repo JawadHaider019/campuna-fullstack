@@ -70,7 +70,6 @@ export default function WelcomeBar({ isLoggedIn: propIsLoggedIn }) {
                         <div className="flex-1 text-left">
                             <p className="font-display text-xs sm:text-base font-bold text-white leading-snug flex items-center justify-start gap-2 flex-wrap">
                                 {isLoggedIn ? 'Du möchtest etwas anbieten?' : 'Private Anzeigen kostenlos einstellen'}
-                                {!isLoggedIn && <span className="text-base sm:text-lg hidden sm:block">👋</span>}
                                 {!isLoggedIn && (
                                     <span className="hidden sm:inline-flex items-center gap-1 bg-sand/20 text-sand text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-gold/20">
                                         <Sparkles className="w-2.5 h-2.5" /> Neu
@@ -114,7 +113,6 @@ export default function WelcomeBar({ isLoggedIn: propIsLoggedIn }) {
                         <div className="flex-1 text-left">
                             <p className="font-display text-xs sm:text-base font-bold text-white leading-snug flex items-center justify-start gap-2 flex-wrap">
                                 {isLoggedIn ? 'Du möchtest etwas anbieten?' : 'Private Anzeigen kostenlos einstellen'}
-                                {!isLoggedIn && <span className="text-base sm:text-lg hidden sm:block">👋</span>}
                                 {!isLoggedIn && (
                                     <span className="hidden sm:inline-flex items-center gap-1 bg-sand/20 text-sand text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border border-gold/20">
                                         <Sparkles className="w-2.5 h-2.5" /> Neu

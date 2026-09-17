@@ -1,0 +1,868 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import {
+    ArrowLeft,
+    Upload,
+    Trash2,
+    Sparkles,
+    MapPin,
+    CheckCircle2,
+    Loader2,
+    Plus,
+    Layers,
+    Tag,
+    Phone,
+    Save,
+    Eye,
+    Building2,
+    User as UserIcon,
+    AlertTriangle
+} from 'lucide-react';
+import { CATEGORIES } from '@/data';
+import { createListing, updateListing, getListingDetail } from '@/api/listings';
+import { toast } from 'react-hot-toast';
+
+const SUBCATEGORIES_MAP = {
+    'Camping Zubehör': [
+        'Ausrüstung und Zubehör',
+        'Vorzelte & Markisen',
+        'Campingmöbel',
+        'Küche & Grillen',
+        'Elektrik & Solar',
+        'Heizung & Klima',
+        'Sonstiges'
+    ],
+    'Wohnmobile & Camper': [
+        'Kastenwagen & Van',
+        'Teilintegriert',
+        'Integriert',
+        'Alkoven',
+        'Wohnwagen',
+        'Sonstiges'
+    ],
+    'Zelte & Dachzelte': [
+        'Dachzelte',
+        'Kuppel- & Tunnelzelte',
+        'Familienzelte',
+        'Wurfzelte',
+        'Zubehör'
+    ],
+    'Fahrräder & Träger': [
+        'Fahrradträger Heck',
+        'Fahrradträger Deichsel',
+        'E-Bikes & Fahrräder',
+        'Zubehör'
+    ],
+    'Stellplätze & Campingplätze': [
+        'Stellplatz',
+        'Campingplatz',
+        'Zeltplatz',
+        'Privatgrundstück'
+    ],
+    'Camping Services': [
+        'Reparatur & Wartung',
+        'Umbau & Nachrüstung',
+        'Reinigung & Pflege',
+        'Transport & Überführung'
+    ],
+    'Tiny Houses': [
+        'Tiny House mobil',
+        'Tiny House stationär',
+        'Modulhäuser'
+    ],
+    'Mieten & Vermieten': [
+        'Camper mieten',
+        'Wohnwagen mieten',
+        'Zubehör mieten'
+    ],
+    'Boote & Wassersport': [
+        'Motorboote',
+        'Segelboote',
+        'Schlauchboote',
+        'Kajaks & SUPs',
+        'Wassersport-Zubehör',
+        'Sonstiges'
+    ]
+};
+
+const MOCK_LOCATIONS = [
+    'Berlin', 'München', 'Hamburg', 'Erfurt', 'Köln', 'Frankfurt am Main',
+    'Stuttgart', 'Düsseldorf', 'Leipzig', 'Trebbin', 'Bruchsal', 'Dausenau',
+    'Riegelsberg', 'Waidring', 'Schuby', 'Oberhausen', 'Schkeuditz', 'Neidenau'
+];
+
+export default function AccountCreateListingTab({
+    editId = null,
+    profile = {},
+    profileType = 'PRIVATE',
+    subDetails = {},
+    user = null,
+    onSuccess = () => { },
+    onCancel = () => { },
+    onOpenLimitModal = () => { }
+}) {
+    // Form state
+    const [title, setTitle] = useState('');
+    const [category, setCategory] = useState('');
+    const [subcategory, setSubcategory] = useState('');
+    const [condition, setCondition] = useState('Gebraucht');
+    const [price, setPrice] = useState('');
+    const [isNegotiable, setIsNegotiable] = useState(false);
+    const [location, setLocation] = useState(profile?.location || '');
+    const [description, setDescription] = useState('');
+    const [phone, setPhone] = useState(profile?.phone || '');
+
+    // Images
+    const [images, setImages] = useState([]); // File objects
+    const [previewUrls, setPreviewUrls] = useState([]);
+    const [deletedExistingImages, setDeletedExistingImages] = useState([]);
+
+    // UI state
+    const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(Boolean(editId));
+    const [locSuggestions, setLocSuggestions] = useState([]);
+    const [isLocFocused, setIsLocFocused] = useState(false);
+    const fileInputRef = useRef(null);
+
+    const availableSubcategories = category ? (SUBCATEGORIES_MAP[category] || []) : [];
+
+    const sellerName = profileType === 'COMMERCIAL'
+        ? profile?.company_name || profile?.first_name || user?.email?.split('@')[0] || 'Anbieter'
+        : [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || user?.email?.split('@')[0] || 'Camper';
+
+    // Load existing listing data in edit mode
+    useEffect(() => {
+        if (!editId) return;
+
+        const loadListing = async () => {
+            setInitialLoading(true);
+            try {
+                const res = await getListingDetail(editId);
+                const l = res.data?.listing;
+                if (l) {
+                    setTitle(l.title || '');
+                    setCategory(l.category || '');
+                    setSubcategory(l.subcategory || '');
+                    setCondition(l.condition || 'Gebraucht');
+                    setPrice(l.price ? String(l.price) : '');
+                    setIsNegotiable(Boolean(l.negotiable));
+                    setLocation(l.location || '');
+                    setDescription(l.description || '');
+                    setPhone(l.phone || '');
+
+                    if (Array.isArray(l.images)) {
+                        setPreviewUrls(l.images);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching listing details for edit:', err);
+                toast.error('Konnte Inserat nicht laden.');
+            } finally {
+                setInitialLoading(false);
+            }
+        };
+
+        loadListing();
+    }, [editId]);
+
+    // Handle Image Upload
+    const handleFiles = (files) => {
+        const fileList = Array.from(files);
+        if (previewUrls.length + fileList.length > 10) {
+            toast.error('Maximal 10 Bilder erlaubt.');
+            return;
+        }
+
+        const newImages = [...images];
+        const newPreviews = [...previewUrls];
+
+        fileList.forEach(file => {
+            if (!file.type.startsWith('image/')) {
+                toast.error(`${file.name} ist keine Bilddatei.`);
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                toast.error(`${file.name} ist größer als 10MB.`);
+                return;
+            }
+            newImages.push(file);
+            newPreviews.push(URL.createObjectURL(file));
+        });
+
+        setImages(newImages);
+        setPreviewUrls(newPreviews);
+    };
+
+    const removeImage = (index) => {
+        const removedPreview = previewUrls[index];
+
+        if (typeof removedPreview === 'string' && (removedPreview.startsWith('http') || removedPreview.startsWith('/'))) {
+            setDeletedExistingImages(prev => [...prev, removedPreview]);
+        } else {
+            const fileIdx = images.findIndex((_, idx) => idx === index);
+            if (fileIdx > -1) {
+                const updatedFiles = [...images];
+                updatedFiles.splice(fileIdx, 1);
+                setImages(updatedFiles);
+            }
+        }
+
+        const updatedPreviews = [...previewUrls];
+        updatedPreviews.splice(index, 1);
+        setPreviewUrls(updatedPreviews);
+    };
+
+    // Location suggestions
+    const handleLocationChange = (val) => {
+        setLocation(val);
+        if (!val.trim()) {
+            setLocSuggestions([]);
+            return;
+        }
+        const filtered = MOCK_LOCATIONS.filter(city =>
+            city.toLowerCase().includes(val.toLowerCase())
+        );
+        setLocSuggestions(filtered);
+    };
+
+    // Submit handler
+    const handleSubmit = async (e) => {
+        if (e) e.preventDefault();
+
+        if (!title.trim()) {
+            toast.error('Bitte gib einen Titel für das Inserat ein.');
+            return;
+        }
+        if (!category) {
+            toast.error('Bitte wähle eine Hauptkategorie.');
+            return;
+        }
+        if (!price || isNaN(Number(price)) || Number(price) < 0) {
+            toast.error('Bitte gib einen gültigen Preis ein.');
+            return;
+        }
+        if (!location.trim()) {
+            toast.error('Bitte gib einen Standort an.');
+            return;
+        }
+        if (!description.trim()) {
+            toast.error('Bitte gib eine kurze Beschreibung an.');
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('title', title.trim());
+            formData.append('category', category);
+            if (subcategory) formData.append('subcategory', subcategory);
+            formData.append('condition', condition);
+            formData.append('price', String(Math.round(Number(price))));
+            formData.append('isNegotiable', String(isNegotiable));
+            formData.append('location', location.trim());
+            formData.append('description', description.trim());
+            if (phone.trim()) formData.append('phone', phone.trim());
+
+            images.forEach(imgFile => {
+                if (imgFile instanceof File) {
+                    formData.append('images', imgFile);
+                }
+            });
+
+            if (editId) {
+                const remainingExisting = previewUrls.filter(
+                    url => typeof url === 'string' && (url.startsWith('http') || url.startsWith('/'))
+                );
+                formData.append('existingImages', JSON.stringify(remainingExisting));
+
+                const res = await updateListing(editId, formData);
+                if (res.data?.success || res.status === 200) {
+                    toast.success('Inserat erfolgreich aktualisiert!');
+                    onSuccess();
+                } else {
+                    toast.error(res.data?.error || 'Aktualisierung fehlgeschlagen.');
+                }
+            } else {
+                const res = await createListing(formData);
+                if (res.data?.success || res.status === 201) {
+                    toast.success('Inserat erfolgreich erstellt und zur Prüfung eingereicht!');
+                    onSuccess();
+                } else {
+                    if (res.data?.upgrade_required) {
+                        onOpenLimitModal();
+                    } else {
+                        toast.error(res.data?.error || 'Erstellung fehlgeschlagen.');
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Error submitting listing from dashboard:', err);
+            const errData = err.response?.data;
+            if (errData?.upgrade_required || err.response?.status === 403) {
+                onOpenLimitModal();
+            } else {
+                toast.error(errData?.error || 'Ein Fehler ist aufgetreten beim Speichern.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (initialLoading) {
+        return (
+            <div className="py-24 flex flex-col items-center justify-center gap-3">
+                <Loader2 className="w-8 h-8 text-forest animate-spin" />
+                <span className="text-xs font-bold text-charcoal/50 font-sans">Inserat wird geladen...</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6 w-full pb-12">
+
+            {/* ─── Top Header (Standardized with Other Dashboard Tabs) ─── */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-beige">
+                <div className="flex items-center gap-3 min-w-0">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="w-10 h-10 rounded-2xl bg-forest/10 hover:bg-forest/20 border border-forest/15 flex items-center justify-center text-forest shrink-0 transition-all cursor-pointer shadow-xs"
+                        title="Zurück zu Meine Inserate"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-black text-forest tracking-tight">
+                            {editId ? 'Inserat bearbeiten' : 'Neues Inserat erstellen'}
+                        </h1>
+                        <p className="text-xs text-charcoal/60 mt-0.5 font-medium">
+                            {editId
+                                ? 'Passe die Daten und Fotos deines Inserats an.'
+                                : 'Erstelle ein ansprechendes Inserat für den Campuna Camping-Marktplatz.'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Top Action Buttons */}
+                <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto justify-end">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-4 py-2.5 rounded-full border border-beige bg-white text-charcoal/70 text-xs font-bold hover:bg-[#faf8f3] transition-all cursor-pointer shadow-xs"
+                    >
+                        Abbrechen
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={loading}
+                        className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-forest text-sand text-xs font-bold uppercase tracking-wider hover:bg-[#004d0a] transition-all shadow-md cursor-pointer disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin text-gold" />
+                                <span>Wird gespeichert...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Save className="w-4 h-4 text-gold" />
+                                <span>{editId ? 'Änderungen speichern' : 'Inserat veröffentlichen'}</span>
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+
+            {/* ─── Form & Preview Grid ─── */}
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+                {/* ── LEFT COLUMN: Form Inputs (8/12) ── */}
+                <div className="lg:col-span-8 space-y-6">
+
+                    {/* Section 1: Grunddaten */}
+                    <div className="bg-white border border-beige rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
+                        <div className="flex items-center gap-2.5 pb-4 border-b border-beige/60">
+                            <div className="w-8 h-8 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold text-xs">
+                                1
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-charcoal font-sans">Grundangaben</h3>
+                                <p className="text-[11px] text-charcoal/50 font-sans">Titel, Kategorie und Zustand</p>
+                            </div>
+                        </div>
+
+                        {/* Title */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-charcoal/80 flex items-center justify-between font-sans">
+                                <span>Titel des Inserats *</span>
+                                <span className="text-[10px] font-mono text-charcoal/40 font-normal">{title.length}/80</span>
+                            </label>
+                            <input
+                                type="text"
+                                maxLength={80}
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="z. B. VW Grand California 600 - Top Zustand, sofort reisebereit"
+                                className="w-full bg-[#faf8f3] border border-beige rounded-xl px-4 py-2.5 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all"
+                            />
+                        </div>
+
+                        {/* Category & Subcategory */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-charcoal/80 font-sans">
+                                    Hauptkategorie *
+                                </label>
+                                <select
+                                    value={category}
+                                    onChange={(e) => {
+                                        setCategory(e.target.value);
+                                        setSubcategory('');
+                                    }}
+                                    className="w-full bg-[#faf8f3] border border-beige rounded-xl px-3.5 py-2.5 text-xs text-charcoal focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all cursor-pointer font-medium"
+                                >
+                                    <option value="">-- Kategorie wählen --</option>
+                                    {CATEGORIES.map(cat => (
+                                        <option key={cat.id} value={cat.name}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-charcoal/80 font-sans">
+                                    Unterkategorie (optional)
+                                </label>
+                                <select
+                                    value={subcategory}
+                                    onChange={(e) => setSubcategory(e.target.value)}
+                                    disabled={!category || availableSubcategories.length === 0}
+                                    className="w-full bg-[#faf8f3] border border-beige rounded-xl px-3.5 py-2.5 text-xs text-charcoal focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all cursor-pointer font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <option value="">
+                                        {!category ? 'Zuerst Hauptkategorie wählen' : '-- Unterkategorie wählen --'}
+                                    </option>
+                                    {availableSubcategories.map(sub => (
+                                        <option key={sub} value={sub}>
+                                            {sub}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Condition */}
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-charcoal/80 font-sans">
+                                Zustand
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {['Neu', 'Neuwertig', 'Gebraucht', 'Defekt / Bastler'].map((cond) => (
+                                    <button
+                                        key={cond}
+                                        type="button"
+                                        onClick={() => setCondition(cond)}
+                                        className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer font-sans ${condition === cond
+                                            ? 'bg-forest text-sand font-bold shadow-xs'
+                                            : 'bg-[#faf8f3] text-charcoal/70 hover:bg-sand/60 border border-beige'
+                                            }`}
+                                    >
+                                        {cond}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Section 2: Preis & Verhandlungsbasis */}
+                    <div className="bg-white border border-beige rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
+                        <div className="flex items-center gap-2.5 pb-4 border-b border-beige/60">
+                            <div className="w-8 h-8 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold text-xs">
+                                2
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-charcoal font-sans">Preis & Verhandlungsbasis</h3>
+                                <p className="text-[11px] text-charcoal/50 font-sans">Verkaufspreis und Preisart festlegen</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-charcoal/80 font-sans">
+                                    Preis in EUR (€) *
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={price}
+                                        onChange={(e) => setPrice(e.target.value)}
+                                        placeholder="z. B. 48500"
+                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl pl-4 pr-10 py-2.5 text-xs text-charcoal font-bold placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all"
+                                    />
+                                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-charcoal/40">
+                                        €
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="pt-5 sm:pt-6">
+                                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={isNegotiable}
+                                        onChange={(e) => setIsNegotiable(e.target.checked)}
+                                        className="w-4 h-4 rounded-md text-forest focus:ring-forest border-beige cursor-pointer"
+                                    />
+                                    <span className="text-xs font-bold text-charcoal font-sans">
+                                        Verhandlungsbasis (VB)
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Section 3: Standort & Kontakt */}
+                    <div className="bg-white border border-beige rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
+                        <div className="flex items-center gap-2.5 pb-4 border-b border-beige/60">
+                            <div className="w-8 h-8 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold text-xs">
+                                3
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-charcoal font-sans">Standort & Kontakt</h3>
+                                <p className="text-[11px] text-charcoal/50 font-sans">Ort des Artikels und optionale Telefonnummer</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Location */}
+                            <div className="space-y-1.5 relative">
+                                <label className="text-xs font-bold text-charcoal/80 font-sans">
+                                    Standort (PLZ oder Stadt) *
+                                </label>
+                                <div className="relative">
+                                    <MapPin className="w-3.5 h-3.5 text-charcoal/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="text"
+                                        value={location}
+                                        onFocus={() => setIsLocFocused(true)}
+                                        onBlur={() => setTimeout(() => setIsLocFocused(false), 200)}
+                                        onChange={(e) => handleLocationChange(e.target.value)}
+                                        placeholder="z. B. 80331 München"
+                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl pl-9 pr-4 py-2.5 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all"
+                                    />
+                                </div>
+
+                                {isLocFocused && locSuggestions.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white border border-beige rounded-xl shadow-lg overflow-hidden max-h-40 overflow-y-auto">
+                                        {locSuggestions.map(city => (
+                                            <button
+                                                key={city}
+                                                type="button"
+                                                onMouseDown={() => setLocation(city)}
+                                                className="w-full text-left px-3.5 py-2 text-xs text-charcoal hover:bg-forest/10 hover:text-forest transition-colors flex items-center gap-2 cursor-pointer font-sans"
+                                            >
+                                                <MapPin className="w-3 h-3 text-forest" />
+                                                <span>{city}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Phone */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-charcoal/80 font-sans">
+                                    Telefonnummer (optional)
+                                </label>
+                                <div className="relative">
+                                    <Phone className="w-3.5 h-3.5 text-charcoal/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="text"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        placeholder="z. B. +49 89 12345678"
+                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl pl-9 pr-4 py-2.5 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Section 4: Ausführliche Beschreibung */}
+                    <div className="bg-white border border-beige rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
+                        <div className="flex items-center gap-2.5 pb-4 border-b border-beige/60">
+                            <div className="w-8 h-8 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold text-xs">
+                                4
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-charcoal font-sans">Ausführliche Beschreibung</h3>
+                                <p className="text-[11px] text-charcoal/50 font-sans">Ausstattung, Zustand, Historie und Besonderheiten</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <textarea
+                                rows={6}
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Beschreibe dein Inserat detailliert: Ausstattung, Wartungshistorie, Maße, Zubehör und eventuelle Besonderheiten..."
+                                className="w-full bg-[#faf8f3] border border-beige rounded-2xl p-4 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all leading-relaxed"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Section 5: Bilder & Medien */}
+                    <div className="bg-white border border-beige rounded-3xl p-6 sm:p-7 shadow-xs space-y-5">
+                        <div className="flex items-center justify-between pb-4 border-b border-beige/60">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold text-xs">
+                                    5
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-bold text-charcoal font-sans">Bilder & Fotos</h3>
+                                    <p className="text-[11px] text-charcoal/50 font-sans">Bis zu 10 hochauflösende Fotos (erstes Bild = Titelbild)</p>
+                                </div>
+                            </div>
+                            <span className="text-xs font-mono font-bold text-charcoal/60">
+                                {previewUrls.length}/10 Fotos
+                            </span>
+                        </div>
+
+                        {/* Dropzone */}
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className="border-2 border-dashed border-beige hover:border-forest bg-[#faf8f3] hover:bg-sand/40 rounded-2xl p-8 text-center cursor-pointer transition-all group flex flex-col items-center justify-center gap-2"
+                        >
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                onChange={(e) => handleFiles(e.target.files)}
+                                className="hidden"
+                            />
+                            <div className="w-12 h-12 rounded-2xl bg-white border border-beige text-charcoal/50 group-hover:text-forest group-hover:border-forest/40 flex items-center justify-center shadow-xs transition-colors">
+                                <Upload className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-charcoal group-hover:text-forest transition-colors font-sans">
+                                    Fotos hier hineinziehen oder <span className="text-forest underline">durchsuchen</span>
+                                </p>
+                                <p className="text-[11px] text-charcoal/50 mt-0.5 font-sans">
+                                    PNG, JPG, WEBP bis 10MB pro Datei
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Image Thumbnails */}
+                        {previewUrls.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-2">
+                                {previewUrls.map((url, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="relative aspect-square rounded-2xl overflow-hidden bg-sand border border-beige group shadow-xs"
+                                    >
+                                        <Image
+                                            src={url}
+                                            alt={`Vorschau ${idx + 1}`}
+                                            fill
+                                            className="object-cover"
+                                            unoptimized
+                                        />
+                                        {idx === 0 && (
+                                            <span className="absolute top-1.5 left-1.5 px-2 py-0.5 bg-forest text-sand text-[9px] font-bold rounded-md uppercase tracking-wider shadow-sm z-10 font-sans">
+                                                Titelbild
+                                            </span>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                removeImage(idx);
+                                            }}
+                                            className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-black/60 text-white hover:bg-rose-600 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer z-10"
+                                            title="Bild entfernen"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+
+                {/* ── RIGHT COLUMN: Live Card Preview & Checklist (4/12) ── */}
+                <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-6">
+
+                    {/* Live Marketplace Card Preview */}
+                    <div className="bg-white border border-beige rounded-3xl p-5 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between pb-2 border-b border-beige/60">
+                            <span className="text-xs font-bold text-charcoal/80 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                                <Eye className="w-3.5 h-3.5 text-forest" />
+                                Live-Vorschau
+                            </span>
+                            <span className="text-[10px] text-charcoal/40 font-mono">Marktplatz-Karte</span>
+                        </div>
+
+                        {/* Simulated Card (Exact Home Listing Card Style) */}
+                        <div className="listing-card group relative flex flex-col w-full bg-white rounded-[24px] overflow-hidden border border-forest/10 hover:border-forest/20 shadow-sm transition-all duration-300 select-none">
+                            {/* Card Image Aspect 16/9 */}
+                            <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
+                                {previewUrls[0] ? (
+                                    <Image
+                                        src={previewUrls[0]}
+                                        alt={title || 'Inserat'}
+                                        fill
+                                        className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
+                                        unoptimized
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-charcoal/40 text-xs gap-1.5 bg-sand/30">
+                                        <Layers className="w-6 h-6 text-charcoal/30" />
+                                        <span className="text-[11px] font-medium font-sans">Kein Titelbild</span>
+                                    </div>
+                                )}
+
+
+                                {/* Location Badge */}
+                                <div className="absolute bottom-3 right-3 flex items-center justify-end pointer-events-none text-white/90 z-10">
+                                    <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-medium flex items-center gap-1">
+                                        <MapPin className="w-3 h-3 text-gold shrink-0" />
+                                        <span className="truncate max-w-[130px]">{location || 'Deutschland'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card Content */}
+                            <div className="p-4 flex flex-col flex-1 justify-between gap-3 font-sans">
+                                <div>
+                                    <h3 className="font-display text-sm md:text-base font-bold text-black group-hover:text-gold transition-colors duration-200 mb-2 line-clamp-1">
+                                        {title || 'Titel deines Inserats...'}
+                                    </h3>
+                                    <div className="relative group/tags mb-2">
+                                        <div className="flex overflow-x-auto gap-1.5 no-scrollbar scroll-smooth">
+                                            {[category || 'Camping Zubehör', subcategory, condition || 'Gebraucht'].filter(Boolean).map((feat, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="text-[10px] text-charcoal/60 bg-sand px-2 py-1 rounded-md border border-forest/5 whitespace-nowrap shrink-0 select-none font-medium"
+                                                >
+                                                    {feat}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-2 border-t border-forest/5 flex items-center justify-between">
+                                    <span className="block text-[10px] uppercase tracking-widest text-charcoal/40 font-mono font-medium">
+                                        {isNegotiable ? 'Verhandlungsbasis' : 'Festpreis'}
+                                    </span>
+                                    <span className="font-display text-base sm:text-lg font-bold text-forest">
+                                        {price ? `${new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Number(price))}${isNegotiable ? ' VB' : ''}` : '0 €'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quality Checklist */}
+                    <div className="bg-sand/30 rounded-3xl p-5 border border-forest/10 space-y-3 font-sans">
+                        <div className="flex items-center gap-2 text-xs font-bold text-forest uppercase tracking-wider">
+                            <Sparkles className="w-3.5 h-3.5 text-gold-dark" />
+                            <span>Vollständigkeits-Check</span>
+                        </div>
+
+                        <div className="space-y-2 pt-1 text-xs">
+                            <div className="flex items-center gap-2">
+                                {title.trim().length >= 10 ? (
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                ) : (
+                                    <div className="w-4 h-4 rounded-full border border-charcoal/20 shrink-0" />
+                                )}
+                                <span className={title.trim().length >= 10 ? 'text-charcoal font-medium' : 'text-charcoal/50'}>
+                                    Aussagekräftiger Titel (min. 10 Zeichen)
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {category ? (
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                ) : (
+                                    <div className="w-4 h-4 rounded-full border border-charcoal/20 shrink-0" />
+                                )}
+                                <span className={category ? 'text-charcoal font-medium' : 'text-charcoal/50'}>
+                                    Kategorie ausgewählt
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {price && Number(price) > 0 ? (
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                ) : (
+                                    <div className="w-4 h-4 rounded-full border border-charcoal/20 shrink-0" />
+                                )}
+                                <span className={price && Number(price) > 0 ? 'text-charcoal font-medium' : 'text-charcoal/50'}>
+                                    Gültiger Preis angegeben
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {location.trim() ? (
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                ) : (
+                                    <div className="w-4 h-4 rounded-full border border-charcoal/20 shrink-0" />
+                                )}
+                                <span className={location.trim() ? 'text-charcoal font-medium' : 'text-charcoal/50'}>
+                                    Standort hinterlegt
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {previewUrls.length > 0 ? (
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                ) : (
+                                    <div className="w-4 h-4 rounded-full border border-charcoal/20 shrink-0" />
+                                )}
+                                <span className={previewUrls.length > 0 ? 'text-charcoal font-medium' : 'text-charcoal/50'}>
+                                    Mindestens 1 Foto hochgeladen
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="pt-3">
+                            <button
+                                type="button"
+                                onClick={handleSubmit}
+                                disabled={loading}
+                                className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-forest text-sand text-xs font-bold uppercase tracking-wider hover:bg-[#004d0a] transition-all cursor-pointer shadow-md disabled:opacity-50"
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin text-gold" />
+                                        <span>Wird veröffentlicht...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="w-4 h-4 text-gold stroke-[3]" />
+                                        <span>{editId ? 'Änderungen speichern' : 'Inserat jetzt veröffentlichen'}</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+    );
+}

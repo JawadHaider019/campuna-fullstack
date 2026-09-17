@@ -40,3 +40,16 @@ const upload = multer({
 
 export const uploadSingle = upload.single('image');
 export const uploadMultiple = upload.array('images', 10);
+
+export const uploadSingleSafe = (req, res, next) => {
+    uploadSingle(req, res, (err) => {
+        if (err) {
+            console.error('Upload middleware error:', err.message);
+            return res.status(400).json({
+                success: false,
+                message: err.message || 'Fehler beim Hochladen der Datei.'
+            });
+        }
+        next();
+    });
+};

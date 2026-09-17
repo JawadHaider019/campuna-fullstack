@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
+    Plus,
     Search,
     Filter,
     CheckCircle2,
@@ -28,7 +30,9 @@ import {
     FileText,
     ArrowUpRight,
     Star,
-    Rocket
+    Rocket,
+    Phone,
+    Pencil
 } from 'lucide-react';
 import {
     getAdminListings,
@@ -36,8 +40,11 @@ import {
     deleteAdminListing,
     toggleAdminListingFeatured
 } from '@/api/admin';
+import { toast } from 'react-hot-toast';
 
 export default function AdminListingsPage() {
+    const router = useRouter();
+
     // Data State
     const [listings, setListings] = useState([]);
     const [categories, setCategories] = useState([]);
@@ -70,7 +77,6 @@ export default function AdminListingsPage() {
     const [listingToReject, setListingToReject] = useState(null);
     const [rejectionReason, setRejectionReason] = useState('');
     const [activeImageIdx, setActiveImageIdx] = useState(0);
-    const [feedbackMessage, setFeedbackMessage] = useState(null);
 
     // Fetch Listings with filters
     const fetchListings = useCallback(async () => {
@@ -95,7 +101,7 @@ export default function AdminListingsPage() {
             }
         } catch (error) {
             console.error('Failed to load listings:', error);
-            showFeedback('Fehler beim Laden der Inserate.', 'error');
+            toast.error('Fehler beim Laden der Inserate.');
         } finally {
             setLoading(false);
         }
@@ -108,19 +114,15 @@ export default function AdminListingsPage() {
         return () => clearTimeout(timer);
     }, [fetchListings]);
 
-    const showFeedback = (msg, type = 'success') => {
-        setFeedbackMessage({ msg, type });
-        setTimeout(() => setFeedbackMessage(null), 4000);
-    };
-
     // Moderation Actions
     const handleStatusUpdate = async (listingId, newStatus, reason = '') => {
         setActionLoading(true);
+        const toastId = toast.loading('Status wird aktualisiert...');
         try {
             const res = await updateAdminListingStatus(listingId, newStatus, reason);
             if (res.success || res.data?.success) {
-                const actionLabel = newStatus === 'APPROVED' ? 'freigegeben' : newStatus === 'REJECTED' ? 'abgelehnt' : 'in Prüfung gesetzt';
-                showFeedback(res.data?.message || `Inserat wurde erfolgreich ${actionLabel}.`);
+                const actionLabel = newStatus === 'APPROVED' ? 'freigegeben' : newStatus === 'REJECTED' ? 'gesperrt / abgelehnt' : 'in Prüfung gesetzt';
+                toast.success(res.data?.message || `Inserat wurde erfolgreich ${actionLabel}!`, { id: toastId });
                 fetchListings();
                 if (selectedListing && selectedListing.id === listingId) {
                     setSelectedListing(prev => ({ ...prev, status: newStatus }));
@@ -128,10 +130,10 @@ export default function AdminListingsPage() {
                 setRejectModalOpen(false);
                 setRejectionReason('');
             } else {
-                showFeedback(res.error || res.data?.error || 'Statusänderung fehlgeschlagen.', 'error');
+                toast.error(res.error || res.data?.error || 'Statusänderung fehlgeschlagen.', { id: toastId });
             }
         } catch (err) {
-            showFeedback(err.response?.data?.error || err.message || 'Statusänderung fehlgeschlagen.', 'error');
+            toast.error(err.response?.data?.error || err.message || 'Statusänderung fehlgeschlagen.', { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -140,10 +142,11 @@ export default function AdminListingsPage() {
     const handleDeleteListing = async () => {
         if (!listingToDelete) return;
         setActionLoading(true);
+        const toastId = toast.loading('Inserat wird gelöscht...');
         try {
             const res = await deleteAdminListing(listingToDelete.id);
             if (res.success || res.data?.success) {
-                showFeedback(res.data?.message || `Inserat "${listingToDelete.title}" wurde endgültig gelöscht.`);
+                toast.success(res.data?.message || `Inserat "${listingToDelete.title}" wurde endgültig gelöscht.`, { id: toastId });
                 setDeleteModalOpen(false);
                 setListingToDelete(null);
                 if (selectedListing?.id === listingToDelete.id) {
@@ -151,10 +154,10 @@ export default function AdminListingsPage() {
                 }
                 fetchListings();
             } else {
-                showFeedback(res.error || res.data?.error || 'Löschen fehlgeschlagen.', 'error');
+                toast.error(res.error || res.data?.error || 'Löschen fehlgeschlagen.', { id: toastId });
             }
         } catch (err) {
-            showFeedback(err.response?.data?.error || err.message || 'Löschen fehlgeschlagen.', 'error');
+            toast.error(err.response?.data?.error || err.message || 'Löschen fehlgeschlagen.', { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -164,19 +167,20 @@ export default function AdminListingsPage() {
         if (!item) return;
         const newFeatured = !item.featured;
         setActionLoading(true);
+        const toastId = toast.loading(newFeatured ? 'Wird als Featured markiert...' : 'Empfehlung wird entfernt...');
         try {
             const res = await toggleAdminListingFeatured(item.id, newFeatured);
             if (res.success || res.data?.success) {
-                showFeedback(res.data?.message || (newFeatured ? 'Inserat als empfohlen markiert.' : 'Empfehlung entfernt.'));
+                toast.success(res.data?.message || (newFeatured ? 'Inserat als Empfohlen (Featured) markiert!' : 'Empfehlung für Inserat entfernt.'), { id: toastId });
                 setListings(prev => prev.map(l => l.id === item.id ? { ...l, featured: newFeatured } : l));
                 if (selectedListing?.id === item.id) {
                     setSelectedListing(prev => ({ ...prev, featured: newFeatured }));
                 }
             } else {
-                showFeedback(res.error || res.data?.error || 'Fehler beim Ändern des Featured-Status.', 'error');
+                toast.error(res.error || res.data?.error || 'Fehler beim Ändern des Featured-Status.', { id: toastId });
             }
         } catch (err) {
-            showFeedback(err.response?.data?.error || err.message || 'Fehler beim Ändern des Featured-Status.', 'error');
+            toast.error(err.response?.data?.error || err.message || 'Fehler beim Ändern des Featured-Status.', { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -225,25 +229,7 @@ export default function AdminListingsPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-[1440px] mx-auto pb-10">
-
-            {/* ─── Feedback Toast ─── */}
-            {feedbackMessage && (
-                <div
-                    className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-xs font-bold transition-all duration-300 ${feedbackMessage.type === 'error'
-                        ? 'bg-rose-50 border-rose-200 text-rose-800'
-                        : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                        }`}
-                >
-                    {feedbackMessage.type === 'error' ? (
-                        <AlertTriangle className="w-4 h-4 text-rose-600" />
-                    ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    )}
-                    <span>{feedbackMessage.msg}</span>
-                </div>
-            )}
-
+        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
             {/* ─── Top Page Header ─── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
                 <div className="flex items-center gap-3">
@@ -261,7 +247,16 @@ export default function AdminListingsPage() {
                 </div>
 
                 {/* Top Quick Actions & View Switcher */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                    {/* Create Listing Button */}
+                    <button
+                        onClick={() => router.push('/admin/inserat-erstellen')}
+                        className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-[#002B06] hover:text-gold transition-all duration-200 cursor-pointer shadow-sm border border-gold/30 shrink-0"
+                    >
+                        <Plus className="w-4 h-4 text-gold" />
+                        <span>Neues Inserat</span>
+                    </button>
+
                     {/* View Switch */}
                     <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center border border-slate-200/60">
                         <button
@@ -585,18 +580,22 @@ export default function AdminListingsPage() {
                                                             )}
                                                         </div>
                                                         <div className="min-w-0 max-w-xs">
-                                                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                                                                {item.is_boosted && (
-                                                                    <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md">
-                                                                        🚀 Boosted
-                                                                    </span>
-                                                                )}
-                                                                {item.featured && (
-                                                                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-bold uppercase px-1.5 py-0.2 rounded-md">
-                                                                        ⭐ Empfohlen
-                                                                    </span>
-                                                                )}
-                                                            </div>
+                                                            {(Boolean(item.is_boosted) || Boolean(item.featured)) && (
+                                                                <div key="badges-row" className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                                                                    {Boolean(item.is_boosted) && (
+                                                                        <span key="badge-boosted" className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md">
+                                                                            <Rocket className="w-2.5 h-2.5 text-amber-800" />
+                                                                            <span>Boosted</span>
+                                                                        </span>
+                                                                    )}
+                                                                    {Boolean(item.featured) && (
+                                                                        <span key="badge-featured" className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md">
+                                                                            <Star className="w-2.5 h-2.5 text-emerald-800 fill-emerald-800" />
+                                                                            <span>Empfohlen</span>
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            )}
                                                             <button
                                                                 onClick={() => {
                                                                     setSelectedListing(item);
@@ -797,131 +796,193 @@ export default function AdminListingsPage() {
                             </div>
                         ) : (
                             listings.map((item) => {
-                                const mainImage = item.images?.[0] || '/logo.webp';
+                                const mainImage = item.images?.[0] || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
+                                const isBoosted = Boolean(item.is_boosted);
+                                const features = [
+                                    item.category || 'Camping Zubehör',
+                                    item.subcategory,
+                                    item.condition,
+                                    item.fuel_type || item.fuelType,
+                                    item.transmission,
+                                    item.brand
+                                ].filter(Boolean);
+
                                 return (
                                     <div
                                         key={item.id}
-                                        className="bg-white border border-[#E8EAEF] rounded-2xl overflow-hidden shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group"
+                                        className="listing-card group relative flex flex-col h-full bg-white rounded-[24px] overflow-hidden border border-forest/10 hover:border-forest/20 shadow-sm hover:shadow-md transition-all duration-300 select-none justify-between"
                                     >
-                                        {/* Image Area */}
-                                        <div className="relative aspect-video bg-slate-100 overflow-hidden">
-                                            <Image
-                                                src={mainImage}
-                                                alt={item.title}
-                                                fill
-                                                sizes="(max-width: 768px) 100vw, 25vw"
-                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                                unoptimized
-                                            />
-                                            {/* Status Badge in Top Left */}
-                                            <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 flex-wrap">
-                                                {item.is_boosted && (
-                                                    <span className="bg-amber-400 text-slate-950 font-black text-[9px] uppercase px-2 py-0.5 rounded-md shadow-sm">
-                                                        🚀
-                                                    </span>
-                                                )}
-                                                {item.featured && (
-                                                    <span className="bg-emerald-700 text-sand font-bold text-[9px] uppercase px-2 py-0.5 rounded-md shadow-sm">
-                                                        ⭐
-                                                    </span>
-                                                )}
-                                                {renderStatusBadge(item.status)}
-                                            </div>
-                                            {/* Price Badge in Top Right */}
-                                            <div className="absolute top-2.5 right-2.5 z-10 bg-slate-900/90 text-white backdrop-blur-xs px-2.5 py-1 rounded-lg text-xs font-bold font-display">
-                                                {formatPrice(item.price, item.negotiable)}
-                                            </div>
-                                        </div>
-
-                                        {/* Content Area */}
-                                        <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                                            <div className="space-y-1.5">
-                                                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-semibold">
-                                                    <Tag className="w-3 h-3 text-slate-400" />
-                                                    <span>{item.category}</span>
-                                                    <span>•</span>
-                                                    <span className="flex items-center gap-0.5">
-                                                        <MapPin className="w-3 h-3 text-slate-400" />
-                                                        {item.location}
-                                                    </span>
+                                        <div>
+                                            {/* Aspect 16/9 Image */}
+                                            <div
+                                                onClick={() => {
+                                                    setSelectedListing(item);
+                                                    setActiveImageIdx(0);
+                                                    setDetailModalOpen(true);
+                                                }}
+                                                className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20 cursor-pointer"
+                                            >
+                                                <img
+                                                    src={mainImage}
+                                                    alt={item.title}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                                                    loading="lazy"
+                                                />
+                                                {/* Top Status & Boost Badges */}
+                                                <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
+                                                    {item.status === 'APPROVED' && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-700 text-white shadow-xs">
+                                                            Veröffentlicht
+                                                        </span>
+                                                    )}
+                                                    {item.status === 'REVIEW' && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-600 text-white shadow-xs">
+                                                            In Prüfung
+                                                        </span>
+                                                    )}
+                                                    {item.status === 'REJECTED' && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-rose-600 text-white shadow-xs">
+                                                            Gesperrt
+                                                        </span>
+                                                    )}
+                                                    {['APPROVED', 'REVIEW', 'REJECTED'].indexOf(item.status) === -1 && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-600 text-white shadow-xs">
+                                                            {item.status || 'Entwurf'}
+                                                        </span>
+                                                    )}
+                                                    {isBoosted && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest shadow-xs flex items-center gap-1 font-sans">
+                                                            <Rocket className="w-2.5 h-2.5" /> Geboostet
+                                                        </span>
+                                                    )}
+                                                    {Boolean(item.featured) && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-forest text-sand border border-gold/40 shadow-xs flex items-center gap-1 font-sans">
+                                                            <Star className="w-2.5 h-2.5 text-gold fill-gold" /> Featured
+                                                        </span>
+                                                    )}
                                                 </div>
+
+                                                {/* Location Pill */}
+                                                <div className="absolute bottom-3 right-3 flex items-center justify-end pointer-events-none text-white/90 z-10">
+                                                    <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-medium flex items-center gap-1">
+                                                        <MapPin className="w-3 h-3 text-gold shrink-0" />
+                                                        <span className="truncate max-w-[130px]">{item.location || 'Deutschland'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Card Content Body */}
+                                            <div className="p-4 sm:p-5 space-y-2.5 font-sans">
                                                 <h3
                                                     onClick={() => {
                                                         setSelectedListing(item);
                                                         setActiveImageIdx(0);
                                                         setDetailModalOpen(true);
                                                     }}
-                                                    className="text-xs font-bold text-slate-900 hover:text-forest transition-colors line-clamp-2 cursor-pointer"
+                                                    className="font-display text-sm sm:text-base font-bold text-black group-hover:text-forest transition-colors duration-200 line-clamp-1 cursor-pointer"
                                                 >
                                                     {item.title}
                                                 </h3>
-                                            </div>
 
-                                            {/* Seller Info */}
-                                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                                                <div className="flex items-center gap-1.5 truncate text-slate-600 font-medium">
-                                                    {item.seller?.type === 'COMMERCIAL' ? (
-                                                        <Building2 className="w-3.5 h-3.5 text-forest shrink-0" />
-                                                    ) : (
-                                                        <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                                    )}
-                                                    <span className="truncate">{item.seller?.name}</span>
+                                                {/* Tags */}
+                                                <div className="flex overflow-x-auto gap-1.5 no-scrollbar scroll-smooth">
+                                                    {features.map((feat, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className="text-[10px] text-charcoal/60 bg-sand px-2 py-1 rounded-md border border-forest/5 whitespace-nowrap shrink-0 select-none font-medium"
+                                                        >
+                                                            {feat}
+                                                        </span>
+                                                    ))}
                                                 </div>
-                                                <span className="text-slate-400 font-mono text-[10px] shrink-0">
-                                                    {new Date(item.created_at).toLocaleDateString('de-DE')}
-                                                </span>
+
+                                                {/* Seller & Date Info */}
+                                                <div className="flex items-center justify-between text-[11px] text-charcoal/50 pt-1">
+                                                    <div className="flex items-center gap-1.5 truncate">
+                                                        {item.seller?.type === 'COMMERCIAL' ? (
+                                                            <Building2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                                                        ) : (
+                                                            <User className="w-3.5 h-3.5 text-charcoal/40 shrink-0" />
+                                                        )}
+                                                        <span className="truncate max-w-[120px] font-medium">{item.seller?.name || 'Benutzer'}</span>
+                                                    </div>
+                                                    <span className="font-mono text-[10px] shrink-0">
+                                                        {new Date(item.created_at).toLocaleDateString('de-DE')}
+                                                    </span>
+                                                </div>
+
+                                                {/* Price Row */}
+                                                <div className="pt-2 border-t border-forest/5 flex items-center justify-between">
+                                                    <span className="block text-[10px] uppercase tracking-widest text-charcoal/40 font-mono font-medium">
+                                                        {item.negotiable || item.isNegotiable ? 'Verhandlungsbasis' : 'Festpreis'}
+                                                    </span>
+                                                    <span className="font-display text-base sm:text-lg font-bold text-forest">
+                                                        {parseFloat(item.price || 0).toLocaleString('de-DE')} €
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        {/* Card Actions Footer */}
-                                        <div className="px-4 py-2.5 bg-[#FAFBFD] border-t border-[#E8EAEF] flex items-center justify-between gap-1">
+                                        {/* 3 Admin Action Buttons Footer */}
+                                        <div className="p-4 sm:p-5 pt-0 mt-2 border-t border-beige/60 pt-3 grid grid-cols-3 gap-2">
+                                            {/* 1. Feature / Empfehlen Toggle Button */}
                                             <button
-                                                onClick={() => {
-                                                    setSelectedListing(item);
-                                                    setActiveImageIdx(0);
-                                                    setDetailModalOpen(true);
-                                                }}
-                                                className="text-xs font-bold text-slate-700 hover:text-forest transition-colors flex items-center gap-1 cursor-pointer"
+                                                type="button"
+                                                onClick={() => handleToggleFeatured(item)}
+                                                disabled={actionLoading}
+                                                title={item.featured ? "Empfehlung entfernen" : "Als Feature markieren"}
+                                                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs border ${
+                                                    item.featured
+                                                        ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-800'
+                                                        : 'bg-[#faf8f3] hover:bg-sand text-charcoal border-beige'
+                                                }`}
                                             >
-                                                <Eye className="w-3.5 h-3.5" />
-                                                <span>Details</span>
+                                                <Star className={`w-3.5 h-3.5 ${item.featured ? 'fill-gold text-gold' : 'text-charcoal/60'}`} />
+                                                <span className="truncate">{item.featured ? 'Featured' : 'Feature'}</span>
                                             </button>
 
-                                            <div className="flex items-center gap-1">
-                                                {item.status !== 'APPROVED' && (
-                                                    <button
-                                                        onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
-                                                        disabled={actionLoading}
-                                                        title="Freigeben"
-                                                        className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer"
-                                                    >
-                                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                                    </button>
-                                                )}
-                                                {item.status !== 'REJECTED' && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setListingToReject(item);
-                                                            setRejectModalOpen(true);
-                                                        }}
-                                                        disabled={actionLoading}
-                                                        title="Ablehnen"
-                                                        className="p-1.5 rounded-lg bg-rose-50 text-rose-700 hover:bg-rose-100 transition-colors cursor-pointer"
-                                                    >
-                                                        <XCircle className="w-3.5 h-3.5" />
-                                                    </button>
-                                                )}
+                                            {/* 2. Block / Sperren Button */}
+                                            {item.status === 'REJECTED' ? (
                                                 <button
-                                                    onClick={() => {
-                                                        setListingToDelete(item);
-                                                        setDeleteModalOpen(true);
-                                                    }}
-                                                    title="Löschen"
-                                                    className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 transition-colors cursor-pointer"
+                                                    type="button"
+                                                    onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
+                                                    disabled={actionLoading}
+                                                    title="Inserat entsperren / freigeben"
+                                                    className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 border border-emerald-200 py-2 px-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
                                                 >
-                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    <span className="truncate">Freigeben</span>
                                                 </button>
-                                            </div>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setListingToReject(item);
+                                                        setRejectModalOpen(true);
+                                                    }}
+                                                    disabled={actionLoading}
+                                                    title="Inserat sperren / ablehnen"
+                                                    className="flex items-center justify-center gap-1.5 bg-amber-50/90 hover:bg-amber-600 hover:text-white text-amber-800 border border-amber-200/90 py-2 px-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                                >
+                                                    <XCircle className="w-3.5 h-3.5" />
+                                                    <span className="truncate">Sperren</span>
+                                                </button>
+                                            )}
+
+                                            {/* 3. Delete / Löschen Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setListingToDelete(item);
+                                                    setDeleteModalOpen(true);
+                                                }}
+                                                disabled={actionLoading}
+                                                title="Inserat endgültig löschen"
+                                                className="flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 py-2 px-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                                <span className="truncate">Löschen</span>
+                                            </button>
                                         </div>
                                     </div>
                                 );
@@ -1099,8 +1160,9 @@ export default function AdminListingsPage() {
                                     </div>
 
                                     {selectedListing.seller?.phone && (
-                                        <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8]">
-                                            📞 {selectedListing.seller.phone}
+                                        <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8] flex items-center gap-2">
+                                            <Phone className="w-3.5 h-3.5 text-slate-500" />
+                                            <span>{selectedListing.seller.phone}</span>
                                         </div>
                                     )}
                                 </div>

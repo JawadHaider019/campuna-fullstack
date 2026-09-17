@@ -1,15 +1,38 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Clock, Calendar, ArrowRight } from 'lucide-react';
+import { ArrowUpRight, Calendar, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BLOG_POSTS } from '@/data';
+import { getPublicPosts } from '@/api/posts';
+import { getImageUrl } from '@/utils/imageUrl';
 
 export default function BlogSection() {
     const router = useRouter();
-    const featuredPost = BLOG_POSTS ? BLOG_POSTS[0] : null;
-    const secondaryPosts = BLOG_POSTS ? BLOG_POSTS.slice(1) : [];
+    const [posts, setPosts] = useState(BLOG_POSTS || []);
+
+    useEffect(() => {
+        getPublicPosts({ limit: 4 })
+            .then(res => {
+                if (res.data?.success && res.data.posts?.length > 0) {
+                    const formatted = res.data.posts.map(p => ({
+                        id: p.id,
+                        title: p.title,
+                        excerpt: p.excerpt,
+                        image: getImageUrl(p.image_url || p.image),
+                        date: new Date(p.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' }),
+                        updateDate: new Date(p.updated_at || p.created_at).toLocaleDateString('de-DE', { month: 'short', day: 'numeric', year: 'numeric' }),
+                        slug: p.slug
+                    }));
+                    setPosts(formatted);
+                }
+            })
+            .catch(() => {});
+    }, []);
+
+    const featuredPost = posts && posts.length > 0 ? posts[0] : null;
+    const secondaryPosts = posts && posts.length > 1 ? posts.slice(1) : [];
 
     if (!featuredPost) return null;
 
@@ -21,9 +44,9 @@ export default function BlogSection() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: index * 0.1 }}
             onClick={() => router.push(`/post/${post.slug}`)}
-            className={`group flex flex-row gap-2 sm:gap-4 cursor-pointer border-b border-forest/5 pb-2 last:border-0 last:pb-0 w-full ${isFirst ? 'lg:hidden' : ''}`}
+            className={`group flex flex-row gap-3 sm:gap-4 cursor-pointer border-b border-forest/5 pb-3 last:border-0 last:pb-0 w-full ${isFirst ? 'lg:hidden' : ''}`}
         >
-            <div className="relative w-24 sm:w-32 h-20 sm:h-24 rounded-xl overflow-hidden shrink-0 shadow-md">
+            <div className="relative w-24 sm:w-32 h-20 sm:h-24 rounded-2xl overflow-hidden shrink-0 shadow-md">
                 <img
                     src={post.image}
                     alt={post.title}
@@ -34,19 +57,13 @@ export default function BlogSection() {
                 />
             </div>
 
-            <div className="flex flex-col justify-center flex-1 min-w-0">
-                <div className="space-y-1.5">
-                    <span className="font-mono text-[9px] font-bold uppercase tracking-wider text-gold bg-forest px-2 py-0.5 rounded inline-block">
-                        {post.category}
-                    </span>
-                    <h3 className="font-display text-sm font-bold text-forest group-hover:text-gold transition-colors duration-200 line-clamp-2 leading-tight">
-                        {post.title}
-                    </h3>
-                </div>
+            <div className="flex flex-col justify-center flex-1 min-w-0 space-y-1.5">
+                <h3 className="font-display text-sm font-bold text-forest group-hover:text-gold transition-colors duration-200 line-clamp-2 leading-tight">
+                    {post.title}
+                </h3>
 
-                <div className="flex items-center justify-between text-[10px] text-charcoal/40 font-mono mt-3">
+                <div className="flex items-center justify-between text-[11px] text-charcoal/40 font-mono">
                     <span>{post.date}</span>
-
                 </div>
             </div>
         </motion.div>
@@ -67,7 +84,7 @@ export default function BlogSection() {
                     </div>
                     {/* Desktop View All - Hidden on Mobile & Tablet */}
                     <div className="hidden lg:block">
-                        <button onClick={() => router.push('/all_blogs')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest">
+                        <button onClick={() => router.push('/all_blogs')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
                             <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Artikel ansehen</span>
                             <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -75,7 +92,7 @@ export default function BlogSection() {
                 </div>
 
                 {/* Magazine Grid Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 md:gap-4 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6 items-start">
 
                     {/* Large Featured Article - ONLY visible on Desktop (lg+) */}
                     <motion.div
@@ -96,10 +113,6 @@ export default function BlogSection() {
                                 referrerPolicy="no-referrer"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
-
-                            <span className="absolute top-8 left-8 bg-gold text-forest text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-lg shadow-lg">
-                                {featuredPost.category}
-                            </span>
 
                             <div className="absolute inset-x-10 bottom-10 space-y-4">
                                 <h3 className="font-display text-4xl font-extrabold text-white">
@@ -136,7 +149,7 @@ export default function BlogSection() {
 
                 {/* Mobile & Tablet Only View All - Bottom Center */}
                 <div className="mt-7 flex justify-center lg:hidden">
-                    <button onClick={() => router.push('/all_blogs')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest">
+                    <button onClick={() => router.push('/all_blogs')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
                         <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Artikel ansehen</span>
                         <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                     </button>

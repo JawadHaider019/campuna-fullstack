@@ -28,6 +28,7 @@ import CoinIcon from '@/app/components/CoinIcon';
 import UserDashboard from './components/UserDashboard';
 import AccountChatTab from './components/AccountChatTab';
 import AccountFavoritesTab from './components/AccountFavoritesTab';
+import AccountCreateListingTab from './components/AccountCreateListingTab';
 import { useChatStore } from '@/store/useChatStore';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 
@@ -245,6 +246,7 @@ export default function MeinKontoPage() {
     const [listingSearch, setListingSearch] = useState('');
     const [listingStatusFilter, setListingStatusFilter] = useState('ALL');
     const [limitModalOpen, setLimitModalOpen] = useState(false);
+    const [editingListingId, setEditingListingId] = useState(null);
 
     // Boost Modal State
     const [selectedListingForBoost, setSelectedListingForBoost] = useState(null);
@@ -409,7 +411,7 @@ export default function MeinKontoPage() {
             fetchUnreadCount();
             fetchFavorites();
 
-            // Check if tab is requested via query param (e.g., ?tab=nachrichten or ?tab=favoriten)
+            // Check if tab is requested via query param (e.g., ?tab=nachrichten or ?tab=favoriten or ?tab=create_listing)
             if (typeof window !== 'undefined') {
                 const params = new URLSearchParams(window.location.search);
                 const requestedTab = params.get('tab');
@@ -417,6 +419,10 @@ export default function MeinKontoPage() {
                     setActiveTab('nachrichten');
                 } else if (['favoriten', 'merkzettel', 'favorites'].includes(requestedTab)) {
                     setActiveTab('favoriten');
+                } else if (['create_listing', 'anzeige-erstellen', 'inserat-erstellen'].includes(requestedTab)) {
+                    const editId = params.get('edit') || params.get('id');
+                    if (editId) setEditingListingId(editId);
+                    setActiveTab('create_listing');
                 }
             }
         }
@@ -424,17 +430,28 @@ export default function MeinKontoPage() {
 
     // ─── Actions ──────────────────────────────────────────────────────────────
 
-    const handleTabChange = (tabId) => {
+    const handleTabChange = (tabId, editIdParam = null) => {
+        if (editIdParam) {
+            setEditingListingId(editIdParam);
+        } else if (tabId !== 'create_listing') {
+            setEditingListingId(null);
+        }
         setActiveTab(tabId);
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
             if (tabId === 'dashboard') {
                 url.searchParams.delete('tab');
                 url.searchParams.delete('id');
+                url.searchParams.delete('edit');
             } else {
                 url.searchParams.set('tab', tabId);
                 if (tabId !== 'nachrichten') {
                     url.searchParams.delete('id');
+                }
+                if (tabId !== 'create_listing') {
+                    url.searchParams.delete('edit');
+                } else if (editIdParam) {
+                    url.searchParams.set('edit', editIdParam);
                 }
             }
             window.history.replaceState(null, '', url.toString());
@@ -450,8 +467,13 @@ export default function MeinKontoPage() {
         if (isAtLimit) {
             setLimitModalOpen(true);
         } else {
-            router.push('/anzeige-erstellen');
+            setEditingListingId(null);
+            handleTabChange('create_listing');
         }
+    };
+
+    const handleEditListing = (listingId) => {
+        handleTabChange('create_listing', listingId);
     };
 
     const handleEdit = () => {
@@ -597,7 +619,7 @@ export default function MeinKontoPage() {
         try {
             const res = await boostListing(selectedListingForBoost.id, boostDuration);
             if (res.success || res.data?.success) {
-                toast.success('Inserat erfolgreich geboostet! 🚀', { id: toastId });
+                toast.success('Inserat erfolgreich geboostet!', { id: toastId });
                 setUserListings(prev => prev.map(l => {
                     if (l.id === selectedListingForBoost.id) {
                         return {
@@ -649,7 +671,7 @@ export default function MeinKontoPage() {
             reason: 'Bedarf vorübergehend gedeckt',
             confirm_clawback: true,
         });
-        toast.success('Test-Bankdaten übernommen!', { icon: '💳' });
+        toast.success('Test-Bankdaten übernommen!');
     };
 
     const handleCancelSubscriptionConfirm = async (e) => {
@@ -914,7 +936,7 @@ export default function MeinKontoPage() {
                     {/* ── 1. LEFT SIDEBAR NAVIGATION (Admin Style, Full Height Fixed on side) ── */}
                     <aside className="hidden lg:flex flex-col w-[230px] xl:w-[250px] bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] text-white  pr-5 py-4 shadow-xl border border-gold/20 justify-between shrink-0 h-full overflow-hidden">
 
-                        <div className="space-y-6">
+                        <div className="space-y-4">
                             {/* Navigation Header */}
                             <div className="flex items-center justify-between px-2 pt-1 pb-2 border-b border-white/50">
                                 <span className="text-[10px] font-mono tracking-[0.3em] text-white uppercase font-semibold block">
@@ -1015,6 +1037,29 @@ export default function MeinKontoPage() {
                         <main className="w-full space-y-6">
 
                             {/* ═════════════════════════════════════════════════════════════
+                                TAB: CREATE / EDIT LISTING (IN-DASHBOARD)
+                               ═════════════════════════════════════════════════════════════ */}
+                            {activeTab === 'create_listing' && (
+                                <AccountCreateListingTab
+                                    editId={editingListingId}
+                                    profile={effectiveProfile}
+                                    profileType={profileType}
+                                    subDetails={subDetails}
+                                    user={user}
+                                    onSuccess={() => {
+                                        setEditingListingId(null);
+                                        loadAllAccountData();
+                                        handleTabChange('inserate');
+                                    }}
+                                    onCancel={() => {
+                                        setEditingListingId(null);
+                                        handleTabChange('inserate');
+                                    }}
+                                    onOpenLimitModal={() => setLimitModalOpen(true)}
+                                />
+                            )}
+
+                            {/* ═════════════════════════════════════════════════════════════
                                 TAB 0: PREMIUM BUSINESS DASHBOARD (FOR SUBSCRIBERS)
                                ═════════════════════════════════════════════════════════════ */}
                             {activeTab === 'business_cockpit' && (
@@ -1030,6 +1075,7 @@ export default function MeinKontoPage() {
                                         onOpenCancelModal={() => setCancelSubModalOpen(true)}
                                         onOpenBoostModal={handleOpenBoostModal}
                                         onCreateListing={handleCreateListingClick}
+                                        onEditListing={handleEditListing}
                                         user={user}
                                     />
                                 ) : (
@@ -1190,7 +1236,7 @@ export default function MeinKontoPage() {
                                                         <Building2 className="w-3.5 h-3.5" /> Gewerblich
                                                     </span>
                                                     <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-sm ${subDetails.is_business ? 'bg-forest text-sand border border-gold/30' : 'bg-white text-charcoal'}`}>
-                                                        {subDetails.is_business ? '★ Business' : 'Free'}
+                                                        {subDetails.is_business ? 'Business' : 'Free'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -1453,13 +1499,14 @@ export default function MeinKontoPage() {
                                                                     </div>
 
                                                                     <div className="flex items-center gap-1.5 shrink-0">
-                                                                        <Link
-                                                                            href={`/anzeige-erstellen?edit=${item.id}`}
-                                                                            className="p-1.5 rounded-xl bg-white hover:bg-sand border border-beige text-charcoal/70 hover:text-forest transition-all"
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleEditListing(item.id)}
+                                                                            className="p-1.5 rounded-xl bg-white hover:bg-sand border border-beige text-charcoal/70 hover:text-forest transition-all cursor-pointer"
                                                                             title="Inserat bearbeiten"
                                                                         >
                                                                             <Pencil className="w-3.5 h-3.5" />
-                                                                        </Link>
+                                                                        </button>
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => handleOpenBoostModal(item)}
@@ -1754,7 +1801,7 @@ export default function MeinKontoPage() {
                                                 { id: 'ALL', label: `Alle (${userListings.length})` },
                                                 { id: 'APPROVED', label: `Veröffentlicht (${userListings.filter(l => l.status === 'APPROVED').length})` },
                                                 { id: 'REVIEW', label: `In Prüfung (${userListings.filter(l => l.status === 'REVIEW').length})` },
-                                                { id: 'BOOSTED', label: `Geboostet 🚀` },
+                                                { id: 'BOOSTED', label: 'Geboostet' },
                                             ].map(tab => (
                                                 <button
                                                     key={tab.id}
@@ -1798,105 +1845,132 @@ export default function MeinKontoPage() {
                                             <Loader2 className="w-8 h-8 animate-spin text-forest" />
                                         </div>
                                     ) : filteredListings.length === 0 ? (
-                                        <div className="py-16 text-center bg-white rounded-2xl sm:rounded-3xl border border-dashed border-beige p-8 space-y-3 shadow-xs">
-                                            <div className="w-12 h-12 rounded-2xl bg-forest/10 flex items-center justify-center mx-auto text-forest">
-                                                <Rocket className="w-6 h-6" />
+                                        <div className="p-12 text-center bg-white rounded-3xl border border-beige shadow-xs">
+                                            <div className="w-14 h-14 rounded-2xl bg-forest/5 text-forest flex items-center justify-center mx-auto mb-4">
+                                                <Compass className="w-7 h-7 text-forest" />
                                             </div>
-                                            <h3 className="font-bold text-charcoal text-sm sm:text-base">Keine Inserate gefunden</h3>
-                                            <p className="text-xs text-charcoal/60 max-w-sm mx-auto">
+                                            <h3 className="text-base font-bold text-charcoal">Keine Inserate gefunden</h3>
+                                            <p className="text-xs text-charcoal/60 max-w-md mx-auto mt-1 mb-6">
                                                 {listingSearch || listingStatusFilter !== 'ALL'
-                                                    ? 'Keine Ergebnisse für deine aktuellen Filtereinstellungen.'
-                                                    : 'Erstelle jetzt dein erstes Inserat und erreiche tausende Camping-Interessierte!'}
+                                                    ? 'Keine Inserate entsprechen deinen aktuellen Filterkriterien.'
+                                                    : 'Du hast bisher noch keine Inserate angelegt. Erstelle jetzt dein erstes Camping-Inserat auf Campuna.'}
                                             </p>
-                                            {(!listingSearch && listingStatusFilter === 'ALL') && (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleCreateListingClick}
-                                                    className="inline-flex items-center gap-2 bg-forest hover:bg-[#004d0a] text-sand px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer mt-2"
-                                                >
-                                                    <Plus className="w-3.5 h-3.5 text-gold" />
-                                                    <span>Erstes Inserat erstellen</span>
-                                                </button>
-                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={handleCreateListingClick}
+                                                className="inline-flex items-center gap-2 bg-forest hover:bg-[#004d0a] text-sand px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer"
+                                            >
+                                                <Plus className="w-4 h-4 text-gold" />
+                                                <span>Jetzt Inserat aufgeben</span>
+                                            </button>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                             {filteredListings.map((item) => {
                                                 const isBoosted = Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
                                                 const img = item.images && item.images.length > 0 ? item.images[0] : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
+                                                const features = [
+                                                    item.category || 'Camping Zubehör',
+                                                    item.subcategory,
+                                                    item.condition,
+                                                    item.fuel_type || item.fuelType,
+                                                    item.transmission,
+                                                    item.brand
+                                                ].filter(Boolean);
 
                                                 return (
-                                                    <div key={item.id} className="bg-white border border-beige hover:border-forest/40 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between group">
+                                                    <div
+                                                        key={item.id}
+                                                        className="listing-card group relative flex flex-col h-full bg-white rounded-[24px] overflow-hidden border border-forest/10 hover:border-forest/20 shadow-sm hover:shadow-md transition-all duration-300 select-none justify-between"
+                                                    >
                                                         <div>
-                                                            <div className="relative aspect-[16/9] bg-stone-100 overflow-hidden">
-                                                                <img src={img} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                                                <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10">
+                                                            {/* Aspect 16/9 Image */}
+                                                            <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
+                                                                <img
+                                                                    src={img}
+                                                                    alt={item.title}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                                                                    loading="lazy"
+                                                                />
+                                                                {/* Top Status Badges */}
+                                                                <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
                                                                     <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase shadow-xs ${item.status === 'APPROVED' ? 'bg-emerald-700 text-white' : 'bg-amber-600 text-white'}`}>
                                                                         {item.status === 'APPROVED' ? 'Veröffentlicht' : 'In Prüfung'}
                                                                     </span>
                                                                     {isBoosted && (
-                                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest shadow-xs flex items-center gap-1">
-                                                                            <Zap className="w-3 h-3" /> Geboostet
+                                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest shadow-xs flex items-center gap-1 font-sans">
+                                                                            <Rocket className="w-2.5 h-2.5" /> Geboostet
                                                                         </span>
                                                                     )}
                                                                 </div>
-                                                                <div className="absolute bottom-2.5 left-3 z-10">
-                                                                    <span className="px-2.5 py-0.5 rounded-md text-[9px] font-bold uppercase bg-black/60 backdrop-blur-xs text-white">
-                                                                        {item.category || 'Camping'}
-                                                                    </span>
+
+                                                                {/* Location Pill */}
+                                                                <div className="absolute bottom-3 right-3 flex items-center justify-end pointer-events-none text-white/90 z-10">
+                                                                    <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-medium flex items-center gap-1">
+                                                                        <MapPin className="w-3 h-3 text-gold shrink-0" />
+                                                                        <span className="truncate max-w-[130px]">{item.location || 'Deutschland'}</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="p-4 sm:p-5 space-y-2">
-                                                                <div className="flex items-center justify-between text-[10px] uppercase font-bold text-charcoal/50">
-                                                                    <span className="flex items-center gap-1">
-                                                                        <MapPin className="w-3 h-3 text-gold-dark" />
-                                                                        <span className="truncate max-w-[150px]">{item.location || 'Deutschland'}</span>
-                                                                    </span>
-                                                                    <span>CP-{item.id.slice(-4).toUpperCase()}</span>
-                                                                </div>
-                                                                <h4 className="font-bold text-sm text-charcoal line-clamp-1 group-hover:text-forest transition-colors">
+                                                            {/* Card Content Body */}
+                                                            <div className="p-4 sm:p-5 space-y-2.5 font-sans">
+                                                                <h3 className="font-display text-sm sm:text-base font-bold text-black group-hover:text-forest transition-colors duration-200 line-clamp-1">
                                                                     {item.title}
-                                                                </h4>
-                                                                <div className="flex items-baseline gap-1.5 pt-0.5">
-                                                                    <span className="text-base font-black text-forest font-mono">
+                                                                </h3>
+
+                                                                {/* Tags */}
+                                                                <div className="flex overflow-x-auto gap-1.5 no-scrollbar scroll-smooth">
+                                                                    {features.map((feat, idx) => (
+                                                                        <span
+                                                                            key={idx}
+                                                                            className="text-[10px] text-charcoal/60 bg-sand px-2 py-1 rounded-md border border-forest/5 whitespace-nowrap shrink-0 select-none font-medium"
+                                                                        >
+                                                                            {feat}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+
+                                                                {/* Price Row */}
+                                                                <div className="pt-2 border-t border-forest/5 flex items-center justify-between">
+                                                                    <span className="block text-[10px] uppercase tracking-widest text-charcoal/40 font-mono font-medium">
+                                                                        {item.negotiable || item.isNegotiable ? 'Verhandlungsbasis' : 'Festpreis'}
+                                                                    </span>
+                                                                    <span className="font-display text-base sm:text-lg font-bold text-forest">
                                                                         {parseFloat(item.price || 0).toLocaleString('de-DE')} €
                                                                     </span>
-                                                                    {item.negotiable && (
-                                                                        <span className="text-[10px] font-bold text-gold-dark bg-gold/15 px-1.5 py-0.2 rounded">
-                                                                            VB
-                                                                        </span>
-                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>
 
-                                                        <div className="p-4 sm:p-5 pt-0 border-t border-beige/60 mt-2 flex items-center justify-between gap-2">
-                                                            <Link
-                                                                href={`/anzeige-erstellen?edit=${item.id}`}
-                                                                className="flex-1 flex items-center justify-center gap-1.5 bg-[#faf8f3] hover:bg-forest hover:text-sand text-charcoal border border-beige py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                                        {/* Bottom Actions Row */}
+                                                        <div className="p-4 sm:p-5 pt-0 mt-2 border-t border-beige/60 pt-3 flex items-center justify-between gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleEditListing(item.id)}
+                                                                className="flex-1 flex items-center justify-center gap-1.5 bg-[#faf8f3] hover:bg-forest hover:text-sand text-charcoal border border-beige py-2 px-3 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
                                                                 title="Inserat bearbeiten"
                                                             >
                                                                 <Pencil className="w-3.5 h-3.5" />
                                                                 <span>Bearbeiten</span>
-                                                            </Link>
+                                                            </button>
 
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleOpenBoostModal(item)}
-                                                                className="flex-1 flex items-center justify-center gap-1.5 bg-gold/15 hover:bg-gold text-forest border border-gold/40 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                                                className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-gold via-[#ffd269] to-gold hover:brightness-105 text-forest font-bold py-2 px-3 rounded-full text-xs transition-all cursor-pointer shadow-xs"
                                                                 title="Mit Campuna Credits boosten"
                                                             >
-                                                                <Rocket className="w-3.5 h-3.5 text-gold-dark" />
+                                                                <Rocket className="w-3.5 h-3.5 text-forest" />
                                                                 <span>Boosten</span>
                                                             </button>
 
                                                             <Link
                                                                 href={`/inserate/${item.slug || item.id}`}
-                                                                className="p-2 bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 hover:text-forest rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0"
+                                                                className="p-2 bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 hover:text-forest rounded-full text-xs font-bold transition-all cursor-pointer shrink-0"
                                                                 title="Inserat ansehen"
                                                             >
-                                                                <ExternalLink className="w-3.5 h-3.5" />
+                                                                <Eye className="w-4 h-4" />
                                                             </Link>
                                                         </div>
                                                     </div>
@@ -2807,7 +2881,7 @@ export default function MeinKontoPage() {
                                 onClick={handleAutofillCancelBank}
                                 className="w-full text-center py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold cursor-pointer"
                             >
-                                ⚡ Test-Bankdaten automatisch ausfüllen
+                                Test-Bankdaten automatisch ausfüllen
                             </button>
 
                             <form onSubmit={handleCancelSubscriptionConfirm} className="space-y-3">

@@ -29,7 +29,8 @@ import {
     Image as ImageIcon,
     Folder,
     Clock,
-    ChevronDown
+    ChevronDown,
+    Rocket
 } from 'lucide-react';
 import { getListingDetail, getAllListings, reportListing } from '@/api/listings';
 import { createOrGetConversation } from '@/api/conversations';
@@ -663,10 +664,10 @@ export default function ListingDetailPage() {
                         Zurück
                     </button>
                     <div className="flex flex-wrap items-center gap-2.5">
-                        {/* 🚀 Boosted Badge */}
+                        {/* Boosted Badge */}
                         {(listing.is_boosted || (listing.boosted_until && new Date(listing.boosted_until) > new Date())) && (
                             <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[10px] sm:text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-md border border-yellow-100/90 flex items-center gap-1.5">
-                                <span>🚀</span>
+                                <Rocket className="w-3.5 h-3.5 text-slate-950" />
                                 <span>BOOSTED</span>
                             </span>
                         )}

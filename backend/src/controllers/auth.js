@@ -339,6 +339,21 @@ export const login = async (req, res) => {
                 );
             }
 
+            // Synchronize into users & company_profiles for foreign keys (e.g. listings)
+            await pool.query(
+                `INSERT INTO users (id, email, password_hash, role, user_type, email_verified, is_suspended, created_at, updated_at)
+                 VALUES ($1, $2, $3, 'ADMIN', 'COMMERCIAL', TRUE, FALSE, NOW(), NOW())
+                 ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, role = 'ADMIN', user_type = 'COMMERCIAL', email_verified = TRUE`,
+                [adminRecord.id, adminRecord.email, adminRecord.password_hash]
+            ).catch(() => {});
+
+            await pool.query(
+                `INSERT INTO company_profiles (user_id, company_name, updated_at)
+                 VALUES ($1, 'Campuna Official', NOW())
+                 ON CONFLICT (user_id) DO NOTHING`,
+                [adminRecord.id]
+            ).catch(() => {});
+
             const { accessToken, refreshToken } = generateTokens({
                 id: adminRecord.id,
                 email: adminRecord.email,

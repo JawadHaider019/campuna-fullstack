@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Heart, MapPin, ShieldCheck, Eye, ArrowLeft, Search, SlidersHorizontal, X } from 'lucide-react';
+import { Heart, MapPin, ShieldCheck, Eye, ArrowLeft, Search, SlidersHorizontal, X, Rocket } from 'lucide-react';
 import { CATEGORIES } from '@/data';
 import { getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
@@ -266,10 +266,10 @@ function ListingCard({ item }) {
                 {/* Top badge row */}
                 <div className="absolute top-2 sm:top-3 inset-x-2 sm:inset-x-3 flex items-center justify-between z-20 gap-1.5">
                     <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap pointer-events-none">
-                        {/* 🚀 Boosted Badge */}
+                        {/* Boosted Badge */}
                         {isBoosted && (
                             <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[7px] sm:text-[8px] font-black uppercase tracking-wider px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
-                                <span>🚀</span>
+                                <Rocket className="w-2 sm:w-2.5 h-2 sm:h-2.5 text-slate-950" />
                                 <span>BOOSTED</span>
                             </span>
                         )}

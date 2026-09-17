@@ -36,6 +36,7 @@ export default function UserDashboard({
     onOpenCancelModal = () => { },
     onOpenBoostModal = () => { },
     onCreateListing = () => { },
+    onEditListing = () => { },
     user = null,
 }) {
     const router = useRouter();
@@ -415,13 +416,14 @@ export default function UserDashboard({
                                                 <span>{isBoosted ? 'Aktiv' : 'Boosten'}</span>
                                             </button>
 
-                                            <Link
-                                                href={`/anzeige-erstellen?edit=${item.id}`}
-                                                className="p-1.5 bg-white hover:bg-sand border border-beige text-charcoal/60 hover:text-forest rounded-xl transition-all"
+                                            <button
+                                                type="button"
+                                                onClick={() => onEditListing(item.id)}
+                                                className="p-1.5 bg-white hover:bg-sand border border-beige text-charcoal/60 hover:text-forest rounded-xl transition-all cursor-pointer"
                                                 title="Bearbeiten"
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
-                                            </Link>
+                                            </button>
                                         </div>
                                     </div>
                                 );

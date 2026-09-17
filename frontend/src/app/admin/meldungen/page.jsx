@@ -276,7 +276,7 @@ export default function AdminReportsPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-[1440px] mx-auto pb-10">
+        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
 
             {/* ─── Feedback Toast ─── */}
             {feedbackMessage && (
@@ -304,7 +304,7 @@ export default function AdminReportsPage() {
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="text-xl sm:text-2xl font-black font-sans text-slate-900 tracking-tight">
-                                Meldungen & Konfliktlösung 🚩
+                                Meldungen & Konfliktlösung
                             </h1>
                             {stats.pending > 0 && (
                                 <span className="px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-[11px] font-black tracking-wide animate-pulse">
@@ -567,7 +567,6 @@ export default function AdminReportsPage() {
                                 <th className="px-5 py-3.5">Meldegrund & Details</th>
                                 <th className="px-5 py-3.5">Gemeldet von</th>
                                 <th className="px-5 py-3.5">Verkäufer</th>
-                                <th className="px-5 py-3.5 text-center">KI-Sicherheitscheck</th>
                                 <th className="px-5 py-3.5">Datum</th>
                                 <th className="px-5 py-3.5">Status</th>
                                 <th className="px-5 py-3.5 text-right">Aktionen</th>
@@ -576,7 +575,7 @@ export default function AdminReportsPage() {
                         <tbody className="divide-y divide-[#F1F3F6]">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                                    <td colSpan={7} className="py-12 text-center text-slate-400">
                                         <div className="inline-flex items-center gap-2 font-semibold">
                                             <RefreshCw className="w-4 h-4 animate-spin text-forest" />
                                             <span>Meldungen werden geladen...</span>
@@ -585,7 +584,7 @@ export default function AdminReportsPage() {
                                 </tr>
                             ) : reports.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="py-16 text-center">
+                                    <td colSpan={7} className="py-16 text-center">
                                         <div className="max-w-xs mx-auto space-y-2">
                                             <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
                                                 <ShieldCheck className="w-6 h-6" />
@@ -610,7 +609,8 @@ export default function AdminReportsPage() {
                                     return (
                                         <tr
                                             key={item.id}
-                                            className={`hover:bg-[#F9FAF8] transition-colors ${item.status === 'PENDING' ? 'bg-rose-50/20' : ''
+                                            onClick={() => handleOpenDetail(item)}
+                                            className={`hover:bg-slate-100/70 transition-colors cursor-pointer group ${item.status === 'PENDING' ? 'bg-rose-50/20' : ''
                                                 }`}
                                         >
                                             {/* Listing Column */}
@@ -635,6 +635,7 @@ export default function AdminReportsPage() {
                                                         <Link
                                                             href={item.listing?.slug ? `/inserate/${item.listing.slug}` : '#'}
                                                             target="_blank"
+                                                            onClick={(e) => e.stopPropagation()}
                                                             className="font-bold text-slate-900 hover:text-forest transition-colors truncate block text-xs"
                                                             title={item.listing?.title}
                                                         >
@@ -649,7 +650,7 @@ export default function AdminReportsPage() {
                                                         </div>
                                                         {item.total_reports_for_listing > 1 && (
                                                             <span className="inline-flex items-center gap-1 text-[10px] font-black text-rose-700 bg-rose-100 px-1.5 py-0.2 rounded mt-0.5">
-                                                                ⚠️ {item.total_reports_for_listing}x gemeldet
+                                                                {item.total_reports_for_listing}x gemeldet
                                                             </span>
                                                         )}
                                                     </div>
@@ -721,29 +722,6 @@ export default function AdminReportsPage() {
                                                 </div>
                                             </td>
 
-                                            {/* AI Moderation Column */}
-                                            <td className="px-5 py-3.5 text-center">
-                                                {item.listing?.ai_score !== undefined && item.listing?.ai_score !== null ? (
-                                                    <div className="inline-flex flex-col items-center">
-                                                        <span className={`text-xs font-black px-2 py-0.5 rounded-lg border ${item.listing.ai_score >= 75
-                                                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                                            : item.listing.ai_score <= 35
-                                                                ? 'bg-rose-50 text-rose-800 border-rose-200'
-                                                                : 'bg-amber-50 text-amber-800 border-amber-200'
-                                                            }`}>
-                                                            Score: {item.listing.ai_score}/100
-                                                        </span>
-                                                        {item.listing.fraud_risk_score !== undefined && (
-                                                            <span className="text-[10px] text-slate-400 mt-0.5 font-mono">
-                                                                Risiko: {item.listing.fraud_risk_score}%
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-[11px] text-slate-400 font-mono">-</span>
-                                                )}
-                                            </td>
-
                                             {/* Date Column */}
                                             <td className="px-5 py-3.5 text-slate-500 text-[11px] font-mono whitespace-nowrap">
                                                 {formatDate(item.created_at)}
@@ -764,11 +742,14 @@ export default function AdminReportsPage() {
                                                 <div className="flex items-center justify-end gap-1.5">
                                                     {item.status === 'PENDING' && (
                                                         <button
-                                                            onClick={() => handleModerationAction({
-                                                                status: 'REVIEWED',
-                                                                customNote: 'Direkt durch Admin als gelöst markiert.',
-                                                                reportId: item.id
-                                                            })}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleModerationAction({
+                                                                    status: 'REVIEWED',
+                                                                    customNote: 'Direkt durch Admin als gelöst markiert.',
+                                                                    reportId: item.id
+                                                                });
+                                                            }}
                                                             title="Schnell als gelöst markieren"
                                                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 font-bold text-xs shadow-2xs transition-transform active:scale-95 cursor-pointer"
                                                         >
@@ -777,7 +758,10 @@ export default function AdminReportsPage() {
                                                         </button>
                                                     )}
                                                     <button
-                                                        onClick={() => handleOpenDetail(item)}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenDetail(item);
+                                                        }}
                                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest text-sand hover:bg-forest/90 font-bold text-xs shadow-2xs transition-transform active:scale-95 cursor-pointer"
                                                     >
                                                         <Eye className="w-3.5 h-3.5" />
@@ -892,11 +876,6 @@ export default function AdminReportsPage() {
                                                 }`}>
                                                 Status: {selectedReport.listing?.status || selectedReport.listing_status}
                                             </span>
-                                            {selectedReport.listing?.ai_score !== undefined && (
-                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700">
-                                                    KI-Score: {selectedReport.listing.ai_score}/100
-                                                </span>
-                                            )}
                                         </div>
                                     </div>
                                 </div>

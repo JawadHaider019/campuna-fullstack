@@ -27,16 +27,45 @@ import {
     getAdminReportDetail,
     updateAdminReportStatus
 } from '../controllers/listingReports.js';
+import {
+    getAdminBroadcasts,
+    createAdminBroadcast,
+    updateAdminBroadcast,
+    deleteAdminBroadcast
+} from '../controllers/broadcasts.js';
+import {
+    getAdminPosts,
+    getAdminPostById,
+    createPost,
+    updatePost,
+    deletePost,
+    uploadPostImage
+} from '../controllers/posts.js';
+import { uploadSingleSafe } from '../middleware/upload.js';
 
 const router = express.Router();
 
 // All admin routes require valid auth + ADMIN role
 router.use(authenticate, requireAdmin);
 
+// Blog posts endpoints
+router.get('/posts', getAdminPosts);
+router.get('/posts/:id', getAdminPostById);
+router.post('/posts', createPost);
+router.put('/posts/:id', updatePost);
+router.delete('/posts/:id', deletePost);
+router.post('/posts/upload-image', uploadSingleSafe, uploadPostImage);
+
 // Dashboard stats and tools
 router.get('/dashboard-stats', getAdminDashboardStats);
 router.get('/export-csv', exportAdminDataCsv);
 router.post('/batch-ai-scan', batchAiModerationScan);
+
+// Broadcasts (Rundschreiben) endpoints
+router.get('/broadcasts', getAdminBroadcasts);
+router.post('/broadcasts', createAdminBroadcast);
+router.patch('/broadcasts/:id', updateAdminBroadcast);
+router.delete('/broadcasts/:id', deleteAdminBroadcast);
 
 // Reports moderation endpoints
 router.get('/reports', getAdminReports);

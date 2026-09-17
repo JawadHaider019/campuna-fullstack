@@ -10,11 +10,21 @@ import subscriptionRoutes from './routes/subscription.js';
 import favoritesRoutes from './routes/favorites.js';
 import adminRoutes from './routes/admin.js';
 import conversationRoutes from './routes/conversations.js';
+import broadcastRoutes from './routes/broadcasts.js';
+import postsRoutes from './routes/posts.js';
 import './config/initAdminTable.js';
 import './config/initChatTables.js';
 import './config/initReportsTable.js';
+import { initBroadcastsTable } from './config/initBroadcastsTable.js';
+import { initBlogPostsTable } from './config/initBlogPostsTable.js';
 import pool from './config/database.js';
 import { seedMarketplaceData } from './config/seedMarketplaceData.js';
+
+// Initialize broadcasts table
+initBroadcastsTable().catch(e => console.error('Broadcasts init error:', e.message));
+
+// Initialize blog posts table and seed
+initBlogPostsTable().catch(e => console.error('Blog posts init error:', e.message));
 
 // Auto-seed sample marketplace data if DB has fewer than 5 listings
 pool.query('SELECT count(*) FROM listings')
@@ -52,6 +62,8 @@ app.use('/api/listings', listingRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/conversations', conversationRoutes);
+app.use('/api/broadcasts', broadcastRoutes);
+app.use('/api/posts', postsRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Global error handling middleware (handles Multer errors and others)

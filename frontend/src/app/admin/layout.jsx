@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
     Hexagon,
@@ -13,7 +14,9 @@ import {
     Menu,
     X,
     Sparkles,
-    Flag
+    Flag,
+    Megaphone,
+    BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminDashboardStats } from '@/api/admin';
@@ -73,13 +76,15 @@ export default function AdminLayout({ children }) {
             badgeColor: 'bg-amber-500 text-slate-900 font-black'
         },
         {
-            label: 'Meldungen 🚩',
+            label: 'Meldungen',
             path: '/admin/meldungen',
             icon: Flag,
             badge: pendingReportsCount > 0 ? String(pendingReportsCount) : null,
             badgeColor: 'bg-rose-500 text-white font-black'
         },
         { label: 'KI-Entscheidungen', path: '/admin/entscheidungen', icon: Sparkles, badge: 'KI' },
+        { label: 'Blog & Ratgeber', path: '/admin/blogs', icon: BookOpen },
+        { label: 'Rundschreiben', path: '/admin/rundschreiben', icon: Megaphone },
         { label: 'Benutzerverwaltung', path: '/admin/benutzer', icon: Users },
     ];
 
@@ -106,9 +111,13 @@ export default function AdminLayout({ children }) {
             {/* ─── FIXED FOREST-TO-BLACK SIDEBAR ─── */}
             <aside className="hidden lg:flex flex-col w-[230px] xl:w-[250px] p-4 justify-between shrink-0 text-white relative bg-transparent h-full overflow-y-auto">
 
-                <div className="space-y-8">
-                    {/* Deep Sunken / Recessed Logo Cavity Container */}
-                    <div className="relative rounded-3xl px-4 py-3 bg-gradient-to-b from-[#D5D9E0] via-[#ECEEF2] to-[#FFFFFF] shadow-[inset_0_5px_10px_rgba(0,0,0,0.38),inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_1px_rgba(255,255,255,0.15)] border border-black/30 ring-1 ring-white/10 flex items-center justify-center overflow-hidden">
+                <div className="space-y-6">
+                    {/* Deep Sunken / Recessed Logo Cavity Container (Clickable -> Home) */}
+                    <Link
+                        href="/"
+                        title="Zur Startseite"
+                        className="relative rounded-3xl px-4 py-3 bg-gradient-to-b from-[#D5D9E0] via-[#ECEEF2] to-[#FFFFFF] shadow-[inset_0_5px_10px_rgba(0,0,0,0.38),inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_1px_rgba(255,255,255,0.15)] border border-black/30 ring-1 ring-white/10 flex items-center justify-center overflow-hidden group cursor-pointer hover:opacity-95 transition-opacity"
+                    >
                         {/* Recessed vignette overlay */}
                         <div className="absolute inset-0 rounded-3xl pointer-events-none shadow-[inset_0_8px_16px_rgba(0,0,0,0.25)]" />
                         <Image
@@ -116,10 +125,10 @@ export default function AdminLayout({ children }) {
                             alt="Campuna"
                             width={140}
                             height={42}
-                            className="w-[125px] h-auto object-contain relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+                            className="w-[125px] h-auto object-contain relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.12)] group-hover:scale-102 transition-transform duration-200"
                             priority
                         />
-                    </div>
+                    </Link>
 
                     {/* Navigation Section */}
                     <div className="space-y-3">
@@ -145,14 +154,7 @@ export default function AdminLayout({ children }) {
                                             <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-forest' : 'text-sand/50'}`} />
                                             <span>{item.label}</span>
                                         </div>
-                                        {item.badge && (
-                                            <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full ${isActive
-                                                ? 'bg-forest text-sand'
-                                                : 'bg-white/10 text-gold border border-gold/30'
-                                                }`}>
-                                                {item.badge}
-                                            </span>
-                                        )}
+
                                     </button>
                                 );
                             })}
@@ -195,7 +197,11 @@ export default function AdminLayout({ children }) {
             {/* ─── MOBILE TOPBAR (On Small Screens) ─── */}
             <div className="lg:hidden flex flex-col w-full">
                 <header className="px-4 py-3 bg-transparent text-white flex items-center justify-between">
-                    <div className="relative rounded-xl px-3 py-1.5 bg-gradient-to-b from-[#D5D9E0] via-[#ECEEF2] to-[#FFFFFF] shadow-[inset_0_4px_8px_rgba(0,0,0,0.38),inset_0_1px_3px_rgba(0,0,0,0.3),0_1px_1px_rgba(255,255,255,0.15)] border border-black/30 ring-1 ring-white/10 inline-flex items-center overflow-hidden">
+                    <Link
+                        href="/"
+                        title="Zur Startseite"
+                        className="relative rounded-xl px-3 py-1.5 bg-gradient-to-b from-[#D5D9E0] via-[#ECEEF2] to-[#FFFFFF] shadow-[inset_0_4px_8px_rgba(0,0,0,0.38),inset_0_1px_3px_rgba(0,0,0,0.3),0_1px_1px_rgba(255,255,255,0.15)] border border-black/30 ring-1 ring-white/10 inline-flex items-center overflow-hidden cursor-pointer"
+                    >
                         <Image
                             src="/logo.webp"
                             alt="Campuna"
@@ -204,7 +210,7 @@ export default function AdminLayout({ children }) {
                             className="w-[90px] h-auto object-contain relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]"
                             priority
                         />
-                    </div>
+                    </Link>
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                         className="p-1.5 text-white/80 hover:text-white bg-white/10 rounded-lg"
@@ -239,11 +245,6 @@ export default function AdminLayout({ children }) {
                                             <Icon className="w-4 h-4" />
                                             <span>{item.label}</span>
                                         </div>
-                                        {item.badge && (
-                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-forest text-sand font-bold">
-                                                {item.badge}
-                                            </span>
-                                        )}
                                     </button>
                                 );
                             })}

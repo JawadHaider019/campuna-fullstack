@@ -34,16 +34,16 @@ export default function Footer() {
 
                     {/* Logo & Manifesto Column */}
                     <div className="flex flex-col space-y-4 max-w-xs items-start h-auto">
-                        <div className="flex items-start">
+                        <Link href="/" title="Zur Startseite" className="flex items-start group cursor-pointer">
                             <Image
                                 src="/logo.webp"
                                 alt="Campuna® – Dein Camping-Marktplatz"
                                 width={140}
                                 height={40}
-                                className="h-[40px] w-[140px] object-contain"
+                                className="h-[40px] w-[140px] object-contain group-hover:opacity-85 transition-opacity"
                             />
                             <span className="text-2xl sm:text-3xl font-normal text-forest ml-0.5 -mt-1 select-none leading-none">®</span>
-                        </div>
+                        </Link>
                         <p className="font-sans text-[15px] text-charcoal/80 font-normal leading-relaxed text-left">
                             Campuna wächst mit euch.
                         </p>

@@ -678,7 +678,7 @@ export const PROVIDERS = [
     name: 'Casamaki',
     logo: '/partners/casamaki-logo.avif',
     coverImage: '/partners/casemaki-cover.avif',
-    description: 'Nr. 1 Partner für Wohnkabinen 🚐 Festaufbau &...',
+    description: 'Nr. 1 Partner für Wohnkabinen - Festaufbau &...',
     slug: '?uid=1774612775285x928668539058932000',
     listingsCount: 3,
     rating: 4.9,

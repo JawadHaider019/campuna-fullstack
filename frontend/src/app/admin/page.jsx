@@ -31,7 +31,6 @@ import {
     ArrowRight,
     Flag
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
     getAdminDashboardStats,
     exportAdminDataCsv,
@@ -124,40 +123,39 @@ export default function AdminDashboard() {
     // Computed gauge values
     const approvalRate = stats?.listings?.approvalRate ?? 100;
     // Map approvalRate (0-100) to SVG semi-circle arc angle (180deg total)
-    // 0% -> strokeDashoffset corresponds to arc length
     const radius = 40;
     const arcLength = Math.PI * radius; // ~125.66
     const strokeDashoffset = arcLength - (arcLength * approvalRate) / 100;
 
     return (
-        <div className="space-y-6 max-w-[1440px] mx-auto pb-10">
+        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
 
-            {/* ─── Feedback Toast Banner ─── */}
-            <AnimatePresence>
+            {/* ─── Feedback Toast Banner (Stable Fixed DOM) ─── */}
+            <div className="fixed top-6 right-6 z-50 pointer-events-none">
                 {feedback && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                        className={`fixed top-6 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 backdrop-blur-md text-xs font-bold ${feedback.type === 'error'
-                                ? 'bg-rose-900/90 text-white border-rose-700 shadow-rose-900/30'
-                                : 'bg-emerald-950/90 text-sand border-emerald-700 shadow-emerald-950/40'
-                            }`}
+                    <div
+                        className={`pointer-events-auto px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 backdrop-blur-md text-xs font-bold transition-all duration-300 ${
+                            feedback.type === 'error'
+                                ? 'bg-rose-900 text-white border-rose-700 shadow-rose-900/30'
+                                : 'bg-emerald-950 text-sand border-emerald-700 shadow-emerald-950/40'
+                        }`}
                     >
-                        {feedback.type === 'error' ? (
-                            <AlertTriangle className="w-4 h-4 text-rose-300 shrink-0" />
-                        ) : (
-                            <CheckCircle2 className="w-4 h-4 text-gold shrink-0" />
-                        )}
+                        <span className="shrink-0">
+                            {feedback.type === 'error' ? (
+                                <AlertTriangle className="w-4 h-4 text-rose-300" />
+                            ) : (
+                                <CheckCircle2 className="w-4 h-4 text-gold" />
+                            )}
+                        </span>
                         <span>{feedback.msg}</span>
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
+            </div>
 
             {/* ─── Top Command Center Header ─── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold">
+                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold shrink-0">
                         <Activity className="w-5 h-5" />
                     </div>
                     <div>
@@ -168,6 +166,16 @@ export default function AdminDashboard() {
                             Echtzeit-Übersicht, Moderation, Monetarisierung und Systemgesundheit.
                         </p>
                     </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                    <button
+                        onClick={() => router.push('/admin/inserat-erstellen')}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-[#002B06] hover:text-gold transition-all duration-200 cursor-pointer shadow-sm border border-gold/30 shrink-0"
+                    >
+                        <Plus className="w-4 h-4 text-gold" />
+                        <span>Neues Inserat erstellen</span>
+                    </button>
                 </div>
             </div>
 
@@ -183,7 +191,7 @@ export default function AdminDashboard() {
                         <span className="text-[11px] font-semibold text-sand/80 uppercase tracking-wider">
                             Gesamt-Inserate
                         </span>
-                        <div className="w-6 h-6 rounded-full bg-white/10 text-gold flex items-center justify-center font-bold text-xs group-hover:bg-gold group-hover:text-forest transition-colors">
+                        <div className="w-6 h-6 rounded-full bg-white/10 text-gold flex items-center justify-center font-bold text-xs group-hover:bg-gold group-hover:text-forest transition-colors shrink-0">
                             <ArrowUpRight className="w-3.5 h-3.5" />
                         </div>
                     </div>
@@ -192,7 +200,7 @@ export default function AdminDashboard() {
                             {loading ? '...' : (stats?.listings?.total || 0)}
                         </div>
                         <div className="flex items-center justify-between mt-1 pt-2 border-t border-white/10 text-[10px] text-sand/80">
-                            <span className="text-gold font-bold">{stats?.listings?.approved || 0} Aktiv</span>
+                            <span className="text-gold font-bold">{`${stats?.listings?.approved || 0} Aktiv`}</span>
                             <span>{formatEuro(stats?.listings?.totalActiveValue)}</span>
                         </div>
                     </div>
@@ -208,9 +216,9 @@ export default function AdminDashboard() {
                             Warteschlange
                         </span>
                         {(stats?.listings?.review || 0) > 0 ? (
-                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
                         ) : (
-                            <div className="w-6 h-6 rounded-full bg-[#EBF7EE] text-[#1E7E50] flex items-center justify-center font-bold text-xs">
+                            <div className="w-6 h-6 rounded-full bg-[#EBF7EE] text-[#1E7E50] flex items-center justify-center font-bold text-xs shrink-0">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
                             </div>
                         )}
@@ -222,30 +230,32 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-1.5 text-[11px] font-bold mt-1">
                             {(stats?.listings?.review || 0) > 0 ? (
                                 <span className="text-amber-600 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> Prüfung nötig
+                                    <Clock className="w-3 h-3 shrink-0" />
+                                    <span>Prüfung nötig</span>
                                 </span>
                             ) : (
                                 <span className="text-emerald-600 flex items-center gap-1">
-                                    <ShieldCheck className="w-3 h-3" /> Alles geprüft
+                                    <ShieldCheck className="w-3 h-3 shrink-0" />
+                                    <span>Alles geprüft</span>
                                 </span>
                             )}
                         </div>
                     </div>
                 </div>
 
-                {/* 3. Meldungen 🚩 (Offene Benutzermeldungen) */}
+                {/* 3. Meldungen (Offene Benutzermeldungen) */}
                 <div
                     onClick={() => router.push('/admin/meldungen')}
                     className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                            Meldungen 🚩
+                            Meldungen
                         </span>
                         {(stats?.reports?.pending || 0) > 0 ? (
-                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
                         ) : (
-                            <div className="w-6 h-6 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs">
+                            <div className="w-6 h-6 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold text-xs shrink-0">
                                 <Flag className="w-3.5 h-3.5" />
                             </div>
                         )}
@@ -257,11 +267,13 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-1.5 text-[11px] font-bold mt-1">
                             {(stats?.reports?.pending || 0) > 0 ? (
                                 <span className="text-rose-600 flex items-center gap-1">
-                                    <AlertTriangle className="w-3 h-3" /> Zu prüfen
+                                    <AlertTriangle className="w-3 h-3 shrink-0" />
+                                    <span>Zu prüfen</span>
                                 </span>
                             ) : (
                                 <span className="text-emerald-600 flex items-center gap-1">
-                                    <ShieldCheck className="w-3 h-3" /> Keine Meldungen
+                                    <ShieldCheck className="w-3 h-3 shrink-0" />
+                                    <span>Keine Meldungen</span>
                                 </span>
                             )}
                         </div>
@@ -277,13 +289,14 @@ export default function AdminDashboard() {
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Pioneer Club
                         </span>
-                        <div className="w-6 h-6 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs">
+                        <div className="w-6 h-6 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-xs shrink-0">
                             <Award className="w-3.5 h-3.5 text-[#C8A96B]" />
                         </div>
                     </div>
                     <div>
-                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
-                            {loading ? '...' : (stats?.pioneer?.awardedCount || 0)} <span className="text-sm font-semibold text-slate-400">/ 300</span>
+                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans flex items-baseline gap-1">
+                            <span>{loading ? '...' : (stats?.pioneer?.awardedCount || 0)}</span>
+                            <span className="text-sm font-semibold text-slate-400">/ 300</span>
                         </div>
                         <div className="mt-2">
                             <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
@@ -293,8 +306,8 @@ export default function AdminDashboard() {
                                 />
                             </div>
                             <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold mt-1">
-                                <span>{stats?.pioneer?.availableSlots || 300} freie Plätze</span>
-                                <span>{stats?.pioneer?.progressPercentage || 0}%</span>
+                                <span>{`${stats?.pioneer?.availableSlots || 300} freie Plätze`}</span>
+                                <span>{`${stats?.pioneer?.progressPercentage || 0}%`}</span>
                             </div>
                         </div>
                     </div>
@@ -309,7 +322,7 @@ export default function AdminDashboard() {
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Business & MRR
                         </span>
-                        <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs">
+                        <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shrink-0">
                             <DollarSign className="w-3.5 h-3.5 text-forest" />
                         </div>
                     </div>
@@ -318,8 +331,8 @@ export default function AdminDashboard() {
                             {loading ? '...' : (stats?.monetization?.businessTierUsers || stats?.monetization?.activeSubscriptions || 0)}
                         </div>
                         <div className="flex items-center justify-between mt-1 pt-1 text-[10px] text-slate-500 font-medium">
-                            <span className="text-forest font-bold">~ {formatEuro(stats?.monetization?.estimatedMRR)} / Mo</span>
-                            <span className="text-slate-400">{stats?.users?.strategicPartners || 0} Partner</span>
+                            <span className="text-forest font-bold">{`~ ${formatEuro(stats?.monetization?.estimatedMRR)} / Mo`}</span>
+                            <span className="text-slate-400">{`${stats?.users?.strategicPartners || 0} Partner`}</span>
                         </div>
                     </div>
                 </div>
@@ -333,7 +346,7 @@ export default function AdminDashboard() {
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Benutzer
                         </span>
-                        <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
+                        <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs shrink-0">
                             <UserCheck className="w-3.5 h-3.5 text-blue-700" />
                         </div>
                     </div>
@@ -342,8 +355,8 @@ export default function AdminDashboard() {
                             {loading ? '...' : (stats?.users?.total || 0)}
                         </div>
                         <div className="flex items-center justify-between mt-1 pt-1 text-[10px] text-slate-500 font-medium">
-                            <span className="text-slate-700 font-bold">{stats?.users?.commercial || 0} Händler</span>
-                            <span>{stats?.users?.private || 0} Privat</span>
+                            <span className="text-slate-700 font-bold">{`${stats?.users?.commercial || 0} Händler`}</span>
+                            <span>{`${stats?.users?.private || 0} Privat`}</span>
                         </div>
                     </div>
                 </div>
@@ -358,7 +371,7 @@ export default function AdminDashboard() {
                     <div>
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold">
+                                <div className="w-7 h-7 rounded-xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold shrink-0">
                                     <Clock className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -375,19 +388,19 @@ export default function AdminDashboard() {
                                 onClick={() => router.push('/admin/inserate')}
                                 className="text-xs font-bold text-forest hover:underline flex items-center gap-1 cursor-pointer"
                             >
-                                <span>Alle Inserate ({stats?.listings?.total || 0})</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
+                                <span>{`Alle Inserate (${stats?.listings?.total || 0})`}</span>
+                                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                             </button>
                         </div>
 
                         {/* Pending Items List */}
                         {loading ? (
-                            <div className="py-12 flex flex-col items-center justify-center gap-2">
+                            <div key="queue-loading" className="py-12 flex flex-col items-center justify-center gap-2">
                                 <div className="w-7 h-7 border-2 border-forest border-t-transparent rounded-full animate-spin" />
                                 <span className="text-xs text-slate-400">Warteschlange wird geladen...</span>
                             </div>
-                        ) : !stats?.pendingQueue || stats.pendingQueue.length === 0 ? (
-                            <div className="py-10 px-4 text-center bg-sand/30 rounded-2xl border border-dashed border-[#E2E4E8]">
+                        ) : (!stats?.pendingQueue || stats.pendingQueue.length === 0) ? (
+                            <div key="queue-empty" className="py-10 px-4 text-center bg-sand/30 rounded-2xl border border-dashed border-[#E2E4E8]">
                                 <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-2 font-bold">
                                     <CheckCircle2 className="w-5 h-5" />
                                 </div>
@@ -397,10 +410,10 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div key="queue-list" className="space-y-3">
                                 {stats.pendingQueue.map((item) => (
                                     <div
-                                        key={item.id}
+                                        key={`queue-item-${item.id}`}
                                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 transition-all"
                                     >
                                         {/* Image & Main Info */}
@@ -437,7 +450,7 @@ export default function AdminDashboard() {
                                                     <span className="shrink-0">{item.category}</span>
                                                     <span className="shrink-0">•</span>
                                                     <span className="truncate" title={`${item.sellerName} (${item.sellerType === 'COMMERCIAL' ? 'Händler' : 'Privat'})`}>
-                                                        {item.sellerName} ({item.sellerType === 'COMMERCIAL' ? 'Händler' : 'Privat'})
+                                                        {`${item.sellerName} (${item.sellerType === 'COMMERCIAL' ? 'Händler' : 'Privat'})`}
                                                     </span>
                                                 </div>
                                             </div>
@@ -454,7 +467,7 @@ export default function AdminDashboard() {
                                                     }`}
                                                 title={`KI-Score: ${item.aiScore}/100`}
                                             >
-                                                KI: {item.aiScore}/100
+                                                {`KI: ${item.aiScore}/100`}
                                             </span>
 
                                             <button
@@ -473,11 +486,11 @@ export default function AdminDashboard() {
 
                     <div className="pt-4 mt-4 border-t border-[#F2F4F7] flex items-center justify-between text-xs">
                         <span className="text-slate-400 text-[11px]">
-                            {stats?.pendingQueue?.length || 0} von {stats?.listings?.review || 0} ausstehenden Inseraten angezeigt
+                            {`${stats?.pendingQueue?.length || 0} von ${stats?.listings?.review || 0} ausstehenden Inseraten angezeigt`}
                         </span>
                         <button
                             onClick={() => router.push('/admin/entscheidungen')}
-                            className="font-bold text-forest hover:underline flex items-center gap-1"
+                            className="font-bold text-forest hover:underline flex items-center gap-1 cursor-pointer"
                         >
                             <span>KI-Entscheidungsmatrix öffnen</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -490,7 +503,7 @@ export default function AdminDashboard() {
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold">
+                                <div className="w-7 h-7 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold shrink-0">
                                     <ShieldCheck className="w-4 h-4" />
                                 </div>
                                 <h3 className="text-xs font-bold text-slate-800">
@@ -565,7 +578,7 @@ export default function AdminDashboard() {
                     <div className="pt-3 mt-3 border-t border-[#F2F4F7] flex items-center justify-between text-[11px] text-slate-500">
                         <span>KI-Vertrauens-Score:</span>
                         <span className="font-bold text-forest">
-                            {stats?.aiModeration?.avgScore || 85} / 100
+                            {`${stats?.aiModeration?.avgScore || 85} / 100`}
                         </span>
                     </div>
                 </div>
@@ -580,7 +593,7 @@ export default function AdminDashboard() {
                     <div>
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+                                <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold shrink-0">
                                     <TrendingUp className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -592,7 +605,7 @@ export default function AdminDashboard() {
                             </div>
 
                             <span className="text-[10px] font-bold text-slate-500 px-2 py-0.5 rounded-full bg-slate-100">
-                                +{stats?.dailyActivity?.reduce((s, d) => s + parseInt(d.listings_count, 10), 0) || 0} diese Woche
+                                {`+${stats?.dailyActivity?.reduce((s, d) => s + parseInt(d.listings_count, 10), 0) || 0} diese Woche`}
                             </span>
                         </div>
 
@@ -605,10 +618,10 @@ export default function AdminDashboard() {
                                     const isToday = idx === stats.dailyActivity.length - 1;
 
                                     return (
-                                        <div key={idx} className="flex flex-col items-center gap-2 flex-1 relative group">
+                                        <div key={`daily-bar-${idx}`} className="flex flex-col items-center gap-2 flex-1 relative group">
                                             {/* Hover Tooltip */}
                                             <div className="absolute -top-7 bg-slate-900 text-white font-bold text-[9px] px-2 py-0.5 rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                                {item.formatted_date}: {val} Inserate
+                                                {`${item.formatted_date}: ${val} Inserate`}
                                             </div>
 
                                             {/* Bar Container */}
@@ -650,7 +663,7 @@ export default function AdminDashboard() {
                     <div>
                         <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+                                <div className="w-7 h-7 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold shrink-0">
                                     <Building2 className="w-4 h-4" />
                                 </div>
                                 <div>
@@ -665,61 +678,63 @@ export default function AdminDashboard() {
                                 onClick={() => router.push('/admin/benutzer')}
                                 className="text-[11px] font-bold text-forest hover:underline cursor-pointer"
                             >
-                                Alle ({stats?.users?.total || 0})
+                                {`Alle (${stats?.users?.total || 0})`}
                             </button>
                         </div>
 
                         {/* Recent Users List */}
                         <div className="space-y-2.5 mt-2">
                             {loading ? (
-                                <div className="py-8 flex justify-center">
+                                <div key="users-loading" className="py-8 flex justify-center">
                                     <div className="w-6 h-6 border-2 border-forest border-t-transparent rounded-full animate-spin" />
                                 </div>
                             ) : !stats?.recentUsers || stats.recentUsers.length === 0 ? (
-                                <div className="py-6 text-center text-xs text-slate-400">
+                                <div key="users-empty" className="py-6 text-center text-xs text-slate-400">
                                     Keine Benutzer vorhanden.
                                 </div>
                             ) : (
-                                stats.recentUsers.slice(0, 4).map((u) => (
-                                    <div
-                                        key={u.id}
-                                        onClick={() => router.push(`/admin/benutzer?search=${encodeURIComponent(u.email)}`)}
-                                        className="flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-[#F8F9FA] transition-colors cursor-pointer group"
-                                    >
-                                        <div className="flex items-center gap-2.5 truncate">
-                                            <div className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 ${u.userType === 'COMMERCIAL'
-                                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                                    : 'bg-blue-100 text-blue-800 border border-blue-200'
-                                                }`}>
-                                                {u.avatar ? (
-                                                    <Image src={u.avatar} alt={u.name} width={32} height={32} className="w-full h-full object-cover rounded-full" />
-                                                ) : (
-                                                    u.name?.slice(0, 2).toUpperCase() || 'CP'
-                                                )}
-                                            </div>
-                                            <div className="truncate">
-                                                <div className="flex items-center gap-1.5 truncate">
-                                                    <h5 className="text-xs font-bold text-slate-800 group-hover:text-forest transition-colors truncate">
-                                                        {u.name}
-                                                    </h5>
-                                                    {u.hasPioneerBadge && (
-                                                        <Award className="w-3.5 h-3.5 text-[#C8A96B] shrink-0" title="Pioneer Club Mitglied" />
+                                <div key="users-list" className="space-y-2.5">
+                                    {stats.recentUsers.slice(0, 4).map((u) => (
+                                        <div
+                                            key={`recent-user-${u.id}`}
+                                            onClick={() => router.push(`/admin/benutzer?search=${encodeURIComponent(u.email)}`)}
+                                            className="flex items-center justify-between gap-2 p-2 rounded-xl hover:bg-[#F8F9FA] transition-colors cursor-pointer group"
+                                        >
+                                            <div className="flex items-center gap-2.5 truncate">
+                                                <div className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 ${u.userType === 'COMMERCIAL'
+                                                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                                        : 'bg-blue-100 text-blue-800 border border-blue-200'
+                                                    }`}>
+                                                    {u.avatar ? (
+                                                        <Image src={u.avatar} alt={u.name} width={32} height={32} className="w-full h-full object-cover rounded-full" />
+                                                    ) : (
+                                                        u.name?.slice(0, 2).toUpperCase() || 'CP'
                                                     )}
                                                 </div>
-                                                <p className="text-[10px] text-slate-400 truncate">
-                                                    {u.email}
-                                                </p>
+                                                <div className="truncate">
+                                                    <div className="flex items-center gap-1.5 truncate">
+                                                        <h5 className="text-xs font-bold text-slate-800 group-hover:text-forest transition-colors truncate">
+                                                            {u.name}
+                                                        </h5>
+                                                        {u.hasPioneerBadge && (
+                                                            <Award className="w-3.5 h-3.5 text-[#C8A96B] shrink-0" title="Pioneer Club Mitglied" />
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-slate-400 truncate">
+                                                        {u.email}
+                                                    </p>
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${u.userType === 'COMMERCIAL'
-                                                ? 'bg-emerald-100 text-emerald-800'
-                                                : 'bg-slate-100 text-slate-700'
-                                            }`}>
-                                            {u.userType === 'COMMERCIAL' ? 'Händler' : 'Privat'}
-                                        </span>
-                                    </div>
-                                ))
+                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0 ${u.userType === 'COMMERCIAL'
+                                                    ? 'bg-emerald-100 text-emerald-800'
+                                                    : 'bg-slate-100 text-slate-700'
+                                                }`}>
+                                                {u.userType === 'COMMERCIAL' ? 'Händler' : 'Privat'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>
@@ -727,7 +742,7 @@ export default function AdminDashboard() {
                     <div className="pt-3 mt-3 border-t border-[#F2F4F7] flex items-center justify-between text-[11px] text-slate-400">
                         <span>Verifizierte Accounts:</span>
                         <span className="font-bold text-emerald-700">
-                            {stats?.users?.verified || 0} / {stats?.users?.total || 0}
+                            {`${stats?.users?.verified || 0} / ${stats?.users?.total || 0}`}
                         </span>
                     </div>
                 </div>
@@ -740,7 +755,8 @@ export default function AdminDashboard() {
                                 System-Status
                             </span>
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-gold bg-white/10 px-2.5 py-0.5 rounded-full border border-gold/30">
-                                <Zap className="w-3 h-3 fill-current" /> Online
+                                <Zap className="w-3 h-3 fill-current" />
+                                <span>Online</span>
                             </span>
                         </div>
 
@@ -751,10 +767,10 @@ export default function AdminDashboard() {
                             </span>
                             {stats?.categories && stats.categories.length > 0 ? (
                                 stats.categories.slice(0, 4).map((cat, idx) => (
-                                    <div key={idx} className="space-y-1">
+                                    <div key={`cat-item-${idx}`} className="space-y-1">
                                         <div className="flex items-center justify-between text-[11px]">
                                             <span className="font-semibold text-sand truncate">{cat.category}</span>
-                                            <span className="text-gold font-bold">{cat.count} ({cat.percentage}%)</span>
+                                            <span className="text-gold font-bold">{`${cat.count} (${cat.percentage}%)`}</span>
                                         </div>
                                         <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
                                             <div
@@ -770,7 +786,10 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-
+                    <div className="pt-3 mt-3 border-t border-white/10 flex items-center justify-between text-[10px] text-sand/70">
+                        <span>Datenbank & API</span>
+                        <span className="font-mono text-emerald-400 font-bold">100% Betriebsbereit</span>
+                    </div>
                 </div>
 
             </div>

@@ -38,6 +38,7 @@ import {
     manuallyVerifyUserEmail,
     deleteAdminUser
 } from '@/api/admin';
+import { toast } from 'react-hot-toast';
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState([]);
@@ -65,7 +66,6 @@ export default function AdminUsersPage() {
     const [userToDelete, setUserToDelete] = useState(null);
     const [actionMenuOpenId, setActionMenuOpenId] = useState(null);
     const [copiedCode, setCopiedCode] = useState(null);
-    const [feedbackMessage, setFeedbackMessage] = useState(null);
 
     // Fetch users from API
     const fetchUsers = useCallback(async () => {
@@ -86,7 +86,7 @@ export default function AdminUsersPage() {
             }
         } catch (error) {
             console.error('Failed to load users:', error);
-            showFeedback('Fehler beim Laden der Benutzer.', 'error');
+            toast.error('Fehler beim Laden der Benutzer.');
         } finally {
             setLoading(false);
         }
@@ -99,27 +99,24 @@ export default function AdminUsersPage() {
         return () => clearTimeout(timer);
     }, [fetchUsers]);
 
-    const showFeedback = (msg, type = 'success') => {
-        setFeedbackMessage({ msg, type });
-        setTimeout(() => setFeedbackMessage(null), 4000);
-    };
-
     // Actions
     const handleToggleSuspend = async (user) => {
         setActionLoading(true);
+        const newStatus = !user.is_suspended;
+        const toastId = toast.loading(newStatus ? 'Benutzer wird gesperrt...' : 'Benutzer wird reaktiviert...');
         try {
-            const newStatus = !user.is_suspended;
             const res = await toggleUserSuspension(user.id, newStatus);
             if (res.success || res.data?.success) {
-                showFeedback(
-                    res.data?.message || (newStatus ? `Konto von "${user.email}" wurde gesperrt.` : `Konto von "${user.email}" wurde reaktiviert.`)
+                toast.success(
+                    res.data?.message || (newStatus ? `Konto von "${user.email}" wurde gesperrt.` : `Konto von "${user.email}" wurde reaktiviert.`),
+                    { id: toastId }
                 );
                 fetchUsers();
             } else {
-                showFeedback(res.error || res.data?.error || 'Aktion fehlgeschlagen.', 'error');
+                toast.error(res.error || res.data?.error || 'Aktion fehlgeschlagen.', { id: toastId });
             }
         } catch (err) {
-            showFeedback(err.response?.data?.error || err.message || 'Aktion fehlgeschlagen.', 'error');
+            toast.error(err.response?.data?.error || err.message || 'Aktion fehlgeschlagen.', { id: toastId });
         } finally {
             setActionLoading(false);
             setActionMenuOpenId(null);
@@ -128,16 +125,17 @@ export default function AdminUsersPage() {
 
     const handleVerifyEmail = async (user) => {
         setActionLoading(true);
+        const toastId = toast.loading('E-Mail wird verifiziert...');
         try {
             const res = await manuallyVerifyUserEmail(user.id);
             if (res.success || res.data?.success) {
-                showFeedback(res.data?.message || `E-Mail für "${user.email}" wurde manuell verifiziert.`);
+                toast.success(res.data?.message || `E-Mail für "${user.email}" wurde manuell verifiziert.`, { id: toastId });
                 fetchUsers();
             } else {
-                showFeedback(res.error || res.data?.error || 'Verifizierung fehlgeschlagen.', 'error');
+                toast.error(res.error || res.data?.error || 'Verifizierung fehlgeschlagen.', { id: toastId });
             }
         } catch (err) {
-            showFeedback(err.response?.data?.error || err.message || 'Verifizierung fehlgeschlagen.', 'error');
+            toast.error(err.response?.data?.error || err.message || 'Verifizierung fehlgeschlagen.', { id: toastId });
         } finally {
             setActionLoading(false);
             setActionMenuOpenId(null);
@@ -147,18 +145,19 @@ export default function AdminUsersPage() {
     const handleDeleteUser = async () => {
         if (!userToDelete) return;
         setActionLoading(true);
+        const toastId = toast.loading('Benutzer wird gelöscht...');
         try {
             const res = await deleteAdminUser(userToDelete.id);
             if (res.success || res.data?.success) {
-                showFeedback(res.data?.message || `Benutzer "${userToDelete.email}" wurde gelöscht.`);
+                toast.success(res.data?.message || `Benutzer "${userToDelete.email}" wurde endgültig gelöscht.`, { id: toastId });
                 setDeleteModalOpen(false);
                 setUserToDelete(null);
                 fetchUsers();
             } else {
-                showFeedback(res.error || res.data?.error || 'Löschen fehlgeschlagen.', 'error');
+                toast.error(res.error || res.data?.error || 'Löschen fehlgeschlagen.', { id: toastId });
             }
         } catch (err) {
-            showFeedback(err.response?.data?.error || err.message || 'Löschen fehlgeschlagen.', 'error');
+            toast.error(err.response?.data?.error || err.message || 'Löschen fehlgeschlagen.', { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -167,6 +166,7 @@ export default function AdminUsersPage() {
     const copyToClipboard = (text, id) => {
         navigator.clipboard.writeText(text);
         setCopiedCode(id);
+        toast.success('In die Zwischenablage kopiert!');
         setTimeout(() => setCopiedCode(null), 2000);
     };
 
@@ -180,26 +180,7 @@ export default function AdminUsersPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-[1440px] mx-auto pb-10">
-
-            {/* ─── Feedback Toast Alert ─── */}
-            {feedbackMessage && (
-                <div
-                    className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-xs font-bold border backdrop-blur-md transition-all duration-300 ${feedbackMessage.type === 'error'
-                        ? 'bg-rose-900/90 text-rose-100 border-rose-500/30'
-                        : 'bg-emerald-900/90 text-emerald-100 border-emerald-500/30'
-                        }`}
-                >
-                    {feedbackMessage.type === 'error' ? (
-                        <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                    ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    )}
-                    <span>{feedbackMessage.msg}</span>
-                </div>
-            )}
-
-            {/* ─── Top Page Header ─── */}
+        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold">

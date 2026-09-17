@@ -11,7 +11,8 @@ import crypto from 'crypto';
  */
 export const createListing = async (req, res) => {
     try {
-        const { id } = req.user;
+        const { id, role } = req.user;
+        const isAdmin = role === 'ADMIN';
         const { title, price, description, category, subcategory, location, isNegotiable } = req.body;
 
         // 1. Validate required fields
@@ -26,18 +27,35 @@ export const createListing = async (req, res) => {
         );
         const activeCount = parseInt(countRes.rows[0]?.count || 0, 10);
 
-        // 3. Fetch subscription-based listing limit
-        const features = await getUserFeatures(id);
-        const limit = features.listing_limit; // -1 = unlimited
+        // 3. Fetch subscription-based listing limit (bypassed for ADMIN)
+        if (!isAdmin) {
+            const features = await getUserFeatures(id);
+            const limit = features.listing_limit; // -1 = unlimited
 
-        if (limit !== -1 && activeCount >= limit) {
-            return res.status(403).json({
-                success: false,
-                error: `Du hast das Limit von ${limit} aktiven Anzeigen erreicht. Upgrade auf Business, um unbegrenzt Anzeigen zu erstellen.`,
-                upgrade_required: true,
-                current_plan: features.plan_name,
-                listing_limit: limit,
-            });
+            if (limit !== -1 && activeCount >= limit) {
+                return res.status(403).json({
+                    success: false,
+                    error: `Du hast das Limit von ${limit} aktiven Anzeigen erreicht. Upgrade auf Business, um unbegrenzt Anzeigen zu erstellen.`,
+                    upgrade_required: true,
+                    current_plan: features.plan_name,
+                    listing_limit: limit,
+                });
+            }
+        } else {
+            // Ensure admin exists in users and company_profiles for foreign key constraints
+            await pool.query(
+                `INSERT INTO users (id, email, password_hash, role, user_type, email_verified, is_suspended, created_at, updated_at)
+                 VALUES ($1, $2, 'admin_account', 'ADMIN', 'COMMERCIAL', TRUE, FALSE, NOW(), NOW())
+                 ON CONFLICT (id) DO UPDATE SET role = 'ADMIN', user_type = 'COMMERCIAL', email_verified = TRUE`,
+                [id, req.user.email || 'admin@campuna.com']
+            ).catch(() => {});
+
+            await pool.query(
+                `INSERT INTO company_profiles (user_id, company_name, updated_at)
+                 VALUES ($1, 'Campuna Official', NOW())
+                 ON CONFLICT (user_id) DO NOTHING`,
+                [id]
+            ).catch(() => {});
         }
 
         // 4. Parse incoming data
@@ -69,6 +87,7 @@ export const createListing = async (req, res) => {
             .replace(/^-+|-+$/g, '');
 
         const listingId = crypto.randomUUID();
+        const initialStatus = isAdmin ? 'APPROVED' : 'REVIEW';
 
         // 6. Create Listing in single table
         const insertRes = await pool.query(
@@ -76,7 +95,7 @@ export const createListing = async (req, res) => {
                 id, user_id, title, slug, description, price, negotiable, location,
                 condition, category, subcategory, status, featured, boosted_until, images, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'REVIEW', false, NULL, $12, NOW(), NOW()
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, NULL, $13, NOW(), NOW()
             ) RETURNING *`,
             [
                 listingId,
@@ -90,6 +109,7 @@ export const createListing = async (req, res) => {
                 req.body.condition || 'Gebraucht',
                 category,
                 subcategory || '',
+                initialStatus,
                 imageUrls
             ]
         );
@@ -104,12 +124,26 @@ export const createListing = async (req, res) => {
                     text_score, image_score, price_score, fraud_risk_score,
                     ai_reasons, status, created_at, updated_at
                 ) VALUES (
-                    $1, $2, 50, 'MANUAL_REVIEW', 0.50,
-                    60, 60, 60, 15,
-                    '["Neues Inserat eingereicht - wartet auf manuelle Prüfung."]'::jsonb,
-                    'PENDING', NOW(), NOW()
+                    $1, $2, $3, $4, $5,
+                    $6, $7, $8, $9,
+                    $10::jsonb,
+                    $11, NOW(), NOW()
                 ) ON CONFLICT (listing_id) DO NOTHING`,
-                [crypto.randomUUID(), listing.id]
+                [
+                    crypto.randomUUID(),
+                    listing.id,
+                    isAdmin ? 99 : 50,
+                    isAdmin ? 'APPROVE' : 'MANUAL_REVIEW',
+                    isAdmin ? 1.0 : 0.50,
+                    isAdmin ? 99 : 60,
+                    isAdmin ? 99 : 60,
+                    isAdmin ? 99 : 60,
+                    0,
+                    isAdmin
+                        ? JSON.stringify(['Direkt freigegeben durch Administrator.'])
+                        : JSON.stringify(['Neues Inserat eingereicht - wartet auf manuelle Prüfung.']),
+                    isAdmin ? 'APPROVED' : 'PENDING'
+                ]
             );
         } catch (modErr) {
             console.warn('Notice: initial listing_moderation creation:', modErr.message);
@@ -120,7 +154,7 @@ export const createListing = async (req, res) => {
 
         return res.status(201).json({
             success: true,
-            message: 'Anzeige erfolgreich erstellt.',
+            message: isAdmin ? 'Anzeige erfolgreich erstellt und direkt freigegeben.' : 'Anzeige erfolgreich erstellt.',
             listing,
             pioneer_badge_info: {
                 active_approved_count: activeCount + 1,
@@ -218,7 +252,7 @@ export const getAllListings = async (req, res) => {
             LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN private_profiles pp ON u.id = pp.user_id
             LEFT JOIN company_profiles cp ON u.id = cp.user_id
-            WHERE l.status = 'APPROVED'
+            WHERE l.status = 'APPROVED' AND (u.is_suspended IS FALSE OR u.is_suspended IS NULL)
             ORDER BY 
                 (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) DESC,
                 l.featured DESC,
@@ -321,8 +355,18 @@ export const getListingDetail = async (req, res) => {
         }
 
         // Retrieve profile details based on account type
-        const userRes = await pool.query('SELECT user_type, role, email FROM users WHERE id = $1', [listing.user_id]);
+        const userRes = await pool.query('SELECT user_type, role, email, is_suspended FROM users WHERE id = $1', [listing.user_id]);
         const user = userRes.rows[0] || {};
+
+        if (user.is_suspended) {
+            const isAdmin = req.user && (req.user.role === 'ADMIN');
+            if (!isAdmin) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Dieses Inserat ist nicht mehr verfügbar, da das Verkäuferkonto gesperrt wurde.'
+                });
+            }
+        }
 
         let profile = null;
         if (user.user_type === 'COMMERCIAL') {
@@ -382,6 +426,12 @@ export const getListingDetail = async (req, res) => {
 export const getListingsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
+
+        // Check if seller is suspended
+        const userCheck = await pool.query('SELECT is_suspended FROM users WHERE id = $1', [userId]);
+        if (userCheck.rowCount === 0 || userCheck.rows[0].is_suspended) {
+            return res.status(404).json({ success: false, error: 'Verkäufer nicht gefunden oder gesperrt.' });
+        }
 
         const query = `
             SELECT 
@@ -620,7 +670,10 @@ export const updateListing = async (req, res) => {
                 .replace(/^-+|-+$/g, '');
         }
 
-        // 6. Update listing: Set status to 'REVIEW' for mandatory moderation approval
+        const isAdmin = req.user.role === 'ADMIN';
+        const targetStatus = isAdmin ? (existingListing.status || 'APPROVED') : 'REVIEW';
+
+        // 6. Update listing: Set status to 'REVIEW' for regular users or preserve for ADMIN
         const updateRes = await pool.query(
             `UPDATE listings
              SET title = $1,
@@ -633,12 +686,12 @@ export const updateListing = async (req, res) => {
                  category = $8,
                  subcategory = $9,
                  images = $10,
-                 status = 'REVIEW',
-                 reviewed_by_id = NULL,
-                 reviewed_by_type = NULL,
-                 reviewed_at = NULL,
+                 status = $11,
+                 reviewed_by_id = CASE WHEN $12 = TRUE THEN $13 ELSE NULL END,
+                 reviewed_by_type = CASE WHEN $12 = TRUE THEN 'ADMIN' ELSE NULL END,
+                 reviewed_at = CASE WHEN $12 = TRUE THEN NOW() ELSE NULL END,
                  updated_at = NOW()
-             WHERE id = $11
+             WHERE id = $14
              RETURNING *`,
             [
                 title,
@@ -651,36 +704,56 @@ export const updateListing = async (req, res) => {
                 category,
                 subcategory || '',
                 finalImages,
+                targetStatus,
+                isAdmin,
+                isAdmin ? userId : null,
                 id
             ]
         );
 
         const updatedListing = updateRes.rows[0];
 
-        // 7. Upsert listing_moderation record to mark status as PENDING review
+        // 7. Upsert listing_moderation record
         try {
-            await pool.query(
-                `INSERT INTO listing_moderation (
-                    listing_id, ai_score, ai_decision, confidence_score, text_score, image_score, price_score, fraud_risk_score, ai_reasons, status, updated_at
-                ) VALUES (
-                    $1, 50, 'MANUAL_REVIEW', 0.50, 50, 50, 50, 10, '["Inserat wurde vom Verkäufer überarbeitet und erfordert erneute Prüfung."]'::jsonb, 'PENDING', NOW()
-                )
-                ON CONFLICT (listing_id) DO UPDATE SET
-                    status = 'PENDING',
-                    ai_decision = 'MANUAL_REVIEW',
-                    ai_reasons = '["Inserat wurde vom Verkäufer überarbeitet und erfordert erneute Prüfung."]'::jsonb,
-                    admin_notes = NULL,
-                    reviewed_at = NULL,
-                    updated_at = NOW()`,
-                [id]
-            );
+            if (isAdmin) {
+                await pool.query(
+                    `INSERT INTO listing_moderation (
+                        listing_id, ai_score, ai_decision, confidence_score, text_score, image_score, price_score, fraud_risk_score, ai_reasons, status, updated_at
+                    ) VALUES (
+                        $1, 99, 'APPROVE', 1.0, 99, 99, 99, 0, '["Inserat wurde von einem Administrator aktualisiert und freigegeben."]'::jsonb, 'APPROVED', NOW()
+                    )
+                    ON CONFLICT (listing_id) DO UPDATE SET
+                        status = 'APPROVED',
+                        ai_decision = 'APPROVE',
+                        ai_reasons = '["Inserat wurde von einem Administrator aktualisiert und freigegeben."]'::jsonb,
+                        reviewed_at = NOW(),
+                        updated_at = NOW()`,
+                    [id]
+                );
+            } else {
+                await pool.query(
+                    `INSERT INTO listing_moderation (
+                        listing_id, ai_score, ai_decision, confidence_score, text_score, image_score, price_score, fraud_risk_score, ai_reasons, status, updated_at
+                    ) VALUES (
+                        $1, 50, 'MANUAL_REVIEW', 0.50, 50, 50, 50, 10, '["Inserat wurde vom Verkäufer überarbeitet und erfordert erneute Prüfung."]'::jsonb, 'PENDING', NOW()
+                    )
+                    ON CONFLICT (listing_id) DO UPDATE SET
+                        status = 'PENDING',
+                        ai_decision = 'MANUAL_REVIEW',
+                        ai_reasons = '["Inserat wurde vom Verkäufer überarbeitet und erfordert erneute Prüfung."]'::jsonb,
+                        admin_notes = NULL,
+                        reviewed_at = NULL,
+                        updated_at = NOW()`,
+                    [id]
+                );
+            }
         } catch (modErr) {
             console.warn('Notice: listing_moderation update on listing edit:', modErr.message);
         }
 
         return res.status(200).json({
             success: true,
-            message: 'Inserat erfolgreich aktualisiert. Es befindet sich nun zur Prüfung in der Moderation.',
+            message: isAdmin ? 'Inserat erfolgreich aktualisiert.' : 'Inserat erfolgreich aktualisiert. Es befindet sich nun zur Prüfung in der Moderation.',
             listing: {
                 ...updatedListing,
                 price: parseFloat(updatedListing.price) || 0,

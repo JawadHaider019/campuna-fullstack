@@ -21,7 +21,8 @@ import {
     Package,
     Heart,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Rocket
 } from 'lucide-react';
 import { getPublicProfile } from '@/api/profile';
 import { getListingsByUser } from '@/api/listings';
@@ -204,10 +205,10 @@ const ListingCard = React.memo(({ item: rawItem }) => {
                 {/* Top Badges */}
                 <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap pointer-events-none">
-                        {/* 🚀 Boosted Badge */}
+                        {/* Boosted Badge */}
                         {item.is_boosted && (
                             <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
-                                <span>🚀</span>
+                                <Rocket className="w-2.5 h-2.5 text-slate-950" />
                                 <span>BOOSTED</span>
                             </span>
                         )}

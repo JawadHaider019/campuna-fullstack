@@ -391,56 +391,110 @@ export const updateAdminReportStatus = async (req, res) => {
 
         const currentReport = reportRes.rows[0];
 
-        // 2. Update report status
-        const updateRes = await pool.query(
-            `UPDATE listing_reports
-             SET status = $1,
-                 reviewed_by_id = $2,
-                 reviewed_at = NOW(),
-                 admin_note = $3,
-                 updated_at = NOW()
-             WHERE id = $4
-             RETURNING *`,
-            [status, adminId, admin_note ? admin_note.trim() : null, id]
-        );
-
-        const updatedReport = updateRes.rows[0];
+        // 2. Update report status with fallback for admin table foreign key
+        let updatedReport;
+        try {
+            const updateRes = await pool.query(
+                `UPDATE listing_reports
+                 SET status = $1,
+                     reviewed_by_id = $2,
+                     reviewed_at = NOW(),
+                     admin_note = $3,
+                     updated_at = NOW()
+                 WHERE id = $4
+                 RETURNING *`,
+                [status, adminId, admin_note ? admin_note.trim() : null, id]
+            );
+            updatedReport = updateRes.rows[0];
+        } catch (fkErr) {
+            const updateRes = await pool.query(
+                `UPDATE listing_reports
+                 SET status = $1,
+                     reviewed_by_id = NULL,
+                     reviewed_at = NOW(),
+                     admin_note = $2,
+                     updated_at = NOW()
+                 WHERE id = $3
+                 RETURNING *`,
+                [status, admin_note ? admin_note.trim() : null, id]
+            );
+            updatedReport = updateRes.rows[0];
+        }
 
         // 3. Optional Listing Action (e.g., Reject/Deactivate)
         if (listing_action === 'REJECT') {
-            await pool.query(
-                `UPDATE listings 
-                 SET status = 'REJECTED', 
-                     reviewed_by_type = 'ADMIN', 
-                     reviewed_by_id = $1, 
-                     reviewed_at = NOW(), 
-                     updated_at = NOW() 
-                 WHERE id = $2`,
-                [adminId, currentReport.listing_id]
-            );
+            try {
+                await pool.query(
+                    `UPDATE listings 
+                     SET status = 'REJECTED', 
+                         reviewed_by_type = 'ADMIN', 
+                         reviewed_by_id = $1, 
+                         reviewed_at = NOW(), 
+                         updated_at = NOW() 
+                     WHERE id = $2`,
+                    [adminId, currentReport.listing_id]
+                );
+            } catch {
+                await pool.query(
+                    `UPDATE listings 
+                     SET status = 'REJECTED', 
+                         reviewed_by_type = 'ADMIN', 
+                         reviewed_by_id = NULL, 
+                         reviewed_at = NOW(), 
+                         updated_at = NOW() 
+                     WHERE id = $1`,
+                    [currentReport.listing_id]
+                );
+            }
 
             // Also mark all other pending reports for this listing as REVIEWED
-            await pool.query(
-                `UPDATE listing_reports
-                 SET status = 'REVIEWED',
-                     reviewed_by_id = $1,
-                     reviewed_at = NOW(),
-                     admin_note = COALESCE(admin_note, 'Automatisch abgeschlossen durch Inserat-Sperrung.'),
-                     updated_at = NOW()
-                 WHERE listing_id = $2 AND status = 'PENDING'`,
-                [adminId, currentReport.listing_id]
-            );
+            try {
+                await pool.query(
+                    `UPDATE listing_reports
+                     SET status = 'REVIEWED',
+                         reviewed_by_id = $1,
+                         reviewed_at = NOW(),
+                         admin_note = COALESCE(admin_note, 'Automatisch abgeschlossen durch Inserat-Sperrung.'),
+                         updated_at = NOW()
+                     WHERE listing_id = $2 AND status = 'PENDING'`,
+                    [adminId, currentReport.listing_id]
+                );
+            } catch {
+                await pool.query(
+                    `UPDATE listing_reports
+                     SET status = 'REVIEWED',
+                         reviewed_by_id = NULL,
+                         reviewed_at = NOW(),
+                         admin_note = COALESCE(admin_note, 'Automatisch abgeschlossen durch Inserat-Sperrung.'),
+                         updated_at = NOW()
+                     WHERE listing_id = $1 AND status = 'PENDING'`,
+                    [currentReport.listing_id]
+                );
+            }
         } else if (listing_action === 'APPROVE') {
-            await pool.query(
-                `UPDATE listings 
-                 SET status = 'APPROVED', 
-                     reviewed_by_type = 'ADMIN', 
-                     reviewed_by_id = $1, 
-                     reviewed_at = NOW(), 
-                     updated_at = NOW() 
-                 WHERE id = $2`,
-                [adminId, currentReport.listing_id]
-            );
+            try {
+                await pool.query(
+                    `UPDATE listings 
+                     SET status = 'APPROVED', 
+                         reviewed_by_type = 'ADMIN', 
+                         reviewed_by_id = $1, 
+                         reviewed_at = NOW(), 
+                         updated_at = NOW() 
+                     WHERE id = $2`,
+                    [adminId, currentReport.listing_id]
+                );
+            } catch {
+                await pool.query(
+                    `UPDATE listings 
+                     SET status = 'APPROVED', 
+                         reviewed_by_type = 'ADMIN', 
+                         reviewed_by_id = NULL, 
+                         reviewed_at = NOW(), 
+                         updated_at = NOW() 
+                     WHERE id = $1`,
+                    [currentReport.listing_id]
+                );
+            }
         }
 
         // 4. Optional Seller Action (Suspend account)
