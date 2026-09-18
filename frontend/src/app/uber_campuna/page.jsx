@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { motion, AnimatePresence, useInView, useAnimation } from 'framer-motion';
 import { Compass, Users, Layers, ShieldCheck, Heart, Sparkles, Send, CheckCircle2, ArrowRight, Mail, ChevronsDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Breadcrumbs from '../components/Breadcrumbs';
 
 const CTA = lazy(() => import('../components/CTA'));
 
@@ -288,8 +289,16 @@ export default function AboutPage() {
                 </div>
             </section>
 
+            {/* ── Breadcrumbs below Hero ── */}
+            <div className="max-w-7xl mx-auto px-6 md:px-12 pt-6 pb-0">
+                <Breadcrumbs
+                    items={[{ label: 'Über Campuna' }]}
+                    variant="light"
+                />
+            </div>
+
             {/* SEO Marketplace Strip */}
-            <section className="pt-10 sm:pt-12 relative z-20">
+            <section className="pt-6 sm:pt-8 relative z-20">
                 <div className="max-w-7xl mx-auto px-6 md:px-12">
                     <motion.div
                         initial={{ opacity: 0, y: 16 }}

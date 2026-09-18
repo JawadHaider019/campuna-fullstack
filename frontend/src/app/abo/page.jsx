@@ -18,6 +18,7 @@ import {
     BarChart2, Loader2, Crown, ArrowRight,
     AlertTriangle, ChevronDown, Shield, Sparkles
 } from 'lucide-react';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -212,7 +213,7 @@ export default function AboPage() {
                 <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gold/10 blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-12 -left-12 w-72 h-72 rounded-full bg-white/5 blur-3xl pointer-events-none" />
 
-                <div className="relative max-w-4xl mx-auto px-4 text-center">
+                <div className="relative max-w-4xl mx-auto px-4 text-center flex flex-col items-center">
                     <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block mb-4">
                         Campuna Business
                     </span>
@@ -234,23 +235,31 @@ export default function AboPage() {
                             <button
                                 id="btn-hero-upgrade"
                                 onClick={openUpgrade}
-                                className="inline-flex items-center gap-2 bg-gold hover:bg-gold-dark text-charcoal font-bold px-8 py-4 rounded-full text-sm uppercase tracking-wider transition-all shadow-lg hover:shadow-xl hover:scale-105 cursor-pointer"
+                                className="inline-flex items-center gap-2 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black px-8 py-4 rounded-full text-sm uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-gold/25 hover:scale-105 active:scale-95 cursor-pointer group"
                             >
-                                Jetzt upgraden
-                                <ArrowRight className="w-4 h-4" />
+                                <span>Jetzt upgraden</span>
+                                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
                             </button>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-6xl mx-auto px-4 py-16 space-y-20">
+            {/* ── Breadcrumbs below Hero ── */}
+            <div className="max-w-6xl mx-auto px-4 pt-6 pb-0">
+                <Breadcrumbs
+                    items={[{ label: 'Business-Tarife' }]}
+                    variant="light"
+                />
+            </div>
+
+            <div className="max-w-6xl mx-auto px-4 py-10 space-y-20">
 
                 {/* ── Status Banner ── */}
                 {isLoggedIn && (
                     <div className={`rounded-3xl p-6 border flex flex-col sm:flex-row items-start sm:items-center gap-4 ${isOnBusiness ? 'bg-forest/5 border-forest/20' : 'bg-gold/5 border-gold/20'}`}>
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${isOnBusiness ? 'bg-forest/15 text-forest' : 'bg-gold/20 text-gold-dark'}`}>
-                            {isOnBusiness ? <Crown className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
+                            {isOnBusiness ? <Sparkles className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
                         </div>
                         <div className="flex-1">
                             <h2 className="font-bold text-charcoal font-sans text-sm">
@@ -311,7 +320,7 @@ export default function AboPage() {
                             </div>
 
                             <ul className="space-y-3 flex-1 mb-8">
-                                {['Bis zu 3 aktive Anzeigen', 'Firmenprofil (500 Zeichen)', '0 CC Startguthaben (100 CC mit Referral)', 'Normale Sichtbarkeit', 'Kontaktformular für Kunden', 'Eigener Referral-Code'].map((f) => (
+                                {['Bis zu 3 aktive Anzeigen', 'Firmenprofil (500 Zeichen)', '0 CC Startguthaben (100 CC with Referral)', 'Normale Sichtbarkeit', 'Kontaktformular für Kunden', 'Eigener Referral-Code'].map((f) => (
                                     <li key={f} className="flex items-center gap-2.5 text-sm text-charcoal/70 font-sans">
                                         <Check className="w-4 h-4 text-charcoal/30 shrink-0" />
                                         {f}
@@ -330,7 +339,7 @@ export default function AboPage() {
 
                             <div className="relative mb-6">
                                 <span className="inline-flex items-center gap-1.5 bg-gold/20 text-gold rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4 border border-gold/30">
-                                    <Crown className="w-3 h-3" /> Business
+                                    <Sparkles className="w-3 h-3" /> Business
                                 </span>
                                 <div className="flex items-end gap-2 mb-2">
                                     <span className="text-5xl font-black text-white font-sans">€29</span>
@@ -363,9 +372,10 @@ export default function AboPage() {
                                 <button
                                     id="btn-card-upgrade"
                                     onClick={openUpgrade}
-                                    className="relative w-full py-3 rounded-xl text-center text-xs font-bold uppercase tracking-wider font-sans bg-gold hover:bg-gold-dark text-charcoal transition-all shadow-md hover:shadow-lg hover:scale-[1.02] cursor-pointer"
+                                    className="relative w-full py-3.5 rounded-xl text-center text-xs font-black uppercase tracking-wider font-sans bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-gold/25 hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 group"
                                 >
-                                    {isLoggedIn ? 'Jetzt upgraden' : 'Registrieren & upgraden'}
+                                    <span>{isLoggedIn ? 'Jetzt upgraden' : 'Registrieren & upgraden'}</span>
+                                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
                                 </button>
                             )}
                         </div>
@@ -528,10 +538,10 @@ export default function AboPage() {
                             <button
                                 id="btn-cta-upgrade"
                                 onClick={openUpgrade}
-                                className="inline-flex items-center gap-2 bg-gold hover:bg-gold-dark text-charcoal font-bold px-10 py-4 rounded-full text-sm uppercase tracking-wider transition-all shadow-xl hover:scale-105 cursor-pointer"
+                                className="inline-flex items-center gap-2 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black px-10 py-4 rounded-full text-sm uppercase tracking-wider transition-all duration-300 shadow-xl hover:shadow-gold/30 hover:scale-105 active:scale-95 cursor-pointer group"
                             >
-                                {isLoggedIn ? 'Jetzt upgraden' : 'Kostenlos registrieren'}
-                                <ArrowRight className="w-4 h-4" />
+                                <span>{isLoggedIn ? 'Jetzt upgraden' : 'Kostenlos registrieren'}</span>
+                                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
                             </button>
                         </div>
                     </section>
@@ -575,7 +585,7 @@ export default function AboPage() {
                                 </button>
                                 <div className="flex items-center gap-3 relative">
                                     <div className="w-12 h-12 rounded-2xl bg-gold/20 border border-gold/30 flex items-center justify-center">
-                                        <Crown className="w-6 h-6 text-gold" />
+                                        <Sparkles className="w-6 h-6 text-gold" />
                                     </div>
                                     <div>
                                         <h3 className="text-lg font-black text-white font-sans">Business aktivieren</h3>

@@ -41,6 +41,8 @@ import {
     toggleAdminListingFeatured
 } from '@/api/admin';
 import { toast } from 'react-hot-toast';
+import { getImageUrl } from '@/utils/imageUrl';
+import CircleLoader from '@/app/components/CircleLoader';
 
 export default function AdminListingsPage() {
     const router = useRouter();
@@ -526,12 +528,7 @@ export default function AdminListingsPage() {
                                 {loading ? (
                                     <tr>
                                         <td colSpan="8" className="py-16 text-center">
-                                            <div className="inline-flex flex-col items-center gap-2">
-                                                <div className="w-7 h-7 border-3 border-forest border-t-transparent rounded-full animate-spin" />
-                                                <span className="text-xs font-bold text-slate-400">
-                                                    Inserate werden geladen...
-                                                </span>
-                                            </div>
+                                            <CircleLoader size="md" color="forest" />
                                         </td>
                                     </tr>
                                 ) : listings.length === 0 ? (
@@ -552,7 +549,7 @@ export default function AdminListingsPage() {
                                     </tr>
                                 ) : (
                                     listings.map((item) => {
-                                        const mainImage = item.images?.[0] || '/logo.webp';
+                                        const mainImage = item.images?.[0] ? getImageUrl(item.images[0], '/logo.webp') : '/logo.webp';
                                         const isReview = item.status === 'REVIEW';
 
                                         return (
@@ -783,11 +780,8 @@ export default function AdminListingsPage() {
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-4">
                         {loading ? (
-                            <div className="col-span-full py-16 text-center">
-                                <div className="w-7 h-7 border-3 border-forest border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                                <span className="text-xs font-bold text-slate-400">
-                                    Inserate werden geladen...
-                                </span>
+                            <div className="col-span-full py-16 text-center flex items-center justify-center">
+                                <CircleLoader size="lg" color="forest" />
                             </div>
                         ) : listings.length === 0 ? (
                             <div className="col-span-full py-16 text-center bg-white border border-[#E8EAEF] rounded-3xl p-8">
@@ -796,7 +790,7 @@ export default function AdminListingsPage() {
                             </div>
                         ) : (
                             listings.map((item) => {
-                                const mainImage = item.images?.[0] || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
+                                const mainImage = item.images?.[0] ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
                                 const isBoosted = Boolean(item.is_boosted);
                                 const features = [
                                     item.category || 'Camping Zubehör',
@@ -1060,7 +1054,7 @@ export default function AdminListingsPage() {
                                 <div className="space-y-3">
                                     <div className="relative aspect-video sm:aspect-2/1 bg-slate-900 rounded-2xl overflow-hidden shadow-inner">
                                         <Image
-                                            src={selectedListing.images[activeImageIdx] || '/logo.webp'}
+                                            src={selectedListing.images[activeImageIdx] ? getImageUrl(selectedListing.images[activeImageIdx], '/logo.webp') : '/logo.webp'}
                                             alt={selectedListing.title}
                                             fill
                                             className="object-contain"
@@ -1077,7 +1071,7 @@ export default function AdminListingsPage() {
                                                         }`}
                                                 >
                                                     <Image
-                                                        src={img}
+                                                        src={getImageUrl(img)}
                                                         alt={`Bild ${idx + 1}`}
                                                         fill
                                                         className="object-cover"

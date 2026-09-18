@@ -49,7 +49,7 @@ export default function CTA({ onSellClick }) {
 
                             <button
                                 onClick={handleClick}
-                                className="relative w-full max-w-[320px] sm:w-[320px] bg-gradient-to-r from-gold to-beige hover:brightness-110 text-forest font-sans font-bold py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center text-[10px] uppercase tracking-wider shadow-lg hover:scale-[1.02] mx-auto lg:mx-0 cursor-pointer"
+                                className="relative w-full max-w-[320px] sm:w-[320px] bg-gradient-to-r from-gold to-beige hover:brightness-110 text-forest font-sans font-bold py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center text-[10px] sm:text-[12px] uppercase tracking-wider shadow-lg hover:scale-[1.02] mx-auto lg:mx-0 cursor-pointer"
                             >
                                 <span>INSERAT ERSTELLEN – KOSTENLOS</span>
                                 <ArrowRight className="w-4 h-4 absolute right-5 shrink-0" />

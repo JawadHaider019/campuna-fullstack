@@ -182,15 +182,18 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                 );
               })}
 
-              {/* Admin Portal Button or User Account Button */}
+              {/* Admin Panel Button or User Account Button */}
               {isAdmin ? (
                 <button
                   onClick={() => router.push('/admin')}
-                  className="relative flex items-center space-x-1.5 bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal font-sans text-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 group ml-1 cursor-pointer"
+                  className="relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-[#0A2218] via-forest to-[#0A2218] hover:from-forest hover:to-[#0A2218] text-white border border-gold/45 hover:border-gold font-sans text-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-full shadow-[0_2px_12px_rgba(0,99,13,0.25)] hover:shadow-[0_4px_22px_rgba(200,169,107,0.4)] hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-out group ml-1 cursor-pointer"
                   title="Zum Administrationsbereich"
                 >
-                  <ShieldCheck className="w-4 h-4 shrink-0 text-forest" />
-                  <span>Admin Portal</span>
+                  {/* Lazy shimmer beam on hover */}
+                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-out pointer-events-none" />
+
+                  <ShieldCheck className="w-4 h-4 shrink-0 text-gold group-hover:text-amber-300 group-hover:scale-115 group-hover:rotate-6 transition-all duration-500 ease-out" />
+                  <span className="relative z-10 text-white tracking-wide">Admin Panel</span>
                 </button>
               ) : (
                 <button
@@ -274,10 +277,11 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                         setIsOpen(false);
                         router.push('/admin');
                       }}
-                      className="w-full bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal py-3 rounded-full font-sans text-sm font-bold uppercase tracking-wider transition-colors duration-300 shadow-md flex items-center justify-center space-x-2 min-h-[48px] cursor-pointer"
+                      className="relative overflow-hidden w-full bg-gradient-to-r from-[#0A2218] via-forest to-[#0A2218] hover:from-forest hover:to-[#0A2218] text-white border border-gold/45 hover:border-gold py-3 rounded-full font-sans text-sm font-bold uppercase tracking-wider transition-all duration-500 ease-out shadow-[0_2px_12px_rgba(0,99,13,0.25)] hover:shadow-[0_4px_22px_rgba(200,169,107,0.4)] flex items-center justify-center space-x-2 min-h-[48px] group cursor-pointer"
                     >
-                      <ShieldCheck className="w-4 h-4 shrink-0 text-forest" />
-                      <span>Admin Portal</span>
+                      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-out pointer-events-none" />
+                      <ShieldCheck className="w-4.5 h-4.5 shrink-0 text-gold group-hover:text-amber-300 group-hover:scale-115 transition-all duration-500" />
+                      <span className="relative z-10 text-white tracking-wide">Admin Panel</span>
                     </button>
                   ) : (
                     <button

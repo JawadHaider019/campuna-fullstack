@@ -614,7 +614,8 @@ export const PROVIDERS = [
     rating: u.rating,
     location: u.location,
     verified: u.verified,
-    sellerType: u.sellerType
+    sellerType: u.sellerType,
+    achievements: u.achievements || [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }]
   })),
   {
     id: 'prov_1',

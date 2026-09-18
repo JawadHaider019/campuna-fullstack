@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="goldSandGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C8A96B" />
+      <stop offset="100%" stop-color="#f7f3ea" />
+    </linearGradient>
+    <filter id="badgeShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.25" />
+    </filter>
+  </defs>
+
+  <!-- Clean Circular Background with Gold-Sand Gradient -->
+  <circle cx="60" cy="60" r="54" fill="url(#goldSandGrad)" stroke="#FFFFFF" stroke-width="4" filter="url(#badgeShadow)" />
+
+  <!-- Campuna Forest Crown Icon -->
+  <path
+    d="M36 74h48v4a2 2 0 0 1-2 2H38a2 2 0 0 1-2-2v-4zm0-6l4-24 12 12 8-16 8 16 12-12 4 24H36z"
+    fill="#00630D"
+  />
+</svg>

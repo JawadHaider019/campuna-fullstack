@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import CircleLoader from '@/app/components/CircleLoader';
 
 /**
  * Direct route for /nachrichten/:id
@@ -21,13 +22,7 @@ export default function ConversationRedirectPage() {
     }, [id, router]);
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#f7f5f0]">
-            <div className="flex flex-col items-center gap-2">
-                <div className="w-10 h-10 border-4 border-forest border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-bold text-forest uppercase tracking-wider">
-                    Unterhaltung wird geöffnet...
-                </p>
-            </div>
-        </div>
+        <CircleLoader size="lg" color="forest" fullPage />
     );
 }
+

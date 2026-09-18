@@ -26,7 +26,8 @@ export const STATIC_USERS = [
         listingsCount: 4,
         memberSince: '2022-04-10',
         description: 'Ihr Fachpartner für Wohnmobile, Kastenwagen und Wohnwagen. Wir bieten Neufahrzeuge und geprüfte Gebrauchtwagen.',
-        badges: ['Verifizierter Händler', 'Meisterwerkstatt', 'Top Bewertung']
+        badges: ['Meisterwerkstatt', 'Top Bewertung'],
+        achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }]
     },
     {
         id: 'usr_gas_and_go',
@@ -48,7 +49,8 @@ export const STATIC_USERS = [
         listingsCount: 2,
         memberSince: '2023-02-11',
         description: 'Zertifizierter mobiler Gasservice für Wohnmobile, Caravans und Boote nach G607 und G608.',
-        badges: ['Zertifizierter Betrieb', 'Gewerblich verifiziert', 'Schnelle Antwort']
+        badges: ['Zertifizierter Betrieb', 'Schnelle Antwort'],
+        achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 2 }]
     },
     {
         id: 'usr_stefan_bergmann',

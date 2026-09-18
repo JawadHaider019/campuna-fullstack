@@ -38,6 +38,10 @@ import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { STATIC_LISTINGS } from '@/data';
 import { toast } from 'react-hot-toast';
+import { getImageUrl } from '@/utils/imageUrl';
+import PioneerBadge from '@/app/components/PioneerBadge';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import CircleLoader from '@/app/components/CircleLoader';
 
 function slugifyTitle(title = '') {
     return title
@@ -224,10 +228,10 @@ export default function ListingDetailPage() {
                     try {
                         const res = await getListingDetail(listingId);
                         if (res.success && res.data?.listing) {
-                            const apiMatch = res.data.listing;
-                            const images = apiMatch.images && apiMatch.images.length > 0
+                            const rawImages = apiMatch.images && apiMatch.images.length > 0
                                 ? apiMatch.images
                                 : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
+                            const images = rawImages.map(img => getImageUrl(img, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'));
 
                             foundListing = {
                                 id: apiMatch.id,
@@ -278,9 +282,10 @@ export default function ListingDetailPage() {
                             });
 
                             if (match) {
-                                const images = match.images && match.images.length > 0
+                                const rawImages = match.images && match.images.length > 0
                                     ? match.images
                                     : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
+                                const images = rawImages.map(img => getImageUrl(img, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'));
 
                                 foundListing = {
                                     id: match.id,
@@ -345,7 +350,6 @@ export default function ListingDetailPage() {
                     // Fetch related listings from database or fallback to static
                     getAllListings().then(res => {
                         if (res.success && active && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
-                            const dbListings = res.data.listings || [];
                             const mapped = dbListings.map(l => ({
                                 id: l.id,
                                 title: l.title || 'Camping Angebot',
@@ -353,7 +357,7 @@ export default function ListingDetailPage() {
                                 pricePeriod: l.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
                                 location: l.location || 'Deutschland',
                                 displayLocation: l.location || 'Deutschland',
-                                images: l.images && l.images.length > 0 ? l.images : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80']
+                                images: (l.images && l.images.length > 0 ? l.images : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80']).map(img => getImageUrl(img))
                             }));
                             const related = mapped.filter(item => item.id !== foundListing.id);
                             setRelatedListings(related);
@@ -445,12 +449,7 @@ export default function ListingDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-sand/30 pt-20">
-                <div className="w-12 h-12 border-4 border-forest border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="font-sans text-xs font-semibold text-forest uppercase tracking-widest animate-pulse">
-                    Inserat wird geladen...
-                </p>
-            </div>
+            <CircleLoader size="lg" color="forest" fullPage />
         );
     }
 
@@ -463,10 +462,10 @@ export default function ListingDetailPage() {
                     Das gesuchte Inserat existiert leider nicht, wurde gelöscht oder befindet sich noch in redaktioneller Prüfung.
                 </p>
                 <button
-                    onClick={() => router.push('/')}
+                    onClick={() => router.push('/inserate')}
                     className="bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3 px-6 rounded-full text-xs uppercase tracking-wider shadow-md cursor-pointer"
                 >
-                    Zurück zur Startseite
+                    Alle Inserate ansehen
                 </button>
             </div>
         );
@@ -476,6 +475,7 @@ export default function ListingDetailPage() {
         title,
         price,
         pricePeriod,
+        category,
         displayLocation,
         images,
         seller,
@@ -536,21 +536,8 @@ export default function ListingDetailPage() {
                         <span className="font-display font-bold text-charcoal sm:text-base leading-tight group-hover/seller:text-forest transition-colors">
                             {seller.name}
                         </span>
-                        {seller.verified && (
-                            <ShieldCheck className="w-4.5 h-4.5 text-forest shrink-0 fill-forest/15" />
-                        )}
                         {seller.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
-                            <div
-                                className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2 py-0.5 text-[10px] font-bold font-sans shadow-sm cursor-help"
-                                title="Campuna Pioneer"
-                            >
-                                <img
-                                    src="/pioneer_badge.png"
-                                    alt="Campuna Pioneer Badge"
-                                    className="w-4 h-4 rounded-full object-cover border border-gold/30"
-                                />
-                                <span>Pioneer</span>
-                            </div>
+                            <PioneerBadge size="xs" text="Pioneer" />
                         )}
                     </div>
                     <span className="text-[11px] text-charcoal/50 font-bold">
@@ -654,15 +641,16 @@ export default function ListingDetailPage() {
         <div className="bg-white min-h-screen relative font-sans text-charcoal pt-24 sm:pt-28 pb-16">
             <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
 
-                {/* ── Breadcrumbs and Back Button ── */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <button
-                        onClick={() => window.history.back()}
-                        className="flex items-center gap-2 text-xs md:text-sm font-semibold text-charcoal/50 hover:text-forest transition-colors group cursor-pointer"
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Zurück
-                    </button>
+                {/* ── Breadcrumbs and Badges ── */}
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 pb-3 border-b border-forest/5">
+                    <Breadcrumbs
+                        items={[
+                            { label: 'Inserate', href: '/inserate' },
+                            ...(category ? [{ label: category, href: `/inserate?cat=${encodeURIComponent(category)}` }] : []),
+                            { label: title || 'Inserat' }
+                        ]}
+                        variant="light"
+                    />
                     <div className="flex flex-wrap items-center gap-2.5">
                         {/* Boosted Badge */}
                         {(listing.is_boosted || (listing.boosted_until && new Date(listing.boosted_until) > new Date())) && (

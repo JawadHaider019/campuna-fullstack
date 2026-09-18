@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, ChevronRight, ChevronDown, ShieldCheck, Mail } from 'lucide-react';
 import { 
@@ -57,8 +57,9 @@ const USER_TYPES = [
     { value: 'business', label: 'Gewerblicher Nutzer' }
 ];
 
-export default function AuthForm({ initialMode = 'login' }) {
+function AuthFormContent({ initialMode = 'login' }) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [mode, setMode] = useState(initialMode);
 
     useEffect(() => {
@@ -79,6 +80,26 @@ export default function AuthForm({ initialMode = 'login' }) {
     const [companyName, setCompanyName] = useState('');
     const [companyEmail, setCompanyEmail] = useState('');
     const [websiteUrl, setWebsiteUrl] = useState('');
+
+    // Query params detection for account type (e.g. ?type=commercial)
+    useEffect(() => {
+        if (!searchParams) return;
+        const typeParam = searchParams.get('type') || searchParams.get('account_type') || searchParams.get('userType');
+        if (typeParam) {
+            const normalized = typeParam.toLowerCase();
+            if (['commercial', 'business', 'gewerblich', 'anbieter'].includes(normalized)) {
+                setUserType('business');
+                setMode('signup');
+            } else if (['private', 'seller', 'privat'].includes(normalized)) {
+                setUserType('seller');
+                setMode('signup');
+            }
+        }
+        const modeParam = searchParams.get('mode');
+        if (modeParam && ['login', 'signup', 'forgot'].includes(modeParam)) {
+            setMode(modeParam);
+        }
+    }, [searchParams]);
 
     // Forgot password & OTP state
     const [forgotEmail, setForgotEmail] = useState('');
@@ -843,5 +864,17 @@ export default function AuthForm({ initialMode = 'login' }) {
                 </div>
             </motion.div>
         </div>
+    );
+}
+
+export default function AuthForm(props) {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen w-full flex items-center justify-center bg-charcoal">
+                <div className="w-8 h-8 border-3 border-gold border-t-transparent rounded-full animate-spin" />
+            </div>
+        }>
+            <AuthFormContent {...props} />
+        </Suspense>
     );
 }

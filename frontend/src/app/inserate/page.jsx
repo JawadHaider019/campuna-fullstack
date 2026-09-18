@@ -13,12 +13,19 @@ import {
     X,
     Search,
     Filter,
-    Rocket
+    Rocket,
+    PlusCircle,
+    Sparkles
 } from 'lucide-react';
 import { getAllListings } from '@/api/listings';
 import { CATEGORIES, STATIC_LISTINGS } from '@/data';
 import CategoriesSection from '@/app/components/CategoriesSection';
+import PriceRangeSlider from '@/app/components/PriceRangeSlider';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { getImageUrl } from '@/utils/imageUrl';
+import CircleLoader from '@/app/components/CircleLoader';
 
 // Map API subcategory or tags to pre-defined mapping
 const CATEGORY_SUBCATEGORIES = {
@@ -240,7 +247,7 @@ function mapListing(item) {
                     '$1cdn-cgi/image/f=auto,fit=cover/$2'
                 );
             }
-            return url;
+            return getImageUrl(url, '/hero-campuna.webp');
         });
 
     if (images.length === 0) {
@@ -488,6 +495,7 @@ function ListingCard({ item }) {
 function ListingsContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
 
     // Search state variables (filters in form)
     const [minPrice, setMinPrice] = useState('');
@@ -599,6 +607,19 @@ function ListingsContent() {
         fetchData();
         return () => { active = false; };
     }, []);
+
+    // Live Price Filter Change (instantly updates results & URL without needing to click search)
+    const handlePriceChange = (newMin, newMax) => {
+        setMinPrice(newMin);
+        setMaxPrice(newMax);
+        const updated = {
+            ...appliedFilters,
+            minPrice: newMin,
+            maxPrice: newMax,
+        };
+        setAppliedFilters(updated);
+        syncUrlParams(updated);
+    };
 
     // Handle Search Submission
     const handleSearchSubmit = (e) => {
@@ -774,15 +795,6 @@ function ListingsContent() {
                 }}
             >
                 <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-                    {/* Back button */}
-                    <button
-                        onClick={() => router.push('/')}
-                        className="mb-8 self-start flex items-center gap-2 text-xs md:text-sm font-semibold text-white/80 hover:text-white transition-colors group cursor-pointer"
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Zurück zur Startseite
-                    </button>
-
                     <span className="font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-gold block mb-2">
                         Camping Marktplatz Deutschland
                     </span>
@@ -795,8 +807,16 @@ function ListingsContent() {
                 </div>
             </section>
 
+            {/* ── Breadcrumbs below Hero ── */}
+            <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-6 pb-1">
+                <Breadcrumbs
+                    items={appliedFilters.kategorie ? [{ label: 'Inserate', href: '/inserate' }, { label: appliedFilters.kategorie }] : [{ label: 'Inserate' }]}
+                    variant="light"
+                />
+            </div>
+
             {/* ── Main content grid ── */}
-            <main className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-10">
+            <main className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
                     {/* ── Filters: Desktop Sidebar ── */}
@@ -835,35 +855,15 @@ function ListingsContent() {
 
                             {/* Price range */}
                             <div>
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-forest/90 mb-2">
-                                    Preis
-                                </label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-charcoal/40">Min</span>
-                                        <input
-                                            type="number"
-                                            value={minPrice}
-                                            onChange={(e) => setMinPrice(e.target.value)}
-                                            placeholder="€ 0"
-                                            className="w-full pl-9 pr-2 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all"
-                                            min="0"
-                                        />
-                                    </div>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-charcoal/40">Max</span>
-                                        <input
-                                            type="number"
-                                            value={maxPrice}
-                                            onChange={(e) => setMaxPrice(e.target.value)}
-                                            placeholder="€ Max"
-                                            className="w-full pl-9 pr-2 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/30 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all"
-                                            min="0"
-                                        />
-                                    </div>
-                                </div>
+                                <PriceRangeSlider
+                                    minPrice={minPrice}
+                                    maxPrice={maxPrice}
+                                    setMinPrice={setMinPrice}
+                                    setMaxPrice={setMaxPrice}
+                                    onChange={handlePriceChange}
+                                />
 
-                                <label className="mt-3 flex items-center gap-2 cursor-pointer select-none">
+                                <label className="mt-3.5 flex items-center gap-2 cursor-pointer select-none">
                                     <input
                                         type="checkbox"
                                         checked={isVerhandelbar}
@@ -1107,7 +1107,7 @@ function ListingsContent() {
 
                                     {(appliedFilters.minPrice || appliedFilters.maxPrice) && (
                                         <span className="inline-flex items-center gap-1.5 bg-sand border border-forest/10 rounded-full px-3 py-1 text-[10.5px] font-semibold text-charcoal/80">
-                                            Preis: {appliedFilters.minPrice ? `${appliedFilters.minPrice} €` : '0 €'} – {appliedFilters.maxPrice ? `${appliedFilters.maxPrice} €` : 'Beliebig'}
+                                            Preis: {appliedFilters.minPrice ? `${Number(appliedFilters.minPrice).toLocaleString('de-DE')} €` : '0 €'} – {appliedFilters.maxPrice ? `${Number(appliedFilters.maxPrice).toLocaleString('de-DE')} €` : 'Beliebig'}
                                             <X
                                                 className="w-3.5 h-3.5 text-charcoal/50 hover:text-rose-600 cursor-pointer transition-colors"
                                                 onClick={() => {
@@ -1163,19 +1163,70 @@ function ListingsContent() {
                         ) : sortedListings.length === 0 ? (
                             // Empty State
                             <div className="text-center py-20 px-4 bg-sand/20 rounded-[32px] border border-dashed border-forest/10 flex flex-col items-center justify-center">
-                                <Search className="w-12 h-12 text-forest/45 mb-4" />
+                                {appliedFilters.keyword ||
+                                appliedFilters.kategorie ||
+                                appliedFilters.unterkategorie ||
+                                appliedFilters.standort ||
+                                (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
+                                appliedFilters.minPrice ||
+                                appliedFilters.maxPrice ||
+                                appliedFilters.isVerhandelbar ? (
+                                    <Search className="w-12 h-12 text-forest/45 mb-4" />
+                                ) : (
+                                    <Sparkles className="w-12 h-12 text-forest/45 mb-4" />
+                                )}
+
                                 <p className="font-display text-lg font-bold text-forest mb-2">
-                                    Keine Inserate gefunden
+                                    {appliedFilters.keyword ||
+                                    appliedFilters.kategorie ||
+                                    appliedFilters.unterkategorie ||
+                                    appliedFilters.standort ||
+                                    (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
+                                    appliedFilters.minPrice ||
+                                    appliedFilters.maxPrice ||
+                                    appliedFilters.isVerhandelbar
+                                        ? 'Keine Inserate gefunden'
+                                        : 'Noch keine Inserate vorhanden'}
                                 </p>
+
                                 <p className="font-sans text-xs text-charcoal/60 max-w-sm mb-6 font-light">
-                                    Es gibt keine Camping-Anzeigen, die deinen aktuellen Filtern entsprechen. Probiere aus, einige Suchkriterien zu lockern.
+                                    {appliedFilters.keyword ||
+                                    appliedFilters.kategorie ||
+                                    appliedFilters.unterkategorie ||
+                                    appliedFilters.standort ||
+                                    (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
+                                    appliedFilters.minPrice ||
+                                    appliedFilters.maxPrice ||
+                                    appliedFilters.isVerhandelbar
+                                        ? 'Es gibt keine Camping-Anzeigen, die deinen aktuellen Filtern entsprechen. Du kannst die Filter zurücksetzen oder selbst ein Inserat aufgeben.'
+                                        : 'Aktuell sind noch keine Angebote in diesem Bereich veröffentlicht. Sei der Erste und erstelle jetzt kostenlos dein Inserat!'}
                                 </p>
-                                <button
-                                    onClick={handleResetFilters}
-                                    className="bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 text-xs font-bold uppercase tracking-wider py-3.5 px-7 rounded-full shadow-md cursor-pointer"
-                                >
-                                    Alle Filter zurücksetzen
-                                </button>
+
+                                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                    {(appliedFilters.keyword ||
+                                        appliedFilters.kategorie ||
+                                        appliedFilters.unterkategorie ||
+                                        appliedFilters.standort ||
+                                        (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
+                                        appliedFilters.minPrice ||
+                                        appliedFilters.maxPrice ||
+                                        appliedFilters.isVerhandelbar) && (
+                                        <button
+                                            onClick={handleResetFilters}
+                                            className="w-full sm:w-auto bg-white hover:bg-forest/5 text-forest border border-forest/20 hover:border-forest/40 transition-all text-xs font-bold uppercase tracking-wider py-3.5 px-6 rounded-full shadow-xs cursor-pointer"
+                                        >
+                                            Alle Filter zurücksetzen
+                                        </button>
+                                    )}
+
+                                    <button
+                                        onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes&tab=create_listing' : '/register?redirect=/mein-konto?n=yes%26tab=create_listing')}
+                                        className="w-full sm:w-auto bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 text-xs font-bold uppercase tracking-wider py-3.5 px-7 rounded-full shadow-md cursor-pointer flex items-center justify-center gap-2 font-sans"
+                                    >
+                                        <PlusCircle className="w-4 h-4" />
+                                        <span>{isLoggedIn ? 'Inserat erstellen' : 'Kostenlos inserieren'}</span>
+                                    </button>
+                                </div>
                             </div>
                         ) : (
                             // Listings Grid
@@ -1294,35 +1345,15 @@ function ListingsContent() {
 
                                 {/* Price range */}
                                 <div>
-                                    <label className="block text-[11px] font-bold uppercase tracking-wider text-forest/90 mb-2">
-                                        Preis
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-charcoal/40">Min</span>
-                                            <input
-                                                type="number"
-                                                value={minPrice}
-                                                onChange={(e) => setMinPrice(e.target.value)}
-                                                placeholder="€ 0"
-                                                className="w-full pl-9 pr-2 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal focus:outline-none tracking-tight"
-                                                min="0"
-                                            />
-                                        </div>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-charcoal/40">Max</span>
-                                            <input
-                                                type="number"
-                                                value={maxPrice}
-                                                onChange={(e) => setMaxPrice(e.target.value)}
-                                                placeholder="€ Max"
-                                                className="w-full pl-9 pr-2 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal focus:outline-none tracking-tight"
-                                                min="0"
-                                            />
-                                        </div>
-                                    </div>
+                                    <PriceRangeSlider
+                                        minPrice={minPrice}
+                                        maxPrice={maxPrice}
+                                        setMinPrice={setMinPrice}
+                                        setMaxPrice={setMaxPrice}
+                                        onChange={handlePriceChange}
+                                    />
 
-                                    <label className="mt-3 flex items-center gap-2 cursor-pointer select-none">
+                                    <label className="mt-3.5 flex items-center gap-2 cursor-pointer select-none">
                                         <input
                                             type="checkbox"
                                             checked={isVerhandelbar}
@@ -1450,9 +1481,7 @@ function ListingsContent() {
 export default function InseratePage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-white flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-forest border-t-transparent rounded-full animate-spin" />
-            </div>
+            <CircleLoader size="lg" color="forest" fullPage />
         }>
             <ListingsContent />
         </Suspense>

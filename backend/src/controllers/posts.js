@@ -395,10 +395,8 @@ export const uploadPostImage = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Keine Datei hochgeladen' });
         }
 
-        const PORT = process.env.PORT || 5000;
-        const host = process.env.BACKEND_URL || `${req.protocol}://${req.hostname}${PORT ? `:${PORT}` : ''}`;
         const relativeUrl = `/uploads/${req.file.filename}`;
-        const imageUrl = `${host}${relativeUrl}`;
+        const imageUrl = relativeUrl;
 
         return res.json({
             success: true,

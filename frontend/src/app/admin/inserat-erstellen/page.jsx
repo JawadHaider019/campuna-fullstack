@@ -35,6 +35,7 @@ import { CATEGORIES } from '@/data';
 import { createListing } from '@/api/listings';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '@/store/useAuthStore';
+import { isValidPhoneNumber, PHONE_VALIDATION_ERROR } from '@/utils/validation';
 
 // Map of subcategories based on categories
 const SUBCATEGORIES_MAP = {
@@ -212,6 +213,10 @@ function AdminListingFormContent() {
         }
         if (!description.trim()) {
             toast.error('Bitte gib eine kurze Beschreibung an.');
+            return;
+        }
+        if (phone.trim() && !isValidPhoneNumber(phone.trim())) {
+            toast.error(PHONE_VALIDATION_ERROR);
             return;
         }
 
@@ -510,19 +515,37 @@ function AdminListingFormContent() {
 
                             {/* Phone */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700">
-                                    Telefonnummer (optional)
-                                </label>
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold text-slate-700">
+                                        Telefonnummer (optional)
+                                    </label>
+                                    {phone.trim() && !isValidPhoneNumber(phone.trim()) && (
+                                        <span className="text-[10px] font-semibold text-rose-600">
+                                            Ungültiges Format
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="relative">
-                                    <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                    <Phone className={`w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
+                                        phone.trim() && !isValidPhoneNumber(phone.trim()) ? 'text-rose-500' : 'text-slate-400'
+                                    }`} />
                                     <input
-                                        type="text"
+                                        type="tel"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
                                         placeholder="z. B. +49 89 12345678"
-                                        className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest transition-all"
+                                        className={`w-full bg-[#F8F9FA] border rounded-xl pl-9 pr-4 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 transition-all ${
+                                            phone.trim() && !isValidPhoneNumber(phone.trim())
+                                                ? 'border-rose-400 focus:ring-rose-200 focus:border-rose-500'
+                                                : 'border-[#E2E4E8] focus:ring-forest/20 focus:border-forest'
+                                        }`}
                                     />
                                 </div>
+                                {phone.trim() && !isValidPhoneNumber(phone.trim()) && (
+                                    <p className="text-[10px] text-rose-500">
+                                        Bitte gültige Vorwahl & Nummer angeben (z. B. +49 170 1234567 oder 0170 1234567).
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

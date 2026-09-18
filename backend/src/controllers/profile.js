@@ -1,5 +1,6 @@
 import { db } from '../prisma/db.js';
 import { checkAndAwardPioneerBadge } from './badge.js';
+import { isValidPhoneNumber } from '../utils/validation.js';
 
 // ─── Allowed update fields per profile type ──────────────────────────────────
 
@@ -213,6 +214,15 @@ export const updateMyProfile = async (req, res) => {
                 }
             }
 
+            if (updates.phone !== undefined && updates.phone !== null && String(updates.phone).trim() !== '') {
+                if (!isValidPhoneNumber(String(updates.phone))) {
+                    return res.status(400).json({
+                        success: false,
+                        error: 'Bitte geben Sie eine gültige Telefonnummer ein.'
+                    });
+                }
+            }
+
             if (Object.keys(updates).length === 0) {
                 return res.status(400).json({
                     success: false,
@@ -364,10 +374,8 @@ export const uploadAvatar = async (req, res) => {
 
         const { id, user_type, role } = req.user;
 
-        // Generate full URL
-        const PORT = process.env.PORT || 5000;
-        const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
-        const fileUrl = `${host}/uploads/${req.file.filename}`;
+        // Generate portable relative URL
+        const fileUrl = `/uploads/${req.file.filename}`;
 
         if (role === 'ADMIN') {
             return res.status(200).json({
@@ -426,10 +434,8 @@ export const uploadCover = async (req, res) => {
 
         const { id, user_type, role } = req.user;
 
-        // Generate full URL
-        const PORT = process.env.PORT || 5000;
-        const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
-        const fileUrl = `${host}/uploads/${req.file.filename}`;
+        // Generate portable relative URL
+        const fileUrl = `/uploads/${req.file.filename}`;
 
         if (role === 'ADMIN') {
             return res.status(200).json({
@@ -500,15 +506,27 @@ export const getAllProfiles = async (req, res) => {
                 const name = u.user_type === 'COMMERCIAL'
                     ? (profileObj.company_name || 'Gewerblicher Anbieter')
                     : `${profileObj.first_name || ''} ${profileObj.last_name || ''}`.trim() || 'Privatverkäufer';
-                    
+
+                const achievements = await db.orm.public.UserAchievement
+                    .where({ user_id: u.id })
+                    .all();
+
+                let loc = profileObj.location;
+                if (!loc && profileObj.company_address) {
+                    loc = typeof profileObj.company_address === 'string' ? profileObj.company_address : profileObj.company_address.address;
+                }
+                if (!loc) loc = 'Deutschland';
+
                 profiles.push({
                     id: u.id,
                     name,
                     logo: profileObj.avatar_url || profileObj.logo_url || profileObj.profile_image_url || '',
                     coverImage: profileObj.cover_image_url || profileObj.cover_url || '',
                     description: profileObj.bio || '',
+                    location: loc,
                     listingsCount: listings.length,
-                    type: u.user_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'
+                    type: u.user_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
+                    achievements
                 });
             }
         }

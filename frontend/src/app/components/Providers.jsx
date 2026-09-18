@@ -118,6 +118,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
     }, [user?.id]);
 
     const x = useMotionValue(0);
+    const dirRef = useRef(-1);
     const isHoveredRef = useRef(false);
     const isDraggingRef = useRef(false);
     const cardWidthRef = useRef(360);
@@ -149,20 +150,21 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
         let lastTime = performance.now();
 
         const loop = (time) => {
-            const delta = (time - lastTime) / 1000;
+            const delta = Math.min((time - lastTime) / 1000, 0.1);
             lastTime = time;
 
-            if (shouldSlide && constraints > 0 && providersList.length > 0 && !isHoveredRef.current && !isDraggingRef.current) {
-                const step = cardWidthRef.current + gap;
-                const maxMove = step * providersList.length;
-                let currentX = x.get() - 30 * delta;
-                while (currentX <= -maxMove) {
-                    currentX += maxMove;
+            if (shouldSlide && constraints > 0 && providersList.length > 0) {
+                if (!isHoveredRef.current && !isDraggingRef.current) {
+                    let currentX = x.get() + dirRef.current * 25 * delta;
+                    if (dirRef.current === -1 && currentX <= -constraints) {
+                        currentX = -constraints;
+                        dirRef.current = 1;
+                    } else if (dirRef.current === 1 && currentX >= 0) {
+                        currentX = 0;
+                        dirRef.current = -1;
+                    }
+                    x.set(currentX);
                 }
-                while (currentX > 0) {
-                    currentX -= maxMove;
-                }
-                x.set(currentX);
             } else {
                 x.set(0);
             }
@@ -191,8 +193,8 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
 
                     <div className="hidden lg:flex items-center space-x-6">
                         <button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/signup_login')}
-                            className="text-charcoal/60 hover:text-forest text-[11px] font-sans font-semibold transition-colors border-b border-transparent hover:border-forest/30 pb-0.5"
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/register?type=commercial')}
+                            className="text-charcoal/60 hover:text-forest text-[11px] font-sans font-semibold transition-colors border-b border-transparent hover:border-forest/30 pb-0.5 cursor-pointer"
                         >
                             Auch Anbieter werden
                         </button>
@@ -249,8 +251,8 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
 
                     <div className="mt-8 flex items-center justify-center gap-4 sm:gap-6 lg:hidden">
                         <button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/register')}
-                            className="text-charcoal/60 hover:text-forest text-[11px] font-sans font-semibold transition-colors border-b border-transparent hover:border-forest/30 pb-0.5"
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/register?type=commercial')}
+                            className="text-charcoal/60 hover:text-forest text-[11px] font-sans font-semibold transition-colors border-b border-transparent hover:border-forest/30 pb-0.5 cursor-pointer"
                         >
                             Auch Anbieter werden
                         </button>

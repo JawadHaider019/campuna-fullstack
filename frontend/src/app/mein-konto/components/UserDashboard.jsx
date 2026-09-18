@@ -24,6 +24,7 @@ import {
     getSubscriberLeads,
 } from '@/api/profile';
 import CoinIcon from '@/app/components/CoinIcon';
+import { getImageUrl } from '@/utils/imageUrl';
 
 export default function UserDashboard({
     subDetails = {},
@@ -372,7 +373,7 @@ export default function UserDashboard({
                         <div className="space-y-3">
                             {filteredListings.map((item) => {
                                 const isBoosted = Boolean(item.boosted_until && new Date(item.boosted_until) > new Date());
-                                const img = (item.images && item.images.length > 0) ? item.images[0] : 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=200';
+                                const img = (item.images && item.images.length > 0) ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=200';
 
                                 return (
                                     <div

@@ -12,24 +12,37 @@ export const useFavoritesStore = create(
             loading: false,
 
             /**
-             * Check if a listing is currently favorited
+             * Check if a listing is currently favorited.
+             * Returns false for logged-out users.
              */
             isFavorite: (id) => {
                 if (!id) return false;
+                const isLoggedIn = useAuthStore.getState().isLoggedIn;
+                if (!isLoggedIn) return false;
                 const strId = String(id);
                 return get().favoriteIds.some(favId => String(favId) === strId);
             },
 
             /**
-             * Toggle favorite status of a listing (optimistic + persistent + server sync)
+             * Toggle favorite status of a listing.
+             * Disallowed for logged-out users.
              */
             toggleFavorite: async (listingOrId) => {
                 if (!listingOrId) return;
 
+                const isLoggedIn = useAuthStore.getState().isLoggedIn;
+                if (!isLoggedIn) {
+                    toast.error('Bitte melde dich an, um Inserate zu speichern.', {
+                        id: 'fav-login-required',
+                        duration: 3500,
+                        icon: '🔒'
+                    });
+                    return;
+                }
+
                 const item = typeof listingOrId === 'object' ? listingOrId : { id: listingOrId };
                 const id = String(item.id);
                 const isFav = get().isFavorite(id);
-                const isLoggedIn = useAuthStore.getState().isLoggedIn;
 
                 if (isFav) {
                     // Remove from favorites
@@ -42,12 +55,10 @@ export const useFavoritesStore = create(
                         duration: 2500
                     });
 
-                    if (isLoggedIn) {
-                        try {
-                            await removeFavorite(id);
-                        } catch (err) {
-                            console.error('Failed to sync remove favorite to server:', err);
-                        }
+                    try {
+                        await removeFavorite(id);
+                    } catch (err) {
+                        console.error('Failed to sync remove favorite to server:', err);
                     }
                 } else {
                     // Add to favorites
@@ -62,12 +73,10 @@ export const useFavoritesStore = create(
                         duration: 2500
                     });
 
-                    if (isLoggedIn) {
-                        try {
-                            await addFavorite(id);
-                        } catch (err) {
-                            console.error('Failed to sync add favorite to server:', err);
-                        }
+                    try {
+                        await addFavorite(id);
+                    } catch (err) {
+                        console.error('Failed to sync add favorite to server:', err);
                     }
                 }
             },
@@ -77,7 +86,10 @@ export const useFavoritesStore = create(
              */
             fetchFavorites: async () => {
                 const isLoggedIn = useAuthStore.getState().isLoggedIn;
-                if (!isLoggedIn) return;
+                if (!isLoggedIn) {
+                    set({ favoriteIds: [], favoriteListings: [], loading: false });
+                    return;
+                }
 
                 set({ loading: true });
                 try {
@@ -98,28 +110,12 @@ export const useFavoritesStore = create(
             },
 
             /**
-             * Synchronize local favorites with server upon login
+             * Synchronize favorites with server upon login
              */
             syncWithServer: async () => {
                 const isLoggedIn = useAuthStore.getState().isLoggedIn;
-                const localIds = get().favoriteIds;
                 if (!isLoggedIn) return;
-
-                if (localIds.length > 0) {
-                    try {
-                        const res = await syncFavorites(localIds);
-                        if (res.success) {
-                            set({
-                                favoriteIds: res.data.favoriteIds || [],
-                                favoriteListings: res.data.listings || []
-                            });
-                        }
-                    } catch (err) {
-                        console.error('Failed to sync favorites with server:', err);
-                    }
-                } else {
-                    get().fetchFavorites();
-                }
+                get().fetchFavorites();
             },
 
             /**
@@ -127,6 +123,9 @@ export const useFavoritesStore = create(
              */
             removeFavoriteItem: async (id) => {
                 if (!id) return;
+                const isLoggedIn = useAuthStore.getState().isLoggedIn;
+                if (!isLoggedIn) return;
+
                 const strId = String(id);
                 set(state => ({
                     favoriteIds: state.favoriteIds.filter(favId => String(favId) !== strId),
@@ -136,18 +135,15 @@ export const useFavoritesStore = create(
                     id: `fav-remove-${strId}`
                 });
 
-                const isLoggedIn = useAuthStore.getState().isLoggedIn;
-                if (isLoggedIn) {
-                    try {
-                        await removeFavorite(strId);
-                    } catch (err) {
-                        console.error('Failed to remove favorite from server:', err);
-                    }
+                try {
+                    await removeFavorite(strId);
+                } catch (err) {
+                    console.error('Failed to remove favorite from server:', err);
                 }
             },
 
             /**
-             * Clear local favorites (on explicit clear or switch)
+             * Clear local favorites (on explicit clear or logout)
              */
             clearFavorites: () => set({ favoriteIds: [], favoriteListings: [] })
         }),

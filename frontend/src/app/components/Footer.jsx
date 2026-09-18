@@ -62,7 +62,7 @@ export default function Footer() {
                             </li>
                             <li>
                                 <Link href={isAdmin ? "/admin" : "/mein-konto"} className="hover:text-forest transition-colors font-[400]">
-                                    {isAdmin ? "Admin Portal" : "Mein Konto"}
+                                    {isAdmin ? "Admin Panel" : "Mein Konto"}
                                 </Link>
                             </li>
                             <li>

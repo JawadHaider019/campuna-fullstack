@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import { db } from '../prisma/db.js';
 import { getUserFeatures } from './subscription.js';
+import { isValidPhoneNumber } from '../utils/validation.js';
 import crypto from 'crypto';
 
 /**
@@ -18,6 +19,12 @@ export const createListing = async (req, res) => {
         // 1. Validate required fields
         if (!title || !price || !category || !location) {
             return res.status(400).json({ success: false, error: 'Bitte füllen Sie alle Pflichtfelder aus.' });
+        }
+
+        if (req.body.phone && String(req.body.phone).trim() !== '') {
+            if (!isValidPhoneNumber(String(req.body.phone))) {
+                return res.status(400).json({ success: false, error: 'Bitte geben Sie eine gültige Telefonnummer ein.' });
+            }
         }
 
         // 2. Count current active + pending listings
@@ -69,11 +76,8 @@ export const createListing = async (req, res) => {
         // 5. Handle image uploads
         const imageUrls = [];
         if (req.files && req.files.length > 0) {
-            const PORT = process.env.PORT || 5000;
-            const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
-
             for (const file of req.files) {
-                imageUrls.push(`${host}/uploads/${file.filename}`);
+                imageUrls.push(`/uploads/${file.filename}`);
             }
         }
 
@@ -511,10 +515,10 @@ export const boostListing = async (req, res) => {
             return res.status(403).json({ success: false, error: 'Keine Berechtigung für dieses Inserat.' });
         }
 
-        if (listing.status !== 'APPROVED' && listing.status !== 'REVIEW') {
+        if (listing.status !== 'APPROVED') {
             return res.status(400).json({
                 success: false,
-                error: 'Nur freigegebene oder in Prüfung befindliche Inserate können geboostet werden.'
+                error: 'Nur freigegebene (aktive) Inserate können geboostet werden.'
             });
         }
 
@@ -618,6 +622,12 @@ export const updateListing = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Bitte füllen Sie alle Pflichtfelder aus.' });
         }
 
+        if (req.body.phone && String(req.body.phone).trim() !== '') {
+            if (!isValidPhoneNumber(String(req.body.phone))) {
+                return res.status(400).json({ success: false, error: 'Bitte geben Sie eine gültige Telefonnummer ein.' });
+            }
+        }
+
         const parsedPrice = parseInt(price, 10);
         if (isNaN(parsedPrice)) {
             return res.status(400).json({ success: false, error: 'Ungültiger Preis angegeben.' });
@@ -647,11 +657,8 @@ export const updateListing = async (req, res) => {
         // 4. Process new uploaded files
         const newUploadedUrls = [];
         if (req.files && req.files.length > 0) {
-            const PORT = process.env.PORT || 5000;
-            const host = req.protocol + '://' + req.hostname + (PORT ? `:${PORT}` : '');
-
             for (const file of req.files) {
-                newUploadedUrls.push(`${host}/uploads/${file.filename}`);
+                newUploadedUrls.push(`/uploads/${file.filename}`);
             }
         }
 

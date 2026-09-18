@@ -1,27 +1,20 @@
 /** @type {import('next').NextConfig} */
+const backendDestination = process.env.BACKEND_INTERNAL_URL ||
+  (process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/?$/, '')
+    : 'http://localhost:5000');
+
 const nextConfig = {
   reactCompiler: true,
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'plus.unsplash.com',
-      },
-      {
-        protocol: 'https',
         hostname: '**',
       },
       {
         protocol: 'http',
-        hostname: 'localhost',
-      },
-      {
-        protocol: 'http',
-        hostname: '127.0.0.1',
+        hostname: '**',
       },
     ],
   },
@@ -29,7 +22,7 @@ const nextConfig = {
     return [
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:5000/uploads/:path*',
+        destination: `${backendDestination}/uploads/:path*`,
       },
     ];
   },

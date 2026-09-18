@@ -39,6 +39,7 @@ import {
     deleteAdminUser
 } from '@/api/admin';
 import { toast } from 'react-hot-toast';
+import PioneerBadge from '@/app/components/PioneerBadge';
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState([]);
@@ -469,9 +470,7 @@ export default function AdminUsersPage() {
                                                                 {u.name}
                                                             </span>
                                                             {u.has_pioneer_badge && (
-                                                                <span title="Pioneer Awards Gewinner">
-                                                                    <Award className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                                </span>
+                                                                <PioneerBadge size="xs" text="Pioneer" />
                                                             )}
                                                         </div>
                                                         <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5 truncate">
@@ -747,9 +746,7 @@ export default function AdminUsersPage() {
                                             {selectedUser.user_type === 'COMMERCIAL' ? 'Gewerblicher Händler' : 'Privater Verkäufer'}
                                         </span>
                                         {selectedUser.has_pioneer_badge && (
-                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
-                                                <Award className="w-3 h-3" /> Pioneer
-                                            </span>
+                                            <PioneerBadge size="xs" text="Pioneer" />
                                         )}
                                     </div>
                                 </div>

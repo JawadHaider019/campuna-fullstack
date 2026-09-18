@@ -19,11 +19,11 @@ function unwrap(res) {
  * Starts a new conversation or retrieves the existing one for a listing.
  * Optionally sends an initial message.
  */
-export const createOrGetConversation = async (listingId, initialMessage = '') => {
-    const res = await api.post('/conversations', {
-        listing_id: listingId,
-        initial_message: initialMessage
-    });
+export const createOrGetConversation = async (param1, param2 = '') => {
+    const payload = typeof param1 === 'object' && param1 !== null
+        ? param1
+        : { listing_id: param1, initial_message: param2 };
+    const res = await api.post('/conversations', payload);
     return unwrap(res);
 };
 

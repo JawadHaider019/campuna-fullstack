@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, ChevronRight, ChevronDown, Scale, Fuel, HelpCircle, BookOpen, Layers } from 'lucide-react';
 import PayloadCalculator from './PayloadCalculator';
 import BudgetCalculator from './BudgetCalculator';
+import Breadcrumbs from './Breadcrumbs';
 import { TOOLS_DATA, TOOLS_LIST } from '@/data/toolsData';
 
 export default function CampingHelfer({ currentToolKey = 'zuladungsrechner' }) {
@@ -31,7 +32,6 @@ export default function CampingHelfer({ currentToolKey = 'zuladungsrechner' }) {
                         backgroundPosition: 'center',
                     }}
                 >
-
                     {/* Header Title & Subtitle */}
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10 text-left">
                         <div>
@@ -60,8 +60,19 @@ export default function CampingHelfer({ currentToolKey = 'zuladungsrechner' }) {
                 </section>
             </div>
 
+            {/* ── Breadcrumbs below Hero ── */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 pt-6 pb-0">
+                <Breadcrumbs
+                    items={[
+                        { label: 'Camping-Tools', href: '/#tool' },
+                        { label: tool.shortTitle || tool.title }
+                    ]}
+                    variant="light"
+                />
+            </div>
+
             {/* Main Calculator Workspace */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-8 sm:py-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 py-6 sm:py-8">
                 {tool.calculatorType === 'payload' ? (
                     <PayloadCalculator />
                 ) : (

@@ -19,6 +19,7 @@ import PayloadCalculator from './PayloadCalculator';
 import BudgetCalculator from './BudgetCalculator';
 import { BLOG_POSTS } from '@/data';
 import { getAllListings } from '@/api/listings';
+import { getImageUrl } from '@/utils/imageUrl';
 
 const DEFAULT_INSP_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=800&q=80';
 
@@ -127,7 +128,7 @@ export default function ToolsSection() {
                                 >
                                     <div className="relative w-full sm:w-[40%] h-48 sm:h-auto overflow-hidden bg-sand/10">
                                         <img
-                                            src={insp.images?.[0] || DEFAULT_INSP_IMAGE}
+                                            src={getImageUrl(insp.images?.[0], DEFAULT_INSP_IMAGE)}
                                             alt={insp.title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                             onError={(e) => { e.currentTarget.src = DEFAULT_INSP_IMAGE; }}

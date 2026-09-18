@@ -31,6 +31,11 @@ import AccountFavoritesTab from './components/AccountFavoritesTab';
 import AccountCreateListingTab from './components/AccountCreateListingTab';
 import { useChatStore } from '@/store/useChatStore';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
+import { isValidPhoneNumber, PHONE_VALIDATION_ERROR } from '@/utils/validation';
+import { getImageUrl } from '@/utils/imageUrl';
+import PioneerBadge from '@/app/components/PioneerBadge';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import CircleLoader from '@/app/components/CircleLoader';
 
 
 import {
@@ -40,9 +45,23 @@ import {
     Crown, Calendar, ArrowRight, Receipt, Download, Printer, CreditCard,
     Rocket, Eye, LayoutDashboard, Gift, Users, CheckCircle2, Zap, ExternalLink,
     Clock, TrendingUp, Bell, Search, ShieldCheck, Compass, CheckCircle, Pencil, Send,
-    FileSpreadsheet, MessageSquare, Heart, Trash2
+    FileSpreadsheet, MessageSquare, Heart, Trash2, PanelLeftClose, PanelLeftOpen, PanelLeft
 } from 'lucide-react';
 
+
+const ACCOUNT_TAB_LABELS = {
+    dashboard: 'Übersicht & Profil',
+    business_cockpit: 'Business Cockpit',
+    inserate: 'Meine Inserate',
+    create_listing: 'Inserat erstellen',
+    nachrichten: 'Nachrichten',
+    favoriten: 'Merkzettel',
+    abo: 'Abonnement & Plan',
+    credits: 'Campuna Credits',
+    empfehlen: 'Freunde werben',
+    sicherheit: 'Sicherheit',
+    pioneer: 'Pionier Status'
+};
 
 // ─── Sub-Components ───────────────────────────────────────────────────────────
 
@@ -85,18 +104,24 @@ const Avatar = ({ src, name, size = 'lg', onUploadClick, isPioneer = false }) =>
 };
 
 const FormField = ({ label, value, editValue, isEditing, onChange, type = 'text', placeholder, icon: Icon, multiline = false, maxLength }) => {
+    const isInvalidPhone = type === 'tel' && Boolean(editValue?.trim()) && !isValidPhoneNumber(editValue?.trim());
+
     if (isEditing) {
         return (
             <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                        {Icon && <Icon className="w-3.5 h-3.5 text-forest" />} {label}
+                        {Icon && <Icon className={`w-3.5 h-3.5 ${isInvalidPhone ? 'text-rose-500' : 'text-forest'}`} />} {label}
                     </label>
-                    {maxLength && (
+                    {isInvalidPhone ? (
+                        <span className="text-[10px] font-semibold text-rose-600 font-sans">
+                            Ungültiges Telefonformat
+                        </span>
+                    ) : maxLength ? (
                         <span className="text-[10px] font-mono text-charcoal/40">
                             {(editValue || '').length} / {maxLength}
                         </span>
-                    )}
+                    ) : null}
                 </div>
                 {multiline ? (
                     <textarea
@@ -114,8 +139,17 @@ const FormField = ({ label, value, editValue, isEditing, onChange, type = 'text'
                         onChange={e => onChange(e.target.value)}
                         placeholder={placeholder}
                         maxLength={maxLength}
-                        className="w-full bg-[#faf8f3] border border-beige rounded-2xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all"
+                        className={`w-full bg-[#faf8f3] border rounded-2xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 font-sans transition-all ${
+                            isInvalidPhone
+                                ? 'border-rose-400 focus:ring-rose-200 focus:border-rose-500'
+                                : 'border-beige focus:ring-forest/20 focus:border-forest'
+                        }`}
                     />
+                )}
+                {isInvalidPhone && (
+                    <p className="text-[10px] text-rose-500 font-sans">
+                        Bitte gültige Nummer angeben (z. B. +49 89 1234567 oder 0170 12345678).
+                    </p>
                 )}
             </div>
         );
@@ -217,6 +251,27 @@ export default function MeinKontoPage() {
     const [mounted, setMounted] = useState(false);
     const [isBioExpanded, setIsBioExpanded] = useState(false);
     const [achievements, setAchievements] = useState([]);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    // Persist sidebar collapsed state
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem('campuna_user_sidebar_collapsed');
+            if (saved !== null) {
+                setSidebarCollapsed(saved === 'true');
+            }
+        } catch (_) {}
+    }, []);
+
+    const toggleSidebar = () => {
+        setSidebarCollapsed(prev => {
+            const next = !prev;
+            try {
+                localStorage.setItem('campuna_user_sidebar_collapsed', String(next));
+            } catch (_) {}
+            return next;
+        });
+    };
 
     // Subscriptions & Billing
     const [subDetails, setSubDetails] = useState({ plan_name: 'FREE', is_business: false });
@@ -277,9 +332,10 @@ export default function MeinKontoPage() {
     const avatarSrc = useMemo(() => {
         const source = isEditing ? draft : profile;
         if (!source) return null;
-        return profileType === 'COMMERCIAL'
+        const raw = profileType === 'COMMERCIAL'
             ? source.logo_url || source.profile_image_url
             : source.profile_image_url;
+        return raw ? getImageUrl(raw) : null;
     }, [profile, draft, isEditing, profileType]);
 
     const pioneerBadge = useMemo(() => {
@@ -491,6 +547,11 @@ export default function MeinKontoPage() {
     };
 
     const handleSave = async () => {
+        if (draft.phone && draft.phone.trim() && !isValidPhoneNumber(draft.phone.trim())) {
+            toast.error(PHONE_VALIDATION_ERROR);
+            return;
+        }
+
         setSaving(true);
         const toastId = toast.loading('Profil wird gespeichert...');
         try {
@@ -599,6 +660,11 @@ export default function MeinKontoPage() {
     };
 
     const handleOpenBoostModal = (listing) => {
+        if (!listing) return;
+        if (listing.status !== 'APPROVED') {
+            toast.error('Nur freigegebene (aktive) Inserate können geboostet werden.');
+            return;
+        }
         setSelectedListingForBoost(listing);
         setBoostDuration(7);
         setBoostModalOpen(true);
@@ -724,17 +790,7 @@ export default function MeinKontoPage() {
 
     if (!mounted || loading) {
         return (
-            <div className="min-h-screen bg-sand flex items-center justify-center p-4">
-                <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-[2rem] shadow-sm border border-beige">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-forest to-[#002204] flex items-center justify-center shadow-md">
-                        <Loader2 className="w-7 h-7 text-gold animate-spin" />
-                    </div>
-                    <div className="text-center">
-                        <h3 className="font-bold text-charcoal font-sans">Konto-Zentrale wird geladen</h3>
-                        <p className="text-xs text-charcoal/50 font-sans mt-0.5">Campuna Profil & Services...</p>
-                    </div>
-                </div>
-            </div>
+            <CircleLoader size="lg" color="forest" fullPage />
         );
     }
 
@@ -778,29 +834,15 @@ export default function MeinKontoPage() {
                 id: 'business_cockpit',
                 label: 'Dashboard',
                 icon: LayoutDashboard,
-                badge: 'PRO',
-                highlight: true,
             }
         ] : []),
         { id: 'dashboard', label: subDetails.is_business ? 'Mein Profil' : 'Mein Profil & Übersicht', icon: User },
-        { id: 'inserate', label: 'Meine Inserate', icon: Rocket, count: userListings.length },
-        {
-            id: 'nachrichten',
-            label: 'Nachrichten',
-            icon: MessageSquare,
-            count: unreadMessagesCount > 0 ? unreadMessagesCount : undefined,
-            badge: unreadMessagesCount > 0 ? `${unreadMessagesCount} neu` : undefined,
-            highlight: unreadMessagesCount > 0,
-        },
-        {
-            id: 'favoriten',
-            label: 'Merkzettel',
-            icon: Heart,
-            count: favoriteCount > 0 ? favoriteCount : undefined,
-        },
-        { id: 'finanzen', label: 'Abonnement', icon: Crown, badge: subDetails.is_business ? 'Business' : 'Free' },
-        { id: 'credits', label: 'Campuna Credits', icon: Gift, count: `${Number(creditBalance).toLocaleString('de-DE')} CC` },
-        { id: 'pioneer', label: pioneerBadge ? `Pioneer #${pioneerBadge.position || '300'}` : 'Badge erhalten', icon: Award, highlight: true },
+        { id: 'inserate', label: 'Meine Inserate', icon: Rocket },
+        { id: 'nachrichten', label: 'Nachrichten', icon: MessageSquare },
+        { id: 'favoriten', label: 'Merkzettel', icon: Heart },
+        { id: 'finanzen', label: 'Abonnement', icon: CreditCard },
+        { id: 'credits', label: 'Campuna Credits', icon: Gift },
+        { id: 'pioneer', label: pioneerBadge ? 'Campuna Pioneer' : 'Pioneer Auszeichnung', icon: Award },
     ];
 
 
@@ -830,7 +872,7 @@ export default function MeinKontoPage() {
             {/* ── TOP FULL-WIDTH NAVBAR ── */}
             <header className="shrink-0 z-40 w-full bg-white backdrop-blur-md border-b border-beige">
                 <div className="w-full mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
-                    {/* Left: Brand Logo */}
+                    {/* Left: Brand Logo & Breadcrumb (Desktop) */}
                     <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         <Link href="/" className="flex items-center gap-1 group cursor-pointer" title="Zur Startseite">
                             <img
@@ -840,6 +882,15 @@ export default function MeinKontoPage() {
                             />
                             <span className="text-lg sm:text-2xl font-normal text-forest leading-none select-none">®</span>
                         </Link>
+                        <div className="hidden lg:block h-5 w-px bg-beige" />
+                        <div className="hidden lg:block">
+                            <Breadcrumbs
+                                items={activeTab === 'dashboard'
+                                    ? [{ label: 'Mein Konto' }]
+                                    : [{ label: 'Mein Konto', href: '/mein-konto' }, { label: navItems.find(n => n.id === activeTab)?.label || activeTab }]}
+                                variant="light"
+                            />
+                        </div>
                     </div>
 
                     {/* Right: Top Bar Actions */}
@@ -913,18 +964,6 @@ export default function MeinKontoPage() {
                             >
                                 <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-gold' : 'text-forest'}`} />
                                 <span className="whitespace-nowrap">{item.label}</span>
-                                {item.count !== undefined && (
-                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${isActive ? 'bg-white/20 text-white' : 'bg-[#faf8f3] text-charcoal/60 border border-beige'
-                                        }`}>
-                                        {item.count}
-                                    </span>
-                                )}
-                                {item.badge && (
-                                    <span className={`text-[9px] uppercase px-2 py-0.5 rounded-full font-black ${isActive ? 'bg-gold text-forest' : 'bg-gold/20 text-gold-dark'
-                                        }`}>
-                                        {item.badge}
-                                    </span>
-                                )}
                             </button>
                         );
                     })}
@@ -933,15 +972,36 @@ export default function MeinKontoPage() {
                 {/* ── MAIN DASHBOARD CONTAINER (Sidebar + Content Hub) ── */}
                 <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden h-full">
 
-                    {/* ── 1. LEFT SIDEBAR NAVIGATION (Admin Style, Full Height Fixed on side) ── */}
-                    <aside className="hidden lg:flex flex-col w-[230px] xl:w-[250px] bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] text-white  pr-5 py-4 shadow-xl border border-gold/20 justify-between shrink-0 h-full overflow-hidden">
-
+                    {/* ── 1. LEFT SIDEBAR NAVIGATION (Admin Style, Full Height Fixed on side, Collapsible) ── */}
+                    <aside
+                        className={`hidden lg:flex flex-col bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] text-white shadow-xl border-r border-gold/20 justify-between shrink-0 h-full overflow-hidden transition-all duration-300 ease-in-out select-none px-3 py-4 ${
+                            sidebarCollapsed 
+                                ? 'w-[68px]' 
+                                : 'w-[230px] xl:w-[250px]'
+                        }`}
+                    >
                         <div className="space-y-4">
                             {/* Navigation Header */}
-                            <div className="flex items-center justify-between px-2 pt-1 pb-2 border-b border-white/50">
-                                <span className="text-[10px] font-mono tracking-[0.3em] text-white uppercase font-semibold block">
-                                    NAVIGATION
-                                </span>
+                            <div className={`flex items-center pt-1 pb-2 border-b border-white/20 transition-all ${
+                                sidebarCollapsed ? 'justify-center' : 'justify-between px-1'
+                            }`}>
+                                {!sidebarCollapsed && (
+                                    <span className="text-[10px] font-mono tracking-[0.3em] text-white/90 uppercase font-semibold block truncate">
+                                        NAVIGATION
+                                    </span>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={toggleSidebar}
+                                    title={sidebarCollapsed ? 'Seitenleiste ausklappen' : 'Seitenleiste einklappen'}
+                                    className="p-1.5 rounded-xl text-sand/60 hover:text-gold hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                                >
+                                    {sidebarCollapsed ? (
+                                        <PanelLeftOpen className="w-4 h-4 text-gold" />
+                                    ) : (
+                                        <PanelLeftClose className="w-4 h-4" />
+                                    )}
+                                </button>
                             </div>
 
                             {/* Nav Items */}
@@ -951,82 +1011,134 @@ export default function MeinKontoPage() {
                                     const isActive = activeTab === item.id;
 
                                     return (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => handleTabChange(item.id)}
-                                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-r-3xl text-xs font-semibold transition-all duration-200 cursor-pointer ${isActive
-                                                ? 'bg-gold text-forest font-bold shadow-md shadow-gold/20'
-                                                : 'text-sand/75 hover:text-white hover:bg-white/10 font-medium'
+                                        <div key={item.id} className="relative group">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleTabChange(item.id)}
+                                                className={`w-full h-10 flex items-center ${
+                                                    sidebarCollapsed ? 'justify-center' : 'justify-start gap-3'
+                                                } px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                                                    isActive
+                                                        ? 'bg-gold text-forest font-bold shadow-md shadow-gold/20'
+                                                        : 'text-sand/75 hover:text-white hover:bg-white/10 font-medium'
                                                 }`}
-                                        >
-                                            <div className="flex items-center gap-3 truncate">
+                                            >
                                                 <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-forest' : 'text-sand/60 group-hover:text-gold'}`} />
-                                                <span className="truncate">{item.label}</span>
-                                            </div>
+                                                {!sidebarCollapsed && (
+                                                    <span className="truncate leading-none">{item.label}</span>
+                                                )}
+                                            </button>
 
-
-                                        </button>
+                                            {/* Floating Tooltip in collapsed mode */}
+                                            {sidebarCollapsed && (
+                                                <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-950/95 text-white text-[11px] font-bold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 z-50">
+                                                    {item.label}
+                                                </div>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </nav>
                         </div>
 
                         {/* Upgrade Widget & Bottom Account Section */}
-                        <div className="space-y-3 pl-2">
+                        <div className={`space-y-3 transition-all ${sidebarCollapsed ? 'px-0' : 'pl-1'}`}>
                             {!subDetails.is_business && (
-                                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                                    <div className="flex items-center gap-1.5 text-gold">
-                                        <Sparkles className="w-3.5 h-3.5" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Campuna Club</span>
+                                sidebarCollapsed ? (
+                                    <div className="flex justify-center group relative">
+                                        <button
+                                            type="button"
+                                            onClick={() => router.push('/abo/kasse')}
+                                            title="Campuna Club Upgrade"
+                                            className="w-11 h-11 rounded-2xl bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest flex items-center justify-center transition-all duration-300 shadow-md hover:shadow-gold/30 hover:scale-105 active:scale-95 cursor-pointer"
+                                        >
+                                            <Sparkles className="w-4 h-4" />
+                                        </button>
+                                        <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-950/95 text-gold text-[11px] font-bold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 z-50">
+                                            Campuna Club Upgrade
+                                        </div>
                                     </div>
-                                    <p className="text-[11px] text-sand/80 font-sans leading-relaxed">
-                                        Unbegrenzte Inserate & Reichweiten-Boosts freischalten.
-                                    </p>
-                                    <button
-                                        type="button"
-                                        onClick={() => router.push('/abo/kasse')}
-                                        className="w-full bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal font-black text-[11px] uppercase tracking-wider py-2 px-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
-                                    >
-                                        <span>Upgrade</span>
-                                        <ArrowRight className="w-3 h-3" />
-                                    </button>
-                                </div>
+                                ) : (
+                                    <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+                                        <div className="flex items-center gap-1.5 text-gold">
+                                            <Sparkles className="w-3.5 h-3.5" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Campuna Club</span>
+                                        </div>
+                                        <p className="text-[11px] text-sand/80 font-sans leading-relaxed">
+                                            Unbegrenzte Inserate & Reichweiten-Boosts freischalten.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => router.push('/abo/kasse')}
+                                            className="w-full bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-[11px] uppercase tracking-wider py-2.5 px-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-gold/25 flex items-center justify-center gap-1.5 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
+                                        >
+                                            <span>Upgrade</span>
+                                            <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform duration-200" />
+                                        </button>
+                                    </div>
+                                )
                             )}
 
-                            {/* Bottom User Account Pill (Admin Style) */}
-                            <div className="space-y-2.5 pt-4 border-t border-white/10">
-                                <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold px-1 block">
-                                    BENUTZERKONTO
-                                </span>
+                            {/* Bottom User Account Pill */}
+                            <div className={`pt-3 border-t border-white/10 transition-all ${sidebarCollapsed ? 'space-y-2 flex flex-col items-center' : 'space-y-2.5'}`}>
+                                {!sidebarCollapsed && (
+                                    <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold px-1 block">
+                                        BENUTZERKONTO
+                                    </span>
+                                )}
 
-                                <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2.5 truncate min-w-0">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center ring-2 ring-gold/40 shadow-sm shrink-0 overflow-hidden">
+                                {sidebarCollapsed ? (
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div
+                                            className="w-9 h-9 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center ring-2 ring-gold/40 shadow-sm shrink-0 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                                            title={`${displayName} (${profileType === 'COMMERCIAL' ? 'gewerblich' : 'privat'})`}
+                                            onClick={() => handleTabChange('dashboard')}
+                                        >
                                             {avatarSrc ? (
                                                 <img src={avatarSrc} alt={displayName} className="w-full h-full object-cover" />
                                             ) : (
                                                 <span>{displayName ? displayName.slice(0, 2).toUpperCase() : 'CU'}</span>
                                             )}
                                         </div>
-                                        <div className="truncate text-left">
-                                            <h5 className="text-xs font-bold text-white truncate leading-tight">
-                                                {displayName}
-                                            </h5>
-                                            <p className="text-[10px] font-mono text-gold/70 truncate">
-                                                {profileType === 'COMMERCIAL' ? 'gewerblich' : 'privat'}
-                                            </p>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleLogout}
+                                            title="Abmelden"
+                                            className="p-2 text-sand/50 hover:text-rose-400 hover:bg-white/10 rounded-xl transition-colors cursor-pointer shrink-0"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                        </button>
                                     </div>
+                                ) : (
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2.5 truncate min-w-0 cursor-pointer group" onClick={() => handleTabChange('dashboard')}>
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center ring-2 ring-gold/40 shadow-sm shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
+                                                {avatarSrc ? (
+                                                    <img src={avatarSrc} alt={displayName} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <span>{displayName ? displayName.slice(0, 2).toUpperCase() : 'CU'}</span>
+                                                )}
+                                            </div>
+                                            <div className="truncate text-left">
+                                                <h5 className="text-xs font-bold text-white truncate leading-tight group-hover:text-gold transition-colors">
+                                                    {displayName}
+                                                </h5>
+                                                <p className="text-[10px] font-mono text-gold/70 truncate">
+                                                    {profileType === 'COMMERCIAL' ? 'gewerblich' : 'privat'}
+                                                </p>
+                                            </div>
+                                        </div>
 
-                                    <button
-                                        type="button"
-                                        onClick={handleLogout}
-                                        title="Abmelden"
-                                        className="p-1.5 text-sand/50 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer shrink-0"
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                    </button>
-                                </div>
+                                        <button
+                                            type="button"
+                                            onClick={handleLogout}
+                                            title="Abmelden"
+                                            className="p-1.5 text-sand/50 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer shrink-0"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -1034,6 +1146,16 @@ export default function MeinKontoPage() {
 
                     {/* ── 2. RIGHT MAIN UNIFIED CONTAINER CANVAS (All sections housed inside) ── */}
                     <div className="flex-1 h-full min-h-0 overflow-y-auto p-4 sm:p-6 min-w-0">
+                        {/* ── Breadcrumbs inside page canvas (Mobile only) ── */}
+                        <div className="block lg:hidden mb-3.5">
+                            <Breadcrumbs
+                                items={activeTab === 'dashboard'
+                                    ? [{ label: 'Mein Konto' }]
+                                    : [{ label: 'Mein Konto', href: '/mein-konto' }, { label: navItems.find(n => n.id === activeTab)?.label || activeTab }]}
+                                variant="light"
+                            />
+                        </div>
+
                         <main className="w-full space-y-6">
 
                             {/* ═════════════════════════════════════════════════════════════
@@ -1084,7 +1206,7 @@ export default function MeinKontoPage() {
                                         <TabHeader
                                             title="Campuna Business Cockpit"
                                             subtitle="Schalte professionelle Händler-Werkzeuge, unbegrenzte Inserate und Live-Analysen frei"
-                                            icon={Crown}
+                                            icon={CreditCard}
                                             badge={
                                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-gold/20 text-gold-dark border border-gold/40">
                                                     Upgrade verfügbar
@@ -1094,7 +1216,7 @@ export default function MeinKontoPage() {
 
                                         {/* Business Teaser Hero */}
                                         <div className="rounded-3xl bg-gradient-to-br from-[#003808] via-[#002204] to-[#011403] border border-gold/30 p-8 text-white shadow-xl relative overflow-hidden space-y-6">
-                                            <Crown className="absolute right-6 bottom-4 w-60 h-60 text-white/[0.03] pointer-events-none stroke-[1]" />
+                                            <Sparkles className="absolute right-6 bottom-4 w-60 h-60 text-white/[0.03] pointer-events-none stroke-[1]" />
                                             <div className="relative z-10 max-w-2xl space-y-4">
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase bg-gold text-forest shadow-md">
                                                     <Sparkles className="w-3.5 h-3.5 fill-forest" />
@@ -1110,10 +1232,10 @@ export default function MeinKontoPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => router.push('/abo/kasse')}
-                                                        className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-forest font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-lg hover:shadow-gold/30 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                                        className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider rounded-2xl transition-all duration-300 shadow-lg hover:shadow-gold/30 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
                                                     >
                                                         <span>Jetzt Business freischalten (29 € / Monat)</span>
-                                                        <ArrowRight className="w-4 h-4" />
+                                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -1208,7 +1330,7 @@ export default function MeinKontoPage() {
                                             <div className="relative h-44 sm:h-52 bg-gradient-to-r from-[#004709] via-[#002204] to-[#040805] overflow-hidden group">
                                                 {(isEditing ? draft?.cover_image_url : profile?.cover_image_url) ? (
                                                     <img
-                                                        src={isEditing ? draft?.cover_image_url : profile?.cover_image_url}
+                                                        src={getImageUrl(isEditing ? draft?.cover_image_url : profile?.cover_image_url)}
                                                         alt="Cover"
                                                         className="w-full h-full object-cover"
                                                     />
@@ -1340,15 +1462,12 @@ export default function MeinKontoPage() {
                                                                 </span>
 
                                                                 {pioneerBadge ? (
-                                                                    <button
-                                                                        type="button"
+                                                                    <PioneerBadge
+                                                                        size="sm"
+                                                                        text="Campuna Pioneer"
                                                                         onClick={() => setBadgeModalOpen(true)}
-                                                                        className="inline-flex items-center gap-1.5 bg-gold/20 border border-gold/40 text-gold-dark px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider cursor-pointer hover:bg-gold/30 transition-all shadow-xs"
                                                                         title="Dein Campuna Pioneer Badge Status"
-                                                                    >
-                                                                        <Crown className="w-3.5 h-3.5 text-gold-dark" />
-                                                                        <span>Pioneer #{pioneerBadge.position || '300'}</span>
-                                                                    </button>
+                                                                    />
                                                                 ) : (
                                                                     <button
                                                                         type="button"
@@ -1474,7 +1593,7 @@ export default function MeinKontoPage() {
                                                     <div className="space-y-3">
                                                         {userListings.slice(0, 3).map((item) => {
                                                             const isBoosted = Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
-                                                            const img = item.images && item.images.length > 0 ? item.images[0] : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500';
+                                                            const img = item.images && item.images.length > 0 ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500';
 
                                                             return (
                                                                 <div key={item.id} className="flex items-center justify-between gap-3 p-3 bg-[#faf8f3] hover:bg-sand border border-beige rounded-2xl transition-all">
@@ -1507,15 +1626,27 @@ export default function MeinKontoPage() {
                                                                         >
                                                                             <Pencil className="w-3.5 h-3.5" />
                                                                         </button>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => handleOpenBoostModal(item)}
-                                                                            className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gold/15 border border-beige hover:border-gold text-[10px] font-bold text-charcoal transition-all cursor-pointer flex items-center gap-1 shadow-xs"
-                                                                            title="Mit Campuna Credits boosten"
-                                                                        >
-                                                                            <Rocket className="w-3 h-3 text-gold-dark" />
-                                                                            <span className="hidden sm:inline">Boosten</span>
-                                                                        </button>
+                                                                        {item.status === 'APPROVED' ? (
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleOpenBoostModal(item)}
+                                                                                className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gold/15 border border-beige hover:border-gold text-[10px] font-bold text-charcoal transition-all cursor-pointer flex items-center gap-1 shadow-xs"
+                                                                                title="Mit Campuna Credits boosten"
+                                                                            >
+                                                                                <Rocket className="w-3 h-3 text-gold-dark" />
+                                                                                <span className="hidden sm:inline">Boosten</span>
+                                                                            </button>
+                                                                        ) : (
+                                                                            <button
+                                                                                type="button"
+                                                                                disabled
+                                                                                className="px-2.5 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-[10px] font-bold text-stone-400 cursor-not-allowed flex items-center gap-1 opacity-60"
+                                                                                title="Boosten ist nur für freigegebene Inserate verfügbar"
+                                                                            >
+                                                                                <Rocket className="w-3 h-3 text-stone-400" />
+                                                                                <span className="hidden sm:inline">Boosten</span>
+                                                                            </button>
+                                                                        )}
                                                                         <Link
                                                                             href={`/inserate/${item.slug || item.id}`}
                                                                             className="p-1.5 rounded-xl bg-white hover:bg-sand border border-beige text-charcoal/60 hover:text-forest transition-all"
@@ -1560,7 +1691,7 @@ export default function MeinKontoPage() {
                                                     {subDetails.is_business && (
                                                         <div className="flex items-start gap-3 p-3 bg-[#faf8f3] rounded-2xl border border-beige">
                                                             <div className="w-6 h-6 rounded-full bg-gold/20 text-gold-dark flex items-center justify-center shrink-0 mt-0.5">
-                                                                <Crown className="w-3.5 h-3.5" />
+                                                                <Sparkles className="w-3.5 h-3.5" />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="font-bold text-charcoal">Campuna Business Status aktiv</p>
@@ -1590,7 +1721,7 @@ export default function MeinKontoPage() {
                                             <div className="bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-sand shadow-md space-y-4 relative overflow-hidden border border-gold/20">
                                                 <div className="flex items-center justify-between pb-3 border-b border-white/10">
                                                     <span className="text-[10px] font-black uppercase tracking-widest text-gold flex items-center gap-1.5">
-                                                        <Crown className="w-3.5 h-3.5" /> Abonnement
+                                                        <CreditCard className="w-3.5 h-3.5" /> Abonnement
                                                     </span>
                                                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-white/15 text-sand">
                                                         {subDetails.is_business ? 'Business Aktiv' : 'Kostenloser Tarif'}
@@ -1644,10 +1775,10 @@ export default function MeinKontoPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => router.push('/abo/kasse')}
-                                                            className="w-full bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02]"
+                                                            className="w-full bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl transition-all duration-300 shadow-md hover:shadow-gold/25 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
                                                         >
                                                             <span>Auf Business Upgraden (29 €)</span>
-                                                            <ArrowRight className="w-3.5 h-3.5" />
+                                                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
                                                         </button>
                                                     )}
                                                 </div>
@@ -1744,53 +1875,139 @@ export default function MeinKontoPage() {
                                         }
                                     />
 
-                                    {/* 4 Metric Overview Cards */}
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                                        <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-beige shadow-xs flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-forest/10 flex items-center justify-center text-forest shrink-0">
-                                                <Rocket className="w-5 h-5" />
+                                    {/* 4 Metric Overview Cards (Credits & Pioneer styled Bento Cards) */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                        {/* 1. Gesamt Inserate (Forest-to-Dark Luxury Bento Hero Tile) */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setListingStatusFilter('ALL')}
+                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[130px] ${
+                                                listingStatusFilter === 'ALL'
+                                                    ? 'bg-gradient-to-br from-[#004709] via-[#002805] to-[#040805] text-sand shadow-lg ring-2 ring-gold border border-gold/40 scale-[1.01]'
+                                                    : 'bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] text-sand shadow-md border border-gold/20 hover:border-gold/50 hover:shadow-lg hover:-translate-y-0.5'
+                                            }`}
+                                        >
+                                            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gold/15 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform" />
+                                            
+                                            <div className="flex items-center justify-between relative z-10">
+                                                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-sand/70">
+                                                    Gesamt Inserate
+                                                </span>
+                                                <div className="w-8 h-8 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold shrink-0 group-hover:bg-gold group-hover:text-forest transition-colors shadow-xs">
+                                                    <Rocket className="w-4 h-4" />
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider block">Gesamt Inserate</span>
-                                                <span className="text-lg sm:text-xl font-black text-charcoal font-mono">{userListings.length}</span>
-                                            </div>
-                                        </div>
 
-                                        <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-beige shadow-xs flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-700 shrink-0">
-                                                <CheckCircle2 className="w-5 h-5" />
+                                            <div className="relative z-10 mt-2">
+                                                <div className="text-2xl sm:text-3xl font-black font-mono text-gold tracking-tight">
+                                                    {userListings.length}
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 text-[10px] text-sand/70">
+                                                    <span>Alle Fahrzeuge</span>
+                                                    <span className="font-bold text-gold flex items-center gap-0.5">
+                                                        {subDetails.is_business ? '∞ Kontingent' : `${userListings.length}/3 Free`}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider block">Veröffentlicht</span>
-                                                <span className="text-lg sm:text-xl font-black text-emerald-700 font-mono">
+                                        </button>
+
+                                        {/* 2. Veröffentlicht (Active / Approved) */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setListingStatusFilter('APPROVED')}
+                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[130px] ${
+                                                listingStatusFilter === 'APPROVED'
+                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-emerald-500 border border-emerald-300 scale-[1.01]'
+                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-emerald-300 hover:shadow-md hover:-translate-y-0.5'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-charcoal/50 group-hover:text-emerald-700 transition-colors">
+                                                    Veröffentlicht
+                                                </span>
+                                                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors shadow-xs">
+                                                    <CheckCircle2 className="w-4 h-4" />
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-2">
+                                                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-700 tracking-tight">
                                                     {userListings.filter(l => l.status === 'APPROVED').length}
-                                                </span>
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[10px] text-charcoal/60">
+                                                    <span className="flex items-center gap-1">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live auf Marktplatz
+                                                    </span>
+                                                    <span className="font-bold text-emerald-700">Aktiv</span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-beige shadow-xs flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-700 shrink-0">
-                                                <Clock className="w-5 h-5" />
+                                        {/* 3. In Prüfung (Review Queue) */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setListingStatusFilter('REVIEW')}
+                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[130px] ${
+                                                listingStatusFilter === 'REVIEW'
+                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-amber-500 border border-amber-300 scale-[1.01]'
+                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-amber-300 hover:shadow-md hover:-translate-y-0.5'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-charcoal/50 group-hover:text-amber-700 transition-colors">
+                                                    In Prüfung
+                                                </span>
+                                                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors shadow-xs">
+                                                    <Clock className="w-4 h-4" />
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider block">In Prüfung</span>
-                                                <span className="text-lg sm:text-xl font-black text-amber-700 font-mono">
+
+                                            <div className="mt-2">
+                                                <div className="text-2xl sm:text-3xl font-black font-mono text-amber-700 tracking-tight">
                                                     {userListings.filter(l => l.status === 'REVIEW').length}
-                                                </span>
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[10px] text-charcoal/60">
+                                                    <span className="flex items-center gap-1">
+                                                        <ShieldCheck className="w-3 h-3 text-amber-600" /> Moderation
+                                                    </span>
+                                                    <span className="font-bold text-amber-700">
+                                                        {userListings.filter(l => l.status === 'REVIEW').length > 0 ? 'In Prüfung' : 'Keine'}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </button>
 
-                                        <div className="p-3.5 sm:p-4 bg-white rounded-2xl border border-beige shadow-xs flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center text-gold-dark shrink-0">
-                                                <Zap className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider block">Geboostet</span>
-                                                <span className="text-lg sm:text-xl font-black text-gold-dark font-mono">
-                                                    {userListings.filter(l => l.is_boosted || (l.boosted_until && new Date(l.boosted_until) > new Date())).length}
+                                        {/* 4. Geboostet (Boosted Ads) */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setListingStatusFilter('BOOSTED')}
+                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[130px] ${
+                                                listingStatusFilter === 'BOOSTED'
+                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-gold border border-gold scale-[1.01]'
+                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-gold hover:shadow-md hover:-translate-y-0.5'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-charcoal/50 group-hover:text-gold-dark transition-colors">
+                                                    Geboostet
                                                 </span>
+                                                <div className="w-8 h-8 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold-dark shrink-0 group-hover:bg-gold group-hover:text-forest transition-colors shadow-xs">
+                                                    <Zap className="w-4 h-4" />
+                                                </div>
                                             </div>
-                                        </div>
+
+                                            <div className="mt-2">
+                                                <div className="text-2xl sm:text-3xl font-black font-mono text-gold-dark tracking-tight">
+                                                    {userListings.filter(l => l.is_boosted || (l.boosted_until && new Date(l.boosted_until) > new Date())).length}
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[10px] text-charcoal/60">
+                                                    <span className="flex items-center gap-1">
+                                                        <Sparkles className="w-3 h-3 text-gold-dark" /> Reichweite
+                                                    </span>
+                                                    <span className="font-bold text-gold-dark">Top-Platzierung</span>
+                                                </div>
+                                            </div>
+                                        </button>
                                     </div>
 
                                     {/* Filter & Search Toolbar */}
@@ -1865,12 +2082,11 @@ export default function MeinKontoPage() {
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-4.5">
                                             {filteredListings.map((item) => {
                                                 const isBoosted = Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
-                                                const img = item.images && item.images.length > 0 ? item.images[0] : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
+                                                const img = item.images && item.images.length > 0 ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
                                                 const features = [
-                                                    item.category || 'Camping Zubehör',
                                                     item.subcategory,
                                                     item.condition,
                                                     item.fuel_type || item.fuelType,
@@ -1881,62 +2097,75 @@ export default function MeinKontoPage() {
                                                 return (
                                                     <div
                                                         key={item.id}
-                                                        className="listing-card group relative flex flex-col h-full bg-white rounded-[24px] overflow-hidden border border-forest/10 hover:border-forest/20 shadow-sm hover:shadow-md transition-all duration-300 select-none justify-between"
+                                                        className="listing-card group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-forest/10 hover:border-forest/25 shadow-xs hover:shadow-md transition-all duration-300 select-none justify-between"
                                                     >
                                                         <div>
-                                                            {/* Aspect 16/9 Image */}
-                                                            <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
+                                                            {/* Compact Image */}
+                                                            <div 
+                                                                className="relative h-36 w-full overflow-hidden bg-sand/20 cursor-pointer"
+                                                                onClick={() => router.push(`/inserate/${item.slug || item.id}`)}
+                                                            >
                                                                 <img
                                                                     src={img}
                                                                     alt={item.title}
-                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                                     loading="lazy"
                                                                 />
                                                                 {/* Top Status Badges */}
-                                                                <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
-                                                                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase shadow-xs ${item.status === 'APPROVED' ? 'bg-emerald-700 text-white' : 'bg-amber-600 text-white'}`}>
+                                                                <div className="absolute top-2.5 left-2.5 flex items-center gap-1 flex-wrap z-10 pointer-events-none">
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase shadow-xs ${item.status === 'APPROVED' ? 'bg-emerald-700 text-white' : 'bg-amber-600 text-white'}`}>
                                                                         {item.status === 'APPROVED' ? 'Veröffentlicht' : 'In Prüfung'}
                                                                     </span>
                                                                     {isBoosted && (
-                                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest shadow-xs flex items-center gap-1 font-sans">
+                                                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest shadow-xs flex items-center gap-1 font-sans">
                                                                             <Rocket className="w-2.5 h-2.5" /> Geboostet
                                                                         </span>
                                                                     )}
                                                                 </div>
 
                                                                 {/* Location Pill */}
-                                                                <div className="absolute bottom-3 right-3 flex items-center justify-end pointer-events-none text-white/90 z-10">
-                                                                    <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-full text-[9px] font-medium flex items-center gap-1">
-                                                                        <MapPin className="w-3 h-3 text-gold shrink-0" />
-                                                                        <span className="truncate max-w-[130px]">{item.location || 'Deutschland'}</span>
+                                                                <div className="absolute bottom-2 right-2 flex items-center justify-end pointer-events-none text-white/90 z-10">
+                                                                    <div className="bg-black/55 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] font-medium flex items-center gap-1">
+                                                                        <MapPin className="w-2.5 h-2.5 text-gold shrink-0" />
+                                                                        <span className="truncate max-w-[110px]">{item.location || 'Deutschland'}</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
 
                                                             {/* Card Content Body */}
-                                                            <div className="p-4 sm:p-5 space-y-2.5 font-sans">
-                                                                <h3 className="font-display text-sm sm:text-base font-bold text-black group-hover:text-forest transition-colors duration-200 line-clamp-1">
+                                                            <div className="p-3.5 space-y-1.5 font-sans">
+                                                                <span className="text-[9px] font-bold uppercase tracking-wider text-forest/70 block">
+                                                                    {item.category || 'Camping Inserat'}
+                                                                </span>
+
+                                                                <h3 
+                                                                    className="font-display text-xs sm:text-sm font-bold text-charcoal group-hover:text-forest transition-colors line-clamp-1 leading-snug cursor-pointer"
+                                                                    onClick={() => router.push(`/inserate/${item.slug || item.id}`)}
+                                                                    title={item.title}
+                                                                >
                                                                     {item.title}
                                                                 </h3>
 
-                                                                {/* Tags */}
-                                                                <div className="flex overflow-x-auto gap-1.5 no-scrollbar scroll-smooth">
-                                                                    {features.map((feat, idx) => (
-                                                                        <span
-                                                                            key={idx}
-                                                                            className="text-[10px] text-charcoal/60 bg-sand px-2 py-1 rounded-md border border-forest/5 whitespace-nowrap shrink-0 select-none font-medium"
-                                                                        >
-                                                                            {feat}
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
+                                                                {/* Features Pills */}
+                                                                {features.length > 0 && (
+                                                                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                                                                        {features.slice(0, 3).map((feat, idx) => (
+                                                                            <span
+                                                                                key={idx}
+                                                                                className="text-[9px] text-charcoal/60 bg-sand/60 px-1.5 py-0.5 rounded-md border border-forest/5 whitespace-nowrap shrink-0 font-medium"
+                                                                            >
+                                                                                {feat}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
 
                                                                 {/* Price Row */}
                                                                 <div className="pt-2 border-t border-forest/5 flex items-center justify-between">
-                                                                    <span className="block text-[10px] uppercase tracking-widest text-charcoal/40 font-mono font-medium">
-                                                                        {item.negotiable || item.isNegotiable ? 'Verhandlungsbasis' : 'Festpreis'}
+                                                                    <span className="text-[10px] uppercase tracking-wider text-charcoal/45 font-medium">
+                                                                        {item.negotiable || item.isNegotiable ? 'VB' : 'Festpreis'}
                                                                     </span>
-                                                                    <span className="font-display text-base sm:text-lg font-bold text-forest">
+                                                                    <span className="font-display text-sm sm:text-base font-black text-forest">
                                                                         {parseFloat(item.price || 0).toLocaleString('de-DE')} €
                                                                     </span>
                                                                 </div>
@@ -1944,33 +2173,45 @@ export default function MeinKontoPage() {
                                                         </div>
 
                                                         {/* Bottom Actions Row */}
-                                                        <div className="p-4 sm:p-5 pt-0 mt-2 border-t border-beige/60 pt-3 flex items-center justify-between gap-2">
+                                                        <div className="p-3 pt-0 mt-1 border-t border-beige/60 pt-2.5 flex items-center justify-between gap-1.5">
                                                             <button
                                                                 type="button"
                                                                 onClick={() => handleEditListing(item.id)}
-                                                                className="flex-1 flex items-center justify-center gap-1.5 bg-[#faf8f3] hover:bg-forest hover:text-sand text-charcoal border border-beige py-2 px-3 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                                                className="flex-1 flex items-center justify-center gap-1 bg-[#faf8f3] hover:bg-forest hover:text-white border border-beige py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
                                                                 title="Inserat bearbeiten"
                                                             >
-                                                                <Pencil className="w-3.5 h-3.5" />
+                                                                <Pencil className="w-3 h-3" />
                                                                 <span>Bearbeiten</span>
                                                             </button>
 
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => handleOpenBoostModal(item)}
-                                                                className="flex-1 flex items-center justify-center gap-1.5 bg-gradient-to-r from-gold via-[#ffd269] to-gold hover:brightness-105 text-forest font-bold py-2 px-3 rounded-full text-xs transition-all cursor-pointer shadow-xs"
-                                                                title="Mit Campuna Credits boosten"
-                                                            >
-                                                                <Rocket className="w-3.5 h-3.5 text-forest" />
-                                                                <span>Boosten</span>
-                                                            </button>
+                                                            {item.status === 'APPROVED' ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleOpenBoostModal(item)}
+                                                                    className="flex-1 flex items-center justify-center gap-1 bg-gradient-to-r from-gold via-[#ffd269] to-gold hover:brightness-105 text-forest font-bold py-1.5 px-2 rounded-xl text-[11px] transition-all cursor-pointer shadow-2xs"
+                                                                    title="Mit Campuna Credits boosten"
+                                                                >
+                                                                    <Rocket className="w-3 h-3 text-forest" />
+                                                                    <span>Boosten</span>
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    disabled
+                                                                    className="flex-1 flex items-center justify-center gap-1 bg-stone-100 border border-stone-200 text-stone-400 font-bold py-1.5 px-2 rounded-xl text-[11px] cursor-not-allowed opacity-60"
+                                                                    title="Boosten ist nur für freigegebene Inserate verfügbar"
+                                                                >
+                                                                    <Rocket className="w-3 h-3 text-stone-400" />
+                                                                    <span>Boosten</span>
+                                                                </button>
+                                                            )}
 
                                                             <Link
                                                                 href={`/inserate/${item.slug || item.id}`}
-                                                                className="p-2 bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 hover:text-forest rounded-full text-xs font-bold transition-all cursor-pointer shrink-0"
+                                                                className="p-1.5 bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/60 hover:text-forest rounded-xl transition-all shrink-0"
                                                                 title="Inserat ansehen"
                                                             >
-                                                                <Eye className="w-4 h-4" />
+                                                                <Eye className="w-3.5 h-3.5" />
                                                             </Link>
                                                         </div>
                                                     </div>
@@ -1993,7 +2234,7 @@ export default function MeinKontoPage() {
                                     <TabHeader
                                         title="Abonnement"
                                         subtitle="Dein aktueller Tarif, Inserate-Limits und verfügbare Campuna Mitgliedschaften"
-                                        icon={Crown}
+                                        icon={CreditCard}
                                         badge={
                                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${subDetails.is_business ? 'bg-emerald-100 text-emerald-800' : 'bg-[#faf8f3] text-charcoal/70 border border-beige'}`}>
                                                 {subDetails.is_business ? 'Business Aktiv' : 'Kostenloser Tarif'}
@@ -2006,7 +2247,7 @@ export default function MeinKontoPage() {
                                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-beige">
                                             <div className="flex items-start sm:items-center gap-3.5">
                                                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-forest to-[#002204] flex items-center justify-center text-gold shadow-md shrink-0">
-                                                    <Crown className="w-6 h-6" />
+                                                    <Sparkles className="w-6 h-6" />
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2 flex-wrap">
@@ -2049,10 +2290,10 @@ export default function MeinKontoPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => router.push('/abo/kasse')}
-                                                        className="px-5 py-2.5 bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                                        className="px-5 py-2.5 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-gold/25 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
                                                     >
                                                         <span>Auf Business Upgraden (29 €)</span>
-                                                        <ArrowRight className="w-3.5 h-3.5" />
+                                                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
                                                     </button>
                                                 )}
                                             </div>
@@ -2216,7 +2457,7 @@ export default function MeinKontoPage() {
                                             }`}>
                                                 {/* Top Ribbon / Badge */}
                                                 <div className="absolute top-0 right-0">
-                                                    <span className="bg-gradient-to-r from-gold to-gold-dark text-charcoal text-[9px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl shadow-xs">
+                                                    <span className="bg-gradient-to-r from-gold via-[#dfbe7f] to-gold text-forest text-[9px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl shadow-xs">
                                                         {subDetails.is_business ? 'Aktiver Plan' : 'Empfohlen'}
                                                     </span>
                                                 </div>
@@ -2281,10 +2522,10 @@ export default function MeinKontoPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => router.push('/abo/kasse')}
-                                                            className="w-full bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                                            className="w-full bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl transition-all duration-300 shadow-md hover:shadow-gold/25 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
                                                         >
                                                             <span>Jetzt auf Business upgraden</span>
-                                                            <ArrowRight className="w-4 h-4" />
+                                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
                                                         </button>
                                                     )}
                                                 </div>
@@ -2490,9 +2731,7 @@ export default function MeinKontoPage() {
                                         icon={Award}
                                         badge={
                                             pioneerBadge ? (
-                                                <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gold/20 text-gold-dark border border-gold/40 flex items-center gap-1.5 shadow-xs">
-                                                    <Crown className="w-3.5 h-3.5" /> Pioneer #{pioneerBadge.position || '300'}
-                                                </span>
+                                                <PioneerBadge size="sm" text="Campuna Pioneer" />
                                             ) : (
                                                 <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gold/15 text-gold-dark border border-gold/30 flex items-center gap-1">
                                                     <Sparkles className="w-3 h-3 text-gold-dark" /> Badge erhalten (In Qualifikation)
@@ -2513,9 +2752,7 @@ export default function MeinKontoPage() {
                                             </p>
                                         </div>
 
-                                        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-gold to-sand flex items-center justify-center shadow-lg border-4 border-white/20 shrink-0">
-                                            <Crown className="w-10 h-10 sm:w-12 sm:h-12 text-forest" />
-                                        </div>
+                                        <PioneerBadge variant="hero" />
                                     </div>
 
                                     {/* 2-Column Grid */}
@@ -2585,7 +2822,7 @@ export default function MeinKontoPage() {
                                                 {pioneerBadge ? (
                                                     <div className="p-3.5 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 font-bold text-xs flex items-center justify-center gap-2">
                                                         <Sparkles className="w-4 h-4 text-gold-dark" />
-                                                        <span>Glückwunsch! Du bist Pioneer #{pioneerBadge.position || '1'}</span>
+                                                        <span>Glückwunsch! Du bist Campuna Pioneer</span>
                                                     </div>
                                                 ) : !isProfileComplete ? (
                                                     <button
@@ -2772,7 +3009,7 @@ export default function MeinKontoPage() {
                                 <button
                                     type="button"
                                     onClick={() => { setLimitModalOpen(false); router.push('/abo/kasse'); }}
-                                    className="flex-1 bg-gradient-to-r from-gold to-gold-dark hover:from-gold-dark hover:to-gold text-charcoal py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
+                                    className="flex-1 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-gold/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     Auf Business Upgraden
                                 </button>
@@ -2969,14 +3206,12 @@ export default function MeinKontoPage() {
                             {pioneerBadge ? (
                                 /* ── When User HAS the Badge ── */
                                 <div className="space-y-5">
-                                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-gold via-amber-300 to-sand flex items-center justify-center mx-auto shadow-xl border-4 border-white/80 ring-4 ring-gold/20">
-                                        <Crown className="w-10 h-10 text-forest" />
-                                    </div>
+                                    <PioneerBadge variant="hero" className="mx-auto" />
 
                                     <div className="space-y-2">
-                                        <span className="inline-flex items-center gap-1.5 bg-gold/20 border border-gold/40 text-gold-dark px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider">
-                                            <Crown className="w-3.5 h-3.5" /> Pioneer #{pioneerBadge.position || '1'}
-                                        </span>
+                                        <div className="flex justify-center">
+                                            <PioneerBadge size="md" text="Campuna Pioneer" />
+                                        </div>
                                         <h3 className="font-display font-black text-charcoal text-2xl">Campuna Pioneer Mitglied</h3>
                                         <p className="text-xs sm:text-sm text-charcoal/70 leading-relaxed max-w-md mx-auto">
                                             Glückwunsch! Du gehörst zu den ersten 300 geprüften Mitgliedern auf Campuna. Dein Profil und all deine Inserate tragen dauerhaft den goldenen Pioneer-Badge.
@@ -3009,10 +3244,8 @@ export default function MeinKontoPage() {
                             ) : (
                                 /* ── When User DOES NOT have the Badge (Get a Badge) ── */
                                 <div className="space-y-5">
-                                    <div className="relative mx-auto w-20 h-20">
-                                        <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-gold via-amber-300 to-sand flex items-center justify-center shadow-xl border-4 border-white/80 ring-4 ring-gold/20">
-                                            <Crown className="w-10 h-10 text-forest" />
-                                        </div>
+                                    <div className="relative mx-auto w-20 h-20 sm:w-24 sm:h-24">
+                                        <PioneerBadge variant="hero" />
                                         <div className="absolute -bottom-1 -right-1 bg-forest text-sand rounded-full p-1 border-2 border-white shadow-sm">
                                             <Sparkles className="w-3.5 h-3.5 text-gold" />
                                         </div>

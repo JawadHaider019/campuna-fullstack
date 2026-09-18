@@ -22,7 +22,8 @@ import {
     ChevronRight,
     Inbox,
     Layers,
-    ChevronLeft
+    ChevronLeft,
+    Building2
 } from 'lucide-react';
 import {
     getConversations,
@@ -30,7 +31,9 @@ import {
     sendChatMessage
 } from '@/api/conversations';
 import { useChatStore } from '@/store/useChatStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
+import { getImageUrl } from '@/utils/imageUrl';
 
 function formatMessageTime(dateString) {
     if (!dateString) return '';
@@ -455,9 +458,10 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                 <div className="w-10 h-10 rounded-full bg-forest text-sand font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden shadow-xs relative">
                                     {contactGroup.user?.avatar ? (
                                         <img
-                                            src={contactGroup.user.avatar}
+                                            src={getImageUrl(contactGroup.user.avatar)}
                                             alt={contactGroup.user.name}
                                             className="w-full h-full object-cover"
+                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                         />
                                     ) : (
                                         contactGroup.user?.name?.charAt(0).toUpperCase() || 'U'
@@ -484,7 +488,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                         </span>
                                         <span className="text-[10px] font-medium text-forest bg-forest/5 px-1.5 py-0.2 rounded flex items-center gap-1 shrink-0">
                                             <Layers className="w-2.5 h-2.5" />
-                                            {listingsCount} {listingsCount === 1 ? 'Inserat' : 'Inserate'}
+                                            {listingsCount} {listingsCount === 1 ? 'Unterhaltung' : 'Unterhaltungen'}
                                         </span>
                                     </div>
 
@@ -581,23 +585,24 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                             </div>
                             <p className="text-[11px] text-charcoal/50 truncate">
                                 {activeContactGroup.conversations.length}{' '}
-                                {activeContactGroup.conversations.length === 1 ? 'Inserat im Gespräch' : 'Inserate im Gespräch'}
+                                {activeContactGroup.conversations.length === 1 ? 'Unterhaltung' : 'Unterhaltungen'}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                {/* Listings Items */}
+                {/* Listings & Inquiries Items */}
                 <div className="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-2.5 divide-y divide-beige/40">
                     <div className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider mb-2 flex items-center gap-1.5 pb-1">
                         <Layers className="w-3.5 h-3.5 text-forest" />
-                        <span>Wähle ein Inserat für den Chat</span>
+                        <span>Unterhaltungen mit {activeContactGroup.user?.name}</span>
                     </div>
 
                     {activeContactGroup.conversations.map((conv) => {
                         const isSelected = selectedConvId === conv.id;
                         const hasUnread = conv.unread_count > 0;
                         const isSellerInquiry = !conv.is_buyer;
+                        const hasListing = Boolean(conv.listing && (conv.listing.title || conv.listing.id));
 
                         return (
                             <div
@@ -611,12 +616,23 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                     {/* Thumbnail */}
-                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-forest/5 border border-beige shrink-0 relative">
-                                        <img
-                                            src={conv.listing?.main_image || '/hero-campuna.webp'}
-                                            alt={conv.listing?.title || 'Listing'}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        />
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-forest/5 border border-beige shrink-0 flex items-center justify-center relative">
+                                        {hasListing ? (
+                                            <img
+                                                src={getImageUrl(conv.listing.main_image, '/hero-campuna.webp')}
+                                                alt={conv.listing.title || 'Listing'}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                onError={(e) => { e.currentTarget.src = '/hero-campuna.webp'; }}
+                                            />
+                                        ) : activeContactGroup.user?.avatar ? (
+                                            <img
+                                                src={getImageUrl(activeContactGroup.user.avatar)}
+                                                alt={activeContactGroup.user.name}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                            />
+                                        ) : (
+                                            <Building2 className="w-6 h-6 text-forest/70" />
+                                        )}
                                     </div>
 
                                     {/* Info */}
@@ -624,31 +640,43 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                             <span
                                                 className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                                                    isSellerInquiry
-                                                        ? 'bg-emerald-100 text-emerald-800'
-                                                        : 'bg-sand text-forest'
+                                                    hasListing
+                                                        ? (isSellerInquiry
+                                                            ? 'bg-emerald-100 text-emerald-800'
+                                                            : 'bg-sand text-forest')
+                                                        : 'bg-amber-100 text-amber-900'
                                                 }`}
                                             >
-                                                {isSellerInquiry ? 'Kaufanfrage' : 'Meine Anfrage'}
+                                                {hasListing
+                                                    ? (isSellerInquiry ? 'Kaufanfrage' : 'Inserat-Anfrage')
+                                                    : (isSellerInquiry ? 'Direktanfrage' : 'Anfrage an Anbieter')}
                                             </span>
-                                            {conv.listing?.location && (
+                                            {(conv.listing?.location || activeContactGroup.user?.location) && (
                                                 <span className="text-[10px] text-charcoal/50 flex items-center gap-0.5 truncate">
                                                     <MapPin className="w-3 h-3 text-gold-dark" />
-                                                    {conv.listing.location}
+                                                    {conv.listing?.location || activeContactGroup.user?.location || 'Deutschland'}
                                                 </span>
                                             )}
                                         </div>
 
                                         <h4 className="font-display font-bold text-xs sm:text-sm text-charcoal group-hover:text-forest transition-colors truncate">
-                                            {conv.listing?.title}
+                                            {hasListing
+                                                ? conv.listing.title
+                                                : `Allgemeine Kontaktanfrage an ${activeContactGroup.user?.name || 'den Anbieter'}`}
                                         </h4>
 
                                         <div className="flex items-baseline gap-2">
-                                            <span className="font-display font-extrabold text-xs text-forest font-mono">
-                                                {conv.listing?.price
-                                                    ? `${conv.listing.price.toLocaleString('de-DE')} €`
-                                                    : 'Auf Anfrage'}
-                                            </span>
+                                            {hasListing ? (
+                                                <span className="font-display font-extrabold text-xs text-forest font-mono">
+                                                    {conv.listing?.price
+                                                        ? `${conv.listing.price.toLocaleString('de-DE')} €`
+                                                        : 'Auf Anfrage'}
+                                                </span>
+                                            ) : (
+                                                <span className="text-[10px] font-semibold text-forest">
+                                                    Direkte Anbieter-Unterhaltung
+                                                </span>
+                                            )}
                                             {conv.last_message && (
                                                 <span className="text-[10px] text-charcoal/50 truncate max-w-[150px] sm:max-w-xs">
                                                     • {conv.last_message.content}
@@ -733,15 +761,19 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                 </span>
                             </div>
                             <p className="text-[10px] text-charcoal/50 truncate">
-                                {activeConversation.is_buyer
-                                    ? 'Verkäufer des Inserats'
-                                    : 'Interessent für dein Inserat'}
+                                {activeConversation.listing && (activeConversation.listing.title || activeConversation.listing.id)
+                                    ? (activeConversation.is_buyer
+                                        ? 'Verkäufer des Inserats'
+                                        : 'Interessent für dein Inserat')
+                                    : (activeConversation.is_buyer
+                                        ? 'Direkter Kontakt zum Anbieter'
+                                        : 'Direktanfrage an dich')}
                             </p>
                         </div>
                     </div>
 
-                    {/* Listing Context Pill */}
-                    {activeConversation.listing && (
+                    {/* Context Pill: Listing or Provider Profile */}
+                    {activeConversation.listing && (activeConversation.listing.title || activeConversation.listing.slug) ? (
                         <Link
                             href={`/inserate/${activeConversation.listing.slug || activeConversation.listing.id}`}
                             target="_blank"
@@ -750,9 +782,10 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                         >
                             <div className="w-7 h-7 rounded-lg overflow-hidden bg-forest/5 shrink-0">
                                 <img
-                                    src={activeConversation.listing.main_image || '/hero-campuna.webp'}
+                                    src={getImageUrl(activeConversation.listing.main_image, '/hero-campuna.webp')}
                                     alt={activeConversation.listing.title}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => { e.currentTarget.src = '/hero-campuna.webp'; }}
                                 />
                             </div>
                             <div className="min-w-0 hidden sm:block text-left">
@@ -760,12 +793,25 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                     {activeConversation.listing.title}
                                 </span>
                                 <span className="font-display font-extrabold text-[11px] text-charcoal">
-                                    {activeConversation.listing.price ? `${activeConversation.listing.price.toLocaleString('de-DE')} €` : 'Preis auf Anfrage'}
+                                    {activeConversation.listing.price ? `${activeConversation.listing.price.toLocaleString('de-DE')} €` : 'Auf Anfrage'}
                                 </span>
                             </div>
                             <ExternalLink className="w-3.5 h-3.5 text-charcoal/40 group-hover:text-forest shrink-0 ml-0.5" />
                         </Link>
-                    )}
+                    ) : activeConversation.other_user?.id ? (
+                        <Link
+                            href={`/anbieter/${encodeURIComponent(activeConversation.other_user.id)}`}
+                            target="_blank"
+                            className="bg-[#faf8f3] hover:bg-sand border border-beige rounded-xl p-1.5 sm:px-2.5 sm:py-1.5 flex items-center gap-2 transition-colors group shrink-0"
+                            title="Anbieterprofil aufrufen"
+                        >
+                            <Building2 className="w-4 h-4 text-forest shrink-0" />
+                            <span className="text-[10px] font-bold text-forest hidden sm:inline truncate">
+                                Anbieterprofil
+                            </span>
+                            <ExternalLink className="w-3.5 h-3.5 text-charcoal/40 group-hover:text-forest shrink-0" />
+                        </Link>
+                    ) : null}
                 </div>
 
                 {/* Message Stream */}
@@ -780,7 +826,9 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                             <Sparkles className="w-6 h-6 text-forest" />
                             <p className="text-xs font-bold text-charcoal">Noch keine Nachrichten</p>
                             <p className="text-[11px] max-w-xs">
-                                Schreibe die erste Nachricht an {activeConversation.other_user?.name} zu {activeConversation.listing?.title}.
+                                {activeConversation.listing?.title
+                                    ? `Schreibe die erste Nachricht an ${activeConversation.other_user?.name} zu ${activeConversation.listing.title}.`
+                                    : `Schreibe die erste Nachricht an ${activeConversation.other_user?.name}.`}
                             </p>
                         </div>
                     ) : (

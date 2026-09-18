@@ -8,6 +8,8 @@ import { CATEGORIES } from '@/data';
 import { getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import CategoriesSection from '@/app/components/CategoriesSection';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import { getImageUrl } from '@/utils/imageUrl';
 
 // Map URL slugs → internal category names
 const SLUG_TO_CATEGORY = {
@@ -139,7 +141,7 @@ function mapListing(item) {
                     '$1cdn-cgi/image/f=auto,fit=cover/$2'
                 );
             }
-            return url;
+            return getImageUrl(url, '/hero.webp');
         });
 
     if (images.length === 0) {
@@ -465,15 +467,6 @@ export default function CategoryPage() {
                     }}
                 >
                     <div className="max-w-7xl mx-auto">
-                        {/* Back button */}
-                        <button
-                            onClick={() => router.push('/')}
-                            className="mb-6 flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors group cursor-pointer"
-                        >
-                            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                            Zurück zur Startseite
-                        </button>
-
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block mb-2">
                             {categoryName ? 'Kategorie' : 'Alle Angebote'}
                         </span>
@@ -518,6 +511,17 @@ export default function CategoryPage() {
 
                     </div>
                 </section>
+
+                {/* ── Breadcrumbs below Hero ── */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+                    <Breadcrumbs
+                        items={[
+                            { label: 'Inserate', href: '/inserate' },
+                            { label: categoryName || heroTitle }
+                        ]}
+                        variant="light"
+                    />
+                </div>
 
                 {/* ── Subcategory Pills Bar ── */}
                 {subcategories.length > 0 && (

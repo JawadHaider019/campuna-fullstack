@@ -48,12 +48,13 @@ export default function BlogSection() {
         >
             <div className="relative w-24 sm:w-32 h-20 sm:h-24 rounded-2xl overflow-hidden shrink-0 shadow-md">
                 <img
-                    src={post.image}
+                    src={getImageUrl(post.image || post.image_url)}
                     alt={post.title}
                     className="w-full h-full object-cover transition-transform duration-[1s] group-hover:scale-105"
                     loading="lazy"
                     decoding="async"
                     referrerPolicy="no-referrer"
+                    onError={(e) => { e.currentTarget.src = '/collection/camping-zubehoer-hero.png'; }}
                 />
             </div>
 
@@ -105,12 +106,13 @@ export default function BlogSection() {
                     >
                         <div className="relative aspect-[16/10] w-full rounded-[32px] overflow-hidden shadow-2xl">
                             <img
-                                src={featuredPost.image}
+                                src={getImageUrl(featuredPost.image || featuredPost.image_url)}
                                 alt={featuredPost.title}
                                 className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
                                 loading="lazy"
                                 decoding="async"
                                 referrerPolicy="no-referrer"
+                                onError={(e) => { e.currentTarget.src = '/collection/camping-zubehoer-hero.png'; }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
 

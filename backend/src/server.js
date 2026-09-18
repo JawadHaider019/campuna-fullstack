@@ -20,6 +20,9 @@ import { initBlogPostsTable } from './config/initBlogPostsTable.js';
 import pool from './config/database.js';
 import { seedMarketplaceData } from './config/seedMarketplaceData.js';
 
+import path from 'path';
+import fs from 'fs';
+
 // Initialize broadcasts table
 initBroadcastsTable().catch(e => console.error('Broadcasts init error:', e.message));
 
@@ -40,11 +43,18 @@ pool.query('SELECT count(*) FROM listings')
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Enable trust proxy for reverse proxies (Render, Railway, Nginx, Vercel, Cloudflare, etc.)
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded files statically
-app.use('/uploads', express.static('uploads'));
+// Ensure uploads directory exists and serve static files with CORS
+const uploadsPath = path.resolve(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsPath)) {
+  fs.mkdirSync(uploadsPath, { recursive: true });
+}
+app.use('/uploads', cors(), express.static(uploadsPath));
 
 app.get('/', (req, res) => {
   res.send(`API Working on port ${PORT}`);

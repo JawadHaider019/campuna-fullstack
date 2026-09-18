@@ -14,6 +14,8 @@ import { motion } from 'framer-motion';
 import { getPublicPosts } from '@/api/posts';
 import { BLOG_POSTS as FALLBACK_POSTS } from '@/data';
 import { getImageUrl } from '@/utils/imageUrl';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import CircleLoader from '@/app/components/CircleLoader';
 
 
 export default function AllBlogsPage() {
@@ -102,8 +104,16 @@ export default function AllBlogsPage() {
                 </div>
             </div>
 
+            {/* ── Breadcrumbs below Hero ── */}
+            <div className="max-w-7xl mx-auto px-6 sm:px-12 pt-6 pb-2">
+                <Breadcrumbs
+                    items={[{ label: 'Magazin & Ratgeber' }]}
+                    variant="light"
+                />
+            </div>
+
             {/* FILTER & CONTENT SECTION */}
-            <div className="max-w-7xl mx-auto px-6 sm:px-12 -mt-8 relative z-20 space-y-8">
+            <div className="max-w-7xl mx-auto px-6 sm:px-12 pt-2 relative z-20 space-y-8">
                 {/* Search Input Card */}
                 <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-xl border border-forest/10 flex items-center justify-between">
                     <div className="relative w-full">
@@ -120,11 +130,8 @@ export default function AllBlogsPage() {
 
                 {/* POSTS GRID */}
                 {isLoading ? (
-                    <div className="text-center py-20 bg-white rounded-3xl border border-forest/10 shadow-sm">
-                        <RefreshCw className="w-8 h-8 text-gold animate-spin mx-auto mb-3" />
-                        <p className="text-xs font-bold text-forest uppercase tracking-widest">
-                            Ratgeber-Artikel werden geladen...
-                        </p>
+                    <div className="py-20">
+                        <CircleLoader size="lg" color="forest" />
                     </div>
                 ) : posts.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-forest/20 p-8 space-y-4 shadow-sm">

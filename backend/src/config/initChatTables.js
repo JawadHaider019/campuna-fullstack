@@ -11,14 +11,19 @@ export const initChatTables = async () => {
             -- 1. Create conversations table
             CREATE TABLE IF NOT EXISTS conversations (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                listing_id UUID NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+                listing_id UUID REFERENCES listings(id) ON DELETE CASCADE,
                 buyer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 seller_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT chk_different_users CHECK (buyer_id <> seller_id),
-                CONSTRAINT unique_listing_buyer_conversation UNIQUE (listing_id, buyer_id)
+                CONSTRAINT chk_different_users CHECK (buyer_id <> seller_id)
             );
+
+            -- Ensure listing_id is nullable if table already exists
+            DO $$ BEGIN
+                ALTER TABLE conversations ALTER COLUMN listing_id DROP NOT NULL;
+            EXCEPTION WHEN OTHERS THEN NULL;
+            END $$;
 
             -- 2. Create indexes for conversations
             CREATE INDEX IF NOT EXISTS idx_conversations_buyer_id ON conversations(buyer_id);

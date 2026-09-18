@@ -19,6 +19,8 @@ import { getPublicPost } from '@/api/posts';
 import { BLOG_POSTS as FALLBACK_POSTS } from '@/data';
 import MarkdownRenderer from '@/app/components/MarkdownRenderer';
 import { getImageUrl } from '@/utils/imageUrl';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import CircleLoader from '@/app/components/CircleLoader';
 
 
 export default function SinglePostPage() {
@@ -116,12 +118,7 @@ export default function SinglePostPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-sand/20 flex flex-col items-center justify-center font-sans">
-                <RefreshCw className="w-10 h-10 text-gold animate-spin mb-4" />
-                <p className="text-xs font-bold text-forest uppercase tracking-widest">
-                    Artikel wird geladen...
-                </p>
-            </div>
+            <CircleLoader size="lg" color="forest" fullPage />
         );
     }
 
@@ -152,16 +149,16 @@ export default function SinglePostPage() {
         <article className="min-h-screen bg-sand/15 font-sans pb-24">
             {/* TOP BAR / BREADCRUMB */}
             <div className="bg-white border-b border-forest/10 sticky top-0 z-30 shadow-sm">
-                <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <Link
-                        href="/all_blogs"
-                        className="inline-flex items-center gap-2 text-xs font-bold text-forest hover:text-gold transition-colors group"
-                    >
-                        <ArrowLeft className="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" />
-                        Zurück zum Magazin
-                    </Link>
+                <div className="max-w-5xl mx-auto px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+                    <Breadcrumbs
+                        items={[
+                            { label: 'Magazin', href: '/all_blogs' },
+                            { label: post.title }
+                        ]}
+                        variant="light"
+                    />
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={handleCopyLink}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-forest/10 bg-sand/30 hover:bg-sand text-forest text-xs font-bold transition-all cursor-pointer"

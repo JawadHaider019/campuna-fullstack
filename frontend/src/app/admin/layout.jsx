@@ -16,10 +16,13 @@ import {
     Sparkles,
     Flag,
     Megaphone,
-    BookOpen
+    BookOpen,
+    ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminDashboardStats } from '@/api/admin';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import CircleLoader from '@/app/components/CircleLoader';
 
 export default function AdminLayout({ children }) {
     const router = useRouter();
@@ -91,11 +94,8 @@ export default function AdminLayout({ children }) {
 
     if (!mounted || !isLoggedIn || user?.role !== 'ADMIN') {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#003807] via-[#001D03] to-[#040805] flex flex-col items-center justify-center font-sans">
-                <div className="w-10 h-10 border-4 border-gold border-t-transparent rounded-full animate-spin mb-3" />
-                <p className="text-xs font-bold text-sand tracking-widest uppercase">
-                    Admin Portal wird geladen...
-                </p>
+            <div className="min-h-screen bg-gradient-to-br from-[#003807] via-[#001D03] to-[#040805] flex items-center justify-center">
+                <CircleLoader size="lg" color="gold" />
             </div>
         );
     }
@@ -111,7 +111,7 @@ export default function AdminLayout({ children }) {
             {/* ─── FIXED FOREST-TO-BLACK SIDEBAR ─── */}
             <aside className="hidden lg:flex flex-col w-[230px] xl:w-[250px] p-4 justify-between shrink-0 text-white relative bg-transparent h-full overflow-y-auto">
 
-                <div className="space-y-6">
+                <div className="space-y-5">
                     {/* Deep Sunken / Recessed Logo Cavity Container (Clickable -> Home) */}
                     <Link
                         href="/"
@@ -131,12 +131,27 @@ export default function AdminLayout({ children }) {
                     </Link>
 
                     {/* Navigation Section */}
-                    <div className="space-y-3">
-                        <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold px-2 block">
-                            NAVIGATION
-                        </span>
+                    <div className="space-y-2.5">
+                        <div className="flex items-center justify-between px-2">
+                            <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold block">
+                                NAVIGATION
+                            </span>
+                        </div>
 
-                        <nav className="space-y-1.5">
+                        {/* Quick Action: Back to main website / Home */}
+                        <Link
+                            href="/"
+                            title="Zur Campuna Startseite"
+                            className="w-full flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-semibold text-sand/85 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-200 cursor-pointer group"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <Home className="w-3.5 h-3.5 text-gold group-hover:scale-110 transition-transform" />
+                                <span>Startseite</span>
+                            </div>
+                            <ArrowUpRight className="w-3 h-3 text-sand/40 group-hover:text-gold transition-colors" />
+                        </Link>
+
+                        <nav className="space-y-1.5 pt-1">
                             {menuItems.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = pathname === item.path;
@@ -268,6 +283,15 @@ export default function AdminLayout({ children }) {
 
             {/* ─── RIGHT MAIN ROUNDED WHITE CANVAS ─── */}
             <div className="flex-1 bg-[#FFFFFF] rounded-3xl overflow-hidden flex flex-col shadow-2xl h-full border border-white/10">
+                {/* ─── Top Header Bar with Breadcrumbs & Home Page Button ─── */}
+                <header className="px-5 py-3 border-b border-stone-100 bg-stone-50/50 backdrop-blur-xs flex items-center justify-between gap-4 shrink-0">
+                    <div className="min-w-0 flex-1">
+                        <Breadcrumbs variant="light" />
+                    </div>
+
+
+                </header>
+
                 <main className="p-4 sm:p-6 flex-1 overflow-y-auto w-full">
                     {children}
                 </main>

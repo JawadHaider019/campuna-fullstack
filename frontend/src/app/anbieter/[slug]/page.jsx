@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     MapPin,
     ShieldCheck,
     Mail,
-    Calendar,
     Globe,
     MessageSquare,
     Star,
@@ -22,12 +21,22 @@ import {
     Heart,
     ChevronLeft,
     ChevronRight,
-    Rocket
+    Rocket,
+    X,
+    Send,
+    Sparkles
 } from 'lucide-react';
 import { getPublicProfile } from '@/api/profile';
 import { getListingsByUser } from '@/api/listings';
+import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
+import { useAuthStore } from '@/store/useAuthStore';
+import { toast } from 'react-hot-toast';
 import { PROVIDERS, STATIC_USERS, STATIC_LISTINGS } from '@/data';
+import { getImageUrl } from '@/utils/imageUrl';
+import PioneerBadge from '@/app/components/PioneerBadge';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import CircleLoader from '@/app/components/CircleLoader';
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
 
@@ -82,7 +91,7 @@ function formatMemberSince(dateStr) {
 }
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80';
-const DEFAULT_LOGO  = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
 
 // ─── Normalizer & Listing Card (Matches Home Page ListingCard) ─────────────────
@@ -109,6 +118,7 @@ function normalizeListing(item) {
     if (images.length === 0) {
         images = [DEFAULT_IMAGE];
     }
+    images = images.map(img => getImageUrl(img, DEFAULT_IMAGE));
 
     const sellerType = item.seller?.type || item.listing_user_type || 'Gewerblich';
 
@@ -125,7 +135,7 @@ function normalizeListing(item) {
     }
 
     const isBoosted = Boolean(
-        item.is_boosted || 
+        item.is_boosted ||
         (item.boosted_until && new Date(item.boosted_until) > new Date())
     );
     const isFeatured = Boolean(item.featured);
@@ -324,8 +334,10 @@ function EmptyListings({ providerName }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProviderDetails() {
-    const params  = useParams();
-    const router  = useRouter();
+    const params = useParams();
+    const router = useRouter();
+    const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+    const currentUser = useAuthStore((state) => state.user);
 
     const rawSlug = params?.slug ? decodeURIComponent(params.slug) : '';
 
@@ -333,19 +345,69 @@ export default function ProviderDetails() {
     const uuidMatch = rawSlug.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i);
     const userId = uuidMatch ? uuidMatch[1] : null;
 
-    const [provider,  setProvider]  = useState(null);
-    const [listings,  setListings]  = useState([]);
-    const [loading,   setLoading]   = useState(true);
-    const [notFound,  setNotFound]  = useState(false);
-    const [coverSrc,  setCoverSrc]  = useState(DEFAULT_COVER);
-    const [logoSrc,   setLogoSrc]   = useState(DEFAULT_LOGO);
+    const [provider, setProvider] = useState(null);
+    const [listings, setListings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [notFound, setNotFound] = useState(false);
+    const [coverSrc, setCoverSrc] = useState(DEFAULT_COVER);
+    const [logoSrc, setLogoSrc] = useState(DEFAULT_LOGO);
+
+    // Chat / Message Modal State
+    const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+    const [contactMessage, setContactMessage] = useState('');
+    const [isSendingMessage, setIsSendingMessage] = useState(false);
+
+    const handleOpenContactModal = () => {
+        if (!isLoggedIn) {
+            toast.error('Bitte melde dich an, um eine Nachricht zu senden.');
+            router.push(`/login?returnUrl=/anbieter/${encodeURIComponent(rawSlug)}`);
+            return;
+        }
+        if (currentUser?.id && provider?.id && String(currentUser.id).toLowerCase() === String(provider.id).toLowerCase()) {
+            toast.error('Du kannst dir nicht selbst eine Nachricht senden.');
+            return;
+        }
+        setIsContactModalOpen(true);
+    };
+
+    const handleSendDirectMessage = async (e) => {
+        if (e) e.preventDefault();
+        if (!contactMessage || !contactMessage.trim()) {
+            toast.error('Bitte gib eine Nachricht ein.');
+            return;
+        }
+
+        setIsSendingMessage(true);
+        try {
+            const res = await createOrGetConversation({
+                listing_id: null,
+                seller_id: provider?.id || userId,
+                initial_message: contactMessage.trim()
+            });
+
+            const convId = res.conversation_id || res.data?.conversation_id;
+            if (res.success && convId) {
+                toast.success('Nachricht gesendet!');
+                setIsContactModalOpen(false);
+                setContactMessage('');
+                router.push(`/mein-konto?tab=nachrichten&id=${encodeURIComponent(convId)}`);
+            } else {
+                toast.error(res.error || res.message || 'Fehler beim Senden der Nachricht.');
+            }
+        } catch (err) {
+            console.error('Error starting chat:', err);
+            toast.error(err.response?.data?.error || err.message || 'Fehler beim Starten der Unterhaltung.');
+        } finally {
+            setIsSendingMessage(false);
+        }
+    };
 
     useEffect(() => {
         let cancelled = false;
 
         const fallbackToMock = () => {
             const cleanSlug = rawSlug.toLowerCase();
-            
+
             // Check in STATIC_USERS first
             const matchedStaticUser = STATIC_USERS.find(u => {
                 const sName = slugifyName(u.name);
@@ -360,23 +422,23 @@ export default function ProviderDetails() {
 
             if (matchedStaticUser) {
                 setProvider({
-                    id:           matchedStaticUser.id,
-                    name:         matchedStaticUser.name,
-                    type:         matchedStaticUser.sellerType || (matchedStaticUser.account_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'),
-                    logo:         matchedStaticUser.logo || DEFAULT_LOGO,
-                    cover:        matchedStaticUser.coverImage || DEFAULT_COVER,
-                    bio:          matchedStaticUser.description || '',
-                    location:     matchedStaticUser.location || 'Deutschland',
-                    email:        matchedStaticUser.email || ('kontakt@' + slugifyName(matchedStaticUser.name) + '.de'),
-                    phone:        matchedStaticUser.phone || '+49 (0) 30 1234567',
-                    website:      matchedStaticUser.website || ('https://' + slugifyName(matchedStaticUser.name) + '.de'),
-                    instagram:    'https://instagram.com/' + slugifyName(matchedStaticUser.name),
-                    facebook:     'https://facebook.com/' + slugifyName(matchedStaticUser.name),
-                    address:      matchedStaticUser.address || matchedStaticUser.location || 'Deutschland',
-                    impressum:    'https://' + slugifyName(matchedStaticUser.name) + '.de/impressum',
-                    memberSince:  formatMemberSince(matchedStaticUser.memberSince),
-                    isStrategic:  matchedStaticUser.account_type === 'COMMERCIAL',
-                    tier:         matchedStaticUser.account_type === 'COMMERCIAL' ? 'BUSINESS' : 'FREE',
+                    id: matchedStaticUser.id,
+                    name: matchedStaticUser.name,
+                    type: matchedStaticUser.sellerType || (matchedStaticUser.account_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'),
+                    logo: matchedStaticUser.logo || DEFAULT_LOGO,
+                    cover: matchedStaticUser.coverImage || DEFAULT_COVER,
+                    bio: matchedStaticUser.description || '',
+                    location: matchedStaticUser.location || 'Deutschland',
+                    email: matchedStaticUser.email || ('kontakt@' + slugifyName(matchedStaticUser.name) + '.de'),
+                    phone: matchedStaticUser.phone || '+49 (0) 30 1234567',
+                    website: matchedStaticUser.website || ('https://' + slugifyName(matchedStaticUser.name) + '.de'),
+                    instagram: 'https://instagram.com/' + slugifyName(matchedStaticUser.name),
+                    facebook: 'https://facebook.com/' + slugifyName(matchedStaticUser.name),
+                    address: matchedStaticUser.address || matchedStaticUser.location || 'Deutschland',
+                    impressum: 'https://' + slugifyName(matchedStaticUser.name) + '.de/impressum',
+                    memberSince: formatMemberSince(matchedStaticUser.memberSince),
+                    isStrategic: matchedStaticUser.account_type === 'COMMERCIAL',
+                    tier: matchedStaticUser.account_type === 'COMMERCIAL' ? 'BUSINESS' : 'FREE',
                     achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
                 });
 
@@ -384,8 +446,8 @@ export default function ProviderDetails() {
                 setLogoSrc(matchedStaticUser.logo || DEFAULT_LOGO);
 
                 // Find user's assigned listings from static marketplace dataset
-                const userListings = STATIC_LISTINGS.filter(l => 
-                    l.seller_user_id === matchedStaticUser.id || 
+                const userListings = STATIC_LISTINGS.filter(l =>
+                    l.seller_user_id === matchedStaticUser.id ||
                     l.seller?.name?.toLowerCase() === matchedStaticUser.name.toLowerCase()
                 );
                 setListings(userListings);
@@ -405,30 +467,30 @@ export default function ProviderDetails() {
 
             if (matchedMock) {
                 setProvider({
-                    id:           matchedMock.id,
-                    name:         matchedMock.name,
-                    type:         matchedMock.sellerType || 'Gewerblich',
-                    logo:         matchedMock.logo || DEFAULT_LOGO,
-                    cover:        matchedMock.coverImage || DEFAULT_COVER,
-                    bio:          matchedMock.description || '',
-                    location:     matchedMock.location || 'Deutschland',
-                    email:        'kontakt@' + slugifyName(matchedMock.name) + '.de',
-                    phone:        '+49 (0) 30 1234567',
-                    website:      'https://' + slugifyName(matchedMock.name) + '.de',
-                    instagram:    'https://instagram.com/' + slugifyName(matchedMock.name),
-                    facebook:     'https://facebook.com/' + slugifyName(matchedMock.name),
-                    address:      matchedMock.location ? `${matchedMock.location}, Deutschland` : 'Deutschland',
-                    impressum:    'https://' + slugifyName(matchedMock.name) + '.de/impressum',
-                    memberSince:  '01.01.2024',
-                    isStrategic:  true,
-                    tier:         'BUSINESS',
+                    id: matchedMock.id,
+                    name: matchedMock.name,
+                    type: matchedMock.sellerType || 'Gewerblich',
+                    logo: matchedMock.logo || DEFAULT_LOGO,
+                    cover: matchedMock.coverImage || DEFAULT_COVER,
+                    bio: matchedMock.description || '',
+                    location: matchedMock.location || 'Deutschland',
+                    email: 'kontakt@' + slugifyName(matchedMock.name) + '.de',
+                    phone: '+49 (0) 30 1234567',
+                    website: 'https://' + slugifyName(matchedMock.name) + '.de',
+                    instagram: 'https://instagram.com/' + slugifyName(matchedMock.name),
+                    facebook: 'https://facebook.com/' + slugifyName(matchedMock.name),
+                    address: matchedMock.location ? `${matchedMock.location}, Deutschland` : 'Deutschland',
+                    impressum: 'https://' + slugifyName(matchedMock.name) + '.de/impressum',
+                    memberSince: '01.01.2024',
+                    isStrategic: true,
+                    tier: 'BUSINESS',
                     achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
                 });
 
                 setCoverSrc(matchedMock.coverImage || DEFAULT_COVER);
                 setLogoSrc(matchedMock.logo || DEFAULT_LOGO);
 
-                const userListings = STATIC_LISTINGS.filter(l => 
+                const userListings = STATIC_LISTINGS.filter(l =>
                     l.seller?.name?.toLowerCase() === matchedMock.name.toLowerCase()
                 );
                 setListings(userListings);
@@ -452,39 +514,39 @@ export default function ProviderDetails() {
                     if (cancelled) return;
 
                     if (profileRes.success && profileRes.data?.profile) {
-                        const p    = profileRes.data.profile;
+                        const p = profileRes.data.profile;
                         const type = profileRes.data.profile_type;
 
                         const name = type === 'COMMERCIAL'
                             ? (p.company_name || 'Gewerblicher Anbieter')
                             : (`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Privatverkäufer');
 
-                        const logo  = p.logo_url || p.profile_image_url || DEFAULT_LOGO;
+                        const logo = p.logo_url || p.profile_image_url || DEFAULT_LOGO;
                         const cover = p.cover_image_url || DEFAULT_COVER;
 
                         setProvider({
-                            id:           userId,
+                            id: userId,
                             name,
-                            type:         type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
+                            type: type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                             logo,
                             cover,
-                            bio:          p.bio || '',
-                            location:     p.location || '',
-                            email:        p.company_email || '',
-                            phone:        p.phone || '',
-                            website:      p.website_url || '',
-                            instagram:    p.instagram_url || '',
-                            facebook:     p.facebook_url || '',
-                            address:      p.company_address || p.location || '',
-                            impressum:    p.privacy_policy_url || '',
-                            memberSince:  formatMemberSince(p.member_since),
-                            isStrategic:  p.is_strategic_partner || false,
-                            tier:         p.tier || 'FREE',
+                            bio: p.bio || '',
+                            location: p.location || '',
+                            email: p.company_email || '',
+                            phone: p.phone || '',
+                            website: p.website_url || '',
+                            instagram: p.instagram_url || '',
+                            facebook: p.facebook_url || '',
+                            address: p.company_address || p.location || '',
+                            impressum: p.privacy_policy_url || '',
+                            memberSince: formatMemberSince(p.member_since),
+                            isStrategic: p.is_strategic_partner || false,
+                            tier: p.tier || 'FREE',
                             achievements: profileRes.data.achievements || [],
                         });
 
-                        setCoverSrc(cover);
-                        setLogoSrc(logo);
+                        setCoverSrc(getImageUrl(cover, DEFAULT_COVER));
+                        setLogoSrc(getImageUrl(logo, DEFAULT_LOGO));
 
                         if (listingsRes.success && Array.isArray(listingsRes.data?.listings)) {
                             setListings(listingsRes.data.listings);
@@ -514,12 +576,7 @@ export default function ProviderDetails() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-sand flex items-center justify-center pt-24">
-                <div className="flex flex-col items-center space-y-4">
-                    <div className="w-12 h-12 border-4 border-forest border-t-transparent rounded-full animate-spin" />
-                    <p className="font-sans text-xs font-semibold text-forest uppercase tracking-widest animate-pulse">Laden...</p>
-                </div>
-            </div>
+            <CircleLoader size="lg" color="forest" fullPage />
         );
     }
 
@@ -535,13 +592,7 @@ export default function ProviderDetails() {
                     <p className="font-display text-xl font-bold text-charcoal mb-1">Anbieter nicht gefunden</p>
                     <p className="text-sm text-charcoal/50">Dieser Anbieter existiert nicht oder ist nicht mehr aktiv.</p>
                 </div>
-                <button
-                    onClick={() => router.back()}
-                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-forest border border-forest/20 px-5 py-2.5 rounded-full hover:bg-forest/5 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Zurück
-                </button>
+
             </div>
         );
     }
@@ -556,16 +607,17 @@ export default function ProviderDetails() {
             <title>{provider.name} – Anbieter auf Campuna</title>
             <meta name="description" content={provider.bio || `${provider.name} – Camping-Anbieter auf Campuna.`} />
 
-            <main className="max-w-7xl mx-auto py-20 px-4 md:px-6">
-
-                {/* Back button */}
-                <button
-                    onClick={() => router.back()}
-                    className="mb-6 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-charcoal/50 hover:text-forest transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    Zurück
-                </button>
+            <main className="max-w-7xl mx-auto pt-24 sm:pt-28 pb-20 px-4 md:px-6">
+                {/* ── Breadcrumbs ── */}
+                <div className="mb-6">
+                    <Breadcrumbs
+                        items={[
+                            { label: 'Camping-Anbieter', href: '/anbieter' },
+                            { label: provider.name }
+                        ]}
+                        variant="light"
+                    />
+                </div>
 
                 {/* ── Profile Card ── */}
                 <section className="bg-white rounded-3xl overflow-hidden border border-forest/10 shadow-lg mb-10">
@@ -604,19 +656,15 @@ export default function ProviderDetails() {
                                         {provider.name}
                                     </h1>
 
-                                    {/* Location & Member since */}
-                                    <div className="flex flex-wrap items-center gap-4 text-xs text-charcoal/55 font-medium">
-                                        {provider.location && (
+                                    {/* Location */}
+                                    {provider.location && (
+                                        <div className="flex flex-wrap items-center gap-4 text-xs text-charcoal/55 font-medium">
                                             <span className="flex items-center gap-1">
                                                 <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
                                                 {provider.location}
                                             </span>
-                                        )}
-                                        <div className="flex items-center gap-1.5 text-charcoal/85 font-semibold">
-                                            <Calendar className="w-4 h-4 text-gold shrink-0" />
-                                            Mitglied seit {provider.memberSince}
                                         </div>
-                                    </div>
+                                    )}
 
                                     {/* Contact row */}
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70 pt-0.5">
@@ -653,23 +701,31 @@ export default function ProviderDetails() {
                                         Privatverkäufer
                                     </span>
                                     {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
-                                        <div 
-                                            className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2.5 py-1 text-xs font-bold font-sans shadow-sm cursor-help"
-                                            title="Campuna Pioneer"
-                                        >
-                                            <img 
-                                                src="/pioneer_badge.png" 
-                                                alt="Campuna Pioneer Badge" 
-                                                className="w-4 h-4 rounded-full object-cover border border-gold/30"
-                                            />
-                                            <span>Pioneer</span>
-                                        </div>
+                                        <PioneerBadge size="sm" text="Pioneer" />
                                     )}
                                 </div>
 
-                                {/* Right Bottom: CTA */}
-                                <div className="w-full mt-auto pt-2">
-                                    <ProviderStats partner={provider} listingsCount={listings.length} />
+                                {/* Right Bottom: CTA & Listing count */}
+                                <div className="w-full flex flex-col items-stretch lg:items-end gap-3 mt-auto pt-2">
+                                    <div className="w-full">
+                                        <button
+                                            type="button"
+                                            onClick={handleOpenContactModal}
+                                            className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                                        >
+                                            <MessageSquare className="w-4 h-4 shrink-0" />
+                                            Anbieter kontaktieren
+                                        </button>
+                                        <span className="block mt-1.5 text-center text-[10px] text-charcoal/40 font-medium">
+                                            Direkt im Campuna Chat schreiben
+                                        </span>
+                                    </div>
+
+                                    {/* Listing count badge */}
+                                    <div className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-forest/15 bg-forest/5 text-forest rounded-full text-xs font-bold">
+                                        <Star className="w-3.5 h-3.5 text-gold fill-gold shrink-0" />
+                                        {listings.length === 1 ? '1 Inserat' : `${listings.length} Inserate`}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -694,21 +750,8 @@ export default function ProviderDetails() {
                                             <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
                                                 {provider.name}
                                             </h1>
-                                            <span className="p-1 bg-forest/5 text-forest rounded-full border border-forest/10 inline-flex items-center justify-center shrink-0" title="Verifizierter Campuna-Anbieter">
-                                                <ShieldCheck className="w-4 h-4 text-forest shrink-0 fill-forest/15" />
-                                            </span>
                                             {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
-                                                <div 
-                                                    className="flex items-center gap-1 bg-forest/5 border border-forest/20 text-forest rounded-full px-2 py-0.5 text-[10px] font-bold font-sans shadow-sm cursor-help"
-                                                    title="Campuna Pioneer"
-                                                >
-                                                    <img 
-                                                        src="/pioneer_badge.png" 
-                                                        alt="Campuna Pioneer Badge" 
-                                                        className="w-4 h-4 rounded-full object-cover border border-gold/30"
-                                                    />
-                                                    <span>Pioneer</span>
-                                                </div>
+                                                <PioneerBadge size="sm" text="Pioneer" />
                                             )}
                                             {provider.tier === 'BUSINESS' && (
                                                 <span className="px-2.5 py-0.5 bg-gold/10 text-gold border border-gold/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
@@ -758,10 +801,6 @@ export default function ProviderDetails() {
                                                 {provider.phone}
                                             </a>
                                         )}
-                                        <div className="flex items-center gap-1.5 text-charcoal/85 font-semibold">
-                                            <Calendar className="w-4 h-4 text-gold shrink-0" />
-                                            Mitglied seit {provider.memberSince}
-                                        </div>
                                     </div>
 
                                     {/* Social / Website links */}
@@ -796,15 +835,16 @@ export default function ProviderDetails() {
                             {/* Right — CTA */}
                             <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col justify-between items-start lg:items-end gap-6 shrink-0 self-stretch">
                                 <div className="w-full">
-                                    <a
-                                        href={`mailto:${contactEmail}?subject=Anfrage%20über%20Campuna`}
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenContactModal}
                                         className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
                                     >
                                         <MessageSquare className="w-4 h-4 shrink-0" />
                                         Anbieter kontaktieren
-                                    </a>
-                                    <span className="block mt-2 text-center text-[10px] text-charcoal/40 font-medium">
-                                        Nachricht direkt senden
+                                    </button>
+                                    <span className="block mt-1.5 text-center text-[10px] text-charcoal/40 font-medium">
+                                        Direkt im Campuna Chat schreiben
                                     </span>
                                 </div>
 
@@ -895,6 +935,135 @@ export default function ProviderDetails() {
                 )}
 
             </main>
+
+            {/* ── Contact / Chat Modal popup (Matched to Listing Chat Modal) ── */}
+            <AnimatePresence>
+                {isContactModalOpen && (
+                    <motion.div
+                        key="contact-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 overflow-y-auto backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-xl w-full flex flex-col relative text-left"
+                        >
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setIsContactModalOpen(false)}
+                                className="absolute top-4 right-4 text-charcoal/45 hover:text-charcoal bg-sand/40 hover:bg-sand p-2 rounded-full transition-all shadow-sm z-20 cursor-pointer"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            {/* Provider Header Snippet */}
+                            <div className="bg-sand/30 border-b border-forest/10 p-5 flex items-center gap-4">
+                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-forest/5 border border-forest/10 shrink-0">
+                                    <img
+                                        src={logoSrc || DEFAULT_LOGO}
+                                        alt={provider.name}
+                                        className="w-full h-full object-cover"
+                                        onError={() => setLogoSrc(DEFAULT_LOGO)}
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <span className="text-[10px] font-bold text-forest uppercase tracking-wider block truncate">
+                                        {provider.name} ({provider.type})
+                                    </span>
+                                    <h4 className="font-display font-bold text-sm text-charcoal truncate">
+                                        {provider.name}
+                                    </h4>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        {provider.location && (
+                                            <span className="text-[11px] text-charcoal/60 flex items-center gap-0.5 truncate">
+                                                <MapPin className="w-3 h-3 text-forest" />
+                                                {provider.location}
+                                            </span>
+                                        )}
+                                        <span className="text-charcoal/30">•</span>
+                                        <span className="text-[11px] text-charcoal/60">
+                                            {listings.length} {listings.length === 1 ? 'Inserat' : 'Inserate'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Chat Form Body */}
+                            <form onSubmit={handleSendDirectMessage} className="p-6 space-y-4 font-sans">
+                                <div>
+                                    <label className="block text-xs font-bold text-charcoal mb-1">
+                                        Nachricht an {provider.name}
+                                    </label>
+                                    <p className="text-[11px] text-charcoal/60 mb-3">
+                                        Starte eine direkte Unterhaltung. Deine Nachricht wird sicher über das Campuna-Nachrichtensystem zugestellt.
+                                    </p>
+
+                                    {/* Quick Preset Chips */}
+                                    <div className="flex flex-wrap gap-1.5 mb-3">
+                                        {[
+                                            'Hallo, ich interessiere mich für deine Angebote!',
+                                            'Bietest du Besichtigungstermine an?',
+                                            'Ich habe eine allgemeine Frage zu deinen Leistungen.'
+                                        ].map((preset) => (
+                                            <button
+                                                key={preset}
+                                                type="button"
+                                                onClick={() => setContactMessage(preset)}
+                                                className={`text-[11px] px-3 py-1.5 rounded-full border transition-all cursor-pointer text-left ${contactMessage === preset
+                                                    ? 'bg-forest text-sand border-forest font-semibold shadow-xs'
+                                                    : 'bg-white hover:bg-sand/40 border-forest/15 text-charcoal/80'
+                                                    }`}
+                                            >
+                                                {preset}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <textarea
+                                        required
+                                        rows={4}
+                                        value={contactMessage}
+                                        onChange={(e) => setContactMessage(e.target.value)}
+                                        placeholder={`Schreibe deine Nachricht an ${provider.name}...`}
+                                        className="w-full bg-sand/20 border border-forest/20 rounded-2xl p-3.5 text-xs text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-forest focus:ring-1 focus:ring-forest resize-none leading-relaxed"
+                                    />
+                                </div>
+
+                                <div className="pt-2 flex items-center justify-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsContactModalOpen(false)}
+                                        className="px-5 py-2.5 rounded-full border border-forest/20 text-charcoal/70 hover:bg-sand/40 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+                                    >
+                                        Abbrechen
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSendingMessage || !contactMessage.trim()}
+                                        className="px-6 py-2.5 rounded-full bg-forest hover:bg-gold text-white hover:text-forest text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                                    >
+                                        {isSendingMessage ? (
+                                            <>
+                                                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                <span>Wird gesendet...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <MessageSquare className="w-3.5 h-3.5" />
+                                                <span>Nachricht senden</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

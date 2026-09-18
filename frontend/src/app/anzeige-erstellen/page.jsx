@@ -2,8 +2,8 @@
 
 import React, { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import CircleLoader from '@/app/components/CircleLoader';
 
 function RedirectContent() {
     const router = useRouter();
@@ -34,23 +34,14 @@ function RedirectContent() {
     }, [isLoggedIn, user, editId, router]);
 
     return (
-        <div className="min-h-screen bg-sand flex items-center justify-center p-4 font-sans">
-            <div className="flex flex-col items-center gap-3 bg-white p-8 rounded-3xl shadow-sm border border-beige">
-                <Loader2 className="w-8 h-8 text-forest animate-spin" />
-                <p className="text-xs font-bold text-charcoal/60">
-                    Weiterleitung zur Inserat-Erstellung...
-                </p>
-            </div>
-        </div>
+        <CircleLoader size="lg" color="forest" fullPage />
     );
 }
 
 export default function AnzeigeErstellenRedirectPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-sand flex items-center justify-center p-4">
-                <Loader2 className="w-8 h-8 text-forest animate-spin" />
-            </div>
+            <CircleLoader size="lg" color="forest" fullPage />
         }>
             <RedirectContent />
         </Suspense>

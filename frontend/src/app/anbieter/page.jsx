@@ -6,7 +6,6 @@ import { motion } from 'framer-motion';
 import {
     Search,
     MapPin,
-    ShieldCheck,
     Star,
     ArrowRight,
     ArrowLeft,
@@ -21,9 +20,13 @@ import { getAllProfiles } from '@/api/profile';
 import { PROVIDERS } from '@/data';
 import { useAuthStore } from '@/store/useAuthStore';
 import CategoriesSection from '@/app/components/CategoriesSection';
+import { getImageUrl } from '@/utils/imageUrl';
+import PioneerBadge from '@/app/components/PioneerBadge';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import CircleLoader from '@/app/components/CircleLoader';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1000&q=80';
-const DEFAULT_LOGO  = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
 
 function slugifyName(name = '') {
     return name
@@ -44,8 +47,10 @@ function buildProviderSlug(name = '', id = '') {
 // ─── Provider Card Component ──────────────────────────────────────────────────────────
 function ProviderCard({ partner }) {
     const router = useRouter();
-    const [coverSrc, setCoverSrc] = useState(partner.coverImage || DEFAULT_COVER);
-    const [logoSrc, setLogoSrc] = useState(partner.logo || DEFAULT_LOGO);
+    const [coverSrc, setCoverSrc] = useState(getImageUrl(partner.coverImage, DEFAULT_COVER));
+    const [logoSrc, setLogoSrc] = useState(getImageUrl(partner.logo, DEFAULT_LOGO));
+
+    const isPioneer = Boolean(partner.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
 
     const handleCardClick = () => {
         const slug = buildProviderSlug(partner.name, partner.id);
@@ -58,7 +63,7 @@ function ProviderCard({ partner }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
             onClick={handleCardClick}
-            className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-forest/10 hover:border-forest/20 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full select-none"
+            className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-forest/10 hover:border-forest/25 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full select-none"
         >
             {/* Cover Banner */}
             <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-sand/30">
@@ -71,39 +76,28 @@ function ProviderCard({ partner }) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
-                {/* Top Badge: Verified */}
-                <div className="absolute top-3.5 right-3.5 z-10">
-                    <span className="bg-forest/90 backdrop-blur-md text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md flex items-center gap-1 border border-white/15">
-                        <ShieldCheck className="w-3 h-3 text-gold shrink-0" />
-                        Verifizierter Partner
-                    </span>
-                </div>
-
-                {/* Location Badge bottom left of cover */}
-                {partner.location && (
-                    <div className="absolute bottom-3 left-3.5 z-10 pointer-events-none">
-                        <span className="bg-black/50 backdrop-blur-md text-white/95 text-[10px] font-medium px-2.5 py-1 rounded-full flex items-center gap-1">
-                            <MapPin className="w-3 h-3 text-gold shrink-0" />
-                            {partner.location}
-                        </span>
+                {/* Top Badge: Pioneer (only if earned) */}
+                {isPioneer && (
+                    <div className="absolute top-3.5 right-3.5 z-10">
+                        <PioneerBadge variant="forest" size="xs" text="Pioneer" className="shadow-lg backdrop-blur-xs" />
                     </div>
                 )}
             </div>
 
-            {/* Logo Avatar overlapping cover */}
+            {/* Logo Avatar overlapping cover & Content */}
             <div className="relative px-5 pt-0 pb-5 flex flex-col flex-1 justify-between">
                 <div className="flex items-end justify-between -mt-10 mb-3">
-                    <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-lg border-2 border-white overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300">
+                    <div className="w-20 h-20 rounded-full bg-white p-1 shadow-lg border-2 border-white ring-2 ring-forest/10 overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300">
                         <img
                             src={logoSrc}
                             alt={`${partner.name} Logo`}
-                            className="w-full h-full object-contain rounded-xl bg-sand/20"
+                            className="w-full h-full object-cover rounded-full bg-sand/20"
                             onError={() => setLogoSrc(DEFAULT_LOGO)}
                         />
                     </div>
 
                     {partner.rating && (
-                        <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full text-amber-900 font-bold text-xs">
+                        <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full text-amber-900 font-bold text-xs shadow-xs">
                             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                             <span>{partner.rating.toFixed(1)}</span>
                         </div>
@@ -112,10 +106,27 @@ function ProviderCard({ partner }) {
 
                 {/* Provider Info */}
                 <div className="space-y-1.5 flex-1">
-                    <h3 className="font-display text-base sm:text-lg font-bold text-charcoal group-hover:text-gold transition-colors duration-200 line-clamp-1">
-                        {partner.name}
-                    </h3>
-                    <p className="font-sans text-xs text-charcoal/70 leading-relaxed font-light line-clamp-2">
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-display text-base sm:text-lg font-bold text-charcoal group-hover:text-forest transition-colors duration-200 line-clamp-1">
+                            {partner.name}
+                        </h3>
+                    </div>
+
+                    {/* Location & Type below heading */}
+                    <div className="flex items-center gap-1.5 text-xs text-charcoal/65 font-medium">
+                        <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
+                        <span className="line-clamp-1">{partner.location || 'Deutschland'}</span>
+                        {partner.type && (
+                            <>
+                                <span className="text-charcoal/30 shrink-0">•</span>
+                                <span className="text-[10px] font-semibold text-forest bg-forest/5 px-2 py-0.5 rounded-full border border-forest/10 shrink-0">
+                                    {partner.type}
+                                </span>
+                            </>
+                        )}
+                    </div>
+
+                    <p className="font-sans text-xs text-charcoal/70 leading-relaxed font-light line-clamp-2 pt-1">
                         {partner.description || 'Spezialisierter Anbieter für Camping, Wohnmobile & Ausrüstung auf Campuna.'}
                     </p>
                 </div>
@@ -176,8 +187,9 @@ function ProvidersContent() {
                         description: p.description || '',
                         listingsCount: p.listingsCount || 0,
                         rating: 4.9,
-                        location: 'Deutschland',
-                        type: p.type || 'Gewerblich'
+                        location: p.location || 'Deutschland',
+                        type: p.type || 'Gewerblich',
+                        achievements: p.achievements || []
                     }));
 
                     // Merge with mock providers so showcase is complete
@@ -211,7 +223,7 @@ function ProvidersContent() {
                 const term = searchTerm.toLowerCase();
                 const inName = p.name?.toLowerCase().includes(term);
                 const inDesc = p.description?.toLowerCase().includes(term);
-                const inLoc  = p.location?.toLowerCase().includes(term);
+                const inLoc = p.location?.toLowerCase().includes(term);
                 if (!inName && !inDesc && !inLoc) return false;
             }
             if (selectedLocation !== 'all') {
@@ -263,15 +275,6 @@ function ProvidersContent() {
                 }}
             >
                 <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-                    {/* Back button */}
-                    <button
-                        onClick={() => router.push('/')}
-                        className="mb-8 self-start flex items-center gap-2 text-xs md:text-sm font-semibold text-white/80 hover:text-white transition-colors group cursor-pointer"
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Zurück zur Startseite
-                    </button>
-
                     <span className="font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-gold block mb-2">
                         CAMPUNA PARTNER & NETZWERK
                     </span>
@@ -285,7 +288,7 @@ function ProvidersContent() {
                     {/* Action buttons */}
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                         <button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/register')}
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/register?type=commercial')}
                             className="bg-gold hover:bg-white text-forest font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-2"
                         >
                             <Building2 className="w-4 h-4" />
@@ -301,13 +304,21 @@ function ProvidersContent() {
                 </div>
             </section>
 
+            {/* ── Breadcrumbs below Hero ── */}
+            <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-6 pb-1">
+                <Breadcrumbs
+                    items={[{ label: 'Camping-Anbieter' }]}
+                    variant="light"
+                />
+            </div>
+
             {/* ── Main Content Area ── */}
-            <main className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-10">
+            <main className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
 
                 {/* Filter & Search Header */}
                 <div className="bg-sand/30 border border-forest/10 rounded-2xl p-4 sm:p-6 mb-10 shadow-sm">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                        
+
                         {/* Search Input */}
                         <div className="relative sm:col-span-2">
                             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal/40" />
@@ -375,8 +386,9 @@ function ProvidersContent() {
                             <div key={i} className="rounded-3xl overflow-hidden border border-forest/5 animate-pulse bg-white">
                                 <div className="h-36 bg-sand/50" />
                                 <div className="p-5 space-y-3">
-                                    <div className="w-16 h-16 rounded-2xl bg-sand/60 -mt-12 mb-3" />
+                                    <div className="w-20 h-20 rounded-full bg-sand/60 -mt-12 mb-3 border-2 border-white" />
                                     <div className="h-5 bg-sand/60 rounded-full w-3/4" />
+                                    <div className="h-3.5 bg-sand/40 rounded-full w-1/3" />
                                     <div className="h-3.5 bg-sand/40 rounded-full w-full" />
                                     <div className="h-3.5 bg-sand/40 rounded-full w-2/3" />
                                 </div>
@@ -411,40 +423,6 @@ function ProvidersContent() {
 
             </main>
 
-            {/* ── CTA Banner for Providers / Business ── */}
-            <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-10 mb-8">
-                <div className="bg-gradient-to-br from-forest to-forest/90 text-white rounded-3xl p-8 sm:p-12 shadow-xl relative overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-8">
-                    <div className="space-y-3 max-w-2xl text-center lg:text-left z-10">
-                        <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full text-gold text-[10px] font-bold uppercase tracking-widest border border-white/10">
-                            <Sparkles className="w-3 h-3 text-gold" />
-                            Für Händler & Gewerbetreibende
-                        </div>
-                        <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
-                            Werde Partner auf Campuna und erreiche tausende Camping-Begeisterte
-                        </h2>
-                        <p className="font-sans text-sand/80 text-xs sm:text-sm leading-relaxed font-light">
-                            Präsentiere deine Angebote, gewinne neue Kunden und profitiere von unserem spezialisierten Marktplatz für ganz Deutschland.
-                        </p>
-                        <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-4 text-xs font-medium text-sand/90">
-                            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-gold" /> Unbegrenzte Inserate</span>
-                            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-gold" /> Verifiziertes Firmenprofil</span>
-                            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-gold" /> Direkter Kundenkontakt</span>
-                        </div>
-                    </div>
-
-                    <div className="z-10 shrink-0">
-                        <button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/register')}
-                            className="bg-gold hover:bg-white text-forest font-sans font-bold text-xs uppercase tracking-wider py-4 px-8 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer whitespace-nowrap active:scale-95"
-                        >
-                            Jetzt Partner werden
-                        </button>
-                    </div>
-
-                    {/* Decorative radial effect */}
-                    <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-gold/15 rounded-full blur-3xl pointer-events-none" />
-                </div>
-            </section>
 
             {/* ── Categories Section Carousel ── */}
             <section className="py-16 px-4 bg-sand/20 border-t border-forest/5">
@@ -467,9 +445,7 @@ function ProvidersContent() {
 export default function AllProvidersPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-white flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-forest border-t-transparent rounded-full animate-spin" />
-            </div>
+            <CircleLoader size="lg" color="forest" fullPage />
         }>
             <ProvidersContent />
         </Suspense>

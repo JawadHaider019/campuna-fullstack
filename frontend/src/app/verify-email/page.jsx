@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { CheckCircle2, AlertTriangle, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { verifyEmailToken } from '@/api/auth';
+import CircleLoader from '@/app/components/CircleLoader';
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams();
@@ -169,9 +170,7 @@ function VerifyEmailContent() {
 export default function VerifyEmailPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen bg-sand flex items-center justify-center">
-                <div className="w-8 h-8 border-3 border-forest border-t-transparent rounded-full animate-spin" />
-            </div>
+            <CircleLoader size="lg" color="forest" fullPage />
         }>
             <VerifyEmailContent />
         </Suspense>

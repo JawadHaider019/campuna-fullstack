@@ -7,6 +7,9 @@ import { useRouter } from 'next/navigation';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import CategoriesSection from '@/app/components/CategoriesSection';
+import Breadcrumbs from '@/app/components/Breadcrumbs';
+import { getImageUrl } from '@/utils/imageUrl';
+import CircleLoader from '@/app/components/CircleLoader';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -51,14 +54,6 @@ export default function FavoritesPage() {
                 }}
             >
                 <div className="max-w-7xl mx-auto">
-                    <button
-                        onClick={() => router.push('/inserate')}
-                        className="mb-6 flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white transition-colors group cursor-pointer"
-                    >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        Zurück zur Übersicht
-                    </button>
-
                     <div className="flex items-center gap-2 mb-2">
                         <Heart className="w-5 h-5 text-rose-400 fill-rose-400" />
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold">
@@ -86,11 +81,48 @@ export default function FavoritesPage() {
                 </div>
             </section>
 
+            {/* ── Breadcrumbs below Hero ── */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-1">
+                <Breadcrumbs
+                    items={[{ label: 'Merkzettel' }]}
+                    variant="light"
+                />
+            </div>
+
             {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-10">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8">
                 {!mounted ? (
-                    <div className="flex justify-center py-20">
-                        <div className="w-8 h-8 border-4 border-forest border-t-transparent rounded-full animate-spin" />
+                    <div className="py-20">
+                        <CircleLoader size="lg" color="forest" />
+                    </div>
+                ) : !isLoggedIn ? (
+                    /* Not logged in state */
+                    <div className="text-center py-20 bg-sand/20 rounded-[32px] border border-dashed border-forest/15 px-6 max-w-3xl mx-auto">
+                        <div className="w-16 h-16 bg-gold/15 text-gold-dark rounded-full flex items-center justify-center mx-auto mb-4 border border-gold/30">
+                            <Heart className="w-8 h-8 text-rose-500 fill-rose-500" />
+                        </div>
+                        <h2 className="font-display text-2xl font-bold text-forest mb-2">
+                            Anmeldung erforderlich
+                        </h2>
+                        <p className="text-xs sm:text-sm text-charcoal/70 max-w-md mx-auto mb-6 leading-relaxed">
+                            Um Inserate auf deinem persönlichen Merkzettel zu speichern und auf all deinen Geräten abzurufen, musst du angemeldet sein.
+                        </p>
+                        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                            <button
+                                onClick={() => router.push('/login?redirect=/favoriten')}
+                                className="w-full sm:w-auto bg-forest hover:bg-[#004d0a] text-sand text-xs font-bold uppercase tracking-wider py-3.5 px-8 rounded-full shadow-lg transition-all duration-300 inline-flex items-center justify-center gap-2 cursor-pointer hover:scale-105 active:scale-95"
+                            >
+                                <Sparkles className="w-4 h-4 text-gold" />
+                                Jetzt anmelden
+                            </button>
+                            <button
+                                onClick={() => router.push('/inserate')}
+                                className="w-full sm:w-auto bg-white hover:bg-sand/40 text-charcoal text-xs font-bold uppercase tracking-wider py-3.5 px-8 rounded-full border border-beige transition-all duration-300 inline-flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <Search className="w-4 h-4" />
+                                Inserate durchsuchen
+                            </button>
+                        </div>
                     </div>
                 ) : favoriteListings.length === 0 ? (
                     /* Empty state */
@@ -149,9 +181,10 @@ export default function FavoritesPage() {
                                             {/* Image */}
                                             <div className="relative aspect-[16/9] bg-sand/30 overflow-hidden cursor-pointer" onClick={() => router.push(`/inserate/${slug}`)}>
                                                 <img
-                                                    src={previewImg}
+                                                    src={getImageUrl(previewImg)}
                                                     alt={item.title}
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    onError={(e) => { e.currentTarget.src = '/hero.webp'; }}
                                                 />
                                                 <span className="absolute top-3 left-3 bg-forest text-white text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
                                                     <ShieldCheck className="w-3 h-3 text-gold" />

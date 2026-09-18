@@ -23,6 +23,8 @@ import {
 import { CATEGORIES } from '@/data';
 import { createListing, updateListing, getListingDetail } from '@/api/listings';
 import { toast } from 'react-hot-toast';
+import { isValidPhoneNumber, PHONE_VALIDATION_ERROR } from '@/utils/validation';
+import { getImageUrl } from '@/utils/imageUrl';
 
 const SUBCATEGORIES_MAP = {
     'Camping Zubehör': [
@@ -249,6 +251,10 @@ export default function AccountCreateListingTab({
         }
         if (!description.trim()) {
             toast.error('Bitte gib eine kurze Beschreibung an.');
+            return;
+        }
+        if (phone.trim() && !isValidPhoneNumber(phone.trim())) {
+            toast.error(PHONE_VALIDATION_ERROR);
             return;
         }
 
@@ -577,19 +583,37 @@ export default function AccountCreateListingTab({
 
                             {/* Phone */}
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-charcoal/80 font-sans">
-                                    Telefonnummer (optional)
-                                </label>
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold text-charcoal/80 font-sans">
+                                        Telefonnummer (optional)
+                                    </label>
+                                    {phone.trim() && !isValidPhoneNumber(phone.trim()) && (
+                                        <span className="text-[10px] font-semibold text-rose-600 font-sans">
+                                            Ungültiges Format
+                                        </span>
+                                    )}
+                                </div>
                                 <div className="relative">
-                                    <Phone className="w-3.5 h-3.5 text-charcoal/40 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                    <Phone className={`w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors ${
+                                        phone.trim() && !isValidPhoneNumber(phone.trim()) ? 'text-rose-500' : 'text-charcoal/40'
+                                    }`} />
                                     <input
-                                        type="text"
+                                        type="tel"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
                                         placeholder="z. B. +49 89 12345678"
-                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl pl-9 pr-4 py-2.5 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all"
+                                        className={`w-full bg-[#faf8f3] border rounded-xl pl-9 pr-4 py-2.5 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 font-sans transition-all ${
+                                            phone.trim() && !isValidPhoneNumber(phone.trim())
+                                                ? 'border-rose-400 focus:ring-rose-200 focus:border-rose-500'
+                                                : 'border-beige focus:ring-forest/20 focus:border-forest'
+                                        }`}
                                     />
                                 </div>
+                                {phone.trim() && !isValidPhoneNumber(phone.trim()) && (
+                                    <p className="text-[10px] text-rose-500 font-sans">
+                                        Bitte gültige Vorwahl & Nummer angeben (z. B. +49 170 1234567 oder 0170 1234567).
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -669,7 +693,7 @@ export default function AccountCreateListingTab({
                                         className="relative aspect-square rounded-2xl overflow-hidden bg-sand border border-beige group shadow-xs"
                                     >
                                         <Image
-                                            src={url}
+                                            src={getImageUrl(url)}
                                             alt={`Vorschau ${idx + 1}`}
                                             fill
                                             className="object-cover"
@@ -718,7 +742,7 @@ export default function AccountCreateListingTab({
                             <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
                                 {previewUrls[0] ? (
                                     <Image
-                                        src={previewUrls[0]}
+                                        src={getImageUrl(previewUrls[0])}
                                         alt={title || 'Inserat'}
                                         fill
                                         className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"

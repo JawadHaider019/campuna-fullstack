@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { STATIC_LISTINGS } from '@/data';
+import { getImageUrl } from '@/utils/imageUrl';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
 
@@ -31,6 +32,7 @@ function normalizeListing(item) {
     if (images.length === 0) {
         images = [DEFAULT_IMAGE];
     }
+    images = images.map(img => getImageUrl(img, DEFAULT_IMAGE));
 
     const sellerType = item.seller?.type || item.listing_user_type || 'Privat';
 

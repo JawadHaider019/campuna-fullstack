@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
+import { getImageUrl } from '@/utils/imageUrl';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -175,7 +176,7 @@ export default function AccountFavoritesTab({ onNavigateToListings }) {
                 </div>
             ) : (
                 /* Grid of Favorites */
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-4.5">
                     <AnimatePresence>
                         {filteredFavorites.map((item) => {
                             const rawImg = Array.isArray(item.images) && item.images.length > 0
@@ -193,28 +194,29 @@ export default function AccountFavoritesTab({ onNavigateToListings }) {
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     transition={{ duration: 0.2 }}
-                                    className="group bg-white rounded-3xl overflow-hidden border border-beige hover:border-gold/40 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                                    className="group bg-white rounded-2xl overflow-hidden border border-beige hover:border-forest/25 hover:shadow-md transition-all duration-300 flex flex-col justify-between"
                                 >
                                     <div>
-                                        {/* Image Area */}
+                                        {/* Compact Image Area */}
                                         <div 
-                                            className="relative aspect-[16/9] bg-sand/30 overflow-hidden cursor-pointer"
+                                            className="relative h-36 w-full bg-sand/30 overflow-hidden cursor-pointer"
                                             onClick={() => router.push(`/inserate/${slug}`)}
                                         >
                                             <img
-                                                src={rawImg}
+                                                src={getImageUrl(rawImg)}
                                                 alt={item.title}
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                onError={(e) => { e.currentTarget.src = '/hero.webp'; }}
                                             />
                                             
                                             {/* Badges */}
-                                            <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
+                                            <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
                                                 {isBoosted && (
-                                                    <span className="bg-gradient-to-r from-gold to-gold-dark text-forest font-black text-[9px] uppercase px-2.5 py-0.5 rounded-full shadow-md flex items-center gap-1">
+                                                    <span className="bg-gradient-to-r from-gold to-gold-dark text-forest font-black text-[9px] uppercase px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
                                                         <Rocket className="w-2.5 h-2.5" /> Boosted
                                                     </span>
                                                 )}
-                                                <span className="bg-forest/90 backdrop-blur-xs text-sand text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 w-fit">
+                                                <span className="bg-forest/90 backdrop-blur-xs text-sand text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 w-fit">
                                                     <ShieldCheck className="w-2.5 h-2.5 text-gold" />
                                                     {item.seller?.type || item.listing_user_type || 'Privat'}
                                                 </span>
@@ -228,41 +230,44 @@ export default function AccountFavoritesTab({ onNavigateToListings }) {
                                                     removeFavoriteItem(item.id);
                                                 }}
                                                 title="Aus Merkzettel entfernen"
-                                                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/95 hover:bg-rose-500 hover:text-white text-rose-500 flex items-center justify-center transition-all shadow-md cursor-pointer group/fav z-10"
+                                                className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-white/95 hover:bg-rose-500 hover:text-white text-rose-500 flex items-center justify-center transition-all shadow-md cursor-pointer group/fav z-10"
                                             >
-                                                <Heart className="w-4 h-4 fill-current transition-transform group-hover/fav:scale-110" />
+                                                <Heart className="w-3.5 h-3.5 fill-current transition-transform group-hover/fav:scale-110" />
                                             </button>
+
+                                            {/* Location Pill */}
+                                            {item.location && (
+                                                <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/55 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] text-white/95 z-10">
+                                                    <MapPin className="w-2.5 h-2.5 text-gold shrink-0" />
+                                                    <span className="truncate max-w-[110px]">{item.location}</span>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Content */}
-                                        <div className="p-4 space-y-2">
+                                        <div className="p-3.5 space-y-1.5 font-sans">
                                             {item.category && (
-                                                <span className="text-[9px] font-black uppercase tracking-wider text-gold-dark block">
+                                                <span className="text-[9px] font-bold uppercase tracking-wider text-forest/70 block">
                                                     {item.category}
                                                 </span>
                                             )}
                                             <h4 
                                                 onClick={() => router.push(`/inserate/${slug}`)}
-                                                className="font-display text-sm font-bold text-forest hover:text-gold transition-colors line-clamp-2 leading-snug cursor-pointer"
+                                                className="font-display text-xs sm:text-sm font-bold text-charcoal group-hover:text-forest transition-colors line-clamp-1 leading-snug cursor-pointer"
+                                                title={item.title}
                                             >
                                                 {item.title}
                                             </h4>
-                                            {item.location && (
-                                                <div className="flex items-center gap-1 text-[11px] text-charcoal/60">
-                                                    <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                    <span className="truncate">{item.location}</span>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
 
                                     {/* Footer / Price & Action */}
-                                    <div className="p-4 pt-2 border-t border-beige flex items-center justify-between mt-2">
+                                    <div className="p-3 pt-2 border-t border-beige flex items-center justify-between mt-1">
                                         <div>
                                             <span className="block text-[8px] uppercase tracking-widest text-charcoal/40 font-mono">
                                                 {item.pricePeriod || 'Kaufpreis'}
                                             </span>
-                                            <span className="font-display text-base font-extrabold text-forest">
+                                            <span className="font-display text-sm sm:text-base font-black text-forest">
                                                 {priceNum > 0 ? `${priceNum.toLocaleString('de-DE')} €` : 'Preis VB'}
                                             </span>
                                         </div>
@@ -270,7 +275,7 @@ export default function AccountFavoritesTab({ onNavigateToListings }) {
                                         <button
                                             type="button"
                                             onClick={() => router.push(`/inserate/${slug}`)}
-                                            className="bg-forest hover:bg-gold hover:text-forest text-sand text-[10px] font-bold uppercase tracking-wider py-2 px-3.5 rounded-full transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                            className="bg-forest hover:bg-gold hover:text-forest text-sand text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-xl transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
                                         >
                                             <Eye className="w-3 h-3" />
                                             <span>Ansehen</span>

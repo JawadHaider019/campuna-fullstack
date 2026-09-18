@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+import { getImageUrl } from '@/utils/imageUrl';
+import CircleLoader from '@/app/components/CircleLoader';
 import {
     Sparkles,
     Search,
@@ -482,11 +483,8 @@ export default function AdminDecisionsPage() {
             {/* ─── Main Decisions Feed / Table ─── */}
             <div className="space-y-4">
                 {loading ? (
-                    <div key="loading-state" className="bg-white border border-[#E8EAEF] rounded-3xl p-16 text-center">
-                        <div className="w-8 h-8 border-3 border-forest border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                        <span className="text-xs font-bold text-slate-400">
-                            KI-Entscheidungen werden geladen...
-                        </span>
+                    <div key="loading-state" className="py-20 flex items-center justify-center">
+                        <CircleLoader size="lg" color="forest" />
                     </div>
                 ) : decisions.length === 0 ? (
                     <div key="empty-state" className="bg-white border border-[#E8EAEF] rounded-3xl p-16 text-center space-y-2">
