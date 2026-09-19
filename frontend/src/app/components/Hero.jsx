@@ -96,9 +96,18 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                     >
                         <motion.button
                             onClick={() => {
+                                if (typeof window !== 'undefined') {
+                                    window.dispatchEvent(new CustomEvent('open-campuna-tools-tab', { detail: { tab: 'tools' } }));
+                                }
                                 const element = document.getElementById('tool');
                                 if (element) {
-                                    element.scrollIntoView({ behavior: 'smooth' });
+                                    const navOffset = 90;
+                                    const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+                                    const offsetPosition = elementPosition - navOffset;
+                                    window.scrollTo({
+                                        top: offsetPosition,
+                                        behavior: 'smooth'
+                                    });
                                 }
                             }}
                             whileHover={{ scale: 1.04 }}
@@ -108,7 +117,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                             Camping Helfer
                         </motion.button>
                         <motion.button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/register')}
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/registrieren')}
                             whileHover={{ scale: 1.04 }}
                             whileTap={{ scale: 0.96 }}
                             className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/25 font-sans font-semibold py-3 px-6 rounded-full transition-all duration-300 text-[12px] tracking-wider cursor-pointer"

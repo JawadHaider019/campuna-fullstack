@@ -2,6 +2,7 @@ import pool from '../config/database.js';
 import { db } from '../prisma/db.js';
 import { getUserFeatures } from './subscription.js';
 import { isValidPhoneNumber } from '../utils/validation.js';
+import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
 import crypto from 'crypto';
 
 /**
@@ -92,14 +93,16 @@ export const createListing = async (req, res) => {
 
         const listingId = crypto.randomUUID();
         const initialStatus = isAdmin ? 'APPROVED' : 'REVIEW';
+        const listingPhone = req.body.phone && String(req.body.phone).trim() !== '' ? String(req.body.phone).trim() : null;
 
         // 6. Create Listing in single table
         const insertRes = await pool.query(
             `INSERT INTO listings (
-                id, user_id, title, slug, description, price, negotiable, location,
+                id, user_id, title, slug, description, price, negotiable, location, phone,
                 condition, category, subcategory, status, featured, boosted_until, images, created_at, updated_at
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, false, NULL, $13, NOW(), NOW()
+                $1, $2, $3, $4, $5, $6, $7, $8, $9,
+                $10, $11, $12, $13, false, NULL, $14, NOW(), NOW()
             ) RETURNING *`,
             [
                 listingId,
@@ -110,6 +113,7 @@ export const createListing = async (req, res) => {
                 parsedPrice,
                 negotiable,
                 location,
+                listingPhone,
                 req.body.condition || 'Gebraucht',
                 category,
                 subcategory || '',
@@ -151,6 +155,11 @@ export const createListing = async (req, res) => {
             );
         } catch (modErr) {
             console.warn('Notice: initial listing_moderation creation:', modErr.message);
+        }
+
+        // 8. If immediately approved (e.g. created by Admin), check and award referral credits
+        if (initialStatus === 'APPROVED') {
+            checkAndAwardReferralCreditsOnApproval(id).catch(() => {});
         }
 
         const remainingForBadge = Math.max(0, 3 - (activeCount + 1));
@@ -400,10 +409,13 @@ export const getListingDetail = async (req, res) => {
             }
         }
 
+        const sellerPhone = listing.phone || profile?.phone || '';
+
         return res.status(200).json({
             success: true,
             listing: {
                 ...listing,
+                phone: sellerPhone,
                 price: parseFloat(listing.price) || 0,
                 featured: Boolean(listing.featured),
                 boosted_until: listing.boosted_until,
@@ -412,6 +424,7 @@ export const getListingDetail = async (req, res) => {
                 seller: {
                     name: sellerName,
                     type: sellerType,
+                    phone: sellerPhone,
                     verified: true,
                     achievements
                 }
@@ -483,23 +496,31 @@ export const getListingsByUser = async (req, res) => {
 
 /**
  * POST /api/listings/:id/boost
- * Allows a seller to boost their listing using Campuna Credits (CC).
- * Packages: 7 days = 500 CC, 14 days = 900 CC, 30 days = 1800 CC
+ * Allows a seller to boost/highlight their listing using Campuna Credits (CC) or Direct Payment.
+ * Packages: 7 days = 500 CC (4,99 €), 14 days = 800 CC (7,99 €), 30 days = 1.300 CC (12,99 €)
  */
 export const boostListing = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
-        const { durationDays = 7 } = req.body;
+        const { durationDays = 7, payment_method = 'CREDIT' } = req.body;
 
         const parsedDays = parseInt(durationDays, 10);
-        const PRICING = {
-            7: 500,
-            14: 900,
-            30: 1800
+        const PRICING_CC = {
+            7: 500,    // 4,99 €
+            14: 800,   // 7,99 €
+            30: 1300   // 12,99 €
         };
 
-        const cost = PRICING[parsedDays] || Math.round(parsedDays * (500 / 7));
+        const PRICING_EUR = {
+            7: '4,99 €',
+            14: '7,99 €',
+            30: '12,99 €'
+        };
+
+        const cost = PRICING_CC[parsedDays] || Math.round(parsedDays * (500 / 7));
+        const priceEur = PRICING_EUR[parsedDays] || `${((cost / 100)).toFixed(2).replace('.', ',')} €`;
+
         if (!cost || cost <= 0) {
             return res.status(400).json({ success: false, error: 'Ungültige Boost-Dauer angegeben.' });
         }
@@ -518,24 +539,56 @@ export const boostListing = async (req, res) => {
         if (listing.status !== 'APPROVED') {
             return res.status(400).json({
                 success: false,
-                error: 'Nur freigegebene (aktive) Inserate können geboostet werden.'
+                error: 'Nur freigegebene (aktive) Inserate können hervorgehoben werden.'
             });
         }
 
-        // Check credit balance
+        // Fetch current credit balance
         const balanceRes = await pool.query(
             'SELECT COALESCE(SUM(amount), 0) as balance FROM credit_transactions WHERE user_id = $1',
             [userId]
         );
         const currentBalance = parseInt(balanceRes.rows[0]?.balance || 0, 10);
 
-        if (currentBalance < cost) {
-            return res.status(400).json({
-                success: false,
-                error: `Nicht genügend Campuna Credits vorhanden. Du benötigst ${cost.toLocaleString('de-DE')} CC (${currentBalance.toLocaleString('de-DE')} CC verfügbar).`,
-                balance: currentBalance,
-                required: cost
-            });
+        const normMethod = (payment_method || 'CREDIT').toUpperCase();
+
+        if (normMethod === 'CREDIT') {
+            if (currentBalance < cost) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Nicht genügend Campuna Credits vorhanden. Du benötigst ${cost.toLocaleString('de-DE')} CC (${currentBalance.toLocaleString('de-DE')} CC verfügbar).`,
+                    balance: currentBalance,
+                    required: cost
+                });
+            }
+
+            // Deduct credits in ledger
+            await pool.query(
+                `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
+                 VALUES ($1, $2, $3, $4, NOW())`,
+                [
+                    userId,
+                    -cost,
+                    'FEATURE_SPEND',
+                    `${parsedDays}-Tage Inserat hervorheben für "${listing.title}" (-${cost.toLocaleString('de-DE')} CC)`
+                ]
+            );
+        } else {
+            // Direct payment (Credit Card / SEPA / PayPal)
+            let methodLabel = 'Kreditkarte';
+            if (normMethod === 'SEPA') methodLabel = 'SEPA-Lastschrift';
+            else if (normMethod === 'PAYPAL') methodLabel = 'PayPal';
+            else if (normMethod === 'DIRECT') methodLabel = 'Direktzahlung';
+
+            // Record direct payment transaction in ledger for audit trail
+            await pool.query(
+                `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
+                 VALUES ($1, 0, 'DIRECT_BOOST_PAYMENT', $2, NOW())`,
+                [
+                    userId,
+                    `${parsedDays}-Tage Inserat hervorheben für "${listing.title}" (${priceEur} bezahlt via ${methodLabel})`
+                ]
+            );
         }
 
         // Calculate new boosted_until
@@ -551,18 +604,6 @@ export const boostListing = async (req, res) => {
             newBoostedUntil = new Date(now.getTime() + parsedDays * 24 * 60 * 60 * 1000);
         }
 
-        // Ledger entry in credit_transactions
-        await pool.query(
-            `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
-             VALUES ($1, $2, $3, $4, NOW())`,
-            [
-                userId,
-                -cost,
-                'FEATURE_SPEND',
-                `${parsedDays}-Tage Spotlight-Boost für Inserat "${listing.title}" (-${cost} CC)`
-            ]
-        );
-
         // Update listing boosted_until
         const updateRes = await pool.query(
             `UPDATE listings
@@ -573,19 +614,21 @@ export const boostListing = async (req, res) => {
         );
 
         const updatedListing = updateRes.rows[0];
-        const newBalance = currentBalance - cost;
+        const newBalance = normMethod === 'CREDIT' ? currentBalance - cost : currentBalance;
 
         return res.status(200).json({
             success: true,
-            message: `Dein Inserat "${listing.title}" wurde erfolgreich für ${parsedDays} Tage geboostet!`,
+            message: `Dein Inserat "${listing.title}" wurde erfolgreich für ${parsedDays} Tage hervorgehoben!`,
             listing: {
                 ...updatedListing,
                 featured: Boolean(updatedListing.featured),
                 is_boosted: true
             },
+            is_boosted: true,
             boosted_until: updatedListing.boosted_until,
             new_balance: newBalance,
-            spent_credits: cost
+            spent_credits: normMethod === 'CREDIT' ? cost : 0,
+            payment_method: normMethod
         });
 
     } catch (error) {
@@ -637,19 +680,36 @@ export const updateListing = async (req, res) => {
 
         // 3. Process existing images kept by user
         let retainedImages = [];
-        if (existing_images) {
-            if (Array.isArray(existing_images)) {
-                retainedImages = existing_images;
-            } else if (typeof existing_images === 'string') {
+        const rawExisting = req.body.existingImages !== undefined
+            ? req.body.existingImages
+            : (req.body.existing_images !== undefined ? req.body.existing_images : req.body.images);
+
+        if (rawExisting !== undefined && rawExisting !== null) {
+            if (Array.isArray(rawExisting)) {
+                retainedImages = rawExisting;
+            } else if (typeof rawExisting === 'string') {
                 try {
-                    const parsed = JSON.parse(existing_images);
+                    const parsed = JSON.parse(rawExisting);
                     if (Array.isArray(parsed)) {
                         retainedImages = parsed;
-                    } else {
-                        retainedImages = [existing_images];
+                    } else if (typeof parsed === 'string' && parsed.trim()) {
+                        retainedImages = [parsed];
                     }
                 } catch {
-                    retainedImages = [existing_images];
+                    if (rawExisting.trim() !== '') {
+                        retainedImages = [rawExisting];
+                    }
+                }
+            }
+        } else if (!req.files || req.files.length === 0) {
+            // If no image metadata was sent and no new files uploaded, preserve existing images
+            if (Array.isArray(existingListing.images)) {
+                retainedImages = existingListing.images;
+            } else if (typeof existingListing.images === 'string') {
+                try {
+                    retainedImages = JSON.parse(existingListing.images);
+                } catch {
+                    retainedImages = [existingListing.images];
                 }
             }
         }
@@ -679,6 +739,9 @@ export const updateListing = async (req, res) => {
 
         const isAdmin = req.user.role === 'ADMIN';
         const targetStatus = isAdmin ? (existingListing.status || 'APPROVED') : 'REVIEW';
+        const listingPhone = req.body.phone !== undefined
+            ? (String(req.body.phone).trim() !== '' ? String(req.body.phone).trim() : null)
+            : existingListing.phone;
 
         // 6. Update listing: Set status to 'REVIEW' for regular users or preserve for ADMIN
         const updateRes = await pool.query(
@@ -689,16 +752,17 @@ export const updateListing = async (req, res) => {
                  price = $4,
                  negotiable = $5,
                  location = $6,
-                 condition = $7,
-                 category = $8,
-                 subcategory = $9,
-                 images = $10,
-                 status = $11,
-                 reviewed_by_id = CASE WHEN $12 = TRUE THEN $13 ELSE NULL END,
-                 reviewed_by_type = CASE WHEN $12 = TRUE THEN 'ADMIN' ELSE NULL END,
-                 reviewed_at = CASE WHEN $12 = TRUE THEN NOW() ELSE NULL END,
+                 phone = $7,
+                 condition = $8,
+                 category = $9,
+                 subcategory = $10,
+                 images = $11,
+                 status = $12,
+                 reviewed_by_id = CASE WHEN $13 = TRUE THEN $14::uuid ELSE NULL END,
+                 reviewed_by_type = CASE WHEN $13 = TRUE THEN 'ADMIN' ELSE NULL END,
+                 reviewed_at = CASE WHEN $13 = TRUE THEN NOW() ELSE NULL END,
                  updated_at = NOW()
-             WHERE id = $14
+             WHERE id = $15
              RETURNING *`,
             [
                 title,
@@ -707,6 +771,7 @@ export const updateListing = async (req, res) => {
                 parsedPrice,
                 negotiable,
                 location,
+                listingPhone,
                 condition || 'Gebraucht',
                 category,
                 subcategory || '',
@@ -927,6 +992,45 @@ export const exportListingsToCsv = async (req, res) => {
     } catch (err) {
         console.error('❌ exportListingsToCsv error:', err.message);
         return res.status(500).json({ success: false, error: 'Fehler beim Exportieren der Inserate als CSV.' });
+    }
+};
+
+/**
+ * DELETE /api/listings/:id
+ * Permanently deletes a listing owned by the authenticated user (or admin).
+ */
+export const deleteListing = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const isAdmin = req.user.role === 'ADMIN';
+
+        // 1. Fetch listing to verify ownership
+        const existingRes = await pool.query('SELECT * FROM listings WHERE id = $1', [id]);
+        if (existingRes.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Inserat nicht gefunden.' });
+        }
+
+        const listing = existingRes.rows[0];
+        if (listing.user_id !== userId && !isAdmin) {
+            return res.status(403).json({ success: false, error: 'Keine Berechtigung zum Löschen dieses Inserats.' });
+        }
+
+        // 2. Clean associated tables
+        await pool.query('DELETE FROM favorites WHERE listing_id = $1', [id]).catch(() => {});
+        await pool.query('DELETE FROM listing_moderation WHERE listing_id = $1', [id]).catch(() => {});
+        await pool.query('DELETE FROM listing_reports WHERE listing_id = $1', [id]).catch(() => {});
+
+        // 3. Delete listing
+        await pool.query('DELETE FROM listings WHERE id = $1', [id]);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Inserat wurde erfolgreich gelöscht.'
+        });
+    } catch (error) {
+        console.error('❌ deleteListing error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Löschen des Inserats.' });
     }
 };
 

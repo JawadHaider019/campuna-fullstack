@@ -227,7 +227,7 @@ function ProvidersContent() {
                 if (!inName && !inDesc && !inLoc) return false;
             }
             if (selectedLocation !== 'all') {
-                if (p.location?.toLowerCase() !== selectedLocation.toLowerCase()) return false;
+                if (!p.location?.toLowerCase().includes(selectedLocation.toLowerCase())) return false;
             }
             return true;
         });
@@ -288,7 +288,7 @@ function ProvidersContent() {
                     {/* Action buttons */}
                     <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                         <button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/register?type=commercial')}
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/registrieren?type=commercial')}
                             className="bg-gold hover:bg-white text-forest font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-2"
                         >
                             <Building2 className="w-4 h-4" />

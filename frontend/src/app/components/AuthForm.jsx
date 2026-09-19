@@ -81,9 +81,17 @@ function AuthFormContent({ initialMode = 'login' }) {
     const [companyEmail, setCompanyEmail] = useState('');
     const [websiteUrl, setWebsiteUrl] = useState('');
 
-    // Query params detection for account type (e.g. ?type=commercial)
+    // Query params detection for referral code and account type (e.g. ?ref=CAMP-XXXX or ?type=commercial)
     useEffect(() => {
         if (!searchParams) return;
+
+        const refParam = searchParams.get('ref') || searchParams.get('referral') || searchParams.get('referral_code') || searchParams.get('code');
+        if (refParam) {
+            const cleanRef = refParam.trim().toUpperCase();
+            setReferredByCode(cleanRef);
+            setMode('signup');
+        }
+
         const typeParam = searchParams.get('type') || searchParams.get('account_type') || searchParams.get('userType');
         if (typeParam) {
             const normalized = typeParam.toLowerCase();
@@ -99,6 +107,19 @@ function AuthFormContent({ initialMode = 'login' }) {
         if (modeParam && ['login', 'signup', 'forgot'].includes(modeParam)) {
             setMode(modeParam);
         }
+
+        const handlePopState = () => {
+            if (typeof window === 'undefined') return;
+            const path = window.location.pathname;
+            if (path.includes('registrieren') || path.includes('register')) {
+                setMode('signup');
+            } else if (path.includes('login') || path.includes('anmelden')) {
+                setMode('login');
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
     }, [searchParams]);
 
     // Forgot password & OTP state
@@ -351,10 +372,10 @@ function AuthFormContent({ initialMode = 'login' }) {
 
     const switchMode = (m) => {
         setMode(m);
-        if (m === 'login') {
-            router.push('/login');
-        } else if (m === 'signup') {
-            router.push('/register');
+        const searchStr = typeof window !== 'undefined' ? window.location.search : '';
+        const targetPath = m === 'login' ? `/login${searchStr}` : m === 'signup' ? `/registrieren${searchStr}` : null;
+        if (targetPath && typeof window !== 'undefined') {
+            window.history.pushState({ mode: m }, '', targetPath);
         }
         setLoading(false);
         setForgotStep('email');
@@ -367,9 +388,9 @@ function AuthFormContent({ initialMode = 'login' }) {
     };
 
     const variants = {
-        hidden: { opacity: 0, y: 16 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
-        exit: { opacity: 0, y: -16, transition: { duration: 0.2 } },
+        hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
+        visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.3, ease: [0.25, 1, 0.5, 1] } },
+        exit: { opacity: 0, y: -10, filter: 'blur(4px)', transition: { duration: 0.18, ease: 'easeIn' } },
     };
 
     const labelCls = "font-sans text-[9px] font-semibold text-white/65 uppercase tracking-wider";
@@ -388,11 +409,16 @@ function AuthFormContent({ initialMode = 'login' }) {
             {/* Cinematic gradient overlay */}
             <div className="absolute inset-0 z-[1] bg-black/45" />
 
-            {/* ── CENTRALIZED Frosted Glass Form Card ── */}
+            {/* ── CENTRALIZED Frosted Glass Form Card with smooth layout resizing ── */}
             <motion.div
+                layout
                 initial={{ opacity: 0, y: 32 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, ease: 'easeOut', delay: 0.15 }}
+                transition={{
+                    opacity: { duration: 0.8, ease: 'easeOut', delay: 0.15 },
+                    layout: { duration: 0.35, ease: [0.25, 1, 0.5, 1] },
+                    y: { duration: 0.8, ease: 'easeOut', delay: 0.15 }
+                }}
                 className="relative z-10 w-full max-w-[460px] bg-black/70 border border-white/20 shadow-[0_24px_64px_-8px_rgba(0,0,0,0.5)] flex flex-col rounded-3xl overflow-hidden"
             >
                 {/* Card inner */}
@@ -509,9 +535,16 @@ function AuthFormContent({ initialMode = 'login' }) {
 
                                 {/* Empfehlungscode (Optional) */}
                                 <div className="flex flex-col gap-1">
-                                    <label htmlFor="reg-referral" className={labelCls}>Empfehlungscode (Optional)</label>
+                                    <div className="flex items-center justify-between">
+                                        <label htmlFor="reg-referral" className={labelCls}>Empfehlungscode (Optional)</label>
+                                        {referredByCode && (
+                                            <span className="text-[10px] font-bold text-amber-200 flex items-center gap-1">
+                                                ✨ Code aktiv
+                                            </span>
+                                        )}
+                                    </div>
                                     <Field id="reg-referral" placeholder="z.B. CAMP-123456" value={referredByCode}
-                                        onChange={e => setReferredByCode(e.target.value)} />
+                                        onChange={e => setReferredByCode(e.target.value.toUpperCase())} />
                                 </div>
 
                                 {/* Passwort */}

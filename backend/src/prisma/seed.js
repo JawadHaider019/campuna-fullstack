@@ -8,7 +8,7 @@ async function seed() {
         name: 'FREE',
         price_cents: 0,
         listing_limit: 3,
-        has_cover_image: true,
+        has_cover_image: false,
         has_spotlight: false,
         has_statistics: false,
         has_csv_import: false,
@@ -19,14 +19,14 @@ async function seed() {
       {
         name: 'BUSINESS',
         price_cents: 2900,
-        listing_limit: -1,   // -1 = unlimited
+        listing_limit: 25,
         has_cover_image: true,
         has_spotlight: true,
         has_statistics: true,
         has_csv_import: true,
         description_limit: 1000,
         is_active: true,
-        description: 'Professionelles Unternehmensprofil mit unbegrenzten Anzeigen, Spotlight, Statistiken und mehr.',
+        description: 'Professionelles Unternehmensprofil mit 25 aktiven Anzeigen, automatischer Spotlight-Rotation, Statistiken und mehr.',
       },
     ];
 

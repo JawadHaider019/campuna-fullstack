@@ -223,11 +223,12 @@ export default function ListingDetailPage() {
             try {
                 let foundListing = null;
 
-                // 1. Try getListingDetail by ID
+                // 1. Try getListingDetail by ID or Slug
                 if (listingId) {
                     try {
                         const res = await getListingDetail(listingId);
                         if (res.success && res.data?.listing) {
+                            const apiMatch = res.data.listing;
                             const rawImages = apiMatch.images && apiMatch.images.length > 0
                                 ? apiMatch.images
                                 : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
@@ -251,7 +252,7 @@ export default function ListingDetailPage() {
                                 isNegotiable: apiMatch.negotiable || false,
                                 description: apiMatch.description || '',
                                 publishedDate: apiMatch.createdAt ? new Date(apiMatch.createdAt).toLocaleDateString('de-DE') : 'Neu eingestellt',
-                                anzeigeNr: `CP-${apiMatch.id.slice(-4).toUpperCase()}`,
+                                anzeigeNr: `CP-${apiMatch.id ? apiMatch.id.slice(-4).toUpperCase() : '1000'}`,
                                 viewsCount: apiMatch.viewsCount || 1,
                                 likesCount: 0,
                                 chatsCount: 0,
@@ -305,7 +306,7 @@ export default function ListingDetailPage() {
                                     isNegotiable: match.negotiable || false,
                                     description: match.description || '',
                                     publishedDate: match.createdAt ? new Date(match.createdAt).toLocaleDateString('de-DE') : 'Neu eingestellt',
-                                    anzeigeNr: `CP-${match.id.slice(-4).toUpperCase()}`,
+                                    anzeigeNr: `CP-${match.id ? match.id.slice(-4).toUpperCase() : '1000'}`,
                                     viewsCount: match.viewsCount || 1,
                                     likesCount: 0,
                                     chatsCount: 0,
@@ -350,6 +351,7 @@ export default function ListingDetailPage() {
                     // Fetch related listings from database or fallback to static
                     getAllListings().then(res => {
                         if (res.success && active && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
+                            const dbListings = res.data.listings;
                             const mapped = dbListings.map(l => ({
                                 id: l.id,
                                 title: l.title || 'Camping Angebot',
@@ -381,7 +383,7 @@ export default function ListingDetailPage() {
 
         fetchProductData();
         return () => { active = false; };
-    }, [listingId]);
+    }, [slug, listingId]);
 
     const handleNextImage = (e) => {
         e.stopPropagation();

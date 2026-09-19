@@ -12,6 +12,9 @@ const pool = new Pool({
     database: String(process.env.DB_NAME || 'Campuna'),
     password: String(process.env.DB_PASSWORD || ''),
     port: Number(process.env.DB_PORT) || 5432,
+    max: 25,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
 });
 
 // Test database connection and log status

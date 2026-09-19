@@ -115,12 +115,24 @@ const server = app.listen(PORT, () => {
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${PORT} is already in use by another process. Please close that process first.`);
+    console.error(`❌ Port ${PORT} is already in use by another process.`);
     process.exit(1);
   } else {
     console.error('Server error:', err);
     process.exit(1);
   }
 });
+
+// Graceful cleanup for nodemon and process restarts
+const cleanup = () => {
+  server.close(() => {
+    pool.end().catch(() => {}).finally(() => {
+      process.exit(0);
+    });
+  });
+};
+process.once('SIGUSR2', cleanup);
+process.once('SIGINT', cleanup);
+process.once('SIGTERM', cleanup);
 
 export default app;

@@ -53,6 +53,7 @@ model PrivateProfile {
   last_name         String            @default("")
   bio               String?
   location          String?
+  phone             String?
   profile_image_url String?
   cover_image_url   String?
   created_at        TimestamptzString @default(now())
@@ -128,6 +129,7 @@ model Listing {
   price            Decimal?
   negotiable       Boolean           @default(false)
   location         String?
+  phone            String?
   condition        String?
   type_of_offer    String?
   status           String            @default("REVIEW")

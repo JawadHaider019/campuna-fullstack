@@ -197,7 +197,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                 </button>
               ) : (
                 <button
-                  onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/register')}
+                  onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/login')}
                   className="relative flex items-center space-x-2 bg-forest text-sand hover:bg-gold hover:text-forest py-2.5 px-5 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg min-w-[135px] justify-center group ml-1 cursor-pointer"
                 >
                   <User className="w-4 h-4 shrink-0" />
@@ -287,7 +287,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                     <button
                       onClick={() => {
                         setIsOpen(false);
-                        router.push(isLoggedIn ? '/mein-konto' : '/register');
+                        router.push(isLoggedIn ? '/mein-konto' : '/login');
                       }}
                       className="w-full bg-forest text-sand py-3 rounded-full font-sans text-sm font-semibold hover:bg-gold hover:text-forest transition-colors duration-300 shadow-md flex items-center justify-center space-x-2 min-h-[48px] group cursor-pointer"
                     >

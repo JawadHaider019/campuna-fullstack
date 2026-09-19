@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import { checkAndAwardPioneerBadge } from './badge.js';
+import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
 
 /**
  * GET /api/admin/decisions
@@ -366,6 +367,7 @@ export const simulateAiScan = async (req, res) => {
 
         if (newListingStatus === 'APPROVED' && listing.user_id) {
             checkAndAwardPioneerBadge(listing.user_id).catch(() => {});
+            checkAndAwardReferralCreditsOnApproval(listing.user_id).catch(() => {});
         }
 
         return res.status(200).json({
@@ -462,6 +464,7 @@ export const submitAdminManualDecision = async (req, res) => {
 
         if (decision === 'APPROVED' && listing.user_id) {
             checkAndAwardPioneerBadge(listing.user_id).catch(() => {});
+            checkAndAwardReferralCreditsOnApproval(listing.user_id).catch(() => {});
         }
 
         return res.status(200).json({

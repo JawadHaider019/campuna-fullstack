@@ -8,7 +8,7 @@ import BroadcastBanner from './BroadcastBanner';
 
 export default function AppShell({ children }) {
     const pathname = usePathname();
-    const isAuthPage = pathname === '/login' || pathname === '/register';
+    const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/anmelden' || pathname === '/registrieren';
     const isAdminRoute = pathname?.startsWith('/admin');
     const isUserAccountRoute = pathname?.startsWith('/mein-konto') || pathname?.startsWith('/de/mein-konto');
     const hideHeaderFooter = isAuthPage || isAdminRoute || isUserAccountRoute;

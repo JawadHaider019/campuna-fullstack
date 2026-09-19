@@ -1,4 +1,6 @@
 import { db } from '../prisma/db.js';
+import pool from '../config/database.js';
+import crypto from 'crypto';
 import { checkAndAwardPioneerBadge } from './badge.js';
 import { isValidPhoneNumber } from '../utils/validation.js';
 
@@ -9,6 +11,7 @@ const PRIVATE_ALLOWED_FIELDS = [
     'last_name',
     'bio',
     'location',
+    'phone',
     'profile_image_url',
 ];
 
@@ -54,13 +57,6 @@ export const getMyProfile = async (req, res) => {
     try {
         const { id, user_type, role } = req.user;
 
-        // Auto-check/award Pioneer Badge when loading dashboard profile (standard users)
-        if (role !== 'ADMIN') {
-            await checkAndAwardPioneerBadge(id).catch(err => {
-                console.error('Auto Pioneer check error:', err.message);
-            });
-        }
-
         // Admin Account Profile
         if (role === 'ADMIN') {
             return res.status(200).json({
@@ -94,6 +90,13 @@ export const getMyProfile = async (req, res) => {
             .where({ id })
             .first();
 
+        // Ensure referral_code is never null
+        let referralCode = user?.referral_code;
+        if (!referralCode && user) {
+            referralCode = 'CAMP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+            await pool.query('UPDATE users SET referral_code = $1 WHERE id = $2', [referralCode, user.id]).catch(() => {});
+        }
+
         // Query user achievements
         const achievements = await db.orm.public.UserAchievement
             .where({ user_id: id })
@@ -104,7 +107,7 @@ export const getMyProfile = async (req, res) => {
             email: user?.email,
             role: user?.role,
             user_type: user?.user_type || 'PRIVATE',
-            referral_code: user?.referral_code,
+            referral_code: referralCode,
             referred_by_code: user?.referred_by_code,
             is_referred: !!user?.referred_by_code,
         };
@@ -235,6 +238,8 @@ export const updateMyProfile = async (req, res) => {
                 .where((p) => p.user_id.eq(id))
                 .update(updates);
 
+            checkAndAwardPioneerBadge(id).catch(() => {});
+
             return res.status(200).json({
                 success: true,
                 message: 'Firmenprofil erfolgreich aktualisiert.',
@@ -260,9 +265,20 @@ export const updateMyProfile = async (req, res) => {
             });
         }
 
+        if (updates.phone !== undefined && updates.phone !== null && String(updates.phone).trim() !== '') {
+            if (!isValidPhoneNumber(String(updates.phone))) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Bitte geben Sie eine gültige Telefonnummer ein.'
+                });
+            }
+        }
+
         const updated = await db.orm.public.PrivateProfile
             .where((p) => p.user_id.eq(id))
             .update(updates);
+
+        checkAndAwardPioneerBadge(id).catch(() => {});
 
         return res.status(200).json({
             success: true,
@@ -478,65 +494,66 @@ export const uploadCover = async (req, res) => {
 
 /**
  * GET /api/profile
- * Returns a public list of all active user profiles with their listing counts.
+ * Returns a public list of all active user profiles with their listing counts and spotlight eligibility.
  */
 export const getAllProfiles = async (req, res) => {
     try {
-        const users = await db.orm.public.User
-            .where({
-                is_suspended: false,
-                user_type: 'COMMERCIAL'
-            })
-            .all();
-        
-        const profiles = [];
-        for (const u of users) {
-            let profileObj = null;
-            if (u.user_type === 'COMMERCIAL') {
-                profileObj = await db.orm.public.CompanyProfile.where({ user_id: u.id }).first();
-            } else {
-                profileObj = await db.orm.public.PrivateProfile.where({ user_id: u.id }).first();
-            }
-            
-            if (profileObj) {
-                const listings = await db.orm.public.Listing
-                    .where({ user_id: u.id, status: 'APPROVED' })
-                    .all();
-                
-                const name = u.user_type === 'COMMERCIAL'
-                    ? (profileObj.company_name || 'Gewerblicher Anbieter')
-                    : `${profileObj.first_name || ''} ${profileObj.last_name || ''}`.trim() || 'Privatverkäufer';
+        const query = `
+            SELECT 
+                u.id,
+                COALESCE(cp.company_name, 'Gewerblicher Anbieter') as name,
+                COALESCE(cp.logo_url, '') as logo,
+                COALESCE(cp.cover_image_url, '') as "coverImage",
+                COALESCE(cp.bio, '') as description,
+                COALESCE(cp.location, 'Deutschland') as location,
+                COALESCE(cp.phone, '') as phone,
+                COALESCE(cp.company_address, '') as "companyAddress",
+                COALESCE(l_count.count, 0)::int as "listingsCount",
+                'Gewerblich' as type,
+                CASE 
+                    WHEN cp.tier = 'BUSINESS' OR sub.id IS NOT NULL THEN TRUE
+                    ELSE FALSE 
+                END as "isBusiness",
+                CASE 
+                    WHEN (cp.tier = 'BUSINESS' OR sub.id IS NOT NULL)
+                     AND cp.logo_url IS NOT NULL AND cp.logo_url != ''
+                     AND cp.cover_image_url IS NOT NULL AND cp.cover_image_url != ''
+                     AND LENGTH(COALESCE(cp.bio, '')) >= 20
+                     AND (
+                         (cp.phone IS NOT NULL AND cp.phone != '')
+                         AND (COALESCE(cp.location, '') != '' OR COALESCE(cp.company_address, '') != '')
+                     )
+                     AND COALESCE(l_count.count, 0) >= 1
+                    THEN TRUE
+                    ELSE FALSE
+                END as "isSpotlightEligible"
+            FROM users u
+            JOIN company_profiles cp ON cp.user_id = u.id
+            LEFT JOIN (
+                SELECT user_id, COUNT(*) as count 
+                FROM listings 
+                WHERE status = 'APPROVED' 
+                GROUP BY user_id
+            ) l_count ON l_count.user_id = u.id
+            LEFT JOIN (
+                SELECT s.user_id, s.id
+                FROM subscriptions s
+                JOIN plans p ON p.id = s.plan_id
+                WHERE s.status = 'ACTIVE' AND p.name = 'BUSINESS'
+            ) sub ON sub.user_id = u.id
+            WHERE (u.is_suspended IS FALSE OR u.is_suspended IS NULL) AND u.user_type = 'COMMERCIAL'
+            ORDER BY "isSpotlightEligible" DESC, "isBusiness" DESC, "listingsCount" DESC, u.created_at DESC
+            LIMIT 50;
+        `;
+        const result = await pool.query(query);
 
-                const achievements = await db.orm.public.UserAchievement
-                    .where({ user_id: u.id })
-                    .all();
-
-                let loc = profileObj.location;
-                if (!loc && profileObj.company_address) {
-                    loc = typeof profileObj.company_address === 'string' ? profileObj.company_address : profileObj.company_address.address;
-                }
-                if (!loc) loc = 'Deutschland';
-
-                profiles.push({
-                    id: u.id,
-                    name,
-                    logo: profileObj.avatar_url || profileObj.logo_url || profileObj.profile_image_url || '',
-                    coverImage: profileObj.cover_image_url || profileObj.cover_url || '',
-                    description: profileObj.bio || '',
-                    location: loc,
-                    listingsCount: listings.length,
-                    type: u.user_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
-                    achievements
-                });
-            }
-        }
-        
         return res.status(200).json({
             success: true,
-            profiles
+            profiles: result.rows || []
         });
     } catch (error) {
         console.error('❌ getAllProfiles error:', error.message);
         return res.status(500).json({ success: false, error: 'Fehler beim Laden der Profile.' });
     }
 };
+

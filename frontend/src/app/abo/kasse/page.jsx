@@ -705,7 +705,7 @@ export default function CheckoutBillingPage() {
                                     Campuna Business
                                 </h3>
                                 <p className="text-xs text-charcoal/50 font-sans mt-0.5">
-                                    Unbegrenzte Inserate & Performance-Statistiken
+                                    Bis zu 25 Inserate, Spotlight & Performance-Statistiken
                                 </p>
                             </div>
 
@@ -727,9 +727,11 @@ export default function CheckoutBillingPage() {
                             {/* Features list */}
                             <ul className="space-y-2 pb-5 border-b border-beige/60 text-xs font-sans text-charcoal/75">
                                 {[
-                                    'Unbegrenzt aktive Inserate',
+                                    'Bis zu 25 aktive Inserate',
+                                    'Automatische Spotlight-Rotation auf Startseite',
+                                    'Individuelles Firmen-Cover & Logo',
                                     'Erweitertes Firmenprofil (1.000 Zeichen)',
-                                    'Detaillierte Besucher- & Klickstatistiken',
+                                    'Detaillierte Besucher- & Leadstatistiken',
                                     '+ 1.000 Campuna Credits inklusive',
                                 ].map((f, i) => (
                                     <li key={i} className="flex items-center gap-2">

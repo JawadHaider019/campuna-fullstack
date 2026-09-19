@@ -39,14 +39,16 @@ export const getUserFeatures = async (userId) => {
     const isReferred = !!user?.referred_by_code;
 
     const planName = plan?.name || 'FREE';
-    const descLimit = planName === 'BUSINESS' ? 1000 : (plan?.description_limit ?? 500);
+    const isBusiness = planName === 'BUSINESS';
+    const listingLimit = isBusiness ? 25 : (plan?.listing_limit ?? 3);
+    const descLimit = isBusiness ? 1000 : (plan?.description_limit ?? 500);
 
     if (!plan) {
         // Hard fallback — plan table not seeded yet
         return {
             plan_name: 'FREE',
             listing_limit: 3,
-            has_cover_image: true,
+            has_cover_image: false,
             has_spotlight: false,
             has_statistics: false,
             has_csv_import: false,
@@ -59,7 +61,7 @@ export const getUserFeatures = async (userId) => {
 
     return {
         plan_name: plan.name,
-        listing_limit: plan.listing_limit,
+        listing_limit: listingLimit,
         has_cover_image: plan.has_cover_image,
         has_spotlight: plan.has_spotlight,
         has_statistics: plan.has_statistics,

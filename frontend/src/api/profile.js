@@ -79,6 +79,8 @@ export const exportListingsCsv = () => api.get('/listings/export-csv');
 // ─── Credit API ───────────────────────────────────────────────────────────────
 export const getCreditBalance = () => api.get('/credits/balance');
 export const getCreditTransactions = () => api.get('/credits/transactions');
+export const purchaseCredits = (packageCredits = 500, payment_method = 'CREDIT_CARD', payment_details = {}) =>
+    api.post('/credits/buy', { packageCredits, payment_method, payment_details });
 export const earnSimulatedCredits = () => api.post('/credits/earn-simulated');
 export const spendSimulatedCredits = (amount = 500, description = 'Spotlight-Boost für Inserat (Test)') =>
     api.post('/credits/spend-simulated', { amount, description });

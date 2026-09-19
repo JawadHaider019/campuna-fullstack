@@ -23,7 +23,7 @@ import Breadcrumbs from '@/app/components/Breadcrumbs';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FEATURE_ROWS = [
-    { key: 'listing_limit', label: 'Aktive Anzeigen', icon: FileText, format: (v) => v === -1 ? 'Unbegrenzt' : `${v} Anzeigen` },
+    { key: 'listing_limit', label: 'Aktive Anzeigen', icon: FileText, format: (v) => `${v} Anzeigen` },
     { key: 'description_limit', label: 'Beschreibungslänge', icon: FileText, format: (v) => `${v} Zeichen` },
     {
         key: 'credits',
@@ -36,7 +36,7 @@ const FEATURE_ROWS = [
 ];
 
 const TESTIMONIALS = [
-    { name: 'Camping Müller GmbH', text: 'Mit dem Business-Tarif haben wir unsere Buchungen um 40% gesteigert. Die unbegrenzten Anzeigen machen einen riesigen Unterschied!', plan: 'Business' },
+    { name: 'Camping Müller GmbH', text: 'Mit dem Business-Tarif haben wir unsere Buchungen um 40% gesteigert. Die 25 Inserate und die Spotlight-Präsenz machen einen riesigen Unterschied!', plan: 'Business' },
     { name: 'Outdoor Reisen Wagner', text: 'Die Reichweite und die detaillierten Statistiken haben uns geholfen, stetig neue Kunden zu gewinnen. Absolut empfehlenswert.', plan: 'Business' },
     { name: 'CamperWorld Bayern', text: 'Die Statistiken zeigen uns genau, welche Anzeigen funktionieren. Ein echter Gamechanger für unser Marketing.', plan: 'Business' },
 ];
@@ -222,7 +222,7 @@ export default function AboPage() {
                         <span className="text-gold font-medium">Mehr Buchungen.</span>
                     </h1>
                     <p className="font-sans text-sm sm:text-base md:text-lg text-white/70 max-w-2xl mx-auto mb-8 leading-relaxed font-light">
-                        Das Business-Abo gibt deinem Unternehmen den professionellen Auftritt, den es verdient — mit unbegrenzten Anzeigen und detaillierten Statistiken.
+                        Das Business-Abo gibt deinem Unternehmen den professionellen Auftritt, den es verdient — mit bis zu 25 Anzeigen, automatischer Spotlight-Präsenz und detaillierten Statistiken.
                     </p>
 
                     <div>
@@ -268,7 +268,7 @@ export default function AboPage() {
                             <p className="text-xs text-charcoal/55 font-sans mt-0.5">
                                 {isOnBusiness
                                     ? `Läuft bis: ${features?.expires_at ? new Date(features.expires_at).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Unbegrenzt'}`
-                                    : `Du hast ${features?.listing_limit ?? 3} Anzeigen-Slots. Upgrade auf Business für unbegrenzte Anzeigen.`}
+                                    : `Du hast ${features?.listing_limit ?? 3} Anzeigen-Slots. Upgrade deinen Tarif auf Business für bis zu 25 Inserate.`}
                             </p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
@@ -315,12 +315,12 @@ export default function AboPage() {
                                     <span className="text-charcoal/40 font-sans text-sm mb-2">/ Monat</span>
                                 </div>
                                 <p className="text-charcoal/55 font-sans text-sm leading-relaxed">
-                                    Für Privatpersonen und kleine Anbieter. Ideal zum Einstieg.
+                                    Für Privatpersonen und kleine gewerbliche Anbieter zum Kennenlernen.
                                 </p>
                             </div>
 
                             <ul className="space-y-3 flex-1 mb-8">
-                                {['Bis zu 3 aktive Anzeigen', 'Firmenprofil (500 Zeichen)', '0 CC Startguthaben (100 CC with Referral)', 'Normale Sichtbarkeit', 'Kontaktformular für Kunden', 'Eigener Referral-Code'].map((f) => (
+                                {['Bis zu 3 aktive Anzeigen', 'Firmenprofil (500 Zeichen)', '0 CC Startguthaben (100 CC mit Referral)', 'Normale Sichtbarkeit', 'Kontaktformular für Kunden', 'Eigener Referral-Code'].map((f) => (
                                     <li key={f} className="flex items-center gap-2.5 text-sm text-charcoal/70 font-sans">
                                         <Check className="w-4 h-4 text-charcoal/30 shrink-0" />
                                         {f}
@@ -352,9 +352,11 @@ export default function AboPage() {
 
                             <ul className="space-y-3 flex-1 mb-8 relative">
                                 {[
-                                    'Unbegrenzte Anzeigen',
-                                    '+ 1.000 Campuna Credits Willkommensbonus',
-                                    'Erweitertes Firmenprofil (1000 Zeichen)',
+                                    'Bis zu 25 aktive Inserate',
+                                    'Automatische Spotlight-Rotation auf der Startseite',
+                                    '+ 1.000 Campuna Credits monatlich inklusive',
+                                    'Individuelles Firmen-Cover & Logo',
+                                    'Erweitertes Firmenprofil (1.000 Zeichen)',
                                     'Performance-Statistiken & Analytics',
                                 ].map((f) => (
                                     <li key={f} className="flex items-center gap-2.5 text-sm text-white/85 font-sans">

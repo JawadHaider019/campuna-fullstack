@@ -108,3 +108,67 @@ export const earnSimulatedCredits = async (req, res) => {
         return res.status(500).json({ success: false, error: 'Fehler beim Gutschreiben des Testguthabens.' });
     }
 };
+
+/**
+ * POST /api/credits/buy
+ * Purchases Campuna Credits package (500 CC, 800 CC, 1.300 CC, 2.500 CC)
+ * Payment methods: CREDIT_CARD, SEPA, PAYPAL, DIRECT
+ */
+export const purchaseCredits = async (req, res) => {
+    try {
+        const { id } = req.user;
+        const { packageCredits = 500, payment_method = 'CREDIT_CARD' } = req.body;
+
+        const credits = parseInt(packageCredits, 10);
+        const PACKAGES = {
+            500: { priceCents: 499, priceEur: '4,99 €', label: '7-Tage Inserat-Highlight Paket' },
+            800: { priceCents: 799, priceEur: '7,99 €', label: '14-Tage Inserat-Highlight Paket' },
+            1300: { priceCents: 1299, priceEur: '12,99 €', label: '30-Tage Inserat-Highlight Paket' },
+            2500: { priceCents: 2499, priceEur: '24,99 €', label: 'Spar-Paket (2.500 CC)' },
+        };
+
+        const pkg = PACKAGES[credits] || {
+            priceCents: Math.round(credits * 0.998),
+            priceEur: `${((credits / 100)).toFixed(2).replace('.', ',')} €`,
+            label: `${credits.toLocaleString('de-DE')} Campuna Credits`
+        };
+
+        if (credits <= 0) {
+            return res.status(400).json({ success: false, error: 'Ungültiges Guthaben-Paket angegeben.' });
+        }
+
+        const normMethod = (payment_method || 'CREDIT_CARD').toUpperCase();
+        let methodLabel = 'Kreditkarte';
+        if (normMethod === 'SEPA') methodLabel = 'SEPA-Lastschrift';
+        else if (normMethod === 'PAYPAL') methodLabel = 'PayPal';
+
+        // Add credit transaction to ledger
+        const tx = await db.orm.public.CreditTransaction.create({
+            user_id: id,
+            amount: credits,
+            type: 'CREDIT_PURCHASE',
+            description: `Guthabenkauf: +${credits.toLocaleString('de-DE')} CC (${pkg.priceEur} bezahlt via ${methodLabel})`,
+        });
+
+        // Compute new balance
+        const transactions = await db.orm.public.CreditTransaction
+            .where((t) => t.user_id.eq(id))
+            .all();
+        const newBalance = transactions.reduce((sum, t) => sum + t.amount, 0);
+
+        return res.status(200).json({
+            success: true,
+            message: `Erfolgreich ${credits.toLocaleString('de-DE')} Campuna Credits aufgeladen!`,
+            transaction: tx,
+            new_balance: newBalance,
+            package: {
+                credits,
+                priceEur: pkg.priceEur,
+                priceCents: pkg.priceCents
+            }
+        });
+    } catch (err) {
+        console.error('purchaseCredits error:', err);
+        return res.status(500).json({ success: false, error: 'Fehler beim Kauf des Guthaben-Pakets.' });
+    }
+};

@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import { checkAndAwardPioneerBadge } from './badge.js';
+import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
 
 /**
  * GET /api/admin/listings
@@ -319,9 +320,10 @@ export const updateAdminListingStatus = async (req, res) => {
             // Non-critical
         }
 
-        // If newly approved, check and potentially award Pioneer badge to seller
+        // If newly approved, check and potentially award Pioneer badge & referral credits to seller
         if (status === 'APPROVED' && updatedListing.user_id) {
             checkAndAwardPioneerBadge(updatedListing.user_id).catch(() => {});
+            checkAndAwardReferralCreditsOnApproval(updatedListing.user_id).catch(() => {});
         }
 
         return res.status(200).json({

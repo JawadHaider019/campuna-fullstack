@@ -17,10 +17,13 @@ import {
     Flag,
     Megaphone,
     BookOpen,
-    ArrowUpRight
+    ArrowUpRight,
+    Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminDashboardStats } from '@/api/admin';
+import { logoutUser } from '@/api/auth';
+import { toast } from 'react-hot-toast';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 
@@ -31,6 +34,8 @@ export default function AdminLayout({ children }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
     const [pendingReportsCount, setPendingReportsCount] = useState(0);
+    const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+    const [loggingOut, setLoggingOut] = useState(false);
 
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const user = useAuthStore((state) => state.user);
@@ -101,8 +106,22 @@ export default function AdminLayout({ children }) {
     }
 
     const handleLogout = () => {
-        logout();
-        router.replace('/login');
+        setLogoutConfirmOpen(true);
+    };
+
+    const handleLogoutConfirm = async () => {
+        setLoggingOut(true);
+        try {
+            await logoutUser();
+        } catch (err) {
+            console.error('Admin logout error:', err);
+        } finally {
+            setLoggingOut(false);
+            setLogoutConfirmOpen(false);
+            logout();
+            router.replace('/login');
+            toast.success('Erfolgreich abgemeldet.');
+        }
     };
 
     return (
@@ -296,6 +315,71 @@ export default function AdminLayout({ children }) {
                     {children}
                 </main>
             </div>
+
+            {/* Logout Confirmation Warning Modal */}
+            <AnimatePresence>
+                {logoutConfirmOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        onClick={() => !loggingOut && setLogoutConfirmOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-white rounded-3xl p-6 sm:p-7 border border-stone-200 shadow-2xl max-w-md w-full space-y-5 relative text-left"
+                        >
+                            <div className="flex items-center gap-3.5">
+                                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-200 shadow-xs">
+                                    <LogOut className="w-6 h-6 text-amber-600" />
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-base text-slate-800">Administrator-Abmeldung bestätigen</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">Admin-Sitzung beenden</p>
+                                </div>
+                            </div>
+
+                            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                                Möchtest du dich wirklich aus dem Campuna Administrationsbereich abmelden? Du wirst zur Anmeldeseite weitergeleitet.
+                            </p>
+
+                            <div className="flex items-center gap-2.5 pt-2">
+                                <button
+                                    type="button"
+                                    disabled={loggingOut}
+                                    onClick={() => setLogoutConfirmOpen(false)}
+                                    className="flex-1 py-2.5 px-4 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-xs font-bold text-slate-700 transition-all cursor-pointer disabled:opacity-50"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={loggingOut}
+                                    onClick={handleLogoutConfirm}
+                                    className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 hover:scale-[1.02]"
+                                >
+                                    {loggingOut ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <span>Wird abgemeldet...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <LogOut className="w-4 h-4" />
+                                            <span>Ja, abmelden</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

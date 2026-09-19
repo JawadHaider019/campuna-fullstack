@@ -44,10 +44,10 @@ export default function BroadcastBanner() {
                 getBroadcastsUnreadCount().catch(() => ({ data: { unread_count: 0 } }))
             ]);
 
-            if (bRes.data?.success) {
+            if (bRes?.success && bRes.data) {
                 setBroadcasts(bRes.data.broadcasts || []);
             }
-            if (cRes.data?.success) {
+            if (cRes?.success && cRes.data) {
                 setUnreadCount(cRes.data.unread_count || 0);
             }
         } catch {

@@ -89,6 +89,132 @@ const CATEGORY_SUBCATEGORIES = {
     ]
 };
 
+// German state mapping for flexible Standort search
+const STATE_MAP = {
+    'bw': 'baden-württemberg',
+    'by': 'bayern',
+    'be': 'berlin',
+    'bb': 'brandenburg',
+    'hb': 'bremen',
+    'hh': 'hamburg',
+    'he': 'hessen',
+    'mv': 'mecklenburg-vorpommern',
+    'ni': 'niedersachsen',
+    'nds': 'niedersachsen',
+    'nrw': 'nordrhein-westfalen',
+    'rp': 'rheinland-pfalz',
+    'rlp': 'rheinland-pfalz',
+    'sl': 'saarland',
+    'sn': 'sachsen',
+    'st': 'sachsen-anhalt',
+    'th': 'thüringen'
+};
+
+export function normalizeLocString(str = '') {
+    return String(str)
+        .toLowerCase()
+        .replace(/ä/g, 'ae')
+        .replace(/ö/g, 'oe')
+        .replace(/ü/g, 'ue')
+        .replace(/ß/g, 'ss')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+export function matchLocation(item, queryLocation) {
+    if (!queryLocation || !queryLocation.trim()) return true;
+    const rawLoc = queryLocation.toLowerCase().trim();
+
+    const expandedQuery = STATE_MAP[rawLoc] || rawLoc;
+    const normQuery = normalizeLocString(expandedQuery);
+    const queryTokens = normQuery.split(/\s+/).filter(Boolean);
+
+    const fullItemLoc = [
+        item.location || '',
+        item.displayLocation || '',
+        item.seller?.location || '',
+        item.seller?.address || ''
+    ].join(' ');
+
+    let normItemLoc = normalizeLocString(fullItemLoc);
+
+    // Expand state abbreviations into item location string
+    Object.entries(STATE_MAP).forEach(([abbr, fullName]) => {
+        const normFullName = normalizeLocString(fullName);
+        if (normItemLoc.includes(normFullName)) {
+            normItemLoc += ' ' + abbr;
+        }
+    });
+
+    if (normItemLoc.includes(normQuery) || normItemLoc.includes(normalizeLocString(rawLoc))) {
+        return true;
+    }
+
+    return queryTokens.every(tok => normItemLoc.includes(tok));
+}
+
+export function matchAnbieter(item, appliedAnbieter) {
+    if (!appliedAnbieter || appliedAnbieter === 'all') return true;
+    const filter = appliedAnbieter.toLowerCase();
+
+    const rawType = (
+        item.listing_user_type ||
+        item.seller?.type ||
+        item.seller_type ||
+        (item.seller?.company_name ? 'Gewerblich' : '') ||
+        ''
+    ).toLowerCase();
+
+    const isCommercial =
+        rawType.includes('gewerb') ||
+        rawType.includes('commercial') ||
+        rawType.includes('business') ||
+        rawType.includes('company') ||
+        rawType.includes('händler') ||
+        rawType.includes('haendler') ||
+        rawType === 'commercial';
+
+    const isPrivate =
+        rawType.includes('privat') ||
+        rawType.includes('private') ||
+        rawType === 'private' ||
+        (!isCommercial && rawType !== '');
+
+    if (filter === 'privat') return isPrivate && !isCommercial;
+    if (filter === 'gewerblich') return isCommercial;
+    return true;
+}
+
+export function matchSubcategory(item, appliedSubcat) {
+    if (!appliedSubcat || !appliedSubcat.trim()) return true;
+    const cleanSub = appliedSubcat.toLowerCase().trim();
+
+    const itemSub = (item.subCategory || item.subcategory || '').toLowerCase().trim();
+    const features = Array.isArray(item.features) ? item.features.map(f => String(f).toLowerCase()) : [];
+    const featuresText = features.join(' ');
+    const titleText = (item.title || '').toLowerCase();
+    const descText = (item.description || '').toLowerCase();
+
+    // 1. Exact or direct substring match
+    if (itemSub && (itemSub === cleanSub || itemSub.includes(cleanSub) || cleanSub.includes(itemSub))) return true;
+    if (features.some(f => f === cleanSub || f.includes(cleanSub) || cleanSub.includes(f))) return true;
+
+    // 2. Tokenized match (e.g. "Vorzelte & Markisen" -> ["vorzelte", "markisen"])
+    const tokens = cleanSub
+        .split(/[\s&,/+]+/)
+        .map(t => t.trim())
+        .filter(t => t.length > 2);
+
+    const fullItemContent = `${itemSub} ${featuresText} ${titleText} ${descText}`;
+
+    return tokens.some(tok => {
+        if (fullItemContent.includes(tok)) return true;
+        const stem = tok.replace(/(e|en|er|n|s)$/i, '');
+        return stem.length >= 3 && fullItemContent.includes(stem);
+    });
+}
+
 // Sort options
 const SORT_OPTIONS = [
     { value: 'newest', label: 'Neueste zuerst' },
@@ -98,7 +224,7 @@ const SORT_OPTIONS = [
 
 export function resolveCategory(catInput = '') {
     if (!catInput) return '';
-    const clean = catInput.trim().toLowerCase();
+    const clean = String(catInput).trim().toLowerCase();
 
     if (
         clean === 'ausrüstung-und-zubehör' ||
@@ -107,7 +233,11 @@ export function resolveCategory(catInput = '') {
         clean === 'camping zubehör' ||
         clean === 'zubehör' ||
         clean === 'camping-zubehör' ||
-        clean === 'ausrüstung und zubehör'
+        clean === 'ausrüstung und zubehör' ||
+        clean === 'ausrüstung & zubehör' ||
+        clean.includes('zubeh') ||
+        clean.includes('ausruest') ||
+        clean.includes('ausrüst')
     ) {
         return 'Camping Zubehör';
     }
@@ -115,9 +245,15 @@ export function resolveCategory(catInput = '') {
         clean === 'fahrzeuge' ||
         clean === 'wohnmobile-camper' ||
         clean === 'wohnmobile & camper' ||
+        clean === 'wohnmobile und camper' ||
         clean === 'wohnmobil' ||
         clean === 'wohnmobile' ||
-        clean === 'wohnmobile-und-camper'
+        clean === 'wohnmobile-und-camper' ||
+        clean.includes('wohnmobil') ||
+        clean.includes('camper') ||
+        clean.includes('fahrzeug') ||
+        clean.includes('kastenwagen') ||
+        clean.includes('wohnwagen')
     ) {
         return 'Wohnmobile & Camper';
     }
@@ -128,7 +264,8 @@ export function resolveCategory(catInput = '') {
         clean === 'zelte' ||
         clean === 'dachzelte' ||
         clean === 'dachzelt' ||
-        clean === 'zelte-und-dachzelte'
+        clean === 'zelte-und-dachzelte' ||
+        clean.includes('zelt')
     ) {
         return 'Zelte & Dachzelte';
     }
@@ -138,7 +275,12 @@ export function resolveCategory(catInput = '') {
         clean === 'fahrräder & träger' ||
         clean === 'fahrräder' ||
         clean === 'fahrrad' ||
-        clean === 'fahrraeder-und-traeger'
+        clean === 'fahrraeder-und-traeger' ||
+        clean.includes('fahrrad') ||
+        clean.includes('fahrräder') ||
+        clean.includes('fahrraeder') ||
+        clean.includes('träger') ||
+        clean.includes('traeger')
     ) {
         return 'Fahrräder & Träger';
     }
@@ -146,10 +288,15 @@ export function resolveCategory(catInput = '') {
         clean === 'campingplätze-stellplätze' ||
         clean === 'stellplaetze' ||
         clean === 'stellplätze & campingplätze' ||
+        clean === 'stellplätze und campingplätze' ||
         clean === 'stellplätze' ||
         clean === 'campingplätze' ||
         clean === 'campingplaetze-stellplaetze' ||
-        clean === 'stellplaetze-und-campingplaetze'
+        clean === 'stellplaetze-und-campingplaetze' ||
+        clean.includes('stellplatz') ||
+        clean.includes('stellplätze') ||
+        clean.includes('campingplatz') ||
+        clean.includes('campingplätze')
     ) {
         return 'Stellplätze & Campingplätze';
     }
@@ -158,7 +305,9 @@ export function resolveCategory(catInput = '') {
         clean === 'camping-services' ||
         clean === 'camping services' ||
         clean === 'services' ||
-        clean === 'service'
+        clean === 'service' ||
+        clean.includes('service') ||
+        clean.includes('dienstleistung')
     ) {
         return 'Camping Services';
     }
@@ -166,25 +315,32 @@ export function resolveCategory(catInput = '') {
         clean === 'tiny-houses' ||
         clean === 'tiny houses' ||
         clean === 'tiny house' ||
-        clean === 'tiny-house'
+        clean === 'tiny-house' ||
+        clean.includes('tiny') ||
+        clean.includes('mobilheim')
     ) {
         return 'Tiny Houses';
     }
     if (
         clean === 'mieten-vermieten' ||
         clean === 'mieten & vermieten' ||
+        clean === 'mieten und vermieten' ||
         clean === 'mieten' ||
         clean === 'vermieten' ||
-        clean === 'mieten-und-vermieten'
+        clean === 'mieten-und-vermieten' ||
+        clean.includes('miet')
     ) {
         return 'Mieten & Vermieten';
     }
     if (
         clean === 'boote-wassersport' ||
         clean === 'boote & wassersport' ||
+        clean === 'boote und wassersport' ||
         clean === 'boote' ||
         clean === 'wassersport' ||
-        clean === 'boote-und-wassersport'
+        clean === 'boote-und-wassersport' ||
+        clean.includes('boot') ||
+        clean.includes('wasser')
     ) {
         return 'Boote & Wassersport';
     }
@@ -619,9 +775,84 @@ function ListingsContent() {
         };
         setAppliedFilters(updated);
         syncUrlParams(updated);
+        setVisibleCount(12);
     };
 
-    // Handle Search Submission
+    // Live Anbieter filter change (instant response)
+    const handleAnbieterChange = (newAnbieter) => {
+        setAnbieter(newAnbieter);
+        const updated = {
+            ...appliedFilters,
+            anbieter: newAnbieter,
+        };
+        setAppliedFilters(updated);
+        syncUrlParams(updated);
+        setVisibleCount(12);
+    };
+
+    // Live Category filter change (instant response + resets subcategory)
+    const handleCategoryChange = (newCat) => {
+        setKategorie(newCat);
+        setUnterkategorie('');
+        const updated = {
+            ...appliedFilters,
+            kategorie: newCat,
+            unterkategorie: '',
+        };
+        setAppliedFilters(updated);
+        syncUrlParams(updated);
+        setVisibleCount(12);
+    };
+
+    // Live Subcategory filter change (instant response)
+    const handleSubcategoryChange = (newSub) => {
+        setUnterkategorie(newSub);
+        const updated = {
+            ...appliedFilters,
+            unterkategorie: newSub,
+        };
+        setAppliedFilters(updated);
+        syncUrlParams(updated);
+        setVisibleCount(12);
+    };
+
+    // Live Keyword filter change (instant response)
+    const handleKeywordChange = (newKw) => {
+        setKeyword(newKw);
+        const updated = {
+            ...appliedFilters,
+            keyword: newKw,
+        };
+        setAppliedFilters(updated);
+        syncUrlParams(updated);
+        setVisibleCount(12);
+    };
+
+    // Live Standort filter change (instant response)
+    const handleStandortChange = (newLoc) => {
+        setStandort(newLoc);
+        const updated = {
+            ...appliedFilters,
+            standort: newLoc,
+        };
+        setAppliedFilters(updated);
+        syncUrlParams(updated);
+        setVisibleCount(12);
+    };
+
+    // Live VB toggle
+    const handleVerhandelbarChange = (checked) => {
+        setIsVerhandelbar(checked);
+        const updated = {
+            ...appliedFilters,
+            isVerhandelbar: checked,
+        };
+        setAppliedFilters(updated);
+        syncUrlParams(updated);
+        setVisibleCount(12);
+    };
+
+    // Handle Search Submission (for Keyword & Standort input forms)
     const handleSearchSubmit = (e) => {
         if (e) e.preventDefault();
         const newFilters = {
@@ -670,13 +901,6 @@ function ListingsContent() {
     // Current subcategories based on selected category in filter form
     const currentSubcategories = kategorie ? (CATEGORY_SUBCATEGORIES[kategorie] || []) : [];
 
-    // Watch for category change to reset subcategory input if it is no longer valid
-    useEffect(() => {
-        if (kategorie && appliedFilters.kategorie !== kategorie) {
-            setUnterkategorie('');
-        }
-    }, [kategorie, appliedFilters.kategorie]);
-
     // Wishlist toggle
     const handleToggleWishlist = (id) => {
         setWishlistedIds(prev =>
@@ -702,11 +926,8 @@ function ListingsContent() {
                 return false;
             }
             // 4. Anbieter (Privat vs Gewerblich)
-            if (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') {
-                const filterType = appliedFilters.anbieter.toLowerCase();
-                const sellerType = (item.listing_user_type || item.seller?.type || '').toLowerCase();
-                if (filterType === 'privat' && !sellerType.includes('privat')) return false;
-                if (filterType === 'gewerblich' && !sellerType.includes('gewerb')) return false;
+            if (!matchAnbieter(item, appliedFilters.anbieter)) {
+                return false;
             }
             // 5. Kategorie
             if (appliedFilters.kategorie) {
@@ -717,14 +938,8 @@ function ListingsContent() {
                 }
             }
             // 6. Unterkategorie
-            if (appliedFilters.unterkategorie) {
-                const sub = appliedFilters.unterkategorie.toLowerCase();
-                const matchesSub =
-                    (item.subCategory && item.subCategory.toLowerCase().includes(sub)) ||
-                    (Array.isArray(item.features) && item.features.some(f => f.toLowerCase().includes(sub))) ||
-                    (item.title && item.title.toLowerCase().includes(sub)) ||
-                    (item.description && item.description.toLowerCase().includes(sub));
-                if (!matchesSub) return false;
+            if (!matchSubcategory(item, appliedFilters.unterkategorie)) {
+                return false;
             }
             // 7. Keyword search (Title, Description, Category, Subcategory, Features, Location, Seller Name)
             if (appliedFilters.keyword) {
@@ -745,11 +960,9 @@ function ListingsContent() {
                 const matchesAllTokens = tokens.every(token => fullContent.includes(token));
                 if (!matchesAllTokens) return false;
             }
-            // 8. Location
-            if (appliedFilters.standort) {
-                const loc = appliedFilters.standort.toLowerCase().trim();
-                const fullLoc = ((item.location || '') + ' ' + (item.displayLocation || '')).toLowerCase();
-                if (!fullLoc.includes(loc)) return false;
+            // 8. Location (Standort)
+            if (!matchLocation(item, appliedFilters.standort)) {
+                return false;
             }
 
             return true;
@@ -846,10 +1059,19 @@ function ListingsContent() {
                                     <input
                                         type="text"
                                         value={keyword}
-                                        onChange={(e) => setKeyword(e.target.value)}
-                                        placeholder="Z.B. Morelo, Zelt, Solar..."
-                                        className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium"
+                                        onChange={(e) => handleKeywordChange(e.target.value)}
+                                        placeholder="Z.B. Morelo, Zelt, Solar, Tiny House..."
+                                        className="w-full pl-10 pr-9 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium"
                                     />
+                                    {keyword && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleKeywordChange('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal/40 hover:text-charcoal p-0.5 cursor-pointer"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -867,7 +1089,7 @@ function ListingsContent() {
                                     <input
                                         type="checkbox"
                                         checked={isVerhandelbar}
-                                        onChange={(e) => setIsVerhandelbar(e.target.checked)}
+                                        onChange={(e) => handleVerhandelbarChange(e.target.checked)}
                                         className="w-3.5 h-3.5 rounded border-forest/15 text-forest focus:ring-transparent focus:ring-offset-0 transition-colors cursor-pointer accent-forest"
                                     />
                                     <span className="text-[11px] font-semibold text-charcoal/70 hover:text-charcoal">
@@ -890,9 +1112,9 @@ function ListingsContent() {
                                         <button
                                             key={opt.key}
                                             type="button"
-                                            onClick={() => setAnbieter(opt.key)}
+                                            onClick={() => handleAnbieterChange(opt.key)}
                                             className={`py-1.5 px-1 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all cursor-pointer ${anbieter === opt.key
-                                                ? 'bg-forest text-white'
+                                                ? 'bg-forest text-white shadow-xs'
                                                 : 'text-charcoal/65 hover:text-charcoal hover:bg-sand/40'
                                                 }`}
                                         >
@@ -909,10 +1131,7 @@ function ListingsContent() {
                                 </label>
                                 <select
                                     value={kategorie}
-                                    onChange={(e) => {
-                                        setKategorie(e.target.value);
-                                        setUnterkategorie('');
-                                    }}
+                                    onChange={(e) => handleCategoryChange(e.target.value)}
                                     className="w-full px-3.5 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium cursor-pointer"
                                 >
                                     <option value="">Alle Kategorien</option>
@@ -930,7 +1149,7 @@ function ListingsContent() {
                                 </label>
                                 <select
                                     value={unterkategorie}
-                                    onChange={(e) => setUnterkategorie(e.target.value)}
+                                    onChange={(e) => handleSubcategoryChange(e.target.value)}
                                     disabled={!kategorie}
                                     className="w-full px-3.5 py-2.5 text-xs rounded-full border border-forest/15 bg-white disabled:bg-sand/30 disabled:text-charcoal/30 text-charcoal focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium cursor-pointer"
                                 >
@@ -944,17 +1163,26 @@ function ListingsContent() {
                             {/* Location (Standort) */}
                             <div>
                                 <label className="block text-[11px] font-bold uppercase tracking-wider text-forest/90 mb-2">
-                                    Standort
+                                    Standort / PLZ / Bundesland
                                 </label>
                                 <div className="relative">
                                     <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal/40" />
                                     <input
                                         type="text"
                                         value={standort}
-                                        onChange={(e) => setStandort(e.target.value)}
-                                        placeholder="Ort oder PLZ..."
-                                        className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium"
+                                        onChange={(e) => handleStandortChange(e.target.value)}
+                                        placeholder="Ort, PLZ oder Bundesland (z.B. Kempten, NRW, München)..."
+                                        className="w-full pl-10 pr-9 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium"
                                     />
+                                    {standort && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleStandortChange('')}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal/40 hover:text-charcoal p-0.5 cursor-pointer"
+                                        >
+                                            <X className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -1220,7 +1448,7 @@ function ListingsContent() {
                                     )}
 
                                     <button
-                                        onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes&tab=create_listing' : '/register?redirect=/mein-konto?n=yes%26tab=create_listing')}
+                                        onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes&tab=create_listing' : '/registrieren?redirect=/mein-konto?n=yes%26tab=create_listing')}
                                         className="w-full sm:w-auto bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 text-xs font-bold uppercase tracking-wider py-3.5 px-7 rounded-full shadow-md cursor-pointer flex items-center justify-center gap-2 font-sans"
                                     >
                                         <PlusCircle className="w-4 h-4" />
@@ -1336,10 +1564,19 @@ function ListingsContent() {
                                         <input
                                             type="text"
                                             value={keyword}
-                                            onChange={(e) => setKeyword(e.target.value)}
-                                            placeholder="Z.B. Morelo, Zelt, Solar..."
-                                            className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium"
+                                            onChange={(e) => handleKeywordChange(e.target.value)}
+                                            placeholder="Z.B. Morelo, Zelt, Solar, Tiny House..."
+                                            className="w-full pl-10 pr-9 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium"
                                         />
+                                        {keyword && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleKeywordChange('')}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal/40 hover:text-charcoal p-0.5 cursor-pointer"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
@@ -1357,7 +1594,7 @@ function ListingsContent() {
                                         <input
                                             type="checkbox"
                                             checked={isVerhandelbar}
-                                            onChange={(e) => setIsVerhandelbar(e.target.checked)}
+                                            onChange={(e) => handleVerhandelbarChange(e.target.checked)}
                                             className="w-3.5 h-3.5 rounded border-forest/15 text-forest focus:ring-transparent focus:ring-offset-0 transition-colors accent-forest"
                                         />
                                         <span className="text-[11px] font-semibold text-charcoal/70">
@@ -1380,9 +1617,9 @@ function ListingsContent() {
                                             <button
                                                 key={opt.key}
                                                 type="button"
-                                                onClick={() => setAnbieter(opt.key)}
+                                                onClick={() => handleAnbieterChange(opt.key)}
                                                 className={`py-1.5 px-1 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all cursor-pointer ${anbieter === opt.key
-                                                    ? 'bg-forest text-white'
+                                                    ? 'bg-forest text-white shadow-xs'
                                                     : 'text-charcoal/65 hover:text-charcoal hover:bg-sand/40'
                                                     }`}
                                             >
@@ -1399,10 +1636,7 @@ function ListingsContent() {
                                     </label>
                                     <select
                                         value={kategorie}
-                                        onChange={(e) => {
-                                            setKategorie(e.target.value);
-                                            setUnterkategorie('');
-                                        }}
+                                        onChange={(e) => handleCategoryChange(e.target.value)}
                                         className="w-full px-3.5 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium cursor-pointer"
                                     >
                                         <option value="">Alle Kategorien</option>
@@ -1420,7 +1654,7 @@ function ListingsContent() {
                                     </label>
                                     <select
                                         value={unterkategorie}
-                                        onChange={(e) => setUnterkategorie(e.target.value)}
+                                        onChange={(e) => handleSubcategoryChange(e.target.value)}
                                         disabled={!kategorie}
                                         className="w-full px-3.5 py-2.5 text-xs rounded-full border border-forest/15 bg-white disabled:bg-sand/30 disabled:text-charcoal/30 text-charcoal focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium cursor-pointer"
                                     >
@@ -1434,17 +1668,26 @@ function ListingsContent() {
                                 {/* Location (Standort) */}
                                 <div>
                                     <label className="block text-[11px] font-bold uppercase tracking-wider text-forest/90 mb-2">
-                                        Standort
+                                        Standort / PLZ / Bundesland
                                     </label>
                                     <div className="relative">
                                         <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal/40" />
                                         <input
                                             type="text"
                                             value={standort}
-                                            onChange={(e) => setStandort(e.target.value)}
-                                            placeholder="Ort oder PLZ..."
-                                            className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium"
+                                            onChange={(e) => handleStandortChange(e.target.value)}
+                                            placeholder="Ort, PLZ oder Bundesland (z.B. Kempten, NRW, München)..."
+                                            className="w-full pl-10 pr-9 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 transition-all font-medium"
                                         />
+                                        {standort && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleStandortChange('')}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal/40 hover:text-charcoal p-0.5 cursor-pointer"
+                                            >
+                                                <X className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

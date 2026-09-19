@@ -49,7 +49,6 @@ export const checkAndAwardPioneerBadge = async (userId) => {
         }
 
         if (!isProfileComplete) {
-            console.log(`[Badge] User ${userId} profile is not complete`);
             return { success: false, error: 'Profil ist unvollständig. Bitte Vorname, Nachname/Firmenname, Info, Standort und Profilbild ausfüllen.' };
         }
 
@@ -60,7 +59,6 @@ export const checkAndAwardPioneerBadge = async (userId) => {
         const approvedListingsCount = approvedListings.length;
 
         if (approvedListingsCount < 3) {
-            console.log(`[Badge] User ${userId} only has ${approvedListingsCount} approved listings (needs 3)`);
             return { success: false, error: 'Nicht genügend freigegebene Inserate (mindestens 3 erforderlich).' };
         }
 
@@ -70,7 +68,6 @@ export const checkAndAwardPioneerBadge = async (userId) => {
             .first();
 
         if (existingAchievement) {
-            console.log(`[Badge] User ${userId} already has the CAMPUNA_PIONEER badge`);
             return { success: true, badge: existingAchievement, alreadyAwarded: true };
         }
 
@@ -81,7 +78,6 @@ export const checkAndAwardPioneerBadge = async (userId) => {
         const totalPioneersCount = existingPioneers.length;
 
         if (totalPioneersCount >= 300) {
-            console.log(`[Badge] Pioneer limit of 300 reached. Current count: ${totalPioneersCount}`);
             return { success: false, error: 'Das Limit von 300 Pioneer-Auszeichnungen wurde bereits erreicht.' };
         }
 

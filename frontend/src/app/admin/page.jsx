@@ -395,12 +395,12 @@ export default function AdminDashboard() {
 
                         {/* Pending Items List */}
                         {loading ? (
-                            <div key="queue-loading" className="py-12 flex flex-col items-center justify-center gap-2">
+                            <div className="py-12 flex flex-col items-center justify-center gap-2">
                                 <div className="w-7 h-7 border-2 border-forest border-t-transparent rounded-full animate-spin" />
                                 <span className="text-xs text-slate-400">Warteschlange wird geladen...</span>
                             </div>
                         ) : (!stats?.pendingQueue || stats.pendingQueue.length === 0) ? (
-                            <div key="queue-empty" className="py-10 px-4 text-center bg-sand/30 rounded-2xl border border-dashed border-[#E2E4E8]">
+                            <div className="py-10 px-4 text-center bg-sand/30 rounded-2xl border border-dashed border-[#E2E4E8]">
                                 <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-2 font-bold">
                                     <CheckCircle2 className="w-5 h-5" />
                                 </div>
@@ -410,7 +410,7 @@ export default function AdminDashboard() {
                                 </p>
                             </div>
                         ) : (
-                            <div key="queue-list" className="space-y-3">
+                            <div className="space-y-3">
                                 {stats.pendingQueue.map((item) => (
                                     <div
                                         key={`queue-item-${item.id}`}
@@ -685,15 +685,15 @@ export default function AdminDashboard() {
                         {/* Recent Users List */}
                         <div className="space-y-2.5 mt-2">
                             {loading ? (
-                                <div key="users-loading" className="py-8 flex justify-center">
+                                <div className="py-8 flex justify-center">
                                     <div className="w-6 h-6 border-2 border-forest border-t-transparent rounded-full animate-spin" />
                                 </div>
                             ) : !stats?.recentUsers || stats.recentUsers.length === 0 ? (
-                                <div key="users-empty" className="py-6 text-center text-xs text-slate-400">
+                                <div className="py-6 text-center text-xs text-slate-400">
                                     Keine Benutzer vorhanden.
                                 </div>
                             ) : (
-                                <div key="users-list" className="space-y-2.5">
+                                <div className="space-y-2.5">
                                     {stats.recentUsers.slice(0, 4).map((u) => (
                                         <div
                                             key={`recent-user-${u.id}`}

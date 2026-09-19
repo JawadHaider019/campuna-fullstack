@@ -42,19 +42,58 @@ export default function ToolsSection() {
     useEffect(() => {
         getAllListings().then(res => {
             if (res.success && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
-                const first = res.data.listings[0];
-                setDbFeatured([{
-                    id: first.id,
-                    title: first.title || 'Camping Angebot',
-                    description: first.description || '',
-                    category: first.category || 'Camping Zubehör',
-                    price: parseFloat(first.price) || 0,
-                    pricePeriod: first.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
-                    images: first.images && first.images.length > 0 ? first.images : [DEFAULT_INSP_IMAGE],
-                    features: [first.condition, first.subcategory].filter(Boolean)
-                }]);
+                const approvedListings = res.data.listings.filter(l => l.status === 'APPROVED');
+                
+                // Priority: High quality (has images, description >= 30 chars, valid price)
+                const qualityListings = approvedListings.filter(l => 
+                    (l.images && l.images.length > 0) &&
+                    (l.description && l.description.trim().length >= 30) &&
+                    (parseFloat(l.price) > 0)
+                );
+                
+                // Prefer boosted first, then quality candidate, then fallback
+                const chosen = qualityListings.find(l => l.is_boosted) || qualityListings[0] || approvedListings[0] || res.data.listings[0];
+                
+                if (chosen) {
+                    setDbFeatured([{
+                        id: chosen.id,
+                        title: chosen.title || 'Camping Angebot',
+                        description: chosen.description || '',
+                        category: chosen.category || 'Camping Zubehör',
+                        price: parseFloat(chosen.price) || 0,
+                        pricePeriod: chosen.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
+                        images: chosen.images && chosen.images.length > 0 ? chosen.images : [DEFAULT_INSP_IMAGE],
+                        features: [chosen.condition, chosen.subcategory, chosen.location].filter(Boolean)
+                    }]);
+                }
             }
         }).catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        const handleOpenToolsTab = (e) => {
+            if (e?.detail?.tab) {
+                setActiveTab(e.detail.tab);
+            } else {
+                setActiveTab('tools');
+            }
+            if (e?.detail?.tool) {
+                setActiveTool(e.detail.tool);
+            }
+        };
+
+        window.addEventListener('open-campuna-tools-tab', handleOpenToolsTab);
+
+        if (typeof window !== 'undefined') {
+            const hash = window.location.hash;
+            if (hash === '#camping-helfer' || hash === '#tools' || hash === '#helfer') {
+                setActiveTab('tools');
+            }
+        }
+
+        return () => {
+            window.removeEventListener('open-campuna-tools-tab', handleOpenToolsTab);
+        };
     }, []);
 
     const handleTabChange = (tab) => {

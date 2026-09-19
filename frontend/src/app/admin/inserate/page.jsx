@@ -578,15 +578,15 @@ export default function AdminListingsPage() {
                                                         </div>
                                                         <div className="min-w-0 max-w-xs">
                                                             {(Boolean(item.is_boosted) || Boolean(item.featured)) && (
-                                                                <div key="badges-row" className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                                                                <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
                                                                     {Boolean(item.is_boosted) && (
-                                                                        <span key="badge-boosted" className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md">
+                                                                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md">
                                                                             <Rocket className="w-2.5 h-2.5 text-amber-800" />
                                                                             <span>Boosted</span>
                                                                         </span>
                                                                     )}
                                                                     {Boolean(item.featured) && (
-                                                                        <span key="badge-featured" className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md">
+                                                                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md">
                                                                             <Star className="w-2.5 h-2.5 text-emerald-800 fill-emerald-800" />
                                                                             <span>Empfohlen</span>
                                                                         </span>
@@ -594,6 +594,7 @@ export default function AdminListingsPage() {
                                                                 </div>
                                                             )}
                                                             <button
+                                                                type="button"
                                                                 onClick={() => {
                                                                     setSelectedListing(item);
                                                                     setActiveImageIdx(0);
@@ -605,7 +606,7 @@ export default function AdminListingsPage() {
                                                                 {item.title}
                                                             </button>
                                                             <span className="text-[11px] text-slate-400 font-mono">
-                                                                ID: {item.id.slice(0, 8)}...
+                                                                ID: {item.id ? item.id.slice(0, 8) : ''}...
                                                             </span>
                                                         </div>
                                                     </div>
@@ -1310,7 +1311,7 @@ export default function AdminListingsPage() {
                         </div>
 
                         <p className="text-xs text-slate-600 leading-relaxed">
-                            Bist du sicher, dass du das Inserat <strong className="text-slate-900">"{listingToDelete.title}"</strong> sowie alle zugehörigen Favoriten und Medien unwiderruflich löschen möchtest?
+                            Möchtest du das Inserat <strong className="text-slate-900">"{listingToDelete.title}"</strong> wirklich löschen?
                         </p>
 
                         <div className="flex items-center justify-end gap-2 pt-2">
@@ -1329,7 +1330,7 @@ export default function AdminListingsPage() {
                                 disabled={actionLoading}
                                 className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
                             >
-                                {actionLoading ? 'Wird gelöscht...' : 'Endgültig löschen'}
+                                {actionLoading ? 'Wird gelöscht...' : 'Löschen'}
                             </button>
                         </div>
                     </div>

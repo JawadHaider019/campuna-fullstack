@@ -18,6 +18,20 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/register',
+        destination: '/registrieren',
+        permanent: false,
+      },
+      {
+        source: '/anmelden',
+        destination: '/login',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

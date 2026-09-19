@@ -18,6 +18,7 @@ import {
     MapPin,
     ArrowUpRight,
     Loader2,
+    Trash2,
 } from 'lucide-react';
 import {
     getSubscriptionAnalytics,
@@ -38,6 +39,7 @@ export default function UserDashboard({
     onOpenBoostModal = () => { },
     onCreateListing = () => { },
     onEditListing = () => { },
+    onDeleteListing = () => { },
     user = null,
 }) {
     const router = useRouter();
@@ -115,9 +117,9 @@ export default function UserDashboard({
                         <Rocket className="w-3.5 h-3.5 text-forest" />
                     </div>
                     <div className="text-xl sm:text-2xl font-black text-forest font-mono">
-                        {userListings.length} <span className="text-xs text-charcoal/40 font-normal">/ ∞</span>
+                        {userListings.length} <span className="text-xs text-charcoal/40 font-normal">/ 25</span>
                     </div>
-                    <p className="text-[11px] text-charcoal/50">Unbegrenztes Kontingent</p>
+                    <p className="text-[11px] text-charcoal/50">25 Inserate im Business-Plan</p>
                 </div>
 
                 {/* 2. Gesamtaufrufe */}
@@ -424,6 +426,15 @@ export default function UserDashboard({
                                                 title="Bearbeiten"
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => onDeleteListing(item)}
+                                                className="p-1.5 bg-white hover:bg-rose-50 border border-beige hover:border-rose-200 text-charcoal/60 hover:text-rose-600 rounded-xl transition-all cursor-pointer"
+                                                title="Löschen"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
                                             </button>
                                         </div>
                                     </div>

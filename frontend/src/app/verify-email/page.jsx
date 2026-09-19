@@ -154,7 +154,7 @@ function VerifyEmailContent() {
                                 <ArrowRight className="w-4 h-4" />
                             </button>
                             <Link
-                                href="/register"
+                                href="/registrieren"
                                 className="block text-xs font-semibold text-slate-500 hover:text-slate-800"
                             >
                                 Neues Konto erstellen &rarr;

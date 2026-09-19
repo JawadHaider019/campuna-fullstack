@@ -17,6 +17,15 @@ export const updateListing = async (id, formData) => {
     return api.put(`/listings/${id}`, formData);
 };
 
+/**
+ * DELETE /api/listings/:id
+ * Deletes a listing owned by the user.
+ * @param {string} id - Listing ID
+ */
+export const deleteListing = async (id) => {
+    return api.delete(`/listings/${id}`);
+};
+
 export const getMyListings = async () => {
     return api.get('/listings/my');
 };
@@ -40,12 +49,13 @@ export const getListingsByUser = async (userId) => {
 
 /**
  * POST /api/listings/:id/boost
- * Boosts a listing using Campuna Credits.
+ * Boosts/highlights a listing using Campuna Credits or direct payment (Card, SEPA, PayPal).
  * @param {string} id - Listing ID
  * @param {number} durationDays - 7, 14, or 30 days
+ * @param {string} paymentMethod - 'CREDIT' | 'CREDIT_CARD' | 'SEPA' | 'PAYPAL'
  */
-export const boostListing = async (id, durationDays = 7) => {
-    return api.post(`/listings/${id}/boost`, { durationDays });
+export const boostListing = async (id, durationDays = 7, paymentMethod = 'CREDIT') => {
+    return api.post(`/listings/${id}/boost`, { durationDays, payment_method: paymentMethod });
 };
 
 /**

@@ -395,6 +395,13 @@ export const login = async (req, res) => {
                 .catch(() => {});
         }
 
+        let userReferralCode = user.referral_code;
+        if (!userReferralCode) {
+            userReferralCode = generateReferralCode();
+            await pool.query('UPDATE users SET referral_code = $1 WHERE id = $2', [userReferralCode, user.id]).catch(() => {});
+            user.referral_code = userReferralCode;
+        }
+
         const { accessToken, refreshToken } = generateTokens(user);
 
         return res.status(200).json({
@@ -407,7 +414,7 @@ export const login = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 account_type: user.user_type,
-                referral_code: user.referral_code,
+                referral_code: userReferralCode,
                 email_verified: true,
             },
         });

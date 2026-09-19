@@ -418,23 +418,46 @@ export default function CategoryPage() {
     const displayedListings = useMemo(() => {
         const filtered = listings.filter(item => {
             if (selectedSubcategory) {
-                const sub = selectedSubcategory.toLowerCase();
-                const matchesSub =
-                    (item.subCategory && item.subCategory.toLowerCase().includes(sub)) ||
-                    (Array.isArray(item.features) && item.features.some(f => f.toLowerCase().includes(sub))) ||
-                    (item.title && item.title.toLowerCase().includes(sub));
+                const cleanSub = selectedSubcategory.toLowerCase().trim();
+                const itemSub = (item.subCategory || item.subcategory || '').toLowerCase().trim();
+                const features = Array.isArray(item.features) ? item.features.map(f => String(f).toLowerCase()) : [];
+                const featuresText = features.join(' ');
+                const titleText = (item.title || '').toLowerCase();
+                const descText = (item.description || '').toLowerCase();
+                const fullItemContent = `${itemSub} ${featuresText} ${titleText} ${descText}`;
+
+                let matchesSub = false;
+                if (itemSub && (itemSub === cleanSub || itemSub.includes(cleanSub) || cleanSub.includes(itemSub))) {
+                    matchesSub = true;
+                } else if (features.some(f => f === cleanSub || f.includes(cleanSub) || cleanSub.includes(f))) {
+                    matchesSub = true;
+                } else {
+                    const tokens = cleanSub
+                        .split(/[\s&,/+]+/)
+                        .map(t => t.trim())
+                        .filter(t => t.length > 2);
+
+                    matchesSub = tokens.some(tok => {
+                        if (fullItemContent.includes(tok)) return true;
+                        const stem = tok.replace(/(e|en|er|n|s)$/i, '');
+                        return stem.length >= 3 && fullItemContent.includes(stem);
+                    });
+                }
+
                 if (!matchesSub) return false;
             }
             if (searchKeyword.trim()) {
                 const kw = searchKeyword.toLowerCase().trim();
+                const tokens = kw.split(/\s+/).filter(Boolean);
                 const text = [
                     item.title || '',
                     item.description || '',
+                    item.subCategory || item.subcategory || '',
                     ...(Array.isArray(item.features) ? item.features : []),
                     item.location || '',
                     item.displayLocation || ''
                 ].join(' ').toLowerCase();
-                if (!text.includes(kw)) return false;
+                if (!tokens.every(tok => text.includes(tok))) return false;
             }
             return true;
         });

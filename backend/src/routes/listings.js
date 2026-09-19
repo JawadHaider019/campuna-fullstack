@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
     createListing,
     updateListing,
+    deleteListing,
     getMyListings,
     getAllListings,
     getListingDetail,
@@ -39,6 +40,9 @@ router.post('/', authenticate, uploadMultiple, createListing);
 
 // PUT /api/listings/:id → Update listing (requires authentication & re-triggers moderation review)
 router.put('/:id', authenticate, uploadMultiple, updateListing);
+
+// DELETE /api/listings/:id → Delete listing (owner or admin)
+router.delete('/:id', authenticate, deleteListing);
 
 // POST /api/listings/:id/boost → Boost listing with Campuna Credits
 router.post('/:id/boost', authenticate, boostListing);

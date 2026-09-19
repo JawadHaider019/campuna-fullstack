@@ -483,11 +483,11 @@ export default function AdminDecisionsPage() {
             {/* ─── Main Decisions Feed / Table ─── */}
             <div className="space-y-4">
                 {loading ? (
-                    <div key="loading-state" className="py-20 flex items-center justify-center">
+                    <div className="py-20 flex items-center justify-center">
                         <CircleLoader size="lg" color="forest" />
                     </div>
                 ) : decisions.length === 0 ? (
-                    <div key="empty-state" className="bg-white border border-[#E8EAEF] rounded-3xl p-16 text-center space-y-2">
+                    <div className="bg-white border border-[#E8EAEF] rounded-3xl p-16 text-center space-y-2">
                         <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mx-auto">
                             <Sparkles className="w-6 h-6" />
                         </div>

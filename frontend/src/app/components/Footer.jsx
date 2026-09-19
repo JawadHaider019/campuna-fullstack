@@ -67,7 +67,7 @@ export default function Footer() {
                             </li>
                             <li>
                                 <Link href="/abo" className="hover:text-forest transition-colors font-[400]">
-                                    Abonnement
+                                    Händler & Business
                                 </Link>
                             </li>
                             <li>
