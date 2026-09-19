@@ -1417,7 +1417,7 @@ export default function MeinKontoPage() {
                                 {sidebarCollapsed ? (
                                     <div className="flex flex-col items-center gap-2">
                                         <div
-                                            className="w-9 h-9 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center ring-2 ring-gold/40 shadow-sm shrink-0 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                                            className="w-9 h-9 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center border-2 border-gold/40 shadow-sm shrink-0 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
                                             title={`${displayName} (${isCommercial ? 'gewerblich' : 'privat'})`}
                                             onClick={() => handleTabChange('dashboard')}
                                         >
@@ -1437,16 +1437,16 @@ export default function MeinKontoPage() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2.5 truncate min-w-0 cursor-pointer group" onClick={() => handleTabChange('dashboard')}>
-                                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center ring-2 ring-gold/40 shadow-sm shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
+                                    <div className="flex items-center justify-between gap-2 min-w-0">
+                                        <div className="flex items-center gap-2.5 min-w-0 cursor-pointer group" onClick={() => handleTabChange('dashboard')}>
+                                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center border-2 border-gold/40 shadow-sm shrink-0 overflow-hidden group-hover:scale-105 transition-transform">
                                                 {avatarSrc ? (
                                                     <img src={avatarSrc} alt={displayName} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <span>{displayName ? displayName.slice(0, 2).toUpperCase() : 'CU'}</span>
                                                 )}
                                             </div>
-                                            <div className="truncate text-left">
+                                            <div className="min-w-0 truncate text-left">
                                                 <h5 className="text-xs font-bold text-white truncate leading-tight group-hover:text-gold transition-colors">
                                                     {displayName}
                                                 </h5>

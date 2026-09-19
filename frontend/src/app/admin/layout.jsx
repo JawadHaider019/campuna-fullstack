@@ -202,12 +202,12 @@ export default function AdminLayout({ children }) {
                         USER ACCOUNT
                     </span>
 
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5 truncate">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center ring-2 ring-gold/40 shadow-sm shrink-0">
+                    <div className="flex items-center justify-between min-w-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center border-2 border-gold/40 shadow-sm shrink-0">
                                 AD
                             </div>
-                            <div className="truncate text-left">
+                            <div className="min-w-0 truncate text-left">
                                 <h5 className="text-xs font-bold text-white truncate leading-tight">
                                     Campuna Admin
                                 </h5>
@@ -220,7 +220,7 @@ export default function AdminLayout({ children }) {
                         <button
                             onClick={handleLogout}
                             title="Abmelden"
-                            className="p-1.5 text-sand/50 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
+                            className="p-1.5 text-sand/50 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer shrink-0"
                         >
                             <LogOut className="w-3.5 h-3.5" />
                         </button>
