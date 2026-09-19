@@ -21,12 +21,12 @@ async function seed() {
         price_cents: 2900,
         listing_limit: 25,
         has_cover_image: true,
-        has_spotlight: true,
+        has_spotlight: false,
         has_statistics: true,
         has_csv_import: true,
         description_limit: 1000,
         is_active: true,
-        description: 'Professionelles Unternehmensprofil mit 25 aktiven Anzeigen, automatischer Spotlight-Rotation, Statistiken und mehr.',
+        description: 'Professionelles Unternehmensprofil mit 25 aktiven Inseraten, Firmen-Cover, Statistiken und Händler-Präsenz für 29 € / Monat.',
       },
     ];
 

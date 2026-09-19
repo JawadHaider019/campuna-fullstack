@@ -33,7 +33,72 @@ async function main() {
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS reviewed_by_id UUID;
         ALTER TABLE listings ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
         ALTER TABLE listings DROP CONSTRAINT IF EXISTS listings_reviewed_by_id_fkey;
-    `).catch((err) => console.log('Notice on listings columns:', err.message));
+        ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
+        ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS spotlight_until TIMESTAMPTZ;
+    `).catch((err) => console.log('Notice on listings/company columns:', err.message));
+
+    // Ensure plans table exists and has updated configuration
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS plans (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(50) UNIQUE NOT NULL,
+            price_cents INTEGER DEFAULT 0,
+            listing_limit INTEGER DEFAULT 3,
+            has_cover_image BOOLEAN DEFAULT FALSE,
+            has_spotlight BOOLEAN DEFAULT FALSE,
+            has_statistics BOOLEAN DEFAULT FALSE,
+            has_csv_import BOOLEAN DEFAULT FALSE,
+            description_limit INTEGER DEFAULT 500,
+            is_active BOOLEAN DEFAULT TRUE,
+            description TEXT
+        );
+
+        INSERT INTO plans (name, price_cents, listing_limit, has_cover_image, has_spotlight, has_statistics, has_csv_import, description_limit, is_active, description)
+        VALUES 
+            ('FREE', 0, 3, FALSE, FALSE, FALSE, FALSE, 500, TRUE, 'Kostenloser Basiszugang für Unternehmen (bis zu 3 aktive Inserate).'),
+            ('BUSINESS', 2900, 25, TRUE, FALSE, TRUE, TRUE, 1000, TRUE, 'Campuna Business – Bis zu 25 Inserate, Titelbild, Händler-Präsenz & Statistiken für 29 € / Monat.')
+        ON CONFLICT (name) DO UPDATE SET 
+            price_cents = EXCLUDED.price_cents,
+            listing_limit = EXCLUDED.listing_limit,
+            has_cover_image = EXCLUDED.has_cover_image,
+            has_spotlight = EXCLUDED.has_spotlight,
+            has_statistics = EXCLUDED.has_statistics,
+            has_csv_import = EXCLUDED.has_csv_import,
+            description_limit = EXCLUDED.description_limit,
+            description = EXCLUDED.description;
+    `).catch((err) => console.log('Notice on plans sync:', err.message));
+
+    // Ensure subscriptions table exists
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS subscriptions (
+            id SERIAL PRIMARY KEY,
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            plan_id INTEGER NOT NULL REFERENCES plans(id),
+            status VARCHAR(50) DEFAULT 'ACTIVE',
+            started_at TIMESTAMPTZ DEFAULT NOW(),
+            expires_at TIMESTAMPTZ,
+            cancelled_at TIMESTAMPTZ,
+            payment_method VARCHAR(50),
+            amount_paid_cents INTEGER DEFAULT 0,
+            credit_tx_id INTEGER,
+            notes TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW()
+        );
+    `).catch(() => {});
+
+    // Grant 3-month Business welcome promo to existing commercial users without active subscription
+    await pool.query(`
+        INSERT INTO subscriptions (user_id, plan_id, status, started_at, expires_at, payment_method, notes, created_at, updated_at)
+        SELECT u.id, p.id, 'ACTIVE', NOW(), NOW() + INTERVAL '90 days', 'PROMO', '3 Monate Campuna Business Willkommensphase', NOW(), NOW()
+        FROM users u
+        CROSS JOIN plans p
+        WHERE u.user_type = 'COMMERCIAL'
+          AND p.name = 'BUSINESS'
+          AND NOT EXISTS (
+              SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.status = 'ACTIVE'
+          );
+    `).catch((err) => console.log('Notice on commercial promo subscription sync:', err.message));
 
     await pool.query(`
         CREATE TABLE IF NOT EXISTS listing_moderation (

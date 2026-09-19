@@ -59,6 +59,77 @@ export const checkAndAwardReferralCreditsOnApproval = async (userId) => {
 };
 
 /**
+ * Checks if a COMMERCIAL user has a PENDING referral and awards 100 CC to both referrer and user
+ * upon completing their company profile (company_name, phone, location/address, bio >= 20, logo_url).
+ */
+export const checkAndAwardReferralCreditsOnCommercialProfile = async (userId) => {
+    try {
+        if (!userId) return false;
+
+        // 1. Check user type and profile
+        const userRes = await pool.query('SELECT id, email, user_type, email_verified FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length === 0) return false;
+        const user = userRes.rows[0];
+
+        if (user.user_type !== 'COMMERCIAL') return false;
+
+        const profileRes = await pool.query('SELECT * FROM company_profiles WHERE user_id = $1', [userId]);
+        if (profileRes.rows.length === 0) return false;
+        const profile = profileRes.rows[0];
+
+        // Check completeness
+        const hasName = Boolean(profile.company_name && profile.company_name.trim());
+        const hasPhone = Boolean(profile.phone && profile.phone.trim());
+        const hasLocation = Boolean((profile.location && profile.location.trim()) || (profile.company_address && profile.company_address.trim()));
+        const hasBio = Boolean(profile.bio && profile.bio.trim().length >= 20);
+        const hasLogo = Boolean(profile.logo_url && profile.logo_url.trim());
+
+        if (!hasName || !hasPhone || !hasLocation || !hasBio || !hasLogo) {
+            return false;
+        }
+
+        // 2. Check for an active PENDING referral for this user
+        const pendingRef = await pool.query(
+            `SELECT r.*, u.email as referrer_email, u.referral_code as referrer_code 
+             FROM referrals r
+             JOIN users u ON u.id = r.referrer_id
+             WHERE r.referred_id = $1 AND r.status = 'PENDING'
+             LIMIT 1`,
+            [userId]
+        );
+
+        if (pendingRef.rows.length === 0) return false;
+
+        const ref = pendingRef.rows[0];
+        const userEmail = user.email || 'Gewerblicher Partner';
+        const companyName = profile.company_name || userEmail;
+
+        // 3. Mark referral as COMPLETED
+        await pool.query('UPDATE referrals SET status = $1 WHERE id = $2', ['COMPLETED', ref.id]);
+
+        // 4. Award 100 CC to Referrer
+        await pool.query(
+            `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
+             VALUES ($1, 100, 'REFERRAL_REWARD', $2, NOW())`,
+            [ref.referrer_id, `Empfehlungsbonus für vollständiges Unternehmensprofil von ${companyName} (+100 CC)`]
+        );
+
+        // 5. Award 100 CC to Referred Commercial User
+        await pool.query(
+            `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
+             VALUES ($1, 100, 'REFERRAL_SIGNUP_BONUS', $2, NOW())`,
+            [userId, `Willkommensbonus für vollständiges Firmenprofil (+100 CC)`]
+        );
+
+        console.log(`🎉 Commercial Referral completed: Both ${ref.referrer_email} and ${companyName} received 100 CC.`);
+        return true;
+    } catch (err) {
+        console.error('checkAndAwardReferralCreditsOnCommercialProfile error:', err.message);
+        return false;
+    }
+};
+
+/**
  * GET /api/referrals/stats
  */
 export const getReferralStats = async (req, res) => {

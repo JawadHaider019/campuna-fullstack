@@ -705,34 +705,19 @@ export default function CheckoutBillingPage() {
                                     Campuna Business
                                 </h3>
                                 <p className="text-xs text-charcoal/50 font-sans mt-0.5">
-                                    Bis zu 25 Inserate, Spotlight & Performance-Statistiken
+                                    Bis zu 25 Inserate, Firmen-Cover, Händler-Präsenz & Statistiken
                                 </p>
                             </div>
 
-                            {/* Welcome Bonus Highlight Badge */}
-                            <div className="my-5 bg-gradient-to-r from-amber-500/10 via-gold/15 to-forest/10 border border-gold/40 rounded-2xl p-4 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-gold/25 flex items-center justify-center shrink-0">
-                                    <img src="/coin.png" className="w-6 h-6" alt="Bonus CC" />
-                                </div>
-                                <div>
-                                    <span className="text-xs font-black text-gold-dark uppercase tracking-wider block font-sans">
-                                        + 1.000 Campuna Credits Willkommensbonus
-                                    </span>
-                                    <span className="text-[11px] text-charcoal/70 font-sans block leading-tight">
-                                        Sofortige Gutschrift auf dein Konto bei Aktivierung!
-                                    </span>
-                                </div>
-                            </div>
-
                             {/* Features list */}
-                            <ul className="space-y-2 pb-5 border-b border-beige/60 text-xs font-sans text-charcoal/75">
+                            <ul className="space-y-2 py-4 pb-5 border-b border-beige/60 text-xs font-sans text-charcoal/75">
                                 {[
-                                    'Bis zu 25 aktive Inserate',
-                                    'Automatische Spotlight-Rotation auf Startseite',
-                                    'Individuelles Firmen-Cover & Logo',
+                                    'Bis zu 25 aktive Inserate gleichzeitig',
+                                    'Professionelles Firmen-Cover & Logo',
                                     'Erweitertes Firmenprofil (1.000 Zeichen)',
+                                    'Präsenz im Bereich „Alle Händler / Anbieter“',
                                     'Detaillierte Besucher- & Leadstatistiken',
-                                    '+ 1.000 Campuna Credits inklusive',
+                                    'Monatlich flexibel kündbar',
                                 ].map((f, i) => (
                                     <li key={i} className="flex items-center gap-2">
                                         <Check className="w-3.5 h-3.5 text-forest shrink-0" />

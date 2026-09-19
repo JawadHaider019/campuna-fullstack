@@ -83,8 +83,10 @@ model CompanyProfile {
   website_url         String?
   instagram_url       String?
   facebook_url        String?
+  linkedin_url        String?
   logo_url            String?
   cover_image_url     String?
+  spotlight_until     TimestamptzString?
   created_at          TimestamptzString @default(now())
   updated_at          temporal.updatedAtString()
 

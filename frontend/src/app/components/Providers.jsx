@@ -2,17 +2,23 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAllProfiles } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getImageUrl } from '@/utils/imageUrl';
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1000&q=80';
-const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1513311068348-19c8fbdc0bb6?auto=format&fit=crop&w=1200&q=80';
+const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=400&q=80';
 
 const ProviderCard = React.memo(({ partner, onPartnerClick, router }) => {
-    const [coverSrc, setCoverSrc] = useState(partner.coverImage || DEFAULT_COVER);
-    const [logoSrc, setLogoSrc] = useState(partner.logo || DEFAULT_LOGO);
+    const [coverSrc, setCoverSrc] = useState(getImageUrl(partner.coverImage, DEFAULT_COVER));
+    const [logoSrc, setLogoSrc] = useState(getImageUrl(partner.logo, DEFAULT_LOGO));
+
+    useEffect(() => {
+        setCoverSrc(getImageUrl(partner.coverImage, DEFAULT_COVER));
+        setLogoSrc(getImageUrl(partner.logo, DEFAULT_LOGO));
+    }, [partner.coverImage, partner.logo]);
 
     const handleCardClick = () => {
         if (onPartnerClick) onPartnerClick(partner.name);
@@ -106,9 +112,20 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
         const loadProviders = async () => {
             try {
                 const res = await getAllProfiles();
-                if (res.success) {
-                    const filtered = (res.data.profiles || []).filter(p => p.id !== user?.id);
-                    setProvidersList(filtered);
+                if (res.success && Array.isArray(res.data?.profiles)) {
+                    // STRICT REQUIREMENT: Only show providers that have fulfilled all requirements
+                    // (isSpotlightEligible === true) and deduplicate by user ID
+                    const seenIds = new Set();
+                    const validSpotlightList = [];
+
+                    for (const p of res.data.profiles) {
+                        if (p.isSpotlightEligible && !seenIds.has(p.id)) {
+                            seenIds.add(p.id);
+                            validSpotlightList.push(p);
+                        }
+                    }
+
+                    setProvidersList(validSpotlightList);
                 }
             } catch (err) {
                 console.error("Error loading providers:", err);
@@ -175,6 +192,10 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
         animationFrameId = requestAnimationFrame(loop);
         return () => cancelAnimationFrame(animationFrameId);
     }, [providersList.length, constraints, x, shouldSlide]);
+
+    if (providersList.length === 0) {
+        return null;
+    }
 
     return (
         <section id="campuna-spotlight" className="py-10 sm:py-16 bg-sand relative overflow-x-hidden scroll-mt-24">

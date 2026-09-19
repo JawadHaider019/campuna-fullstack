@@ -8,12 +8,24 @@
       "model": "CompanyProfile",
       "namespace": "public"
     },
+    "conversations": {
+      "model": "Conversation",
+      "namespace": "public"
+    },
     "credit_transactions": {
       "model": "CreditTransaction",
       "namespace": "public"
     },
+    "listing_reports": {
+      "model": "ListingReport",
+      "namespace": "public"
+    },
     "listings": {
       "model": "Listing",
+      "namespace": "public"
+    },
+    "messages": {
+      "model": "Message",
       "namespace": "public"
     },
     "plans": {
@@ -187,6 +199,13 @@
                   "kind": "scalar"
                 }
               },
+              "linkedin_url": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "location": {
                 "nullable": true,
                 "type": {
@@ -212,6 +231,13 @@
                 "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "spotlight_until": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
                   "kind": "scalar"
                 }
               },
@@ -309,6 +335,9 @@
                 "last_name": {
                   "column": "last_name"
                 },
+                "linkedin_url": {
+                  "column": "linkedin_url"
+                },
                 "location": {
                   "column": "location"
                 },
@@ -339,6 +368,138 @@
               },
               "namespaceId": "public",
               "table": "company_profiles"
+            }
+          },
+          "Conversation": {
+            "fields": {
+              "buyer_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "created_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "listing_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "seller_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "updated_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "buyer": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "buyer_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "listing": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "listing_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Listing",
+                  "namespace": "public"
+                }
+              },
+              "messages": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "conversation_id"
+                  ]
+                },
+                "to": {
+                  "model": "Message",
+                  "namespace": "public"
+                }
+              },
+              "seller": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "seller_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "buyer_id": {
+                  "column": "buyer_id"
+                },
+                "created_at": {
+                  "column": "created_at"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "listing_id": {
+                  "column": "listing_id"
+                },
+                "seller_id": {
+                  "column": "seller_id"
+                },
+                "updated_at": {
+                  "column": "updated_at"
+                }
+              },
+              "namespaceId": "public",
+              "table": "conversations"
             }
           },
           "CreditTransaction": {
@@ -508,6 +669,13 @@
                   "kind": "scalar"
                 }
               },
+              "phone": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "price": {
                 "nullable": true,
                 "type": {
@@ -594,6 +762,36 @@
               }
             },
             "relations": {
+              "conversations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "listing_id"
+                  ]
+                },
+                "to": {
+                  "model": "Conversation",
+                  "namespace": "public"
+                }
+              },
+              "reports": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "listing_id"
+                  ]
+                },
+                "to": {
+                  "model": "ListingReport",
+                  "namespace": "public"
+                }
+              },
               "reviewer": {
                 "cardinality": "N:1",
                 "on": {
@@ -660,6 +858,9 @@
                 "negotiable": {
                   "column": "negotiable"
                 },
+                "phone": {
+                  "column": "phone"
+                },
                 "price": {
                   "column": "price"
                 },
@@ -699,6 +900,275 @@
               },
               "namespaceId": "public",
               "table": "listings"
+            }
+          },
+          "ListingReport": {
+            "fields": {
+              "admin_note": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "created_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "description": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "listing_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "reason": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reporter_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewed_at": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "reviewed_by_id": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updated_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "listing": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "listing_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Listing",
+                  "namespace": "public"
+                }
+              },
+              "reporter": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "reporter_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
+              "reviewer": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "reviewed_by_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "admin_note": {
+                  "column": "admin_note"
+                },
+                "created_at": {
+                  "column": "created_at"
+                },
+                "description": {
+                  "column": "description"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "listing_id": {
+                  "column": "listing_id"
+                },
+                "reason": {
+                  "column": "reason"
+                },
+                "reporter_id": {
+                  "column": "reporter_id"
+                },
+                "reviewed_at": {
+                  "column": "reviewed_at"
+                },
+                "reviewed_by_id": {
+                  "column": "reviewed_by_id"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "updated_at": {
+                  "column": "updated_at"
+                }
+              },
+              "namespaceId": "public",
+              "table": "listing_reports"
+            }
+          },
+          "Message": {
+            "fields": {
+              "content": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "conversation_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "created_at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              },
+              "is_read": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "sender_id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/uuid@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "conversation": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "conversation_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Conversation",
+                  "namespace": "public"
+                }
+              },
+              "sender": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "sender_id"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "content": {
+                  "column": "content"
+                },
+                "conversation_id": {
+                  "column": "conversation_id"
+                },
+                "created_at": {
+                  "column": "created_at"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "is_read": {
+                  "column": "is_read"
+                },
+                "sender_id": {
+                  "column": "sender_id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "messages"
             }
           },
           "Plan": {
@@ -889,6 +1359,13 @@
                   "kind": "scalar"
                 }
               },
+              "phone": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "profile_image_url": {
                 "nullable": true,
                 "type": {
@@ -950,6 +1427,9 @@
                 },
                 "location": {
                   "column": "location"
+                },
+                "phone": {
+                  "column": "phone"
                 },
                 "profile_image_url": {
                   "column": "profile_image_url"
@@ -1312,6 +1792,21 @@
                   "namespace": "public"
                 }
               },
+              "buyer_conversations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "buyer_id"
+                  ]
+                },
+                "to": {
+                  "model": "Conversation",
+                  "namespace": "public"
+                }
+              },
               "company_profile": {
                 "cardinality": "1:1",
                 "on": {
@@ -1384,6 +1879,66 @@
                 },
                 "to": {
                   "model": "Listing",
+                  "namespace": "public"
+                }
+              },
+              "reviewed_reports": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "reviewed_by_id"
+                  ]
+                },
+                "to": {
+                  "model": "ListingReport",
+                  "namespace": "public"
+                }
+              },
+              "seller_conversations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "seller_id"
+                  ]
+                },
+                "to": {
+                  "model": "Conversation",
+                  "namespace": "public"
+                }
+              },
+              "sent_messages": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "sender_id"
+                  ]
+                },
+                "to": {
+                  "model": "Message",
+                  "namespace": "public"
+                }
+              },
+              "submitted_reports": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "reporter_id"
+                  ]
+                },
+                "to": {
+                  "model": "ListingReport",
                   "namespace": "public"
                 }
               },
@@ -1612,6 +2167,11 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "linkedin_url": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "location": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1630,6 +2190,11 @@
                 "privacy_policy_url": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": true
+                },
+                "spotlight_until": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "tier": {
@@ -1690,6 +2255,140 @@
                 {
                   "columns": [
                     "user_id"
+                  ]
+                }
+              ]
+            },
+            "conversations": {
+              "columns": {
+                "buyer_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "listing_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "seller_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "updated_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "listing_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "conversations"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "listings"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "buyer_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "conversations"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "seller_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "conversations"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "buyer_id"
+                  ],
+                  "name": "conversations_buyer_id_idx_a09525cc",
+                  "prefix": "conversations_buyer_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "listing_id"
+                  ],
+                  "name": "conversations_listing_id_idx_087601b6",
+                  "prefix": "conversations_listing_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "seller_id"
+                  ],
+                  "name": "conversations_seller_id_idx_de05cd59",
+                  "prefix": "conversations_seller_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "listing_id",
+                    "buyer_id"
                   ]
                 }
               ]
@@ -1769,6 +2468,169 @@
                 ]
               },
               "uniques": []
+            },
+            "listing_reports": {
+              "columns": {
+                "admin_note": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "description": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "listing_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "reason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "reporter_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "reviewed_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "nativeType": "timestamptz",
+                  "nullable": true
+                },
+                "reviewed_by_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": true
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "PENDING"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updated_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "listing_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "listing_reports"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "listings"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "reporter_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "listing_reports"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                },
+                {
+                  "onDelete": "setNull",
+                  "source": {
+                    "columns": [
+                      "reviewed_by_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "listing_reports"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "listing_id"
+                  ],
+                  "name": "listing_reports_listing_id_idx_087601b6",
+                  "prefix": "listing_reports_listing_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "reporter_id"
+                  ],
+                  "name": "listing_reports_reporter_id_idx_3eeed9a0",
+                  "prefix": "listing_reports_reporter_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "reviewed_by_id"
+                  ],
+                  "name": "listing_reports_reviewed_by_id_idx_660e1779",
+                  "prefix": "listing_reports_reviewed_by_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "listing_id",
+                    "reporter_id"
+                  ]
+                }
+              ]
             },
             "listings": {
               "checks": [
@@ -1850,6 +2712,11 @@
                   },
                   "nativeType": "bool",
                   "nullable": false
+                },
+                "phone": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "price": {
                   "codecId": "pg/numeric@1",
@@ -1967,6 +2834,108 @@
                   ],
                   "name": "listings_user_id_idx_6c952402",
                   "prefix": "listings_user_id_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ]
+              },
+              "uniques": []
+            },
+            "messages": {
+              "columns": {
+                "content": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "conversation_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "created_at": {
+                  "codecId": "pg/timestamptz-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamptz",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                },
+                "is_read": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
+                "sender_id": {
+                  "codecId": "pg/uuid@1",
+                  "nativeType": "uuid",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "conversation_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "messages"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "conversations"
+                  }
+                },
+                {
+                  "onDelete": "cascade",
+                  "source": {
+                    "columns": [
+                      "sender_id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "messages"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "users"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "conversation_id"
+                  ],
+                  "name": "messages_conversation_id_idx_0c3639df",
+                  "prefix": "messages_conversation_id_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "sender_id"
+                  ],
+                  "name": "messages_sender_id_idx_311853a4",
+                  "prefix": "messages_sender_id_idx",
                   "unique": false
                 }
               ],
@@ -2135,6 +3104,11 @@
                   "nullable": false
                 },
                 "location": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "phone": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
@@ -2629,10 +3603,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "4f59754dd90663a949e0ea61dcc20d1016d45cab443b9787f43551adfdd2fc59"
+    "storageHash": "3e9e66cb0714df479d16c704419550c7e8dce96371aad4e809345ec467a54a8f"
   },
   "execution": {
-    "executionHash": "967b95ddeb17386c27a8fa3556b54ac3580a43b05f6a2ba6e9f77413cd673ddf",
+    "executionHash": "85e767769a3d8fcd72695eb67374a9d8a155f8dd7ef11d2f5b873065e56752cc",
     "mutations": {
       "defaults": [
         {
@@ -2648,6 +3622,28 @@
             "column": "updated_at",
             "namespace": "public",
             "table": "company_profiles"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "conversations"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "listing_reports"
           }
         },
         {
@@ -2674,6 +3670,17 @@
             "column": "updated_at",
             "namespace": "public",
             "table": "listings"
+          }
+        },
+        {
+          "onCreate": {
+            "id": "uuidv4",
+            "kind": "generator"
+          },
+          "ref": {
+            "column": "id",
+            "namespace": "public",
+            "table": "messages"
           }
         },
         {

@@ -17,7 +17,6 @@ import {
     X
 } from 'lucide-react';
 import { getAllProfiles } from '@/api/profile';
-import { PROVIDERS } from '@/data';
 import { useAuthStore } from '@/store/useAuthStore';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import { getImageUrl } from '@/utils/imageUrl';
@@ -169,7 +168,7 @@ function ProvidersContent() {
         if (q) setSearchTerm(q);
     }, [searchParams]);
 
-    // Fetch Providers from API with fallback to static mock data
+    // Fetch Providers from database API
     useEffect(() => {
         let active = true;
         setLoading(true);
@@ -177,36 +176,38 @@ function ProvidersContent() {
         const fetchProvidersData = async () => {
             try {
                 const res = await getAllProfiles();
-                if (res.success && Array.isArray(res.data?.profiles) && res.data.profiles.length > 0) {
-                    // Combine or map backend profiles
-                    const backendProfiles = res.data.profiles.map(p => ({
-                        id: p.id,
-                        name: p.name,
-                        logo: p.logo || DEFAULT_LOGO,
-                        coverImage: p.coverImage || DEFAULT_COVER,
-                        description: p.description || '',
-                        listingsCount: p.listingsCount || 0,
-                        rating: 4.9,
-                        location: p.location || 'Deutschland',
-                        type: p.type || 'Gewerblich',
-                        achievements: p.achievements || []
-                    }));
+                if (res.success && Array.isArray(res.data?.profiles)) {
+                    // Deduplicate and map backend profiles
+                    const seenIds = new Set();
+                    const backendProfiles = [];
 
-                    // Merge with mock providers so showcase is complete
-                    const merged = [...backendProfiles];
-                    PROVIDERS.forEach(mockP => {
-                        if (!merged.some(m => m.name.toLowerCase() === mockP.name.toLowerCase())) {
-                            merged.push(mockP);
+                    for (const p of res.data.profiles) {
+                        if (!seenIds.has(p.id)) {
+                            seenIds.add(p.id);
+                            backendProfiles.push({
+                                id: p.id,
+                                name: p.name,
+                                logo: p.logo || DEFAULT_LOGO,
+                                coverImage: p.coverImage || DEFAULT_COVER,
+                                description: p.description || '',
+                                listingsCount: p.listingsCount || 0,
+                                rating: 4.9,
+                                location: p.location || 'Deutschland',
+                                type: p.type || 'Gewerblich',
+                                isSpotlightEligible: p.isSpotlightEligible || false,
+                                isBusiness: p.isBusiness || false,
+                                achievements: p.achievements || []
+                            });
                         }
-                    });
+                    }
 
-                    if (active) setProviders(merged);
+                    if (active) setProviders(backendProfiles);
                 } else {
-                    if (active) setProviders(PROVIDERS);
+                    if (active) setProviders([]);
                 }
             } catch (err) {
-                console.warn('Falling back to static mock providers:', err);
-                if (active) setProviders(PROVIDERS);
+                console.error('Error loading providers from API:', err);
+                if (active) setProviders([]);
             } finally {
                 if (active) setLoading(false);
             }

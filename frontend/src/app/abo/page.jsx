@@ -353,11 +353,11 @@ export default function AboPage() {
                             <ul className="space-y-3 flex-1 mb-8 relative">
                                 {[
                                     'Bis zu 25 aktive Inserate',
-                                    'Automatische Spotlight-Rotation auf der Startseite',
-                                    '+ 1.000 Campuna Credits monatlich inklusive',
-                                    'Individuelles Firmen-Cover & Logo',
+                                    'Professionelles Firmen-Cover & Logo',
                                     'Erweitertes Firmenprofil (1.000 Zeichen)',
-                                    'Performance-Statistiken & Analytics',
+                                    'Präsenz im Bereich „Alle Händler / Anbieter“',
+                                    'Performance-Statistiken & Cockpit-Analytics',
+                                    'Monatlich flexibel kündbar',
                                 ].map((f) => (
                                     <li key={f} className="flex items-center gap-2.5 text-sm text-white/85 font-sans">
                                         <Check className="w-4 h-4 text-gold shrink-0" />

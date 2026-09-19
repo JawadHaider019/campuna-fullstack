@@ -58,6 +58,16 @@ function InstagramIcon(props) {
     );
 }
 
+function LinkedInIcon(props) {
+    return (
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+            <rect x="2" y="9" width="4" height="12" />
+            <circle cx="4" cy="4" r="2" />
+        </svg>
+    );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function slugifyName(name = '') {
@@ -537,10 +547,12 @@ export default function ProviderDetails() {
                             website: p.website_url || '',
                             instagram: p.instagram_url || '',
                             facebook: p.facebook_url || '',
+                            linkedin: p.linkedin_url || '',
                             address: p.company_address || p.location || '',
                             impressum: p.privacy_policy_url || '',
                             memberSince: formatMemberSince(p.member_since),
                             isStrategic: p.is_strategic_partner || false,
+                            isBusiness: p.is_business || p.tier === 'BUSINESS' || p.is_strategic_partner || false,
                             tier: p.tier || 'FREE',
                             achievements: profileRes.data.achievements || [],
                         });
@@ -599,7 +611,7 @@ export default function ProviderDetails() {
 
     // ── Render ───────────────────────────────────────────────────────────────
 
-    const hasSocials = provider.website || provider.instagram || provider.facebook;
+    const hasSocials = provider.website || provider.instagram || provider.facebook || provider.linkedin;
     const contactEmail = provider.email || `kontakt@campuna.de`;
 
     return (
@@ -825,6 +837,13 @@ export default function ProviderDetails() {
                                                     title="Facebook"
                                                     className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
                                                     <FacebookIcon />
+                                                </a>
+                                            )}
+                                            {provider.linkedin && (
+                                                <a href={provider.linkedin} target="_blank" rel="noopener noreferrer"
+                                                    title="LinkedIn"
+                                                    className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                                    <LinkedInIcon />
                                                 </a>
                                             )}
                                         </div>

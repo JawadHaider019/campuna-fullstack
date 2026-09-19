@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMyProfile, updateMyProfile, getPublicProfile, uploadAvatar, uploadCover, getAllProfiles } from '../controllers/profile.js';
+import { getMyProfile, updateMyProfile, getPublicProfile, uploadAvatar, uploadCover, getAllProfiles, bookSpotlight } from '../controllers/profile.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { uploadSingle } from '../middleware/upload.js';
 
@@ -12,6 +12,9 @@ router.get('/me', authenticate, getMyProfile);
 
 // PUT  /api/profile/me      → update own profile
 router.put('/me', authenticate, updateMyProfile);
+
+// POST /api/profile/spotlight → book or extend Homepage Spotlight
+router.post('/spotlight', authenticate, bookSpotlight);
 
 // POST /api/profile/me/avatar → upload/update avatar or company logo
 router.post('/me/avatar', authenticate, uploadSingle, uploadAvatar);

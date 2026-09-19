@@ -109,6 +109,9 @@ export const uploadCover = async (file) => {
     return api.post('/profile/me/cover', formData);
 };
 
-
-
-
+/**
+ * POST /api/profile/spotlight
+ * Books or extends Homepage Spotlight for commercial users.
+ * @param {{ durationDays: number, payment_method: string }} data
+ */
+export const bookSpotlight = (data) => api.post('/profile/spotlight', data);

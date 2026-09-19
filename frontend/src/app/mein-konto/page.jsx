@@ -22,6 +22,7 @@ import {
     getInvoices,
     earnSimulatedCredits,
     spendSimulatedCredits,
+    bookSpotlight,
 } from '@/api/profile';
 import { getMyListings, boostListing, deleteListing } from '@/api/listings';
 import { logoutUser } from '@/api/auth';
@@ -50,6 +51,15 @@ import {
     FileSpreadsheet, MessageSquare, Heart, Trash2, PanelLeftClose, PanelLeftOpen, PanelLeft
 } from 'lucide-react';
 
+function Linkedin(props) {
+    return (
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+            <rect x="2" y="9" width="4" height="12" />
+            <circle cx="4" cy="4" r="2" />
+        </svg>
+    );
+}
 
 const ACCOUNT_TAB_LABELS = {
     dashboard: 'Übersicht & Profil',
@@ -259,6 +269,9 @@ export default function MeinKontoPage() {
     // Profile & User State
     const [profile, setProfile] = useState(null);
     const [profileType, setProfileType] = useState(null);
+    const effectiveProfileType = profileType || (user?.user_type === 'COMMERCIAL' ? 'COMMERCIAL' : 'PRIVATE');
+    const isCommercial = effectiveProfileType === 'COMMERCIAL';
+    const isPrivate = !isCommercial;
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -340,6 +353,12 @@ export default function MeinKontoPage() {
     const [creditPaymentMethod, setCreditPaymentMethod] = useState('CREDIT_CARD'); // 'CREDIT_CARD' | 'SEPA' | 'PAYPAL'
     const [buyingCredits, setBuyingCredits] = useState(false);
 
+    // Spotlight Modal State
+    const [spotlightModalOpen, setSpotlightModalOpen] = useState(false);
+    const [spotlightDuration, setSpotlightDuration] = useState(7); // 7, 14, 30 days
+    const [spotlightPaymentMethod, setSpotlightPaymentMethod] = useState('CREDIT'); // 'CREDIT' | 'CREDIT_CARD' | 'SEPA' | 'PAYPAL'
+    const [bookingSpotlight, setBookingSpotlight] = useState(false);
+
     // Pioneer Award Modal
     const [badgeModalOpen, setBadgeModalOpen] = useState(false);
 
@@ -354,20 +373,20 @@ export default function MeinKontoPage() {
     // Helper data computed
     const displayName = useMemo(() => {
         if (!profile) return user?.email?.split('@')[0] || 'Camper';
-        if (profileType === 'COMMERCIAL') {
+        if (isCommercial) {
             return profile.company_name || profile.first_name || 'Gewerblicher Anbieter';
         }
         return [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Camper';
-    }, [profile, profileType, user]);
+    }, [profile, isCommercial, user]);
 
     const avatarSrc = useMemo(() => {
         const source = isEditing ? draft : profile;
         if (!source) return null;
-        const raw = profileType === 'COMMERCIAL'
+        const raw = isCommercial
             ? source.logo_url || source.profile_image_url
             : source.profile_image_url;
         return raw ? getImageUrl(raw) : null;
-    }, [profile, draft, isEditing, profileType]);
+    }, [profile, draft, isEditing, isCommercial]);
 
     const pioneerBadge = useMemo(() => {
         return (achievements || []).find(a => a.badge_key === 'CAMPUNA_PIONEER') || null;
@@ -379,11 +398,59 @@ export default function MeinKontoPage() {
 
     const isProfileComplete = useMemo(() => {
         if (!profile) return false;
-        if (profileType === 'COMMERCIAL') {
+        if (isCommercial) {
             return Boolean(profile.company_name && profile.bio && profile.location);
         }
         return Boolean(profile.first_name && profile.last_name && profile.bio);
-    }, [profile, profileType]);
+    }, [profile, isCommercial]);
+
+    // Spotlight Requirements Evaluation
+    const spotlightRequirements = useMemo(() => {
+        const source = isEditing ? draft : (profile || {});
+        const hasLogo = Boolean(source?.logo_url && String(source.logo_url).trim());
+        const hasCover = Boolean(source?.cover_image_url && String(source.cover_image_url).trim());
+        const hasBio = Boolean(source?.bio && String(source.bio).trim().length >= 20);
+        const hasPhone = Boolean(source?.phone && String(source.phone).trim());
+        const hasLocation = Boolean((source?.location && String(source.location).trim()) || (source?.company_address && String(source.company_address).trim()));
+        const isVerified = Boolean(user?.email_verified);
+        const isCommercialUser = isCommercial;
+
+        const list = [
+            { id: 'logo', label: 'Firmenlogo / Profilbild', met: hasLogo },
+            { id: 'cover', label: 'Titelbild / Banner', met: hasCover },
+            { id: 'bio', label: 'Unternehmensbeschreibung (mind. 20 Zeichen)', met: hasBio },
+            { id: 'phone', label: 'Telefonnummer', met: hasPhone },
+            { id: 'location', label: 'Standort oder Adresse', met: hasLocation },
+            { id: 'verified', label: 'Verifiziertes Benutzerkonto', met: isVerified },
+        ];
+
+        const metCount = list.filter(i => i.met).length;
+
+        return {
+            hasLogo,
+            hasCover,
+            hasBio,
+            hasPhone,
+            hasLocation,
+            isVerified,
+            isCommercial: isCommercialUser,
+            list,
+            metCount,
+            totalCount: list.length,
+            allMet: hasLogo && hasCover && hasBio && hasPhone && hasLocation && isVerified && isCommercialUser,
+        };
+    }, [isEditing, draft, profile, isCommercial, user]);
+
+    const hasPaidSpotlight = Boolean(
+        profile?.has_paid_spotlight ||
+        (profile?.spotlight_until && new Date(profile.spotlight_until) > new Date()) ||
+        profile?.is_strategic_partner
+    );
+    const isSpotlightActive = Boolean(hasPaidSpotlight && spotlightRequirements.allMet);
+    const isSpotlightPaused = Boolean(hasPaidSpotlight && !spotlightRequirements.allMet);
+    const spotlightDaysLeft = profile?.spotlight_until && new Date(profile.spotlight_until) > new Date()
+        ? Math.ceil((new Date(profile.spotlight_until).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        : 0;
 
     const filteredListings = useMemo(() => {
         return userListings.filter(l => {
@@ -784,6 +851,10 @@ export default function MeinKontoPage() {
 
     const handleCoverUpload = (e) => {
         if (profileType !== 'COMMERCIAL') return;
+        if (!subDetails.is_business) {
+            toast.error('Das individuelle Hintergrundbild ist exklusiv im Business-Tarif (29 €/Monat) verfügbar.');
+            return;
+        }
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -900,6 +971,60 @@ export default function MeinKontoPage() {
             toast.error(err.response?.data?.error || 'Guthabenkauf fehlgeschlagen.', { id: toastId });
         } finally {
             setBuyingCredits(false);
+        }
+    };
+
+    const handleBookSpotlight = async () => {
+        if (!spotlightRequirements.allMet) {
+            toast.error('Bitte vervollständige zuerst alle erforderlichen Angaben in deinem Profil.');
+            return;
+        }
+
+        const SPOTLIGHT_COSTS = { 7: 1500, 14: 2500, 30: 4000 };
+        const SPOTLIGHT_PRICES = { 7: '14,99 €', 14: '24,99 €', 30: '39,99 €' };
+        const cost = SPOTLIGHT_COSTS[spotlightDuration] || 1500;
+        const priceEur = SPOTLIGHT_PRICES[spotlightDuration] || '14,99 €';
+
+        if (spotlightPaymentMethod === 'CREDIT' && (Number(creditBalance) || 0) < cost) {
+            toast.error(`Nicht genügend Credits (${creditBalance} CC vorhanden, ${cost} CC benötigt). Wähle stattdessen Direktzahlung.`);
+            return;
+        }
+
+        setBookingSpotlight(true);
+        const toastId = toast.loading(spotlightPaymentMethod === 'CREDIT' ? 'Spotlight wird aktiviert...' : `Zahlung von ${priceEur} wird verarbeitet...`);
+
+        try {
+            const res = await bookSpotlight({
+                durationDays: spotlightDuration,
+                payment_method: spotlightPaymentMethod
+            });
+
+            if (res.success || res.data?.success) {
+                toast.success(`🎉 Glückwunsch! Dein Unternehmen ist jetzt für ${spotlightDuration} Tage im Campuna Spotlight aktiv!`, { id: toastId });
+                if (res.data?.new_balance !== undefined) {
+                    setCreditBalance(res.data.new_balance);
+                }
+                setProfile(prev => prev ? {
+                    ...prev,
+                    spotlight_until: res.data?.spotlight_until || res.spotlight_until,
+                    is_spotlight_active: true,
+                    spotlight_days_left: res.data?.days_left || spotlightDuration
+                } : prev);
+
+                getCreditTransactions().then(txRes => {
+                    if (txRes?.success && Array.isArray(txRes.data?.transactions)) {
+                        setCreditTransactions(txRes.data.transactions);
+                    }
+                }).catch(() => {});
+
+                setSpotlightModalOpen(false);
+            } else {
+                toast.error(res.error || res.data?.error || 'Spotlight-Buchung fehlgeschlagen.', { id: toastId });
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.error || err.message || 'Spotlight-Buchung fehlgeschlagen.', { id: toastId });
+        } finally {
+            setBookingSpotlight(false);
         }
     };
 
@@ -1245,7 +1370,7 @@ export default function MeinKontoPage() {
 
                         {/* Upgrade Widget & Bottom Account Section */}
                         <div className={`space-y-3 transition-all ${sidebarCollapsed ? 'px-0' : 'pl-1'}`}>
-                            {profileType === 'COMMERCIAL' && !subDetails.is_business && (
+                            {isCommercial && !subDetails.is_business && (
                                 sidebarCollapsed ? (
                                     <div className="flex justify-center group relative">
                                         <button
@@ -1293,7 +1418,7 @@ export default function MeinKontoPage() {
                                     <div className="flex flex-col items-center gap-2">
                                         <div
                                             className="w-9 h-9 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center ring-2 ring-gold/40 shadow-sm shrink-0 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                                            title={`${displayName} (${profileType === 'COMMERCIAL' ? 'gewerblich' : 'privat'})`}
+                                            title={`${displayName} (${isCommercial ? 'gewerblich' : 'privat'})`}
                                             onClick={() => handleTabChange('dashboard')}
                                         >
                                             {avatarSrc ? (
@@ -1489,7 +1614,6 @@ export default function MeinKontoPage() {
                                         title="Mein Profil & Übersicht"
                                         subtitle="Verwalte deine persönlichen Profildaten, aktiven Inserate und Mitgliedschaft"
                                         icon={LayoutDashboard}
-
                                         action={
                                             !isEditing ? (
                                                 <button
@@ -1526,37 +1650,67 @@ export default function MeinKontoPage() {
                                     />
 
                                     {/* Top Profile Showcase Hero Card */}
-
                                     <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-beige overflow-hidden relative">
                                         {/* Cover Banner for Commercial Users */}
-                                        {profileType === 'COMMERCIAL' && (
+                                        {isCommercial && (
                                             <div className="relative h-44 sm:h-52 bg-gradient-to-r from-[#004709] via-[#002204] to-[#040805] overflow-hidden group">
-                                                {(isEditing ? draft?.cover_image_url : profile?.cover_image_url) ? (
+                                                {(isEditing ? draft?.cover_image_url : profile?.cover_image_url) && subDetails.is_business ? (
                                                     <img
                                                         src={getImageUrl(isEditing ? draft?.cover_image_url : profile?.cover_image_url)}
                                                         alt="Cover"
                                                         className="w-full h-full object-cover"
                                                     />
                                                 ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-white/20">
+                                                    <div className="w-full h-full flex flex-col items-center justify-center text-white/20 relative">
                                                         <Compass className="w-24 h-24 stroke-[1]" />
+                                                        {!subDetails.is_business && (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                                                                <span className="text-[11px] font-semibold text-sand/80 bg-black/40 backdrop-blur-xs px-3 py-1 rounded-full border border-white/10">
+                                                                    Standard Campuna Banner
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 )}
-                                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
                                                 {isEditing && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => coverInputRef.current?.click()}
-                                                        className="absolute inset-0 bg-black/40 hover:bg-black/60 transition-colors flex flex-col items-center justify-center gap-1 text-white font-semibold text-xs cursor-pointer z-10"
-                                                    >
-                                                        <Camera className="w-5 h-5 animate-pulse text-gold" />
-                                                        <span>Hintergrundbild ändern</span>
-                                                        <span className="text-[9px] text-white/70">(Max. 5 MB)</span>
-                                                    </button>
+                                                    subDetails.is_business ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => coverInputRef.current?.click()}
+                                                            className="absolute inset-0 bg-black/40 hover:bg-black/60 transition-colors flex flex-col items-center justify-center gap-1 text-white font-semibold text-xs cursor-pointer z-10"
+                                                        >
+                                                            <Camera className="w-5 h-5 animate-pulse text-gold" />
+                                                            <span>Hintergrundbild ändern</span>
+                                                            <span className="text-[9px] text-white/70">(Max. 5 MB)</span>
+                                                        </button>
+                                                    ) : (
+                                                        <div
+                                                            className="absolute inset-0 bg-black/70 backdrop-blur-xs transition-colors flex flex-col items-center justify-center gap-2 text-white p-4 text-center z-10"
+                                                        >
+                                                            <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold border border-gold/40">
+                                                                <Crown className="w-4 h-4 text-gold" />
+                                                            </div>
+                                                            <div className="space-y-0.5 max-w-sm">
+                                                                <p className="font-bold text-xs text-sand">Individuelles Schaufenster-Cover</p>
+                                                                <p className="text-[11px] text-sand/80 leading-tight">
+                                                                    Exklusiv im <strong className="text-gold font-bold">Business-Tarif (29 €/Monat)</strong> für professionelles Branding.
+                                                                </p>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => router.push('/abo')}
+                                                                className="mt-1 inline-flex items-center gap-1.5 bg-gold hover:bg-gold-light text-forest font-black text-[11px] uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md transition-all hover:scale-105 cursor-pointer"
+                                                            >
+                                                                <Sparkles className="w-3.5 h-3.5 text-forest" />
+                                                                <span>Jetzt auf Business upgraden</span>
+                                                            </button>
+                                                        </div>
+                                                    )
                                                 )}
 
-                                                <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                                                <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
                                                     <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gold text-forest shadow-sm flex items-center gap-1.5">
                                                         <Building2 className="w-3.5 h-3.5" /> Gewerblich
                                                     </span>
@@ -1583,7 +1737,7 @@ export default function MeinKontoPage() {
                                                         </div>
 
                                                         <div className="flex-1 space-y-4 w-full min-w-0">
-                                                            {profileType === 'PRIVATE' ? (
+                                                            {isPrivate ? (
                                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                                     <FormField label="Vorname" value={profile?.first_name} editValue={draft.first_name}
                                                                         isEditing={true} onChange={v => setDraft(d => ({ ...d, first_name: v }))}
@@ -1619,24 +1773,31 @@ export default function MeinKontoPage() {
                                                                     isEditing={true} onChange={v => setDraft(d => ({ ...d, location: v }))}
                                                                     placeholder="z.B. München, Bayern" icon={MapPin} />
 
-                                                                {profileType === 'COMMERCIAL' && (
+                                                                {isCommercial && (
                                                                     <FormField label="Website" value={profile?.website_url} editValue={draft.website_url}
                                                                         isEditing={true} onChange={v => setDraft(d => ({ ...d, website_url: v }))}
                                                                         placeholder="https://meine-firma.de" icon={Globe} type="url" />
                                                                 )}
                                                             </div>
 
-                                                            {profileType === 'COMMERCIAL' && (
-                                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-beige">
-                                                                    <FormField label="Instagram URL" value={profile?.instagram_url} editValue={draft.instagram_url}
-                                                                        isEditing={true} onChange={v => setDraft(d => ({ ...d, instagram_url: v }))}
-                                                                        placeholder="https://instagram.com/..." icon={AtSign} type="url" />
-                                                                    <FormField label="Facebook URL" value={profile?.facebook_url} editValue={draft.facebook_url}
-                                                                        isEditing={true} onChange={v => setDraft(d => ({ ...d, facebook_url: v }))}
-                                                                        placeholder="https://facebook.com/..." icon={Share2} type="url" />
-                                                                    <FormField label="USt-IdNr." value={profile?.vat_id} editValue={draft.vat_id}
-                                                                        isEditing={true} onChange={v => setDraft(d => ({ ...d, vat_id: v }))}
-                                                                        placeholder="DE123456789" icon={Shield} />
+                                                            {isCommercial && (
+                                                                <div className="space-y-4 pt-2 border-t border-beige">
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                                        <FormField label="Instagram URL" value={profile?.instagram_url} editValue={draft.instagram_url}
+                                                                            isEditing={true} onChange={v => setDraft(d => ({ ...d, instagram_url: v }))}
+                                                                            placeholder="https://instagram.com/..." icon={AtSign} type="url" />
+                                                                        <FormField label="Facebook URL" value={profile?.facebook_url} editValue={draft.facebook_url}
+                                                                            isEditing={true} onChange={v => setDraft(d => ({ ...d, facebook_url: v }))}
+                                                                            placeholder="https://facebook.com/..." icon={Share2} type="url" />
+                                                                        <FormField label="LinkedIn URL" value={profile?.linkedin_url} editValue={draft.linkedin_url}
+                                                                            isEditing={true} onChange={v => setDraft(d => ({ ...d, linkedin_url: v }))}
+                                                                            placeholder="https://linkedin.com/company/..." icon={Linkedin} type="url" />
+                                                                    </div>
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                        <FormField label="USt-IdNr." value={profile?.vat_id} editValue={draft.vat_id}
+                                                                            isEditing={true} onChange={v => setDraft(d => ({ ...d, vat_id: v }))}
+                                                                            placeholder="DE123456789" icon={Shield} />
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1661,7 +1822,7 @@ export default function MeinKontoPage() {
                                                                 </h2>
 
                                                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-[#faf8f3] text-charcoal/70 border border-beige">
-                                                                    {profileType === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'}
+                                                                    {isCommercial ? 'Gewerblich' : 'Privat'}
                                                                 </span>
 
                                                                 {pioneerBadge ? (
@@ -1723,8 +1884,8 @@ export default function MeinKontoPage() {
                                                             </div>
                                                         </div>
 
-                                                        {profileType === 'COMMERCIAL' && (profile?.website_url || profile?.instagram_url || profile?.facebook_url) && (
-                                                            <div className="flex items-center justify-center sm:justify-start gap-3 pt-1 flex-wrap">
+                                                        {isCommercial && (profile?.website_url || profile?.instagram_url || profile?.facebook_url || profile?.linkedin_url) && (
+                                                            <div className="flex items-center justify-center sm:justify-start gap-2.5 pt-1 flex-wrap">
                                                                 {profile.website_url && (
                                                                     <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 bg-[#faf8f3] hover:bg-sand border border-beige px-3 py-1.5 rounded-xl text-xs font-bold text-forest transition-all">
                                                                         <Globe className="w-3.5 h-3.5 text-gold-dark" /> Website
@@ -1740,6 +1901,11 @@ export default function MeinKontoPage() {
                                                                         <Share2 className="w-3.5 h-3.5 text-gold-dark" /> Facebook
                                                                     </a>
                                                                 )}
+                                                                {profile.linkedin_url && (
+                                                                    <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 bg-[#faf8f3] hover:bg-sand border border-beige px-3 py-1.5 rounded-xl text-xs font-bold text-forest transition-all">
+                                                                        <Linkedin className="w-3.5 h-3.5 text-gold-dark" /> LinkedIn
+                                                                    </a>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
@@ -1747,6 +1913,87 @@ export default function MeinKontoPage() {
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* ── COMMERCIAL SPOTLIGHT PROMINENCE CARD ── */}
+                                    {isCommercial && (
+                                        <div className={`bg-gradient-to-br from-[#faf8f3] via-white to-sand/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 border ${isSpotlightPaused ? 'border-amber-400 bg-amber-50/20' : 'border-gold/40'} shadow-sm relative overflow-hidden space-y-4`}>
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-3 border-b border-beige">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${isSpotlightPaused ? 'from-amber-400 to-amber-600' : 'from-gold to-amber-500'} text-forest flex items-center justify-center font-bold shadow-xs shrink-0`}>
+                                                        <Sparkles className="w-5 h-5 text-forest" />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <h3 className="font-display font-black text-charcoal text-base">Campuna Spotlight (Startseite)</h3>
+                                                            {isSpotlightActive ? (
+                                                                <span key="badge-active" className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1">
+                                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse shrink-0" />
+                                                                    <span>Aktiv (Live auf Startseite)</span>
+                                                                </span>
+                                                            ) : isSpotlightPaused ? (
+                                                                <span key="badge-paused" className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300 inline-flex items-center gap-1">
+                                                                    <AlertTriangle className="w-3 h-3 text-amber-700 shrink-0" />
+                                                                    <span>Pausiert (Profil unvollständig)</span>
+                                                                </span>
+                                                            ) : (
+                                                                <span key="badge-unbooked" className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-stone-100 text-charcoal/60 border border-beige inline-flex items-center">
+                                                                    <span>Nicht gebucht</span>
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-xs text-charcoal/60 mt-0.5 leading-relaxed">
+                                                            {isSpotlightActive
+                                                                ? `Dein Unternehmen rotiert aktiv im Spotlight auf der Campuna-Startseite (noch ${spotlightDaysLeft} ${spotlightDaysLeft === 1 ? 'Tag' : 'Tage'}).`
+                                                                : isSpotlightPaused
+                                                                ? `Spotlight ist für noch ${spotlightDaysLeft} ${spotlightDaysLeft === 1 ? 'Tag' : 'Tage'} gebucht, pausiert jedoch, da dein Profil unvollständig ist. Bitte ergänze die fehlenden Angaben, damit dein Unternehmen auf der Startseite live ausgespielt wird.`
+                                                                : 'Präsentiere dein Unternehmen prominent auf der Campuna Startseite für maximale Händler-Reichweite.'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (isSpotlightPaused && !spotlightRequirements.allMet) {
+                                                            setIsEditing(true);
+                                                        } else {
+                                                            setSpotlightModalOpen(true);
+                                                        }
+                                                    }}
+                                                    className="w-full sm:w-auto px-5 py-2.5 bg-forest hover:bg-[#004d0a] text-sand rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer shrink-0"
+                                                >
+                                                    <Sparkles className="w-4 h-4 text-gold" />
+                                                    <span>
+                                                        {isSpotlightActive 
+                                                            ? 'Spotlight verlängern' 
+                                                            : isSpotlightPaused 
+                                                            ? 'Profil vervollständigen' 
+                                                            : 'Spotlight buchen'}
+                                                    </span>
+                                                </button>
+                                            </div>
+
+                                            {/* Requirements Mini-Checker */}
+                                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[11px] font-bold text-charcoal/70">Voraussetzungen für Spotlight:</span>
+                                                    <span className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded-full ${spotlightRequirements.allMet ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                                                        {`${spotlightRequirements.metCount} / ${spotlightRequirements.totalCount} Kriterien erfüllt${spotlightRequirements.allMet ? (hasPaidSpotlight ? ' • Live auf Startseite' : ' • Bereit zur Buchung') : (hasPaidSpotlight ? ' • Spotlight pausiert' : '')}`}
+                                                    </span>
+                                                </div>
+                                                {!spotlightRequirements.allMet && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsEditing(true)}
+                                                        className="text-[11px] font-bold text-forest hover:text-gold-dark flex items-center gap-1 cursor-pointer underline"
+                                                    >
+                                                        <Edit3 className="w-3 h-3" />
+                                                        <span>Fehlende Angaben ergänzen</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* 2-Column Grid */}
                                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -1929,7 +2176,7 @@ export default function MeinKontoPage() {
                                         {/* Right Column (5 cols) */}
                                         <div className="lg:col-span-5 space-y-6">
                                             {/* Account Plan / Status Card */}
-                                            {profileType === 'PRIVATE' ? (
+                                            {isPrivate ? (
                                                 <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4">
                                                     <div className="flex items-center justify-between pb-3 border-b border-beige">
                                                         <span className="text-[10px] font-black uppercase tracking-widest text-forest flex items-center gap-1.5">
@@ -2767,15 +3014,15 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>Automatische Spotlight-Rotation</strong> auf der Startseite</span>
+                                                            <span><strong>Professionelles Firmen-Cover & Logo</strong></span>
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>Individuelles Firmen-Cover & Logo</strong></span>
+                                                            <span><strong>1.000 Zeichen</strong> Firmenbeschreibung</span>
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>1.000 Zeichen</strong> Firmenbeschreibung & Impressum</span>
+                                                            <span><strong>Präsenz im Verzeichnis</strong> „Alle Händler / Anbieter“</span>
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
@@ -2783,11 +3030,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span>+ 1.000 Campuna Credits monatlich inklusive</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span>Monatlich flexibel kündbar (auch mit 2.900 CC zahlbar)</span>
+                                                            <span>Monatlich flexibel kündbar</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2923,15 +3166,15 @@ export default function MeinKontoPage() {
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                                                         <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
                                                             <span className="text-xs font-black text-forest font-mono">1. Teilen</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Gib deinen Link oder Code an Camping-Freunde weiter.</p>
+                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Gib deinen Link oder Code an Camping-Freunde und Händler weiter.</p>
                                                         </div>
                                                         <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
                                                             <span className="text-xs font-black text-forest font-mono">2. Registrieren</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Dein Kontakt meldet sich mit deinem Code an.</p>
+                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Dein Kontakt meldet sich mit deinem Code bei Campuna an.</p>
                                                         </div>
                                                         <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
                                                             <span className="text-xs font-black text-forest font-mono">3. Beide profitieren</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Sobald das 1. Inserat deines Kontakts freigeschaltet wird, erhalten beide sofort 100 Credits.</p>
+                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Privat: Nach dem 1. freigegebenen Inserat. Gewerblich: Nach vollständigem Firmenprofil erhalten beide 100 CC.</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -3526,7 +3769,195 @@ export default function MeinKontoPage() {
                 )}
             </AnimatePresence>
 
-            {/* 1.1 Credit Top-Up Purchase Modal */}
+            {/* 1.1 Campuna Spotlight Booking Modal */}
+            <AnimatePresence>
+                {spotlightModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
+                        onClick={() => !bookingSpotlight && setSpotlightModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.95, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-beige p-6 sm:p-7 space-y-5 relative my-auto"
+                        >
+                            {/* Header */}
+                            <div className="flex items-start justify-between pb-3 border-b border-beige">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-xl bg-gold/20 flex items-center justify-center text-forest font-bold">
+                                            <Sparkles className="w-4 h-4 text-forest" />
+                                        </div>
+                                        <h3 className="font-black text-charcoal text-lg sm:text-xl font-display">Campuna Spotlight buchen</h3>
+                                    </div>
+                                    <p className="text-xs text-charcoal/70 leading-relaxed">
+                                        Platziere dein Unternehmen in der prominenten Spotlight-Sektion auf der Campuna-Startseite.
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => !bookingSpotlight && setSpotlightModalOpen(false)}
+                                    className="text-charcoal/40 hover:text-charcoal p-1 rounded-full hover:bg-sand transition-colors cursor-pointer shrink-0"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Profile Completeness Checklist */}
+                            <div className="bg-[#faf8f3] rounded-2xl border border-beige p-4 space-y-2.5 text-xs">
+                                <div className="flex items-center justify-between font-bold text-charcoal pb-1 border-b border-beige/60">
+                                    <span className="flex items-center gap-1.5">
+                                        <ShieldCheck className="w-4 h-4 text-gold-dark" /> Voraussetzungen für Spotlight
+                                    </span>
+                                    <span className={`font-mono text-[11px] px-2 py-0.5 rounded-full ${spotlightRequirements.allMet ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                                        {spotlightRequirements.metCount} / {spotlightRequirements.totalCount} erfüllt
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                                    {spotlightRequirements.list.map((req) => (
+                                        <div key={req.id} className="flex items-center gap-2 text-[11px]">
+                                            <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white shrink-0 ${req.met ? 'bg-emerald-600' : 'bg-stone-300'}`}>
+                                                <Check className="w-2.5 h-2.5" />
+                                            </div>
+                                            <span className={req.met ? 'text-charcoal font-medium' : 'text-charcoal/50'}>{req.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {!spotlightRequirements.allMet && (
+                                    <div className="mt-2 p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 flex items-center justify-between gap-2">
+                                        <span>Vervollständige dein Profil, um Spotlight freizuschalten.</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSpotlightModalOpen(false);
+                                                setIsEditing(true);
+                                            }}
+                                            className="font-bold text-forest underline cursor-pointer hover:text-gold-dark shrink-0"
+                                        >
+                                            Jetzt bearbeiten &rarr;
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Duration Packages */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider">Spotlight-Dauer wählen:</label>
+                                <div className="grid grid-cols-3 gap-2.5">
+                                    {[
+                                        { days: 7, priceEur: '14,99 €', cc: '1.500 CC', label: '7 Tage' },
+                                        { days: 14, priceEur: '24,99 €', cc: '2.500 CC', label: '14 Tage', popular: true },
+                                        { days: 30, priceEur: '39,99 €', cc: '4.000 CC', label: '30 Tage', bestValue: true },
+                                    ].map((pkg) => (
+                                        <button
+                                            key={pkg.days}
+                                            type="button"
+                                            onClick={() => setSpotlightDuration(pkg.days)}
+                                            className={`p-3.5 rounded-2xl text-center border transition-all cursor-pointer relative flex flex-col justify-between ${
+                                                spotlightDuration === pkg.days
+                                                    ? 'border-forest bg-forest text-sand shadow-md ring-2 ring-forest/20'
+                                                    : 'border-beige bg-[#faf8f3] text-charcoal hover:bg-sand/60'
+                                            }`}
+                                        >
+                                            {pkg.popular && (
+                                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.2 rounded-full text-[8px] font-black uppercase bg-gold text-forest tracking-tight">
+                                                    Beliebt
+                                                </span>
+                                            )}
+                                            {pkg.bestValue && (
+                                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.2 rounded-full text-[8px] font-black uppercase bg-emerald-500 text-white tracking-tight">
+                                                    Spartipp
+                                                </span>
+                                            )}
+                                            <span className="text-xs font-black block">{pkg.label}</span>
+                                            <span className={`text-base font-extrabold block my-1 ${spotlightDuration === pkg.days ? 'text-white' : 'text-charcoal'}`}>
+                                                {pkg.priceEur}
+                                            </span>
+                                            <span className={`text-[10px] block opacity-80 ${spotlightDuration === pkg.days ? 'text-sand' : 'text-charcoal/60'}`}>
+                                                oder {pkg.cc}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Payment Method Selector */}
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider">Zahlungsmethode:</label>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    {[
+                                        { id: 'CREDIT', label: 'Campuna Credits', icon: CoinIcon, isCoin: true },
+                                        { id: 'CREDIT_CARD', label: 'Kreditkarte', icon: CreditCard },
+                                        { id: 'PAYPAL', label: 'PayPal', icon: ShieldCheck },
+                                        { id: 'SEPA', label: 'SEPA', icon: Building2 },
+                                    ].map((m) => {
+                                        const Icon = m.icon;
+                                        return (
+                                            <button
+                                                key={m.id}
+                                                type="button"
+                                                onClick={() => setSpotlightPaymentMethod(m.id)}
+                                                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                                                    spotlightPaymentMethod === m.id
+                                                        ? 'border-forest bg-sand/60 shadow-xs ring-2 ring-forest/20 text-forest font-bold'
+                                                        : 'border-beige bg-[#faf8f3] text-charcoal hover:bg-sand/40'
+                                                }`}
+                                            >
+                                                {m.isCoin ? <CoinIcon size="xs" /> : <Icon className="w-3.5 h-3.5 text-forest" />}
+                                                <span className="text-[10px] leading-tight">{m.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Balance check if CREDIT selected */}
+                            {spotlightPaymentMethod === 'CREDIT' && (
+                                <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige flex items-center justify-between text-xs">
+                                    <span className="text-[11px] text-charcoal/70">Verfügbares Guthaben:</span>
+                                    <span className="font-mono font-bold text-forest">{Number(creditBalance).toLocaleString('de-DE')} CC</span>
+                                </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2.5 pt-1">
+                                <button
+                                    type="button"
+                                    onClick={handleBookSpotlight}
+                                    disabled={bookingSpotlight || !spotlightRequirements.allMet || (spotlightPaymentMethod === 'CREDIT' && Number(creditBalance) < (spotlightDuration === 7 ? 1500 : spotlightDuration === 14 ? 2500 : 4000))}
+                                    className="flex-1 bg-forest hover:bg-[#004d0a] text-sand py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {bookingSpotlight ? <Loader2 className="w-4 h-4 animate-spin text-gold" /> : <Sparkles className="w-4 h-4 text-gold" />}
+                                    <span>
+                                        {bookingSpotlight
+                                            ? 'Wird aktiviert...'
+                                            : !spotlightRequirements.allMet
+                                            ? 'Profil unvollständig'
+                                            : spotlightPaymentMethod === 'CREDIT'
+                                            ? `Mit ${(spotlightDuration === 7 ? 1500 : spotlightDuration === 14 ? 2500 : 4000).toLocaleString('de-DE')} CC aktivieren`
+                                            : `Jetzt für ${spotlightDuration === 7 ? '14,99 €' : spotlightDuration === 14 ? '24,99 €' : '39,99 €'} buchen`}
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSpotlightModalOpen(false)}
+                                    className="px-5 bg-[#faf8f3] text-charcoal hover:bg-sand rounded-2xl text-xs font-bold uppercase transition-all cursor-pointer border border-beige"
+                                >
+                                    Abbrechen
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* 1.2 Credit Top-Up Purchase Modal */}
             <AnimatePresence>
                 {buyCreditModalOpen && (
                     <motion.div
@@ -3957,7 +4388,7 @@ export default function MeinKontoPage() {
                                             Campuna Pioneer Badge erhalten
                                         </h3>
                                         <p className="text-xs text-charcoal/70 leading-relaxed max-w-md mx-auto">
-                                            Sichere dir das exklusive Campuna Pioneer Abzeichen für maximales Vertrauen bei Interessenten und dauerhaft bevorzugte Platzierung deiner Inserate.
+                                            Sichere dir das exklusive Campuna Pioneer Abzeichen für maximales Vertrauen bei Interessenten und dauerhaften Gründerstatus auf Campuna.
                                         </p>
                                     </div>
 
@@ -3969,9 +4400,9 @@ export default function MeinKontoPage() {
                                             <span className="text-[9px] text-charcoal/50 block">Auf Profil & Anzeigen</span>
                                         </div>
                                         <div className="p-2.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
-                                            <Rocket className="w-4 h-4 text-gold-dark mx-auto" />
-                                            <span className="font-bold text-[11px] text-charcoal block leading-tight">Mehr Reichweite</span>
-                                            <span className="text-[9px] text-charcoal/50 block">Höhere Sichtbarkeit</span>
+                                            <ShieldCheck className="w-4 h-4 text-gold-dark mx-auto" />
+                                            <span className="font-bold text-[11px] text-charcoal block leading-tight">Höchstes Vertrauen</span>
+                                            <span className="text-[9px] text-charcoal/50 block">Geprüfter Pionier</span>
                                         </div>
                                         <div className="p-2.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
                                             <Award className="w-4 h-4 text-gold-dark mx-auto" />
