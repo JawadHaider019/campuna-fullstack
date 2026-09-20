@@ -29,9 +29,10 @@ const FEATURE_ROWS = [
         key: 'credits',
         label: 'Campuna Credits',
         icon: Sparkles,
-        freeValue: '0 CC (100 CC mit Referral)',
-        bizValue: '1.000 CC',
+        freeValue: '0 CC (bis 1.000 CC)',
+        bizValue: '1.000 CC Inklusive',
     },
+    { key: 'has_cover_image', label: 'Firmen-Cover & Logo', icon: Shield, freeValue: false, bizValue: true },
     { key: 'has_statistics', label: 'Performance-Statistiken', icon: BarChart2, format: (v) => v },
 ];
 
@@ -42,10 +43,10 @@ const TESTIMONIALS = [
 ];
 
 const FAQ = [
-    { q: 'Wie bezahle ich mit Campuna Credits?', a: 'Du kannst Campuna Credits (CC) sammeln durch Empfehlungen und Aktionen. 2900 CC entsprechen einem Monat Business-Tarif (€29). Wenn du genug Credits hast, wird das Abonnement direkt von deinem Guthaben abgezogen.' },
+    { q: 'Wofür kann ich Campuna Credits einsetzen?', a: 'Campuna Credits (1 CC = €0,01) können flexibel für 7-, 14- oder 30-Tage Inserat-Reichweiten-Boosts sowie Spotlight-Platzierungen genutzt werden. Das Business-Abonnement (€29/Monat) wird regulär via SEPA-Lastschrift oder Kreditkarte abgerechnet.' },
     { q: 'Was passiert mit meinen Anzeigen, wenn ich kündige?', a: 'Deine bestehenden Anzeigen bleiben erhalten, du kannst jedoch keine neuen mehr erstellen, sobald du das kostenlose Limit von 3 Anzeigen erreicht hast.' },
     { q: 'Kann ich monatlich kündigen?', a: 'Ja! Du kannst dein Business-Abonnement jederzeit kündigen. Es läuft noch bis zum Ende des gebuchten Zeitraums.' },
-    { q: 'Gibt es einen Rabatt für mehrere Monate?', a: 'Wir arbeiten gerade an Jahresplänen. Melde dich für unseren Newsletter an, um als Erster informiert zu werden.' },
+    { q: 'Gibt es einen Rabatt für mehrere Monate?', a: 'Ja! Beim 3-Monats-Paket sparst du gegenüber dem Einzelmonat, und beim Jahresplan erhältst du 2 Gratismonate (€290/Jahr).' },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -53,10 +54,10 @@ const FAQ = [
 const FeatureCheck = ({ value, format }) => {
     if (typeof value === 'boolean') {
         return value
-            ? <span className="flex items-center justify-center w-6 h-6 rounded-full bg-forest/10 mx-auto"><Check className="w-3.5 h-3.5 text-forest" /></span>
-            : <span className="flex items-center justify-center w-6 h-6 rounded-full bg-charcoal/5 mx-auto"><X className="w-3.5 h-3.5 text-charcoal/25" /></span>;
+            ? <span className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-forest/10 mx-auto shrink-0"><Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-forest" /></span>
+            : <span className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-charcoal/5 mx-auto shrink-0"><X className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-charcoal/25" /></span>;
     }
-    return <span className="text-sm font-semibold text-charcoal font-sans text-center">{format ? format(value) : value}</span>;
+    return <span className="text-xs sm:text-sm font-semibold text-charcoal font-sans text-center leading-snug whitespace-nowrap px-1">{format ? format(value) : value}</span>;
 };
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
@@ -320,7 +321,7 @@ export default function AboPage() {
                             </div>
 
                             <ul className="space-y-3 flex-1 mb-8">
-                                {['Bis zu 3 aktive Anzeigen', 'Firmenprofil (500 Zeichen)', '0 CC Startguthaben (100 CC mit Referral)', 'Normale Sichtbarkeit', 'Kontaktformular für Kunden', 'Eigener Referral-Code'].map((f) => (
+                                {['Bis zu 3 aktive Anzeigen', 'Firmenprofil (500 Zeichen)', 'Credits mit Empfehlungen (500-1.000 CC)', 'Normale Sichtbarkeit', 'Kontaktformular für Kunden', 'Eigener Referral-Code'].map((f) => (
                                     <li key={f} className="flex items-center gap-2.5 text-sm text-charcoal/70 font-sans">
                                         <Check className="w-4 h-4 text-charcoal/30 shrink-0" />
                                         {f}
@@ -384,9 +385,9 @@ export default function AboPage() {
                     </div>
                 </section>
 
-                {/* ── Feature Table ── */}
+                {/* ── Feature Comparison Section ── */}
                 <section>
-                    <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
+                    <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 space-y-3">
                         <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
                             Feature-Übersicht
                         </span>
@@ -398,11 +399,60 @@ export default function AboPage() {
                         </p>
                     </div>
 
-                    <div className="bg-white rounded-3xl border border-beige/60 overflow-hidden shadow-sm">
-                        <div className="grid grid-cols-3 bg-sand/50 border-b border-beige/60">
-                            <div className="p-5 text-xs font-bold text-charcoal/40 uppercase tracking-widest font-sans">Feature</div>
-                            <div className="p-5 text-center text-xs font-bold text-charcoal/40 uppercase tracking-widest font-sans border-l border-beige/40">Free</div>
-                            <div className="p-5 text-center text-xs font-bold text-forest uppercase tracking-widest font-sans border-l border-beige/40">Business</div>
+                    {/* ── Mobile View: Single Unified Comparison Card (md:hidden) ── */}
+                    <div className="md:hidden bg-white rounded-3xl border border-beige/60 shadow-sm overflow-hidden divide-y divide-beige/40">
+                        {FEATURE_ROWS.map((row) => {
+                            const { key, label, icon: Icon, format, freeValue, bizValue } = row;
+                            const freeVal = freeValue !== undefined ? freeValue : (freePlan ? freePlan[key] : undefined);
+                            const bizVal = bizValue !== undefined ? bizValue : (businessPlan ? businessPlan[key] : undefined);
+                            return (
+                                <div key={key} className="p-4 space-y-2.5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-lg bg-forest/5 flex items-center justify-center text-forest shrink-0">
+                                            <Icon className="w-3.5 h-3.5" />
+                                        </div>
+                                        <span className="font-bold text-xs sm:text-sm text-charcoal font-sans">{label}</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {/* Free Box */}
+                                        <div className="bg-sand/30 rounded-xl p-2.5 flex flex-col items-center justify-center text-center border border-beige/40">
+                                            <span className="text-[9px] font-bold uppercase tracking-wider text-charcoal/50 mb-0.5 font-sans">
+                                                Free
+                                            </span>
+                                            <div className="text-xs font-semibold text-charcoal font-sans min-h-[22px] flex items-center justify-center">
+                                                {freeVal !== undefined && <FeatureCheck value={freeVal} format={format} />}
+                                            </div>
+                                        </div>
+                                        {/* Business Box */}
+                                        <div className="bg-forest/[0.04] rounded-xl p-2.5 flex flex-col items-center justify-center text-center border border-forest/20">
+                                            <div className="flex items-center gap-1 mb-0.5">
+                                                <span className="text-[9px] font-bold uppercase tracking-wider text-forest font-sans">
+                                                    Business
+                                                </span>
+                                                <Sparkles className="w-2.5 h-2.5 text-gold" />
+                                            </div>
+                                            <div className="text-xs font-bold text-forest font-sans min-h-[22px] flex items-center justify-center">
+                                                {bizVal !== undefined && <FeatureCheck value={bizVal} format={format} />}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* ── Desktop View: Full Comparison Table (hidden md:block) ── */}
+                    <div className="hidden md:block w-full bg-white rounded-3xl border border-beige/60 shadow-sm overflow-hidden">
+                        <div className="grid grid-cols-[1.4fr_1fr_1fr] bg-sand/50 border-b border-beige/60">
+                            <div className="p-5 text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans flex items-center">
+                                Feature
+                            </div>
+                            <div className="p-5 text-center text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans border-l border-beige/40 flex items-center justify-center">
+                                Free
+                            </div>
+                            <div className="p-5 text-center text-xs font-bold text-forest uppercase tracking-wider font-sans border-l border-beige/40 bg-forest/[0.04] flex items-center justify-center">
+                                Business
+                            </div>
                         </div>
 
                         {FEATURE_ROWS.map((row, i) => {
@@ -410,15 +460,20 @@ export default function AboPage() {
                             const freeVal = freeValue !== undefined ? freeValue : (freePlan ? freePlan[key] : undefined);
                             const bizVal = bizValue !== undefined ? bizValue : (businessPlan ? businessPlan[key] : undefined);
                             return (
-                                <div key={key} className={`grid grid-cols-3 ${i < FEATURE_ROWS.length - 1 ? 'border-b border-beige/40' : ''}`}>
-                                    <div className="p-5 flex items-center gap-2.5 text-sm font-medium text-charcoal font-sans">
-                                        <Icon className="w-4 h-4 text-charcoal/30 shrink-0" />
-                                        {label}
+                                <div
+                                    key={key}
+                                    className={`grid grid-cols-[1.4fr_1fr_1fr] ${
+                                        i < FEATURE_ROWS.length - 1 ? 'border-b border-beige/40' : ''
+                                    } hover:bg-sand/15 transition-colors`}
+                                >
+                                    <div className="p-5 flex items-center gap-3 text-sm font-medium text-charcoal font-sans">
+                                        <Icon className="w-4 h-4 text-charcoal/40 shrink-0" />
+                                        <span className="leading-tight">{label}</span>
                                     </div>
-                                    <div className="p-5 flex items-center justify-center border-l border-beige/40">
+                                    <div className="p-5 flex items-center justify-center border-l border-beige/40 text-center">
                                         {freeVal !== undefined && <FeatureCheck value={freeVal} format={format} />}
                                     </div>
-                                    <div className="p-5 flex items-center justify-center border-l border-beige/40 bg-forest/[0.02]">
+                                    <div className="p-5 flex items-center justify-center border-l border-beige/40 bg-forest/[0.02] text-center">
                                         {bizVal !== undefined && <FeatureCheck value={bizVal} format={format} />}
                                     </div>
                                 </div>

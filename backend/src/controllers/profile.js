@@ -59,25 +59,30 @@ export const getMyProfile = async (req, res) => {
     try {
         const { id, user_type, role } = req.user;
 
-        // Admin Account Profile
+        // Admin Account Profile -> Campuna Club Business Profile
         if (role === 'ADMIN') {
             return res.status(200).json({
                 success: true,
-                profile_type: 'PRIVATE',
+                profile_type: 'COMMERCIAL',
                 profile: {
-                    first_name: req.user.name?.split(' ')[0] || 'Campuna',
-                    last_name: req.user.name?.split(' ').slice(1).join(' ') || 'Admin',
-                    bio: 'Systemadministrator bei Campuna',
-                    location: 'Berlin, Deutschland',
-                    profile_image_url: null,
+                    company_name: 'Campuna Club',
+                    first_name: 'Campuna',
+                    last_name: 'Club',
+                    tier: 'BUSINESS',
+                    bio: 'Offizielle Angebote, exklusive geprüfte Fahrzeuge & Camping-Equipment direkt vom Campuna Club.',
+                    location: 'Deutschland',
+                    phone: '+49 30 12345678',
+                    website_url: 'https://campuna.de',
+                    logo_url: '/logo.webp',
+                    cover_image_url: '/hero-cover.jpg',
                     created_at: req.user.created_at || new Date().toISOString(),
                 },
                 user: {
                     id: req.user.id,
                     email: req.user.email,
                     role: 'ADMIN',
-                    user_type: 'PRIVATE',
-                    referral_code: 'CAMPUNA-ADMIN',
+                    user_type: 'COMMERCIAL',
+                    referral_code: 'CAMPUNA-CLUB',
                     referred_by_code: null,
                     is_referred: false,
                 },

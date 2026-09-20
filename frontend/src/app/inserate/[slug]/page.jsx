@@ -30,7 +30,16 @@ import {
     Folder,
     Clock,
     ChevronDown,
-    Rocket
+    Rocket,
+    Crown,
+    Phone,
+    PhoneCall,
+    Copy,
+    Send,
+    Mail,
+    MessageCircle,
+    UserPlus,
+    Shield
 } from 'lucide-react';
 import { getListingDetail, getAllListings, reportListing } from '@/api/listings';
 import { createOrGetConversation } from '@/api/conversations';
@@ -42,6 +51,7 @@ import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
+import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 
 function slugifyTitle(title = '') {
     return title
@@ -143,6 +153,7 @@ export default function ListingDetailPage() {
     const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
     const isFavorite = useFavoritesStore((state) => state.isFavorite(listing?.id));
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
+    const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const currentUser = useAuthStore((state) => state.user);
     const [copied, setCopied] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -155,6 +166,13 @@ export default function ListingDetailPage() {
             relatedRowRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
     };
+
+    // Share Modal States
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
+    // Privacy Gate Modal States (for non-registered users viewing phone / contact)
+    const [isPrivacyAuthModalOpen, setIsPrivacyAuthModalOpen] = useState(false);
+    const [privacyModalContext, setPrivacyModalContext] = useState('contact'); // 'contact' | 'phone'
 
     // Contact / Chat Modal States
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -169,10 +187,71 @@ export default function ListingDetailPage() {
     const [isSendingReport, setIsSendingReport] = useState(false);
     const [isReportSent, setIsReportSent] = useState(false);
 
+    // Clean, GDPR-compliant Share URL (contains referral code if logged in, zero personal data)
+    const getCleanShareUrl = () => {
+        if (typeof window === 'undefined') return '';
+        const base = window.location.origin;
+        const refSuffix = currentUser?.referral_code ? `?ref=${encodeURIComponent(currentUser.referral_code)}` : '';
+        return `${base}/inserate/${encodeURIComponent(slug)}${refSuffix}`;
+    };
+
+    const handleShareLink = async () => {
+        if (!currentUser && !isLoggedIn) {
+            setPrivacyModalContext('share');
+            setIsPrivacyAuthModalOpen(true);
+            return;
+        }
+
+        const shareUrl = getCleanShareUrl();
+        const shareTitle = listing?.title || 'Camping Inserat auf Campuna';
+        const shareText = `Schau dir dieses Angebot auf Campuna an: ${shareTitle}`;
+
+        if (typeof navigator !== 'undefined' && navigator.share && /mobile|android|iphone|ipad/i.test(navigator.userAgent)) {
+            try {
+                await navigator.share({
+                    title: shareTitle,
+                    text: shareText,
+                    url: shareUrl
+                });
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
+        setIsShareModalOpen(true);
+    };
+
+    const handleCopyCleanUrl = () => {
+        const url = getCleanShareUrl();
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        toast.success('Link kopiert! Keine privaten Kontaktdaten enthalten.', { icon: '🔒' });
+        setTimeout(() => setCopied(false), 2500);
+    };
+
+    const handleShareWhatsApp = () => {
+        const url = getCleanShareUrl();
+        const text = encodeURIComponent(`Schau dir dieses Angebot auf Campuna an:\n${listing?.title || 'Camping Inserat'}\n${url}`);
+        window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+    };
+
+    const handleShareTelegram = () => {
+        const url = getCleanShareUrl();
+        const text = encodeURIComponent(listing?.title || 'Camping Inserat auf Campuna');
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
+    };
+
+    const handleShareEmail = () => {
+        const url = getCleanShareUrl();
+        const subject = encodeURIComponent(`Camping-Inserat: ${listing?.title || 'Angebot auf Campuna'}`);
+        const body = encodeURIComponent(`Hallo,\n\nich habe dieses interessante Angebot auf Campuna entdeckt:\n\n${listing?.title || ''}\nPreis: ${listing?.price ? `${listing.price.toLocaleString('de-DE')} €` : ''}\nStandort: ${listing?.displayLocation || 'Deutschland'}\n\nLink zum Inserat:\n${url}\n\nBeste Grüße`);
+        window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+    };
+
     const handleOpenContactModal = () => {
-        if (!currentUser) {
-            toast.error('Bitte melde dich an, um eine Nachricht zu senden.');
-            router.push(`/login?returnUrl=/inserate/${encodeURIComponent(slug)}`);
+        if (!currentUser && !isLoggedIn) {
+            setPrivacyModalContext('chat');
+            setIsPrivacyAuthModalOpen(true);
             return;
         }
         if (isOwner) {
@@ -180,6 +259,14 @@ export default function ListingDetailPage() {
             return;
         }
         setIsContactModalOpen(true);
+    };
+
+    const handleRevealPhone = () => {
+        if (!currentUser && !isLoggedIn) {
+            setPrivacyModalContext('phone');
+            setIsPrivacyAuthModalOpen(true);
+            return;
+        }
     };
 
     const handleSendDirectMessage = async (e) => {
@@ -243,10 +330,15 @@ export default function ListingDetailPage() {
                                 location: apiMatch.location || 'Deutschland',
                                 displayLocation: apiMatch.location || 'Deutschland',
                                 images,
+                                is_campuna_club: Boolean(apiMatch.is_campuna_club || apiMatch.seller?.is_campuna_club),
                                 seller: {
                                     name: apiMatch.seller?.name || (apiMatch.seller?.type === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer'),
                                     verified: true,
-                                    type: apiMatch.seller?.type || 'Privat'
+                                    type: apiMatch.seller?.type || 'Privat',
+                                    avatar: apiMatch.seller?.avatar || '',
+                                    tier: apiMatch.seller?.tier || 'FREE',
+                                    is_campuna_club: Boolean(apiMatch.is_campuna_club || apiMatch.seller?.is_campuna_club),
+                                    achievements: apiMatch.seller?.achievements || []
                                 },
                                 features: [apiMatch.condition, apiMatch.subcategory].filter(Boolean),
                                 isNegotiable: apiMatch.negotiable || false,
@@ -297,10 +389,15 @@ export default function ListingDetailPage() {
                                     location: match.location || 'Deutschland',
                                     displayLocation: match.location || 'Deutschland',
                                     images,
+                                    is_campuna_club: Boolean(match.is_campuna_club || match.seller?.is_campuna_club),
                                     seller: {
                                         name: match.seller?.name || (match.seller?.type === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer'),
                                         verified: true,
-                                        type: match.seller?.type || 'Privat'
+                                        type: match.seller?.type || 'Privat',
+                                        avatar: match.seller?.avatar || '',
+                                        tier: match.seller?.tier || 'FREE',
+                                        is_campuna_club: Boolean(match.is_campuna_club || match.seller?.is_campuna_club),
+                                        achievements: match.seller?.achievements || []
                                     },
                                     features: [match.condition, match.subcategory].filter(Boolean),
                                     isNegotiable: match.negotiable || false,
@@ -400,9 +497,7 @@ export default function ListingDetailPage() {
     };
 
     const handleCopyLink = () => {
-        navigator.clipboard.writeText(window.location.href);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        handleCopyCleanUrl();
     };
 
     const handleReportListing = () => {
@@ -527,46 +622,84 @@ export default function ListingDetailPage() {
 
             {/* Seller Details */}
             <div
-                onClick={() => router.push(`/anbieter/${slugifyTitle(seller.name)}-${listing.user_id || listing.owner_user_id || listing.ownerUserId}`)}
+                onClick={() => {
+                    const sellerSlug = `/anbieter/${slugifyTitle(seller.name)}-${listing.user_id || listing.owner_user_id || listing.ownerUserId || ''}`;
+                    if (!isLoggedIn) {
+                        setPrivacyModalContext('profile');
+                        setIsPrivacyAuthModalOpen(true);
+                        return;
+                    }
+                    router.push(sellerSlug);
+                }}
                 className="flex items-center gap-3 text-left border-b border-forest/5 pb-4 cursor-pointer group/seller hover:opacity-90 transition-opacity"
             >
-                <div className="w-12 h-12 rounded-full bg-forest flex items-center justify-center text-white font-display text-lg font-bold select-none shadow shrink-0 group-hover/seller:ring-2 group-hover/seller:ring-gold/50 transition-all">
-                    {seller.name.charAt(0).toUpperCase()}
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-display text-lg font-bold select-none shadow shrink-0 group-hover/seller:ring-2 group-hover/seller:ring-gold/50 transition-all ${
+                    (seller.is_campuna_club || seller.name === 'Campuna Club' || listing.is_campuna_club)
+                        ? 'bg-gradient-to-br from-amber-500 via-forest to-emerald-950 text-amber-300 ring-2 ring-amber-400/40 shadow-lg'
+                        : 'bg-forest text-white'
+                }`}>
+                    {(seller.is_campuna_club || seller.name === 'Campuna Club' || listing.is_campuna_club) ? (
+                        <Crown className="w-6 h-6 text-amber-300 fill-amber-400/30" />
+                    ) : (
+                        seller.name.charAt(0).toUpperCase()
+                    )}
                 </div>
                 <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-display font-bold text-charcoal sm:text-base leading-tight group-hover/seller:text-forest transition-colors">
                             {seller.name}
                         </span>
+                        {(seller.is_campuna_club || seller.name === 'Campuna Club' || listing.is_campuna_club) && (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-wider uppercase bg-amber-50 text-amber-800 border border-amber-300/80 px-2 py-0.5 rounded-full shadow-xs">
+                                <Crown className="w-2.5 h-2.5 text-amber-600 fill-amber-500" />
+                                Club
+                            </span>
+                        )}
                         {seller.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
                             <PioneerBadge size="xs" text="Pioneer" />
                         )}
                     </div>
-                    <span className="text-[11px] text-charcoal/50 font-bold">
-                        {seller.name} ({seller.type}er Nutzer)
+                    <span className="text-[11px] text-charcoal/50 font-bold block mt-0.5">
+                        {(seller.is_campuna_club || seller.name === 'Campuna Club' || listing.is_campuna_club) ? (
+                            <span className="text-emerald-800 font-semibold flex items-center gap-1">
+                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 inline shrink-0" />
+                                Offizieller Business Partner
+                            </span>
+                        ) : (
+                            `${seller.name} (${seller.type}er Nutzer)`
+                        )}
                     </span>
                 </div>
             </div>
 
             {/* 0. Owner Quick Action */}
             {isOwner && (
-                <div className="bg-forest/5 border border-forest/20 rounded-xl p-3.5 text-left mb-2">
-                    <p className="text-[11px] font-bold text-forest mb-2 flex items-center gap-1.5">
+                <div className="bg-forest/5 border border-forest/20 rounded-xl p-3.5 text-left mb-2 space-y-2">
+                    <p className="text-[11px] font-bold text-forest flex items-center gap-1.5">
                         <Pencil className="w-3.5 h-3.5" />
                         Sie sind der Eigentümer
                     </p>
-                    <Link
-                        href={`/anzeige-erstellen?edit=${listing.id}`}
-                        className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-200 font-sans font-bold py-2.5 px-4 rounded-lg shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                        <Pencil className="w-3.5 h-3.5 shrink-0" />
-                        Inserat bearbeiten
-                    </Link>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Link
+                            href={currentUser?.role === 'ADMIN' ? `/admin/inserat-erstellen?edit=${listing.id}` : `/anzeige-erstellen?edit=${listing.id}`}
+                            className="bg-white hover:bg-forest hover:text-white text-forest border border-forest/20 transition-all font-sans font-bold py-2.5 px-3 rounded-lg shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center"
+                        >
+                            <Pencil className="w-3.5 h-3.5 shrink-0" />
+                            Bearbeiten
+                        </Link>
+                        <Link
+                            href={`/inserate/${listing.slug || listing.id}/boosten`}
+                            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-sans font-bold py-2.5 px-3 rounded-lg shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center transition-all hover:shadow-md"
+                        >
+                            <Rocket className="w-3.5 h-3.5 shrink-0 text-amber-100" />
+                            Boosten
+                        </Link>
+                    </div>
                 </div>
             )}
 
-            {/* 1. Primary CTA: Contact Seller */}
-            <div className="space-y-1.5">
+            {/* 1. Primary CTA: Contact Seller & Phone Number Gate */}
+            <div className="space-y-2">
                 {isSold ? (
                     <div className="bg-red-50 border border-red-200/50 p-4 rounded-xl flex items-start text-left gap-2.5">
                         <Lock className="w-5 h-5 text-red-650 shrink-0 mt-0.5" />
@@ -583,58 +716,60 @@ export default function ListingDetailPage() {
                             <MessageSquare className="w-4 h-4 shrink-0" />
                             Verkäufer kontaktieren
                         </button>
-                        <span className="block text-[10px] text-charcoal/45 font-medium text-center">
-                            Nachricht direkt an den Verkäufer senden
-                        </span>
+
+                        {/* Phone Number: Show directly if logged in/commercial or Show GDPR Privacy Gate */}
+                        {(seller?.phone || listing?.phone) ? (
+                            <a
+                                href={`tel:${seller?.phone || listing?.phone}`}
+                                className="w-full bg-white hover:bg-forest/5 border border-forest/20 text-forest font-sans font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                                <PhoneCall className="w-3.5 h-3.5 text-forest shrink-0" />
+                                <span>Anrufen: {seller?.phone || listing?.phone}</span>
+                            </a>
+                        ) : (seller?.has_phone || listing?.has_phone || listing?.is_phone_protected || seller?.is_phone_protected) ? (
+                            <button
+                                onClick={handleRevealPhone}
+                                className="w-full bg-sand/30 hover:bg-sand/60 border border-forest/15 text-charcoal font-sans font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                            >
+                                <Lock className="w-3.5 h-3.5 text-forest group-hover:scale-110 transition-transform" />
+                                <span>Telefonnummer anzeigen</span>
+                                <span className="text-[9px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full">
+                                    🔒 Login
+                                </span>
+                            </button>
+                        ) : null}
                     </>
                 )}
             </div>
 
             {/* 2. Side-by-side Row: Melden & Speichern */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-3 pt-1">
                 <button
                     onClick={handleReportListing}
-                    className="bg-[#d32f2f] hover:bg-[#b71c1c] text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
+                    className="bg-[#d32f2f] hover:bg-[#b71c1c] text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
                 >
-                    <Flag className="w-4 h-4 shrink-0" />
+                    <Flag className="w-3.5 h-3.5 shrink-0" />
                     Melden
                 </button>
 
                 <button
                     onClick={() => toggleFavorite(listing)}
-                    className="bg-white hover:bg-sand/15 border border-forest/15 text-charcoal font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
+                    className="bg-white hover:bg-sand/15 border border-forest/15 text-charcoal font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
                 >
                     <Heart className={`w-4 h-4 shrink-0 ${isFavorite ? 'text-rose-500 fill-rose-500' : 'text-charcoal/60'}`} />
                     {isFavorite ? 'Gespeichert' : 'Speichern'}
                 </button>
             </div>
 
-            {/* 3. Marketplace Policy notice */}
-            <p className="text-[10px] text-charcoal/50 leading-relaxed text-center select-none font-medium pt-2">
-                Campuna ist ein Marktplatz.<br />
-                Der Kauf erfolgt direkt zwischen Käufer und Verkäufer.
-            </p>
-
-            {/* 4. Footer actions: Copy Link & User Type Badge */}
-            <div className="space-y-3 pt-2">
+            {/* 3. Share link button */}
+            <div className="pt-2">
                 <button
-                    onClick={handleCopyLink}
-                    className="w-full bg-[#2a7f55] hover:bg-[#206040] text-white transition-colors duration-300 font-sans font-bold py-3 px-6 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer relative overflow-hidden"
+                    onClick={handleShareLink}
+                    className="w-full bg-gradient-to-r from-forest via-[#1e613c] to-forest hover:from-[#1b4d32] hover:to-[#1b4d32] text-sand hover:text-white transition-all duration-300 font-sans font-bold py-3.5 px-6 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 cursor-pointer active:scale-98 group border border-gold/30"
                 >
-                    {copied ? (
-                        <>
-                            <Check className="w-4 h-4 text-white" />
-                            <span>Link kopiert!</span>
-                        </>
-                    ) : (
-                        <>
-                            <Share2 className="w-4 h-4 text-white/90" />
-                            <span>Link kopieren</span>
-                        </>
-                    )}
+                    <Share2 className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
+                    <span>Inserat teilen</span>
                 </button>
-
-
             </div>
         </div>
     );
@@ -1421,6 +1556,131 @@ export default function ListingDetailPage() {
                         </motion.div>
                     </motion.div>
                 )}
+
+                {/* ─── Share Link Modal (GDPR & Privacy Compliant) ─── */}
+                {isShareModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+                        onClick={() => setIsShareModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-beige relative overflow-hidden"
+                        >
+                            {/* Close Button */}
+                            <button
+                                onClick={() => setIsShareModalOpen(false)}
+                                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-sand/40 hover:bg-sand flex items-center justify-center text-charcoal/60 hover:text-charcoal transition-colors cursor-pointer"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+
+                            <div className="space-y-5">
+                                {/* Modal Header */}
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold">
+                                        <Share2 className="w-5 h-5 text-forest" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-charcoal font-sans">Inserat teilen</h3>
+                                        <p className="text-xs text-charcoal/50">Teile dieses Angebot mit Freunden & Kontakten</p>
+                                    </div>
+                                </div>
+
+                                {/* Link Copy Field */}
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-charcoal/80">
+                                        Öffentlicher Inserats-Link
+                                    </label>
+                                    <div className="flex items-center gap-2 bg-[#faf8f3] border border-beige rounded-2xl p-2 pl-3.5">
+                                        <span className="text-xs text-charcoal/70 font-mono truncate flex-1 select-all">
+                                            {getCleanShareUrl()}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={handleCopyCleanUrl}
+                                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs ${
+                                                copied
+                                                    ? 'bg-emerald-700 text-white'
+                                                    : 'bg-forest hover:bg-gold text-white hover:text-forest'
+                                            }`}
+                                        >
+                                            {copied ? (
+                                                <>
+                                                    <Check className="w-3.5 h-3.5" />
+                                                    <span>Kopiert!</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Copy className="w-3.5 h-3.5" />
+                                                    <span>Kopieren</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Social Sharing Action Grid */}
+                                <div className="space-y-2">
+                                    <span className="text-xs font-bold text-charcoal/80">Direkt teilen via:</span>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {/* WhatsApp */}
+                                        <button
+                                            type="button"
+                                            onClick={handleShareWhatsApp}
+                                            className="p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#128C7E] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group"
+                                        >
+                                            <MessageCircle className="w-5 h-5 text-[#25D366] group-hover:scale-110 transition-transform" />
+                                            <span className="text-[11px] font-bold">WhatsApp</span>
+                                        </button>
+
+                                        {/* Telegram */}
+                                        <button
+                                            type="button"
+                                            onClick={handleShareTelegram}
+                                            className="p-3 rounded-2xl bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border border-[#0088cc]/30 text-[#0088cc] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group"
+                                        >
+                                            <Send className="w-5 h-5 text-[#0088cc] group-hover:scale-110 transition-transform" />
+                                            <span className="text-[11px] font-bold">Telegram</span>
+                                        </button>
+
+                                        {/* E-Mail */}
+                                        <button
+                                            type="button"
+                                            onClick={handleShareEmail}
+                                            className="p-3 rounded-2xl bg-forest/10 hover:bg-forest/20 border border-forest/25 text-forest flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group"
+                                        >
+                                            <Mail className="w-5 h-5 text-forest group-hover:scale-110 transition-transform" />
+                                            <span className="text-[11px] font-bold">E-Mail</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Privacy Compliance Notice Box */}
+                                <div className="p-3.5 bg-emerald-50/70 border border-emerald-200/80 rounded-2xl flex items-start gap-2.5">
+                                    <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                                    <div className="text-[11px] text-emerald-900 leading-relaxed font-normal">
+                                        <strong className="font-bold">100% DSGVO-Datenschutzgarantie:</strong> Beim Teilen werden keinerlei persönliche Kontaktdaten übertragen. Der Empfänger kann das Inserat frei ansehen und private Kontaktdaten erst nach eigener Registrierung freischalten.
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* ─── Standard Auth Required Modal ─── */}
+                <AuthRequiredModal
+                    isOpen={isPrivacyAuthModalOpen}
+                    onClose={() => setIsPrivacyAuthModalOpen(false)}
+                    context={privacyModalContext || 'chat'}
+                    returnUrl={`/inserate/${encodeURIComponent(slug)}`}
+                />
             </AnimatePresence>
 
         </div>

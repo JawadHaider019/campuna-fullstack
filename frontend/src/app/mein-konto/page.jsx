@@ -340,13 +340,6 @@ export default function MeinKontoPage() {
     const [limitModalOpen, setLimitModalOpen] = useState(false);
     const [editingListingId, setEditingListingId] = useState(null);
 
-    // Boost Modal State
-    const [selectedListingForBoost, setSelectedListingForBoost] = useState(null);
-    const [boostModalOpen, setBoostModalOpen] = useState(false);
-    const [boostDuration, setBoostDuration] = useState(7); // 7, 14, 30 days
-    const [boostPaymentMethod, setBoostPaymentMethod] = useState('CREDIT'); // 'CREDIT' | 'CREDIT_CARD' | 'SEPA' | 'PAYPAL'
-    const [boosting, setBoosting] = useState(false);
-
     // Credit Purchase Modal State
     const [buyCreditModalOpen, setBuyCreditModalOpen] = useState(false);
     const [selectedCreditPkg, setSelectedCreditPkg] = useState(500); // 500, 800, 1300, 2500
@@ -882,61 +875,8 @@ export default function MeinKontoPage() {
             toast.error('Nur freigegebene (aktive) Inserate können hervorgehoben werden.');
             return;
         }
-        setSelectedListingForBoost(listing);
-        setBoostDuration(7);
-        // Default to CREDIT if user has >= 500 CC, otherwise CREDIT_CARD
-        setBoostPaymentMethod((Number(creditBalance) || 0) >= 500 ? 'CREDIT' : 'CREDIT_CARD');
-        setBoostModalOpen(true);
-    };
-
-    const handleExecuteBoost = async () => {
-        if (!selectedListingForBoost) return;
-        const PRICING_CC = { 7: 500, 14: 800, 30: 1300 };
-        const PRICING_EUR = { 7: '4,99 €', 14: '7,99 €', 30: '12,99 €' };
-        const cost = PRICING_CC[boostDuration] || 500;
-        const priceEur = PRICING_EUR[boostDuration] || '4,99 €';
-
-        if (boostPaymentMethod === 'CREDIT' && (Number(creditBalance) || 0) < cost) {
-            toast.error(`Nicht genügend Credits (${creditBalance} CC vorhanden, ${cost} CC benötigt). Wähle stattdessen Direktzahlung oder lade dein Guthaben auf.`);
-            return;
-        }
-
-        setBoosting(true);
-        const toastId = toast.loading(boostPaymentMethod === 'CREDIT' ? 'Inserat wird hervorgehoben...' : `Zahlung von ${priceEur} wird verarbeitet...`);
-        try {
-            const res = await boostListing(selectedListingForBoost.id, boostDuration, boostPaymentMethod);
-            if (res.success || res.data?.success) {
-                toast.success(`🎉 Inserat erfolgreich für ${boostDuration} Tage hervorgehoben!`, { id: toastId });
-                setUserListings(prev => prev.map(l => {
-                    if (l.id === selectedListingForBoost.id) {
-                        return {
-                            ...l,
-                            boosted_until: res.data?.boosted_until || res.data?.listing?.boosted_until,
-                            is_boosted: true
-                        };
-                    }
-                    return l;
-                }));
-                if (res.data?.new_balance !== undefined) {
-                    setCreditBalance(res.data.new_balance);
-                }
-                // Refresh credit transactions if loaded
-                getCreditTransactions().then(txRes => {
-                    if (txRes?.success && Array.isArray(txRes.data?.transactions)) {
-                        setCreditTransactions(txRes.data.transactions);
-                    }
-                }).catch(() => {});
-
-                setBoostModalOpen(false);
-                setSelectedListingForBoost(null);
-            } else {
-                toast.error(res.error || res.data?.error || 'Hervorheben fehlgeschlagen.', { id: toastId });
-            }
-        } catch (err) {
-            toast.error(err.response?.data?.error || 'Hervorheben fehlgeschlagen.', { id: toastId });
-        } finally {
-            setBoosting(false);
-        }
+        const targetSlug = listing.slug || listing.id;
+        router.push(`/inserate/${encodeURIComponent(targetSlug)}/boosten`);
     };
 
     const handleOpenBuyCreditModal = (pkgCredits = 500) => {
@@ -3174,7 +3114,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
                                                             <span className="text-xs font-black text-forest font-mono">3. Beide profitieren</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Privat: Nach dem 1. freigegebenen Inserat. Gewerblich: Nach vollständigem Firmenprofil erhalten beide 100 CC.</p>
+                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Privat: 500 CC nach 1. freigegebenem Inserat. Gewerblich: 1.000 CC nach vollständigem Firmenprofil.</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -3482,25 +3422,25 @@ export default function MeinKontoPage() {
                                                         <Crown className="w-3.5 h-3.5 text-gold-dark" /> Goldener Badge im Profil & Inseraten
                                                     </h5>
                                                     <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Dein Account sticht mit einem exklusiven Siegel hervor und signalisiert Käufern maximale Zuverlässigkeit.
+                                                        Dein Account sticht mit einem exklusiven Siegel hervor und signalisiert Käufern maximale Zuverlässigkeit und Vertrauen.
                                                     </p>
                                                 </div>
 
                                                 <div className="p-3.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
                                                     <h5 className="font-bold text-charcoal flex items-center gap-1.5">
-                                                        <Sparkles className="w-3.5 h-3.5 text-gold-dark" /> Bevorzugte Platzierung
+                                                        <Sparkles className="w-3.5 h-3.5 text-gold-dark" /> 1.000 CC Einmal-Bonus
                                                     </h5>
                                                     <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Deine Angebote erhalten automatische Sichtbarkeits-Boni im Campuna Marktplatz.
+                                                        Einmalige Prämie von 1.000 Campuna Credits direkt nach erfolgreicher Qualifikation (nutzbar für Inserate-Boosts & Spotlight).
                                                     </p>
                                                 </div>
 
                                                 <div className="p-3.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
                                                     <h5 className="font-bold text-charcoal flex items-center gap-1.5">
-                                                        <Award className="w-3.5 h-3.5 text-gold-dark" /> Lebenslanger Gründer-Status
+                                                        <Award className="w-3.5 h-3.5 text-gold-dark" /> Lebenslanger Gründer- & Pionierstatus
                                                     </h5>
                                                     <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Als Pioneer verlierst du deinen Rang nie und wirst bei allen neuen Community-Features bevorzugt.
+                                                        Als Pioneer verlierst du deinen Rang nie – streng limitiert auf die ersten 300 geprüften Mitglieder auf Campuna.
                                                     </p>
                                                 </div>
                                             </div>
@@ -3519,255 +3459,6 @@ export default function MeinKontoPage() {
             {/* ═════════════════════════════════════════════════════════════════════════
                 ALL MODALS PRESERVED & ENHANCED WITH UNIFIED THEME
                ═════════════════════════════════════════════════════════════════════════ */}
-
-            {/* 1. Boost with Credits Modal */}
-            <AnimatePresence>
-                {boostModalOpen && selectedListingForBoost && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.95, y: 20 }}
-                            className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-beige p-6 sm:p-7 space-y-5 relative"
-                        >
-                            {/* Header */}
-                            <div className="flex items-start justify-between pb-3 border-b border-beige">
-                                <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <Rocket className="w-5 h-5 text-gold-dark" />
-                                        <h3 className="font-black text-charcoal text-lg sm:text-xl font-display">Mehr Sichtbarkeit für dein Inserat</h3>
-                                    </div>
-                                    <p className="text-xs text-charcoal/70 leading-relaxed">
-                                        Dein Angebot wird für die gewählte Laufzeit hervorgehoben und bevorzugt angezeigt.
-                                    </p>
-                                </div>
-                                <button onClick={() => setBoostModalOpen(false)} className="text-charcoal/40 hover:text-charcoal p-1 rounded-full hover:bg-sand transition-colors cursor-pointer shrink-0">
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            {/* Target Listing Preview */}
-                            <div className="p-3 bg-[#faf8f3] rounded-2xl border border-beige flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-xl bg-forest/10 overflow-hidden shrink-0">
-                                    <img
-                                        src={getImageUrl(selectedListingForBoost.images?.[0]?.url || selectedListingForBoost.images?.[0] || selectedListingForBoost.image_url)}
-                                        alt={selectedListingForBoost.title}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-charcoal/50">Ausgewähltes Inserat:</span>
-                                    <p className="font-bold text-sm text-charcoal truncate">{selectedListingForBoost.title}</p>
-                                </div>
-                            </div>
-
-                            {/* 3 Core Benefits */}
-                            <div className="bg-sand/60 rounded-2xl p-4 space-y-2 border border-beige">
-                                <span className="text-[11px] font-black uppercase tracking-wider text-forest block mb-1">Deine Vorteile:</span>
-                                <div className="flex items-center gap-2.5 text-xs text-charcoal font-medium">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                    <span>Bessere Platzierung in passenden Übersichten</span>
-                                </div>
-                                <div className="flex items-center gap-2.5 text-xs text-charcoal font-medium">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                    <span>Optische Hervorhebung</span>
-                                </div>
-                                <div className="flex items-center gap-2.5 text-xs text-charcoal font-medium">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                    <span>Zusätzliche Chance auf prominente Darstellung auf Campuna</span>
-                                </div>
-                            </div>
-
-                            {/* Duration Packages */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider">Laufzeit wählen:</label>
-                                <div className="grid grid-cols-3 gap-2.5">
-                                    {[
-                                        { days: 7, priceEur: '4,99 €', cost: 500 },
-                                        { days: 14, priceEur: '7,99 €', cost: 800, popular: true },
-                                        { days: 30, priceEur: '12,99 €', cost: 1300 },
-                                    ].map(pkg => (
-                                        <button
-                                            key={pkg.days}
-                                            type="button"
-                                            onClick={() => setBoostDuration(pkg.days)}
-                                            className={`p-3 sm:p-3.5 rounded-2xl text-center border transition-all cursor-pointer relative ${
-                                                boostDuration === pkg.days
-                                                    ? 'border-forest bg-forest text-sand shadow-md ring-2 ring-forest/20'
-                                                    : 'border-beige bg-[#faf8f3] text-charcoal hover:bg-sand'
-                                            }`}
-                                        >
-                                            {pkg.popular && (
-                                                <span className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-gold text-forest tracking-tight shadow-xs">
-                                                    Beliebt
-                                                </span>
-                                            )}
-                                            <span className="text-xs font-black block">{pkg.days} Tage</span>
-                                            <span className={`text-sm font-bold block ${boostDuration === pkg.days ? 'text-white' : 'text-charcoal'}`}>
-                                                {pkg.priceEur}
-                                            </span>
-                                            <span className={`text-[10px] font-mono font-bold block mt-0.5 ${boostDuration === pkg.days ? 'text-gold' : 'text-forest'}`}>
-                                                {pkg.cost.toLocaleString('de-DE')} CC
-                                            </span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Payment Method Selector */}
-                            <div className="space-y-2.5">
-                                <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider block">Zahlungsart wählen:</label>
-                                
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {/* 1. Pay with Campuna Credits */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setBoostPaymentMethod('CREDIT')}
-                                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative flex items-start gap-2.5 ${
-                                            boostPaymentMethod === 'CREDIT'
-                                                ? 'border-forest bg-sand/60 shadow-xs ring-2 ring-forest/20'
-                                                : 'border-beige bg-[#faf8f3] hover:bg-sand/40'
-                                        }`}
-                                    >
-                                        <div className="w-8 h-8 rounded-xl bg-gold/15 flex items-center justify-center text-gold-dark shrink-0 mt-0.5">
-                                            <CoinIcon size="sm" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-bold text-xs text-charcoal">Campuna Credits</span>
-                                                {boostPaymentMethod === 'CREDIT' && <CheckCircle2 className="w-3.5 h-3.5 text-forest" />}
-                                            </div>
-                                            <p className="text-[10px] text-charcoal/60 mt-0.5">
-                                                Guthaben: <strong className="text-forest font-mono">{Number(creditBalance).toLocaleString('de-DE')} CC</strong>
-                                            </p>
-                                            {Number(creditBalance) < (boostDuration === 7 ? 500 : boostDuration === 14 ? 800 : 1300) && (
-                                                <span className="text-[9px] font-bold text-rose-600 block mt-0.5">Guthaben zu gering</span>
-                                            )}
-                                        </div>
-                                    </button>
-
-                                    {/* 2. Direct Credit Card */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setBoostPaymentMethod('CREDIT_CARD')}
-                                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative flex items-start gap-2.5 ${
-                                            boostPaymentMethod === 'CREDIT_CARD'
-                                                ? 'border-forest bg-sand/60 shadow-xs ring-2 ring-forest/20'
-                                                : 'border-beige bg-[#faf8f3] hover:bg-sand/40'
-                                        }`}
-                                    >
-                                        <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center text-forest shrink-0 mt-0.5">
-                                            <CreditCard className="w-4 h-4" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-bold text-xs text-charcoal">Kreditkarte</span>
-                                                {boostPaymentMethod === 'CREDIT_CARD' && <CheckCircle2 className="w-3.5 h-3.5 text-forest" />}
-                                            </div>
-                                            <p className="text-[10px] text-charcoal/60 mt-0.5">Visa, Mastercard, Amex</p>
-                                        </div>
-                                    </button>
-
-                                    {/* 3. SEPA */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setBoostPaymentMethod('SEPA')}
-                                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative flex items-start gap-2.5 ${
-                                            boostPaymentMethod === 'SEPA'
-                                                ? 'border-forest bg-sand/60 shadow-xs ring-2 ring-forest/20'
-                                                : 'border-beige bg-[#faf8f3] hover:bg-sand/40'
-                                        }`}
-                                    >
-                                        <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center text-forest shrink-0 mt-0.5">
-                                            <Building2 className="w-4 h-4" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-bold text-xs text-charcoal">SEPA-Lastschrift</span>
-                                                {boostPaymentMethod === 'SEPA' && <CheckCircle2 className="w-3.5 h-3.5 text-forest" />}
-                                            </div>
-                                            <p className="text-[10px] text-charcoal/60 mt-0.5">Bequem per Bankeinzug</p>
-                                        </div>
-                                    </button>
-
-                                    {/* 4. PayPal */}
-                                    <button
-                                        type="button"
-                                        onClick={() => setBoostPaymentMethod('PAYPAL')}
-                                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer relative flex items-start gap-2.5 ${
-                                            boostPaymentMethod === 'PAYPAL'
-                                                ? 'border-forest bg-sand/60 shadow-xs ring-2 ring-forest/20'
-                                                : 'border-beige bg-[#faf8f3] hover:bg-sand/40'
-                                        }`}
-                                    >
-                                        <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center text-forest shrink-0 mt-0.5">
-                                            <ShieldCheck className="w-4 h-4" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-bold text-xs text-charcoal">PayPal</span>
-                                                {boostPaymentMethod === 'PAYPAL' && <CheckCircle2 className="w-3.5 h-3.5 text-forest" />}
-                                            </div>
-                                            <p className="text-[10px] text-charcoal/60 mt-0.5">Schnell & Käuferschutz</p>
-                                        </div>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Top-up Link if low balance */}
-                            {boostPaymentMethod === 'CREDIT' && Number(creditBalance) < (boostDuration === 7 ? 500 : boostDuration === 14 ? 800 : 1300) && (
-                                <div className="p-3 bg-amber-50/80 rounded-2xl border border-amber-200/80 flex items-center justify-between text-xs">
-                                    <div className="text-[11px] text-amber-900 font-medium">
-                                        Fehlende Credits: <strong className="font-mono">{((boostDuration === 7 ? 500 : boostDuration === 14 ? 800 : 1300) - Number(creditBalance)).toLocaleString('de-DE')} CC</strong>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setBoostModalOpen(false);
-                                            handleOpenBuyCreditModal(boostDuration === 7 ? 500 : boostDuration === 14 ? 800 : 1300);
-                                        }}
-                                        className="text-[11px] font-black text-forest underline cursor-pointer hover:text-forest/80"
-                                    >
-                                        Credits jetzt aufladen &rarr;
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Actions */}
-                            <div className="flex gap-2.5 pt-1">
-                                <button
-                                    type="button"
-                                    onClick={handleExecuteBoost}
-                                    disabled={boosting || (boostPaymentMethod === 'CREDIT' && Number(creditBalance) < (boostDuration === 7 ? 500 : boostDuration === 14 ? 800 : 1300))}
-                                    className="flex-1 bg-forest hover:bg-[#004d0a] text-sand py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {boosting ? <Loader2 className="w-4 h-4 animate-spin text-gold" /> : <Rocket className="w-4 h-4 text-gold" />}
-                                    <span>
-                                        {boosting
-                                            ? 'Wird verarbeitet...'
-                                            : boostPaymentMethod === 'CREDIT'
-                                            ? `Mit ${(boostDuration === 7 ? 500 : boostDuration === 14 ? 800 : 1300).toLocaleString('de-DE')} CC bezahlen`
-                                            : `Jetzt für ${boostDuration === 7 ? '4,99 €' : boostDuration === 14 ? '7,99 €' : '12,99 €'} kaufen & hervorheben`}
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setBoostModalOpen(false)}
-                                    className="px-5 bg-[#faf8f3] text-charcoal hover:bg-sand rounded-2xl text-xs font-bold uppercase transition-all cursor-pointer border border-beige"
-                                >
-                                    Abbrechen
-                                </button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* 1.1 Campuna Spotlight Booking Modal */}
             <AnimatePresence>
@@ -4354,11 +4045,11 @@ export default function MeinKontoPage() {
                                         </div>
                                         <div className="flex items-center gap-2 font-bold text-forest">
                                             <CheckCircle2 className="w-4 h-4 text-gold-dark shrink-0" />
-                                            <span>Höhere Sichtbarkeit & Vertrauen im Marktplatz</span>
+                                            <span>Maximales Vertrauen & Seriosität bei Interessenten</span>
                                         </div>
                                         <div className="flex items-center gap-2 font-bold text-forest">
                                             <CheckCircle2 className="w-4 h-4 text-gold-dark shrink-0" />
-                                            <span>Lebenslanger Gründerstatus gesichert</span>
+                                            <span>Lebenslanger Early-Supporter Status gesichert</span>
                                         </div>
                                     </div>
 

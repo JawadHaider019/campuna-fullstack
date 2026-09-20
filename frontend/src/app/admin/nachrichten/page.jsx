@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     MessageSquare,
@@ -30,7 +31,6 @@ import {
     getConversationDetail,
     sendChatMessage
 } from '@/api/conversations';
-import { useChatStore } from '@/store/useChatStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/imageUrl';
@@ -52,27 +52,47 @@ function formatMessageTime(dateString) {
     return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + `, ${timeStr}`;
 }
 
-export default function AccountChatTab({ currentUser, onNavigateToListings }) {
-    const fetchGlobalUnreadCount = useChatStore((state) => state.fetchUnreadCount);
+const QUICK_REPLIES = [
+    'Hallo, vielen Dank für Ihre Anfrage! Das Fahrzeug ist derzeit noch verfügbar.',
+    'Gerne können wir einen unverbindlichen Besichtigungstermin vereinbaren.',
+    'Vielen Dank für Ihr Interesse! Bei weiteren Fragen stehe ich Ihnen gerne zur Verfügung.',
+    'Das Inserat ist leider bereits reserviert / vergeben.'
+];
+
+export default function AdminMessagesPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const activeConvIdFromQuery = searchParams.get('id');
 
     const [conversations, setConversations] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState(null);
-    const [selectedConvId, setSelectedConvId] = useState(null);
+    const [selectedConvId, setSelectedConvId] = useState(activeConvIdFromQuery || null);
     const [mobileStep, setMobileStep] = useState('contacts'); // 'contacts' | 'listings' | 'chat'
-    
+
     const [activeConversation, setActiveConversation] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessageText, setNewMessageText] = useState('');
-    const [isLoadingList, setIsLoadingList] = useState(true);
-    const [isLoadingThread, setIsLoadingThread] = useState(false);
-    const [isSending, setIsSending] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterTab, setFilterTab] = useState('ALL'); // 'ALL' | 'UNREAD' | 'SELLER' | 'BUYER'
+    const [filterTab, setFilterTab] = useState('ALL'); // 'ALL' | 'UNREAD'
+    const [loadingList, setLoadingList] = useState(true);
+    const [loadingChat, setLoadingChat] = useState(false);
+    const [isSending, setIsSending] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
+    const currentUser = useAuthStore((state) => state.user);
     const chatContainerRef = useRef(null);
     const textareaRef = useRef(null);
 
-    // ── Group Conversations by Contact (User) ─────────────────────────
+    const scrollToBottom = useCallback((smooth = true) => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: smooth ? 'smooth' : 'instant'
+            });
+        }
+    }, []);
+
+    // ── 1. Group Conversations by Contact (User) ─────────────────────────
     const groupedContacts = useMemo(() => {
         const map = new Map();
 
@@ -81,13 +101,11 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
             if (!map.has(contactId)) {
                 map.set(contactId, {
                     userId: contactId,
-                    user: conv.other_user || { name: 'Benutzer', type: 'Privat' },
+                    user: conv.other_user || { name: 'Interessent', type: 'Privat' },
                     conversations: [],
                     totalUnreadCount: 0,
                     latestUpdatedAt: conv.last_message?.created_at || conv.updated_at || conv.created_at,
-                    latestMessage: conv.last_message || null,
-                    buyerCount: 0,
-                    sellerCount: 0
+                    latestMessage: conv.last_message || null
                 });
             }
 
@@ -100,12 +118,6 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
             if (convTime > groupTime || !group.latestMessage) {
                 group.latestUpdatedAt = conv.last_message?.created_at || conv.updated_at || conv.created_at;
                 group.latestMessage = conv.last_message;
-            }
-
-            if (conv.is_buyer) {
-                group.buyerCount += 1;
-            } else {
-                group.sellerCount += 1;
             }
         });
 
@@ -123,23 +135,22 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
         return list;
     }, [conversations]);
 
-    // ── Filtered Contacts ─────────────────────────────────────────────
+    // ── 2. Filtered Contacts List ────────────────────────────────────────
     const filteredContacts = useMemo(() => {
         return groupedContacts.filter((group) => {
             if (filterTab === 'UNREAD' && group.totalUnreadCount === 0) return false;
-            if (filterTab === 'SELLER' && group.sellerCount === 0) return false;
-            if (filterTab === 'BUYER' && group.buyerCount === 0) return false;
 
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase();
                 const nameMatch = group.user?.name?.toLowerCase().includes(q);
+                const emailMatch = group.user?.email?.toLowerCase().includes(q);
                 const listingMatch = group.conversations.some((c) =>
                     c.listing?.title?.toLowerCase().includes(q)
                 );
                 const messageMatch = group.conversations.some((c) =>
                     c.last_message?.content?.toLowerCase().includes(q)
                 );
-                return nameMatch || listingMatch || messageMatch;
+                return nameMatch || emailMatch || listingMatch || messageMatch;
             }
 
             return true;
@@ -152,20 +163,23 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
         return groupedContacts.find((g) => g.userId === selectedUserId) || null;
     }, [groupedContacts, selectedUserId]);
 
-    // ── Load Conversations ───────────────────────────────────────────
-    const loadConversations = async (showLoading = false) => {
-        if (showLoading) setIsLoadingList(true);
+    const totalUnreadCount = useMemo(
+        () => conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0),
+        [conversations]
+    );
+
+    // ── 3. Fetch Conversations ───────────────────────────────────────────
+    const fetchConversationsList = useCallback(async (silent = false) => {
+        if (!silent) setLoadingList(true);
         try {
             const res = await getConversations();
             const list = res.conversations || res.data?.conversations;
             if (res.success && Array.isArray(list)) {
                 setConversations(list);
-                fetchGlobalUnreadCount();
 
-                // Check URL parameter id on initial load
-                const urlParamId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('id') : null;
-                if (urlParamId) {
-                    const targetConv = list.find((c) => c.id === urlParamId);
+                // If query param ID exists, auto select corresponding user and conversation
+                if (activeConvIdFromQuery) {
+                    const targetConv = list.find((c) => c.id === activeConvIdFromQuery);
                     if (targetConv) {
                         setSelectedUserId(targetConv.other_user?.id);
                         setSelectedConvId(targetConv.id);
@@ -174,7 +188,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                     }
                 }
 
-                // If on desktop and nothing selected, default to first contact
+                // If on desktop and no user selected, default to first user
                 if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
                     if (!selectedUserId && list.length > 0) {
                         setSelectedUserId(list[0].other_user?.id);
@@ -182,69 +196,30 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                 }
             }
         } catch (err) {
-            console.error('Error loading conversations:', err);
+            console.error('Error fetching admin conversations:', err);
+            if (!silent) toast.error('Fehler beim Laden der Nachrichten.');
         } finally {
-            if (showLoading) setIsLoadingList(false);
+            if (!silent) setLoadingList(false);
+            setRefreshing(false);
         }
-    };
+    }, [activeConvIdFromQuery, selectedUserId]);
 
     useEffect(() => {
-        loadConversations(true);
+        fetchConversationsList();
+    }, [fetchConversationsList]);
 
+    // Poll conversations list every 6s
+    useEffect(() => {
         const interval = setInterval(() => {
-            loadConversations(false);
-        }, 10000);
-
+            fetchConversationsList(true);
+        }, 6000);
         return () => clearInterval(interval);
-    }, []);
+    }, [fetchConversationsList]);
 
-    // Handle selecting a contact
-    const handleSelectContact = (contactId) => {
-        setSelectedUserId(contactId);
-        setSelectedConvId(null);
-        setMobileStep('listings');
-    };
-
-    // Handle selecting a listing conversation
-    const handleSelectListingConversation = (convId) => {
-        setSelectedConvId(convId);
-        setMobileStep('chat');
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', 'nachrichten');
-            url.searchParams.set('id', convId);
-            window.history.replaceState(null, '', url.toString());
-        }
-    };
-
-    // Handle going back to Contacts list
-    const handleBackToContacts = () => {
-        setSelectedConvId(null);
-        setMobileStep('contacts');
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', 'nachrichten');
-            url.searchParams.delete('id');
-            window.history.replaceState(null, '', url.toString());
-        }
-    };
-
-    // Handle going back to Listings list
-    const handleBackToListings = () => {
-        setSelectedConvId(null);
-        setMobileStep('listings');
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.set('tab', 'nachrichten');
-            url.searchParams.delete('id');
-            window.history.replaceState(null, '', url.toString());
-        }
-    };
-
-    // ── Load Thread Detail ───────────────────────────────────────────
-    const loadThread = async (convId, silent = false) => {
+    // ── 4. Fetch Active Conversation Detail ───────────────────────────────
+    const fetchConversationDetail = useCallback(async (convId, silent = false) => {
         if (!convId) return;
-        if (!silent) setIsLoadingThread(true);
+        if (!silent) setLoadingChat(true);
         try {
             const res = await getConversationDetail(convId);
             const conv = res.conversation || res.data?.conversation;
@@ -252,43 +227,75 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                 setActiveConversation(conv);
                 setMessages(conv.messages || []);
 
-                // Update unread count locally
+                // Mark unread locally
                 setConversations((prev) =>
                     prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c))
                 );
-                fetchGlobalUnreadCount();
             }
         } catch (err) {
-            console.error('Error loading thread:', err);
+            console.error('Error fetching conversation detail:', err);
+            if (!silent) toast.error('Fehler beim Laden des Chats.');
         } finally {
-            if (!silent) setIsLoadingThread(false);
+            if (!silent) setLoadingChat(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (selectedConvId) {
-            loadThread(selectedConvId);
+            fetchConversationDetail(selectedConvId);
             const interval = setInterval(() => {
-                loadThread(selectedConvId, true);
-            }, 5000);
+                fetchConversationDetail(selectedConvId, true);
+            }, 4000);
             return () => clearInterval(interval);
         } else {
             setActiveConversation(null);
             setMessages([]);
         }
-    }, [selectedConvId]);
+    }, [selectedConvId, fetchConversationDetail]);
 
-    // Scroll to bottom on new messages
+    // Auto-scroll on messages change
     useEffect(() => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTo({
-                top: chatContainerRef.current.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
-    }, [messages]);
+        scrollToBottom(false);
+    }, [messages, scrollToBottom]);
 
-    // ── Send Message ──────────────────────────────────────────────────
+    // ── 5. User & Step Navigation Handlers ───────────────────────────────
+    const handleSelectContact = (contactId) => {
+        setSelectedUserId(contactId);
+        setSelectedConvId(null);
+        setMobileStep('listings');
+    };
+
+    const handleSelectListingConversation = (convId) => {
+        setSelectedConvId(convId);
+        setMobileStep('chat');
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('id', convId);
+            window.history.replaceState(null, '', url.toString());
+        }
+    };
+
+    const handleBackToContacts = () => {
+        setSelectedConvId(null);
+        setMobileStep('contacts');
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('id');
+            window.history.replaceState(null, '', url.toString());
+        }
+    };
+
+    const handleBackToListings = () => {
+        setSelectedConvId(null);
+        setMobileStep('listings');
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('id');
+            window.history.replaceState(null, '', url.toString());
+        }
+    };
+
+    // ── 6. Send Message / Reply ───────────────────────────────────────────
     const handleSendMessage = async (e) => {
         if (e) e.preventDefault();
         const text = newMessageText.trim();
@@ -301,7 +308,9 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
             if (res.success && sentMsg) {
                 setMessages((prev) => [...prev, sentMsg]);
                 setNewMessageText('');
+                scrollToBottom(true);
 
+                // Update last message in conversations list
                 setConversations((prev) =>
                     prev.map((c) =>
                         c.id === selectedConvId
@@ -318,42 +327,34 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                     textareaRef.current.style.height = 'auto';
                 }
             } else {
-                toast.error(res.error || res.message || 'Fehler beim Senden der Nachricht.');
+                toast.error(res.error || res.message || 'Fehler beim Senden der Antwort.');
             }
         } catch (err) {
             console.error('Error sending message:', err);
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Senden der Nachricht.');
+            toast.error(err.response?.data?.error || 'Nachricht konnte nicht gesendet werden.');
         } finally {
             setIsSending(false);
         }
     };
 
-    const totalUnreadCount = useMemo(
-        () => conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0),
-        [conversations]
-    );
-
-    const sellerInquiriesCount = useMemo(
-        () => conversations.filter((c) => !c.is_buyer && c.unread_count > 0).length,
-        [conversations]
-    );
-
-    const buyerInquiriesCount = useMemo(
-        () => conversations.filter((c) => c.is_buyer && c.unread_count > 0).length,
-        [conversations]
-    );
+    const handleApplyQuickReply = (text) => {
+        setNewMessageText(text);
+        if (textareaRef.current) {
+            textareaRef.current.focus();
+        }
+    };
 
     const isChatOpen = Boolean(selectedConvId);
 
     // ─────────────────────────────────────────────────────────────────────────
-    // SUB-VIEWS FOR MODULAR RESPONSIVE RENDERING
+    // SUB-VIEWS FOR 3-TIER HIERARCHY: CONTACTS -> LISTINGS -> CHAT
     // ─────────────────────────────────────────────────────────────────────────
 
-    // 1. Contacts List View
+    // 1. Level 1: Contacts List View
     const renderContactsList = () => (
         <div className="flex flex-col h-full bg-[#fdfcf9]">
             {/* Header & Search */}
-            <div className="p-3.5 sm:p-4 border-b border-beige bg-white space-y-3">
+            <div className="p-3.5 sm:p-4 border-b border-beige bg-white space-y-3 shrink-0">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <span className="font-display font-bold text-sm sm:text-base text-charcoal">
@@ -364,11 +365,15 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                         </span>
                     </div>
                     <button
-                        onClick={() => loadConversations(true)}
+                        onClick={() => {
+                            setRefreshing(true);
+                            fetchConversationsList();
+                        }}
+                        disabled={refreshing}
                         title="Neu laden"
                         className="p-1.5 rounded-xl hover:bg-sand/40 text-charcoal/50 hover:text-forest transition-colors cursor-pointer"
                     >
-                        <RefreshCw className="w-3.5 h-3.5" />
+                        <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-forest' : ''}`} />
                     </button>
                 </div>
 
@@ -386,43 +391,37 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
 
                 {/* Filter Tabs */}
                 <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pt-0.5 text-[11px] font-bold">
-                    {[
-                        { id: 'ALL', label: 'Alle' },
-                        { id: 'UNREAD', label: 'Ungelesen', badge: totalUnreadCount > 0 ? totalUnreadCount : undefined },
-                        {
-                            id: 'SELLER',
-                            label: 'Anfragen für mich',
-                            badge: sellerInquiriesCount > 0 ? sellerInquiriesCount : undefined
-                        },
-                        {
-                            id: 'BUYER',
-                            label: 'Meine Anfragen',
-                            badge: buyerInquiriesCount > 0 ? buyerInquiriesCount : undefined
-                        }
-                    ].map((tab) => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setFilterTab(tab.id)}
-                            className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
-                                filterTab === tab.id
-                                    ? 'bg-forest text-sand shadow-xs font-black'
-                                    : 'bg-sand/40 text-charcoal/70 hover:bg-sand'
-                            }`}
-                        >
-                            <span>{tab.label}</span>
-                            {tab.badge && (
-                                <span className="bg-gold text-forest text-[9px] px-1 rounded-full font-mono">
-                                    {tab.badge}
-                                </span>
-                            )}
-                        </button>
-                    ))}
+                    <button
+                        onClick={() => setFilterTab('ALL')}
+                        className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+                            filterTab === 'ALL'
+                                ? 'bg-forest text-sand shadow-xs font-black'
+                                : 'bg-sand/40 text-charcoal/70 hover:bg-sand'
+                        }`}
+                    >
+                        <span>Alle ({conversations.length})</span>
+                    </button>
+                    <button
+                        onClick={() => setFilterTab('UNREAD')}
+                        className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+                            filterTab === 'UNREAD'
+                                ? 'bg-forest text-sand shadow-xs font-black'
+                                : 'bg-sand/40 text-charcoal/70 hover:bg-sand'
+                        }`}
+                    >
+                        <span>Ungelesen</span>
+                        {totalUnreadCount > 0 && (
+                            <span className="bg-gold text-forest text-[9px] px-1 rounded-full font-mono">
+                                {totalUnreadCount}
+                            </span>
+                        )}
+                    </button>
                 </div>
             </div>
 
-            {/* Contacts List */}
+            {/* Contacts Scroll List */}
             <div className="flex-1 overflow-y-auto divide-y divide-beige/60">
-                {isLoadingList ? (
+                {loadingList ? (
                     <div className="p-8 flex flex-col items-center justify-center text-center space-y-2 text-charcoal/60">
                         <Loader2 className="w-5 h-5 text-forest animate-spin" />
                         <p className="text-xs">Kontakte werden geladen...</p>
@@ -436,7 +435,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                         <p className="text-[11px] leading-relaxed max-w-[200px]">
                             {searchQuery
                                 ? 'Keine Treffer für deine Suche.'
-                                : 'Hier siehst du alle Personen, mit denen du über Inserate in Kontakt stehst.'}
+                                : 'Sobald Nutzer Anfragen zu Campuna Club Inseraten stellen, erscheinen sie hier.'}
                         </p>
                     </div>
                 ) : (
@@ -535,7 +534,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
         </div>
     );
 
-    // 2. Listings List View for Active Contact
+    // 2. Level 2: Listings List View for Active Contact
     const renderListingsList = (isSidebarMode = false) => {
         if (!activeContactGroup) {
             return (
@@ -556,7 +555,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
         return (
             <div className="flex flex-col h-full bg-[#fdfcf9]">
                 {/* Header with Back Button */}
-                <div className="p-3.5 sm:p-4 border-b border-beige bg-white space-y-2">
+                <div className="p-3.5 sm:p-4 border-b border-beige bg-white space-y-2 shrink-0">
                     <button
                         onClick={handleBackToContacts}
                         className="flex items-center gap-1.5 text-xs font-bold text-forest hover:text-gold-dark transition-colors cursor-pointer group"
@@ -604,7 +603,6 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                     {activeContactGroup.conversations.map((conv) => {
                         const isSelected = selectedConvId === conv.id;
                         const hasUnread = conv.unread_count > 0;
-                        const isSellerInquiry = !conv.is_buyer;
                         const hasListing = Boolean(conv.listing && (conv.listing.title || conv.listing.id));
 
                         return (
@@ -627,12 +625,6 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                 onError={(e) => { e.currentTarget.src = '/hero-campuna.webp'; }}
                                             />
-                                        ) : activeContactGroup.user?.avatar ? (
-                                            <img
-                                                src={getImageUrl(activeContactGroup.user.avatar)}
-                                                alt={activeContactGroup.user.name}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            />
                                         ) : (
                                             <Building2 className="w-6 h-6 text-forest/70" />
                                         )}
@@ -641,23 +633,13 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                     {/* Info */}
                                     <div className="min-w-0 flex-1 space-y-0.5">
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                            <span
-                                                className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                                                    hasListing
-                                                        ? (isSellerInquiry
-                                                            ? 'bg-emerald-100 text-emerald-800'
-                                                            : 'bg-sand text-forest')
-                                                        : 'bg-amber-100 text-amber-900'
-                                                }`}
-                                            >
-                                                {hasListing
-                                                    ? (isSellerInquiry ? 'Kaufanfrage' : 'Inserat-Anfrage')
-                                                    : (isSellerInquiry ? 'Direktanfrage' : 'Anfrage an Anbieter')}
+                                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded uppercase bg-emerald-100 text-emerald-800">
+                                                Kaufanfrage
                                             </span>
-                                            {(conv.listing?.location || activeContactGroup.user?.location) && (
+                                            {conv.listing?.location && (
                                                 <span className="text-[10px] text-charcoal/50 flex items-center gap-0.5 truncate">
                                                     <MapPin className="w-3 h-3 text-gold-dark" />
-                                                    {conv.listing?.location || activeContactGroup.user?.location || 'Deutschland'}
+                                                    {conv.listing.location}
                                                 </span>
                                             )}
                                         </div>
@@ -665,7 +647,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                         <h4 className="font-display font-bold text-xs sm:text-sm text-charcoal group-hover:text-forest transition-colors truncate">
                                             {hasListing
                                                 ? conv.listing.title
-                                                : `Allgemeine Kontaktanfrage an ${activeContactGroup.user?.name || 'den Anbieter'}`}
+                                                : `Anfrage von ${activeContactGroup.user?.name || 'Interessent'}`}
                                         </h4>
 
                                         <div className="flex items-baseline gap-2">
@@ -708,7 +690,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
         );
     };
 
-    // 3. Active Chat Thread View
+    // 3. Level 3: Active Live Chat Thread View
     const renderChatThread = () => {
         if (!selectedConvId || !activeConversation) {
             return (
@@ -729,7 +711,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
         return (
             <div className="flex flex-col h-full bg-white">
                 {/* Thread Top Bar */}
-                <div className="p-3 sm:p-3.5 bg-white border-b border-beige flex items-center justify-between gap-3 shadow-2xs">
+                <div className="p-3 sm:p-3.5 bg-white border-b border-beige flex items-center justify-between gap-3 shadow-2xs shrink-0">
                     <div className="flex items-center gap-2.5 min-w-0">
                         {/* Mobile Back Button */}
                         <button
@@ -744,7 +726,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                         <div className="w-9 h-9 rounded-full bg-forest text-sand font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
                             {activeConversation.other_user?.avatar ? (
                                 <img
-                                    src={activeConversation.other_user.avatar}
+                                    src={getImageUrl(activeConversation.other_user.avatar)}
                                     alt={activeConversation.other_user.name}
                                     className="w-full h-full object-cover"
                                 />
@@ -760,23 +742,17 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                     {activeConversation.other_user?.name}
                                 </h3>
                                 <span className="text-[9px] font-bold bg-sand text-forest px-1.5 py-0.2 rounded-full shrink-0">
-                                    {activeConversation.other_user?.type}
+                                    {activeConversation.other_user?.type || 'Käufer'}
                                 </span>
                             </div>
                             <p className="text-[10px] text-charcoal/50 truncate">
-                                {activeConversation.listing && (activeConversation.listing.title || activeConversation.listing.id)
-                                    ? (activeConversation.is_buyer
-                                        ? 'Verkäufer des Inserats'
-                                        : 'Interessent für dein Inserat')
-                                    : (activeConversation.is_buyer
-                                        ? 'Direkter Kontakt zum Anbieter'
-                                        : 'Direktanfrage an dich')}
+                                Interessent für Campuna Club Inserat
                             </p>
                         </div>
                     </div>
 
-                    {/* Context Pill: Listing or Provider Profile */}
-                    {activeConversation.listing && (activeConversation.listing.title || activeConversation.listing.slug) ? (
+                    {/* Context Pill: Listing Link Card */}
+                    {activeConversation.listing && (activeConversation.listing.title || activeConversation.listing.slug) && (
                         <Link
                             href={`/inserate/${activeConversation.listing.slug || activeConversation.listing.id}`}
                             target="_blank"
@@ -801,20 +777,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                             </div>
                             <ExternalLink className="w-3.5 h-3.5 text-charcoal/40 group-hover:text-forest shrink-0 ml-0.5" />
                         </Link>
-                    ) : activeConversation.other_user?.id ? (
-                        <Link
-                            href={`/anbieter/${encodeURIComponent(activeConversation.other_user.id)}`}
-                            target="_blank"
-                            className="bg-[#faf8f3] hover:bg-sand border border-beige rounded-xl p-1.5 sm:px-2.5 sm:py-1.5 flex items-center gap-2 transition-colors group shrink-0"
-                            title="Anbieterprofil aufrufen"
-                        >
-                            <Building2 className="w-4 h-4 text-forest shrink-0" />
-                            <span className="text-[10px] font-bold text-forest hidden sm:inline truncate">
-                                Anbieterprofil
-                            </span>
-                            <ExternalLink className="w-3.5 h-3.5 text-charcoal/40 group-hover:text-forest shrink-0" />
-                        </Link>
-                    ) : null}
+                    )}
                 </div>
 
                 {/* Message Stream */}
@@ -822,7 +785,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                     ref={chatContainerRef}
                     className="flex-1 p-3.5 sm:p-5 overflow-y-auto space-y-3.5 bg-[#fdfcf9]"
                 >
-                    {isLoadingThread ? (
+                    {loadingChat ? (
                         <div className="h-full flex flex-col items-center justify-center space-y-2 text-charcoal/60">
                             <Loader2 className="w-5 h-5 text-forest animate-spin" />
                             <p className="text-xs">Nachrichten werden geladen...</p>
@@ -832,22 +795,33 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                             <Sparkles className="w-6 h-6 text-forest" />
                             <p className="text-xs font-bold text-charcoal">Noch keine Nachrichten</p>
                             <p className="text-[11px] max-w-xs">
-                                {activeConversation.listing?.title
-                                    ? `Schreibe die erste Nachricht an ${activeConversation.other_user?.name} zu ${activeConversation.listing.title}.`
-                                    : `Schreibe die erste Nachricht an ${activeConversation.other_user?.name}.`}
+                                Schreibe die erste Nachricht an {activeConversation.other_user?.name} als Campuna Club.
                             </p>
                         </div>
                     ) : (
-                        messages.map((msg) => {
-                            const isMine = msg.is_mine;
+                        messages.map((msg, idx) => {
+                            const isMine = msg.is_mine || msg.sender_id === currentUser?.id;
 
                             return (
                                 <div
-                                    key={msg.id}
+                                    key={msg.id || idx}
                                     className={`flex flex-col ${
                                         isMine ? 'items-end' : 'items-start'
                                     }`}
                                 >
+                                    {/* Sender Tag */}
+                                    <div className="flex items-center gap-1.5 mb-1 px-1">
+                                        <span className="text-[10px] font-bold text-charcoal/45 uppercase tracking-wider font-sans">
+                                            {isMine ? 'Campuna Club (Admin)' : (activeConversation.other_user?.name || 'Interessent')}
+                                        </span>
+                                        {isMine && (
+                                            <span className="inline-flex items-center gap-0.5 bg-gold/20 text-forest text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-gold/40">
+                                                <Sparkles className="w-2.5 h-2.5 text-gold-dark" /> Admin
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Message Bubble */}
                                     <div
                                         className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-3 text-xs sm:text-sm leading-relaxed shadow-xs ${
                                             isMine
@@ -858,6 +832,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                         <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                                     </div>
 
+                                    {/* Timestamp & Delivery */}
                                     <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-charcoal/45">
                                         <span>{formatMessageTime(msg.created_at)}</span>
                                         {isMine && (
@@ -882,22 +857,18 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                     )}
                 </div>
 
-                {/* Reply Input Box */}
-                <div className="p-3 sm:p-4 bg-white border-t border-beige space-y-2 sticky bottom-0 z-10">
+                {/* Reply Input Box (Firmly Attached to Bottom) */}
+                <div className="p-3 sm:p-4 bg-white border-t border-beige space-y-2 sticky bottom-0 z-10 shrink-0">
                     {/* Quick Presets */}
                     <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-[11px]">
-                        {[
-                            'Hallo, das Fahrzeug ist noch verfügbar.',
-                            'Besichtigung ist gerne möglich.',
-                            'Vielen Dank für Ihre Nachricht!'
-                        ].map((chip) => (
+                        {QUICK_REPLIES.map((chip) => (
                             <button
                                 key={chip}
                                 type="button"
-                                onClick={() => setNewMessageText(chip)}
+                                onClick={() => handleApplyQuickReply(chip)}
                                 className="px-2.5 py-1 rounded-full bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 transition-colors whitespace-nowrap cursor-pointer text-[10px]"
                             >
-                                {chip}
+                                {chip.slice(0, 38)}...
                             </button>
                         ))}
                     </div>
@@ -918,7 +889,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                     handleSendMessage();
                                 }
                             }}
-                            placeholder="Nachricht eingeben... (Enter zum Senden)"
+                            placeholder="Nachricht als Campuna Club eingeben... (Enter zum Senden)"
                             className="flex-1 bg-[#faf8f3] border border-beige rounded-2xl p-2.5 sm:p-3 text-xs sm:text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-forest focus:ring-1 focus:ring-forest resize-none max-h-28 leading-relaxed"
                         />
 
@@ -941,9 +912,48 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
     };
 
     return (
-        <div className="space-y-4">
-            {/* ── Main Chat Shell Container ── */}
-            <div className="bg-white rounded-2xl sm:rounded-3xl shadow-sm border border-beige overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-130px)] min-h-[580px] max-h-[820px] lg:h-[740px]">
+        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-6">
+            {/* ─── Top Page Header (Matching Inserate / Benutzer / Meldungen) ─── */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold shrink-0">
+                        <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl sm:text-2xl font-black font-sans text-slate-900 tracking-tight">
+                                Nachrichten & Anfragen
+                            </h1>
+                            {totalUnreadCount > 0 && (
+                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-black tracking-wide animate-pulse">
+                                    {totalUnreadCount} neu
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            Prüfe, verwalte und beantworte alle Käuferanfragen zu Campuna Club Inseraten.
+                        </p>
+                    </div>
+                </div>
+
+                {/* Top Quick Actions */}
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => {
+                            setRefreshing(true);
+                            fetchConversationsList();
+                        }}
+                        disabled={refreshing}
+                        className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#E8EAEF] text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-forest' : ''}`} />
+                        <span>Aktualisieren</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* ── Main Chat Shell Container (Height fitted to screen, pinned bottom input) ── */}
+            <div className="bg-white rounded-3xl border border-[#E8EAEF] shadow-2xs overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-235px)] min-h-[580px] max-h-[860px]">
                 
                 {/* ═════════════════════════════════════════════════════════════
                     PANEL 1 (LEFT ON DESKTOP):
@@ -952,7 +962,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                     - Mobile: Managed smoothly via mobileStep state
                    ═════════════════════════════════════════════════════════════ */}
                 <div
-                    className={`w-full lg:w-80 xl:w-96 lg:border-r border-beige flex flex-col shrink-0 ${
+                    className={`w-full lg:w-80 xl:w-96 lg:border-r border-beige flex flex-col shrink-0 overflow-hidden ${
                         mobileStep === 'contacts'
                             ? 'flex'
                             : !isChatOpen && mobileStep === 'listings'
@@ -972,7 +982,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                     - Mobile: Shows Listings (if mobileStep === 'listings') or Chat (if mobileStep === 'chat')
                    ═════════════════════════════════════════════════════════════ */}
                 <div
-                    className={`flex-1 flex flex-col bg-white ${
+                    className={`flex-1 flex flex-col bg-white overflow-hidden ${
                         mobileStep === 'contacts'
                             ? 'hidden lg:flex'
                             : mobileStep === 'listings'

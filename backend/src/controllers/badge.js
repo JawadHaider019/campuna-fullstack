@@ -81,7 +81,7 @@ export const checkAndAwardPioneerBadge = async (userId) => {
             return { success: false, error: 'Das Limit von 300 Pioneer-Auszeichnungen wurde bereits erreicht.' };
         }
 
-        // 5. Award the badge!
+        // 5. Award the badge + 1,000 CC one-time reward!
         const position = totalPioneersCount + 1;
         const newAchievement = await db.orm.public.UserAchievement.create({
             user_id: userId,
@@ -89,7 +89,17 @@ export const checkAndAwardPioneerBadge = async (userId) => {
             position
         });
 
-        console.log(`🏆 [Badge] CAMPUNA_PIONEER badge successfully awarded to user ${userId} at position #${position}!`);
+        // Award 1,000 Campuna Credits one-time reward into the ledger
+        await db.orm.public.CreditTransaction.create({
+            user_id: userId,
+            amount: 1000,
+            type: 'PIONEER_REWARD',
+            description: `Campuna Pioneer Auszeichnung Einmal-Bonus (#${position}) (+1.000 CC)`,
+        }).catch((txErr) => {
+            console.error('⚠️ [Badge] Could not record pioneer CC reward:', txErr.message);
+        });
+
+        console.log(`🏆 [Badge] CAMPUNA_PIONEER badge successfully awarded to user ${userId} at position #${position} with 1,000 CC bonus!`);
         return { success: true, badge: newAchievement, newlyAwarded: true };
 
     } catch (err) {

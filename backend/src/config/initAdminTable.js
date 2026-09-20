@@ -152,13 +152,83 @@ async function main() {
     const finalAdminId = existing.rows[0]?.id || (await pool.query('SELECT id FROM admins WHERE email = $1', [adminEmail])).rows[0]?.id;
     if (finalAdminId) {
         await pool.query(`
-            INSERT INTO company_profiles (user_id, company_name, updated_at)
-            VALUES ($1, 'Campuna Official', NOW())
-            ON CONFLICT (user_id) DO NOTHING;
+            INSERT INTO company_profiles (user_id, company_name, tier, updated_at)
+            VALUES ($1, 'Campuna Club', 'BUSINESS', NOW())
+            ON CONFLICT (user_id) DO UPDATE SET company_name = 'Campuna Club', tier = 'BUSINESS';
         `, [finalAdminId]).catch((err) => console.log('Notice on company_profiles sync:', err.message));
+
+        // Ensure official Campuna Club listings exist for admin
+        const clubListings = [
+            {
+                title: 'Campuna Club: VW Grand California 680 Automatik',
+                slug: 'campuna-club-vw-grand-california-680-automatik',
+                description: 'Offizielles Campuna Club Fahrzeug: VW Grand California 680 mit 177 PS Automatik, Vollausstattung, 4 Schlafplätze, Solaranlage und Standheizung. Werkstattgeprüft.',
+                price: 79900,
+                location: 'München, Deutschland',
+                category: 'Wohnmobile & Camper',
+                subcategory: 'Kastenwagen & Van',
+                images: [
+                    'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1513311068348-19c8fbdc0bb6?auto=format&fit=crop&w=800&q=80'
+                ]
+            },
+            {
+                title: 'Campuna Club: Knaus Sport 500 EU Silver Selection',
+                slug: 'campuna-club-knaus-sport-500-eu-silver-selection',
+                description: 'Gepflegter Familien-Wohnwagen mit Einzelbetten, Mover, Vorzelt und 100er-Zulassung. Direkt vom Campuna Club verifiziert und sofort einsatzbereit.',
+                price: 21900,
+                location: 'Stuttgart, Deutschland',
+                category: 'Wohnwagen & Caravans',
+                subcategory: 'Wohnwagen',
+                images: [
+                    'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80'
+                ]
+            },
+            {
+                title: 'Campuna Club: EcoFlow DELTA Pro 3600Wh Powerstation',
+                slug: 'campuna-club-ecoflow-delta-pro-3600wh-powerstation',
+                description: 'High-End Powerstation für autarkes Camping und Reisen. 3.600 Wh Kapazität, 3.600W AC-Ausgang, superschnelles Laden. Neuwertig im Originalkarton.',
+                price: 2499,
+                location: 'Hamburg, Deutschland',
+                category: 'Camping Zubehör',
+                subcategory: 'Elektrik & Solar',
+                images: [
+                    'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=1200&q=80'
+                ]
+            }
+        ];
+
+        for (const cl of clubListings) {
+            const check = await pool.query('SELECT id FROM listings WHERE slug = $1', [cl.slug]);
+            if (check.rowCount === 0) {
+                const lid = crypto.randomUUID();
+                await pool.query(
+                    `INSERT INTO listings (
+                        id, user_id, title, slug, description, price, negotiable, location,
+                        condition, category, subcategory, status, featured, images, created_at, updated_at
+                    ) VALUES (
+                        $1, $2, $3, $4, $5, $6, false, $7,
+                        'Sehr gut', $8, $9, 'APPROVED', true, $10, NOW(), NOW()
+                    )`,
+                    [
+                        lid,
+                        finalAdminId,
+                        cl.title,
+                        cl.slug,
+                        cl.description,
+                        cl.price,
+                        cl.location,
+                        cl.category,
+                        cl.subcategory,
+                        cl.images
+                    ]
+                ).catch((err) => console.log('Notice on inserting club listing:', err.message));
+            }
+        }
     }
 
-    console.log('✅ Admin successfully synchronized into users and company_profiles tables');
+    console.log('✅ Admin and Campuna Club verified');
 
     const checkAdmins = await pool.query('SELECT id, email, name, role FROM admins');
     console.log('📊 Current admins table rows:', checkAdmins.rows.length);

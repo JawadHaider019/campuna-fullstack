@@ -101,8 +101,19 @@ Keep listing status separate from full moderation decision history.
 ---
 
 ## 8. Campuna Pioneer Program
-- Granted to users who confirm email and have $\ge 3$ approved listings.
-- Capped at first 300 qualified users. Stored permanently with award position (e.g. `position: 127`).
+- **Goal**: Reward early active supporters and establish foundational trust and platform liquidity.
+- **Limit**: Strictly capped at the first 300 qualified users (private or commercial).
+- **Qualification Criteria**:
+  - **Private User**: Verified account (email) + complete profile (name, bio, location, picture) + at least 3 approved listings.
+  - **Commercial User**: Verified business account (email) + complete company profile (company name, bio, location/address, logo, contact) + at least 3 approved listings.
+- **Pioneer Status & Benefits**:
+  - **Lifelong Pioneer Badge**: Displayed permanently on user profile and all published listings with award position (e.g. `position: 127`) as a high-trust early-supporter mark.
+  - **One-time Reward of 1,000 CC**: Credited to the user's Credit Ledger upon initial qualification.
+- **Strict Separation from Monetization & Visibility**:
+  - **No Permanent Preferred Ranking**: Listings are sorted strictly by natural recency and paid Boosts.
+  - **No Permanent Visibility Bonuses**: Does not grant artificial exposure multipliers.
+  - **No Automatic Spotlight Advantages**: Spotlight is exclusively booked via separate packages.
+  - *Principle*: Visibility benefits remain exclusively tied to Boosts, Business subscriptions, and Spotlight bookings. Pioneer status functions purely as early-supporter prestige and trust recognition.
 
 ---
 
@@ -111,34 +122,35 @@ Keep listing status separate from full moderation decision history.
   - Company name, logo, short description (max 150 characters), contact details, website.
   - Normal search visibility on Campuna.
   - Limited number of active listings (maximum of 3 active approved listings).
-- **Business Profile** (~€29/month, exact price subject to final approval):
-  - Professional extended company profile.
-  - Custom header/background cover image.
-  - Longer description (longer bio, e.g. up to 1000 characters).
-  - High listing limits or unlimited listings.
-  - Higher search visibility (Spotlight or highlighted placements).
-  - Statistics/Performance analytics.
-  - CSV/API import and additional business features.
+- **Business Profile** (€29/month recurring subscription):
+  - Professional extended company profile (header cover image, up to 1,000 characters bio).
+  - Higher listing limits (up to 25+ listings), performance analytics & lead pipeline.
+  - CSV/API import and business inquiry management.
+  - **Revenue Anchor**: Paid recurring professional presence (EUR cash/card/SEPA). Not permanently payable with credits to secure predictable, sustainable platform revenue.
 
 ---
 
 ## 10. Direct Referral System
-- **Referral Code & Tracking**: Unique referral code and link for every account (both commercial and private users).
-- **No Cash Payout / Direct Only**: Direct 1-level referral system (no multi-level marketing, no non-cash payout, no commissions for referrals made by referred users).
-- **Commercial Referral reward**: If a company invites another commercial provider and the referred provider becomes a paying Business customer (completes email confirmation + first Business subscription payment), the referrer receives Campuna Credit.
-- **Private Referral reward**: If a private user invites another camper, and the referred camper registers and publishes their first approved listing, the referrer receives a free Premium boost or Campuna credit.
-- **Credit Use cases**:
-  - Paying Business plan subscription fees.
-  - Buying Premium boosts.
-  - Spotlight placements.
-  - Other paid Campuna marketplace features.
+- **Core Principle**: Win-win growth engine rewarding users for bringing new active users and providers to the platform.
+- **Architecture**: Direct 1-level referral system (no multi-level marketing, non-withdrawable).
+- **Private Referral Reward**: **500 CC** to both referrer and referee.
+  - *Trigger*: Rewarded after registration + first approved listing.
+- **Commercial Referral Reward**: **1,000 CC** to both referrer and referee.
+  - *Trigger*: Rewarded after registration + completed/approved company profile.
 
 ---
 
 ## 11. Campuna Credit Ledger Engine
-- Internal non-cash balance (`credit_transactions`) with full audit trail.
-- **Earn**: Referral rewards, promotions, admin adjustments.
-- **Spend**: Business plan subscription fees, Premium Boosts, Spotlight placement, paid functions.
+- **Valuation**: **1 Campuna Credit (CC) = €0.01** (1 Cent value).
+- **Cash Policy**: Internal credit ledger (`credit_transactions`), strictly non-withdrawable as cash.
+- **Use Cases (Spend)**:
+  - **Listing Boosts**: 7-day, 14-day, and 30-day reach boosts for marketplace listings.
+  - **Spotlight Bookings**: Promoted featured placements.
+  - *Restriction*: Credits are not used to permanently replace the €29/month Business subscription.
+- **Sources (Earn)**:
+  - Direct referral rewards (500 CC private / 1,000 CC commercial).
+  - Pioneer one-time achievement reward (1,000 CC).
+  - Credit package top-ups (e.g., 500 CC, 800 CC, 1,300 CC, 2,500 CC) and administrative adjustments.
 
 ---
 

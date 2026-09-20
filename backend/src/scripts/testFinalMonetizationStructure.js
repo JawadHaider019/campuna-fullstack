@@ -166,13 +166,13 @@ async function runTests() {
             throw new Error('Commercial referral was not awarded after profile completion!');
         }
 
-        // Verify both received 100 CC
+        // Verify both received 1,000 CC
         const refBalance = await pool.query('SELECT SUM(amount) as b FROM credit_transactions WHERE user_id = $1', [referrer.id]);
         const newCommBalance = await pool.query('SELECT SUM(amount) as b FROM credit_transactions WHERE user_id = $1', [newCommercial.id]);
-        if (parseInt(refBalance.rows[0].b, 10) !== 100 || parseInt(newCommBalance.rows[0].b, 10) !== 100) {
-            throw new Error('Referral 100 CC not received by both parties!');
+        if (parseInt(refBalance.rows[0].b, 10) !== 1000 || parseInt(newCommBalance.rows[0].b, 10) !== 1000) {
+            throw new Error(`Commercial referral 1,000 CC not received by both parties! Got: ${refBalance.rows[0].b} and ${newCommBalance.rows[0].b}`);
         }
-        console.log('✅ TEST 5 PASSED: Commercial referral awarded exactly 100 CC upon profile completion.\n');
+        console.log('✅ TEST 5 PASSED: Commercial referral awarded exactly 1,000 CC upon profile completion.\n');
 
         // ─── TEST 6: Private Referral Qualified upon 1st Approved Listing ─────
         console.log('--- TEST 6: Qualified Referral on Private 1st Listing ---');
@@ -196,7 +196,14 @@ async function runTests() {
         if (!privateAwarded) {
             throw new Error('Private referral was not awarded upon 1st approved listing!');
         }
-        console.log('✅ TEST 6 PASSED: Private referral awarded 100 CC upon 1st approved listing.\n');
+
+        // Verify both received 500 CC
+        const privRefBalance = await pool.query('SELECT SUM(amount) as b FROM credit_transactions WHERE user_id = $1', [privateReferrer.id]);
+        const privRefereeBalance = await pool.query('SELECT SUM(amount) as b FROM credit_transactions WHERE user_id = $1', [privateReferee.id]);
+        if (parseInt(privRefBalance.rows[0].b, 10) !== 500 || parseInt(privRefereeBalance.rows[0].b, 10) !== 500) {
+            throw new Error(`Private referral 500 CC not received by both parties! Got: ${privRefBalance.rows[0].b} and ${privRefereeBalance.rows[0].b}`);
+        }
+        console.log('✅ TEST 6 PASSED: Private referral awarded 500 CC upon 1st approved listing.\n');
 
         // ─── TEST 7: Listing Boost (7, 14, 30 Days) & Search Ordering ─────────
         console.log('--- TEST 7: Listing Boost (7, 14, 30 Days) ---');
@@ -235,9 +242,40 @@ async function runTests() {
         if (!boostApplied) {
             throw new Error('Listing boost failed!');
         }
-        console.log('✅ TEST 7 PASSED: Listing boost successfully applied.\n');
+        // ─── TEST 8: Pioneer Award & 1,000 CC One-Time Bonus ───────────────
+        console.log('--- TEST 8: Pioneer Award & 1,000 CC Bonus ---');
+        const { checkAndAwardPioneerBadge } = await import('../controllers/badge.js');
+        const pioneerUser = await createTestUser('USER', 'PRIVATE', true);
+        
+        // Complete profile
+        await pool.query(
+            `INSERT INTO private_profiles (user_id, first_name, last_name, bio, location, profile_image_url, created_at, updated_at)
+             VALUES ($1, 'Julia', 'Sommer', 'Passionierte Camperin seit 10 Jahren.', 'Köln', '/uploads/julia.jpg', NOW(), NOW())`,
+            [pioneerUser.id]
+        );
 
-        console.log('🎉 ALL 7 MONETIZATION & SPOTLIGHT TESTS PASSED PERFECTLY!\n');
+        // Add 3 approved listings
+        for (let i = 1; i <= 3; i++) {
+            await pool.query(
+                `INSERT INTO listings (id, user_id, title, description, price, status, created_at, updated_at)
+                 VALUES (gen_random_uuid(), $1, $2, 'Sehr guter Zustand', 35000, 'APPROVED', NOW(), NOW())`,
+                [pioneerUser.id, `Test Camper ${i}`]
+            );
+        }
+
+        const pioneerResult = await checkAndAwardPioneerBadge(pioneerUser.id);
+        if (!pioneerResult.success || !pioneerResult.newlyAwarded) {
+            throw new Error(`Pioneer badge not awarded! Result: ${JSON.stringify(pioneerResult)}`);
+        }
+
+        // Verify 1,000 CC bonus was credited
+        const pioneerCredit = await pool.query('SELECT SUM(amount) as b FROM credit_transactions WHERE user_id = $1', [pioneerUser.id]);
+        if (parseInt(pioneerCredit.rows[0].b, 10) !== 1000) {
+            throw new Error(`Pioneer 1,000 CC not credited to ledger! Got: ${pioneerCredit.rows[0].b}`);
+        }
+        console.log('✅ TEST 8 PASSED: Pioneer badge awarded at position #' + pioneerResult.badge.position + ' with 1,000 CC bonus.\n');
+
+        console.log('🎉 ALL 8 MONETIZATION, PIONEER & SPOTLIGHT TESTS PASSED PERFECTLY!\n');
         process.exit(0);
 
     } catch (err) {

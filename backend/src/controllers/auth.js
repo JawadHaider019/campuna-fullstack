@@ -348,9 +348,9 @@ export const login = async (req, res) => {
             ).catch(() => {});
 
             await pool.query(
-                `INSERT INTO company_profiles (user_id, company_name, updated_at)
-                 VALUES ($1, 'Campuna Official', NOW())
-                 ON CONFLICT (user_id) DO NOTHING`,
+                `INSERT INTO company_profiles (user_id, company_name, tier, updated_at)
+                 VALUES ($1, 'Campuna Club', 'BUSINESS', NOW())
+                 ON CONFLICT (user_id) DO UPDATE SET company_name = 'Campuna Club', tier = 'BUSINESS'`,
                 [adminRecord.id]
             ).catch(() => {});
 

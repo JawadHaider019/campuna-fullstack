@@ -191,9 +191,7 @@ export async function seedMarketplaceData() {
             `, [userId, p.daysAgo]);
         }
 
-        // 4. Delete existing demo listings to guarantee fresh, high quality state
-        await client.query(`DELETE FROM listing_moderation;`);
-        await client.query(`DELETE FROM listings;`);
+        // 4. Safe Seeding: Never delete existing listings to protect user-created and admin listings
 
         // 5. Rich German Marketplace Listings
         const allListings = [
@@ -526,8 +524,13 @@ export async function seedMarketplaceData() {
             }
         ];
 
-        // 6. Insert all listings and their moderation records
+        // 6. Insert all listings and their moderation records (if not already existing)
         for (const item of allListings) {
+            const existingCheck = await client.query(`SELECT id FROM listings WHERE title = $1 LIMIT 1`, [item.title]);
+            if (existingCheck.rowCount > 0) {
+                continue; // Skip already existing listing
+            }
+
             const listId = crypto.randomUUID();
             const slug = `${item.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}-${Math.random().toString(36).substring(2, 6)}`;
             
@@ -569,7 +572,8 @@ export async function seedMarketplaceData() {
                 VALUES (
                     $1, $2, $3, $4, $5, $6, $7, 
                     $8, $9, $10, $11, NOW() - ($12 || ' days')::interval, NOW() - ($12 || ' days')::interval, NOW()
-                );
+                )
+                ON CONFLICT (listing_id) DO NOTHING;
             `, [
                 modId,
                 listingId,

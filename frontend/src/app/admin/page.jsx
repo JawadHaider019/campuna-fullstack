@@ -29,7 +29,8 @@ import {
     ExternalLink,
     Filter,
     ArrowRight,
-    Flag
+    Flag,
+    MessageSquare
 } from 'lucide-react';
 import {
     getAdminDashboardStats,

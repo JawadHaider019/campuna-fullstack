@@ -2,7 +2,7 @@ import { db } from '../prisma/db.js';
 import pool from '../config/database.js';
 
 /**
- * Checks if a user has a PENDING referral and awards 100 CC to both referrer and user
+ * Checks if a user has a PENDING referral and awards 500 CC to both referrer and user
  * upon their 1st listing approval (status = 'APPROVED').
  */
 export const checkAndAwardReferralCreditsOnApproval = async (userId) => {
@@ -36,21 +36,21 @@ export const checkAndAwardReferralCreditsOnApproval = async (userId) => {
         // 3. Mark referral as COMPLETED
         await pool.query('UPDATE referrals SET status = $1 WHERE id = $2', ['COMPLETED', ref.id]);
 
-        // 4. Award 100 CC to Referrer
+        // 4. Award 500 CC to Referrer
         await pool.query(
             `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
-             VALUES ($1, 100, 'REFERRAL_REWARD', $2, NOW())`,
-            [ref.referrer_id, `Empfehlungsbonus für freigeschaltetes Inserat von ${userEmail} (+100 CC)`]
+             VALUES ($1, 500, 'REFERRAL_REWARD', $2, NOW())`,
+            [ref.referrer_id, `Empfehlungsbonus für freigeschaltetes Inserat von ${userEmail} (+500 CC)`]
         );
 
-        // 5. Award 100 CC to Referred User (Creator)
+        // 5. Award 500 CC to Referred User (Creator)
         await pool.query(
             `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
-             VALUES ($1, 100, 'REFERRAL_SIGNUP_BONUS', $2, NOW())`,
-            [userId, `Willkommensbonus für erstes freigeschaltetes Inserat (+100 CC)`]
+             VALUES ($1, 500, 'REFERRAL_SIGNUP_BONUS', $2, NOW())`,
+            [userId, `Willkommensbonus für erstes freigeschaltetes Inserat (+500 CC)`]
         );
 
-        console.log(`🎉 Referral completed upon listing approval: Both ${ref.referrer_email} and ${userEmail} received 100 CC.`);
+        console.log(`🎉 Referral completed upon listing approval: Both ${ref.referrer_email} and ${userEmail} received 500 CC.`);
         return true;
     } catch (err) {
         console.error('checkAndAwardReferralCreditsOnApproval error:', err.message);
@@ -59,7 +59,7 @@ export const checkAndAwardReferralCreditsOnApproval = async (userId) => {
 };
 
 /**
- * Checks if a COMMERCIAL user has a PENDING referral and awards 100 CC to both referrer and user
+ * Checks if a COMMERCIAL user has a PENDING referral and awards 1,000 CC to both referrer and user
  * upon completing their company profile (company_name, phone, location/address, bio >= 20, logo_url).
  */
 export const checkAndAwardReferralCreditsOnCommercialProfile = async (userId) => {
@@ -107,21 +107,21 @@ export const checkAndAwardReferralCreditsOnCommercialProfile = async (userId) =>
         // 3. Mark referral as COMPLETED
         await pool.query('UPDATE referrals SET status = $1 WHERE id = $2', ['COMPLETED', ref.id]);
 
-        // 4. Award 100 CC to Referrer
+        // 4. Award 1,000 CC to Referrer
         await pool.query(
             `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
-             VALUES ($1, 100, 'REFERRAL_REWARD', $2, NOW())`,
-            [ref.referrer_id, `Empfehlungsbonus für vollständiges Unternehmensprofil von ${companyName} (+100 CC)`]
+             VALUES ($1, 1000, 'REFERRAL_REWARD', $2, NOW())`,
+            [ref.referrer_id, `Empfehlungsbonus für vollständiges Unternehmensprofil von ${companyName} (+1.000 CC)`]
         );
 
-        // 5. Award 100 CC to Referred Commercial User
+        // 5. Award 1,000 CC to Referred Commercial User
         await pool.query(
             `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
-             VALUES ($1, 100, 'REFERRAL_SIGNUP_BONUS', $2, NOW())`,
-            [userId, `Willkommensbonus für vollständiges Firmenprofil (+100 CC)`]
+             VALUES ($1, 1000, 'REFERRAL_SIGNUP_BONUS', $2, NOW())`,
+            [userId, `Willkommensbonus für vollständiges Firmenprofil (+1.000 CC)`]
         );
 
-        console.log(`🎉 Commercial Referral completed: Both ${ref.referrer_email} and ${companyName} received 100 CC.`);
+        console.log(`🎉 Commercial Referral completed: Both ${ref.referrer_email} and ${companyName} received 1.000 CC.`);
         return true;
     } catch (err) {
         console.error('checkAndAwardReferralCreditsOnCommercialProfile error:', err.message);

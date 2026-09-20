@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
-import { Heart, MapPin, ShieldCheck, Eye, ArrowRight, ChevronLeft, ChevronRight, Rocket } from 'lucide-react';
+import { Heart, MapPin, ShieldCheck, Eye, ArrowRight, ChevronLeft, ChevronRight, Rocket, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
@@ -35,6 +35,13 @@ function normalizeListing(item) {
     images = images.map(img => getImageUrl(img, DEFAULT_IMAGE));
 
     const sellerType = item.seller?.type || item.listing_user_type || 'Privat';
+    const isCampunaClub = Boolean(
+        item.is_campuna_club ||
+        item.seller?.is_campuna_club ||
+        item.seller?.name === 'Campuna Club' ||
+        item.seller_name === 'Campuna Club' ||
+        item.company_name === 'Campuna Club'
+    );
 
     let features = [];
     if (Array.isArray(item.features) && item.features.length > 0) {
@@ -62,6 +69,7 @@ function normalizeListing(item) {
         location,
         images,
         sellerType,
+        is_campuna_club: isCampunaClub,
         features,
         featured: isFeatured,
         boosted_until: item.boosted_until,
@@ -130,15 +138,22 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
                             </span>
                         )}
 
-                        {/* Seller Type Badge */}
-                        <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1 ${
-                            (item.sellerType === 'Gewerblich' || item.listing_user_type === 'Gewerblich')
-                                ? 'bg-[#0B3B24] text-white border border-emerald-400/30'
-                                : 'bg-[#107C41] text-white border border-emerald-300/30'
-                        }`}>
-                            <ShieldCheck className="w-2.5 h-2.5 text-white" />
-                            <span>{(item.sellerType || item.listing_user_type || 'Privat').toUpperCase()}</span>
-                        </span>
+                        {/* Campuna Club vs Seller Type Badge */}
+                        {item.is_campuna_club ? (
+                            <span className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg border border-yellow-200 flex items-center gap-1">
+                                <Crown className="w-2.5 h-2.5 fill-slate-950" />
+                                <span>CAMPUNA CLUB</span>
+                            </span>
+                        ) : (
+                            <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1 ${
+                                (item.sellerType === 'Gewerblich' || item.listing_user_type === 'Gewerblich')
+                                    ? 'bg-[#0B3B24] text-white border border-emerald-400/30'
+                                    : 'bg-[#107C41] text-white border border-emerald-300/30'
+                            }`}>
+                                <ShieldCheck className="w-2.5 h-2.5 text-white" />
+                                <span>{(item.sellerType || item.listing_user_type || 'Privat').toUpperCase()}</span>
+                            </span>
+                        )}
                     </div>
 
                     <button

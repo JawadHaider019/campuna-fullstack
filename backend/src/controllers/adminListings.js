@@ -14,7 +14,8 @@ export const getAdminListings = async (req, res) => {
             search = '',
             status = 'ALL',
             category = 'ALL',
-            user_type = 'ALL'
+            user_type = 'ALL',
+            owner = 'ALL'
         } = req.query;
 
         const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -55,7 +56,9 @@ export const getAdminListings = async (req, res) => {
             paramIndex++;
         }
 
-        if (user_type && user_type !== 'ALL') {
+        if (owner === 'club' || owner === 'me' || user_type === 'CAMPUNA_CLUB') {
+            conditions.push(`(u.role = 'ADMIN' OR cp.company_name = 'Campuna Club')`);
+        } else if (user_type && user_type !== 'ALL') {
             params.push(user_type);
             conditions.push(`u.user_type = $${paramIndex}`);
             paramIndex++;
@@ -134,8 +137,11 @@ export const getAdminListings = async (req, res) => {
                 COUNT(CASE WHEN status = 'REVIEW' THEN 1 END) as review_count,
                 COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) as rejected_count,
                 COUNT(CASE WHEN status = 'DRAFT' THEN 1 END) as draft_count,
+                COUNT(CASE WHEN u.role = 'ADMIN' OR cp.company_name = 'Campuna Club' THEN 1 END) as campuna_club_count,
                 COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN price ELSE 0 END), 0) as total_active_value
-            FROM listings
+            FROM listings l
+            LEFT JOIN users u ON l.user_id = u.id
+            LEFT JOIN company_profiles cp ON u.id = cp.user_id
         `;
 
         // Distinct Categories Query
@@ -158,12 +164,15 @@ export const getAdminListings = async (req, res) => {
 
         // Format listings
         const formattedListings = listingsResult.rows.map(row => {
-            const isCommercial = row.seller_type === 'COMMERCIAL';
-            const sellerName = isCommercial
+            const isCampunaClub = row.seller_role === 'ADMIN' || row.company_name === 'Campuna Club';
+            const isCommercial = row.seller_type === 'COMMERCIAL' || isCampunaClub;
+            const sellerName = isCampunaClub
+                ? 'Campuna Club'
+                : isCommercial
                 ? (row.company_name || 'Gewerblicher Händler')
                 : (`${row.private_first_name || ''} ${row.private_last_name || ''}`.trim() || 'Privatanbieter');
 
-            const sellerAvatar = isCommercial ? row.company_logo : row.private_avatar;
+            const sellerAvatar = isCampunaClub ? '/logo.webp' : (isCommercial ? row.company_logo : row.private_avatar);
 
             // Ensure images is always an array
             let imagesArray = [];
@@ -194,6 +203,8 @@ export const getAdminListings = async (req, res) => {
                 boosted_until: row.boosted_until,
                 is_boosted: Boolean(row.is_boosted),
                 images: imagesArray,
+                is_campuna_club: isCampunaClub,
+                is_own_listing: isCampunaClub || row.user_id === req.user?.id,
                 reviewed_by_id: row.reviewed_by_id,
                 reviewed_by_type: row.reviewed_by_type,
                 reviewed_at: row.reviewed_at,
@@ -202,10 +213,10 @@ export const getAdminListings = async (req, res) => {
                 seller: {
                     name: sellerName,
                     email: row.seller_email || '',
-                    type: isCommercial ? 'COMMERCIAL' : 'PRIVATE',
+                    type: isCampunaClub ? 'COMMERCIAL' : (isCommercial ? 'COMMERCIAL' : 'PRIVATE'),
                     avatar: sellerAvatar || '',
                     phone: row.company_phone || '',
-                    tier: row.company_tier || 'FREE'
+                    tier: isCampunaClub ? 'BUSINESS' : (row.company_tier || 'FREE')
                 }
             };
         });
@@ -228,6 +239,7 @@ export const getAdminListings = async (req, res) => {
                 reviewCount: parseInt(summaryRow.review_count || 0, 10),
                 rejectedCount: parseInt(summaryRow.rejected_count || 0, 10),
                 draftCount: parseInt(summaryRow.draft_count || 0, 10),
+                campunaClubCount: parseInt(summaryRow.campuna_club_count || 0, 10),
                 totalActiveValue: parseFloat(summaryRow.total_active_value || 0)
             },
             categories: availableCategories

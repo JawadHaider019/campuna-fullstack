@@ -18,11 +18,13 @@ import {
 } from 'lucide-react';
 import { getAllProfiles } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
+import { toast } from 'react-hot-toast';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
+import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1000&q=80';
 const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
@@ -44,8 +46,9 @@ function buildProviderSlug(name = '', id = '') {
 }
 
 // ─── Provider Card Component ──────────────────────────────────────────────────────────
-function ProviderCard({ partner }) {
+function ProviderCard({ partner, onAuthRequired }) {
     const router = useRouter();
+    const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const [coverSrc, setCoverSrc] = useState(getImageUrl(partner.coverImage, DEFAULT_COVER));
     const [logoSrc, setLogoSrc] = useState(getImageUrl(partner.logo, DEFAULT_LOGO));
 
@@ -53,7 +56,16 @@ function ProviderCard({ partner }) {
 
     const handleCardClick = () => {
         const slug = buildProviderSlug(partner.name, partner.id);
-        router.push(`/anbieter/${slug}`);
+        const targetUrl = `/anbieter/${slug}`;
+        if (!isLoggedIn) {
+            if (onAuthRequired) {
+                onAuthRequired(targetUrl);
+            } else {
+                router.push(`/login?returnUrl=${encodeURIComponent(targetUrl)}`);
+            }
+            return;
+        }
+        router.push(targetUrl);
     };
 
     return (
@@ -158,6 +170,7 @@ function ProvidersContent() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLocation, setSelectedLocation] = useState('all');
     const [sortBy, setSortBy] = useState('listings'); // 'listings', 'rating', 'name'
+    const [authModalState, setAuthModalState] = useState({ isOpen: false, returnUrl: '' });
 
     const [providers, setProviders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -417,7 +430,11 @@ function ProvidersContent() {
                     // Grid
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
                         {sortedProviders.map((partner, idx) => (
-                            <ProviderCard key={`${partner.id || partner.name}-${idx}`} partner={partner} />
+                            <ProviderCard
+                                key={`${partner.id || partner.name}-${idx}`}
+                                partner={partner}
+                                onAuthRequired={(url) => setAuthModalState({ isOpen: true, returnUrl: url })}
+                            />
                         ))}
                     </div>
                 )}
@@ -437,6 +454,14 @@ function ProvidersContent() {
                 </div>
                 <CategoriesSection showHeader={false} />
             </section>
+
+            {/* ── Standard Auth Required Modal ── */}
+            <AuthRequiredModal
+                isOpen={authModalState.isOpen}
+                onClose={() => setAuthModalState({ isOpen: false, returnUrl: '' })}
+                context="profile"
+                returnUrl={authModalState.returnUrl}
+            />
 
         </div>
     );

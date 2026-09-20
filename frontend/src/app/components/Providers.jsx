@@ -6,12 +6,15 @@ import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAllProfiles } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
+import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/imageUrl';
+import AuthRequiredModal from './AuthRequiredModal';
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1513311068348-19c8fbdc0bb6?auto=format&fit=crop&w=1200&q=80';
 const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=400&q=80';
 
-const ProviderCard = React.memo(({ partner, onPartnerClick, router }) => {
+const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, router }) => {
+    const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const [coverSrc, setCoverSrc] = useState(getImageUrl(partner.coverImage, DEFAULT_COVER));
     const [logoSrc, setLogoSrc] = useState(getImageUrl(partner.logo, DEFAULT_LOGO));
 
@@ -21,7 +24,6 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, router }) => {
     }, [partner.coverImage, partner.logo]);
 
     const handleCardClick = () => {
-        if (onPartnerClick) onPartnerClick(partner.name);
         const nameSlug = partner.name
             .toLowerCase()
             .replace(/ä/g, 'ae')
@@ -30,8 +32,19 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, router }) => {
             .replace(/ß/g, 'ss')
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
-        // Embed user UUID or name slug at the end so the details page can look up the profile
-        router.push(`/anbieter/${nameSlug}-${partner.id}`);
+        const targetUrl = `/anbieter/${nameSlug}-${partner.id}`;
+        if (onPartnerClick) onPartnerClick(partner.name);
+
+        if (!isLoggedIn) {
+            if (onAuthRequired) {
+                onAuthRequired(targetUrl);
+            } else {
+                router.push(`/login?returnUrl=${encodeURIComponent(targetUrl)}`);
+            }
+            return;
+        }
+
+        router.push(targetUrl);
     };
 
     return (
@@ -104,6 +117,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
     const rowRef = useRef(null);
     const [constraints, setConstraints] = useState(0);
     const [isDesktop, setIsDesktop] = useState(false);
+    const [authModalState, setAuthModalState] = useState({ isOpen: false, returnUrl: '' });
 
     const { user } = useAuthStore();
     const [providersList, setProvidersList] = useState([]);
@@ -263,6 +277,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                                         key={`${partner.id}-${idx}`}
                                         partner={partner}
                                         onPartnerClick={onPartnerClick}
+                                        onAuthRequired={(url) => setAuthModalState({ isOpen: true, returnUrl: url })}
                                         router={router}
                                     />
                                 ))}
@@ -284,6 +299,14 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                     </div>
                 </div>
             </div>
+
+            {/* ── Standard Auth Required Modal ── */}
+            <AuthRequiredModal
+                isOpen={authModalState.isOpen}
+                onClose={() => setAuthModalState({ isOpen: false, returnUrl: '' })}
+                context="profile"
+                returnUrl={authModalState.returnUrl}
+            />
         </section>
     );
 }

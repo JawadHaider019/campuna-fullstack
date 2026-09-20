@@ -24,7 +24,9 @@ import {
     Rocket,
     X,
     Send,
-    Sparkles
+    Sparkles,
+    Lock,
+    ArrowRight
 } from 'lucide-react';
 import { getPublicProfile } from '@/api/profile';
 import { getListingsByUser } from '@/api/listings';
@@ -37,6 +39,7 @@ import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
+import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
 
@@ -361,6 +364,14 @@ export default function ProviderDetails() {
     const [notFound, setNotFound] = useState(false);
     const [coverSrc, setCoverSrc] = useState(DEFAULT_COVER);
     const [logoSrc, setLogoSrc] = useState(DEFAULT_LOGO);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Auth Modal State
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
     // Chat / Message Modal State
     const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -369,8 +380,7 @@ export default function ProviderDetails() {
 
     const handleOpenContactModal = () => {
         if (!isLoggedIn) {
-            toast.error('Bitte melde dich an, um eine Nachricht zu senden.');
-            router.push(`/login?returnUrl=/anbieter/${encodeURIComponent(rawSlug)}`);
+            setIsAuthModalOpen(true);
             return;
         }
         if (currentUser?.id && provider?.id && String(currentUser.id).toLowerCase() === String(provider.id).toLowerCase()) {
@@ -589,6 +599,20 @@ export default function ProviderDetails() {
     if (loading) {
         return (
             <CircleLoader size="lg" color="forest" fullPage />
+        );
+    }
+
+    // ── Not Logged In Protection ───────────────────────────────────────────────
+    if (mounted && !isLoggedIn) {
+        return (
+            <div className="min-h-screen bg-sand flex flex-col items-center justify-center pt-24 pb-16 px-4">
+                <AuthRequiredModal
+                    isOpen={true}
+                    onClose={() => router.push('/')}
+                    context="profile"
+                    returnUrl={`/anbieter/${encodeURIComponent(rawSlug)}`}
+                />
+            </div>
         );
     }
 
@@ -1083,6 +1107,14 @@ export default function ProviderDetails() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* ── Standard Auth Required Modal ── */}
+            <AuthRequiredModal
+                isOpen={isAuthModalOpen}
+                onClose={() => setIsAuthModalOpen(false)}
+                context="chat"
+                returnUrl={`/anbieter/${encodeURIComponent(rawSlug)}`}
+            />
         </div>
     );
 }

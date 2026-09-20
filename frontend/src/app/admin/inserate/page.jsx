@@ -32,7 +32,8 @@ import {
     Star,
     Rocket,
     Phone,
-    Pencil
+    Pencil,
+    Crown
 } from 'lucide-react';
 import {
     getAdminListings,
@@ -58,6 +59,7 @@ export default function AdminListingsPage() {
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [categoryFilter, setCategoryFilter] = useState('ALL');
     const [userTypeFilter, setUserTypeFilter] = useState('ALL');
+    const [ownerFilter, setOwnerFilter] = useState('ALL'); // 'ALL' | 'CLUB'
     const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12, totalPages: 1 });
@@ -67,6 +69,7 @@ export default function AdminListingsPage() {
         reviewCount: 0,
         rejectedCount: 0,
         draftCount: 0,
+        campunaClubCount: 0,
         totalActiveValue: 0
     });
 
@@ -90,7 +93,8 @@ export default function AdminListingsPage() {
                 search: search.trim() || undefined,
                 status: statusFilter,
                 category: categoryFilter,
-                user_type: userTypeFilter
+                user_type: userTypeFilter,
+                owner: ownerFilter === 'CLUB' ? 'club' : undefined
             });
 
             if (res.data?.success) {
@@ -107,7 +111,7 @@ export default function AdminListingsPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, search, statusFilter, categoryFilter, userTypeFilter]);
+    }, [page, search, statusFilter, categoryFilter, userTypeFilter, ownerFilter]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -441,6 +445,26 @@ export default function AdminListingsPage() {
                     {/* Filter Controls */}
                     <div className="flex flex-wrap items-center gap-2">
 
+                        {/* Campuna Club Filter Toggle Chip */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOwnerFilter(prev => prev === 'CLUB' ? 'ALL' : 'CLUB');
+                                setPage(1);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${ownerFilter === 'CLUB'
+                                ? 'bg-forest text-gold border-gold/50 shadow-sm ring-1 ring-gold/40'
+                                : 'bg-[#F8F9FA] hover:bg-white text-slate-700 border-[#E2E4E8] hover:border-gold/40'
+                                }`}
+                        >
+                            <Crown className={`w-3.5 h-3.5 ${ownerFilter === 'CLUB' ? 'text-gold' : 'text-amber-500'}`} />
+                            <span>Campuna Club</span>
+                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${ownerFilter === 'CLUB' ? 'bg-gold text-forest' : 'bg-slate-200 text-slate-700'
+                                }`}>
+                                {summary.campunaClubCount || 0}
+                            </span>
+                        </button>
+
                         {/* Status Tabs */}
                         <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center text-xs">
                             {[
@@ -551,6 +575,7 @@ export default function AdminListingsPage() {
                                     listings.map((item) => {
                                         const mainImage = item.images?.[0] ? getImageUrl(item.images[0], '/logo.webp') : '/logo.webp';
                                         const isReview = item.status === 'REVIEW';
+                                        const isCampunaClub = Boolean(item.is_campuna_club);
 
                                         return (
                                             <tr
@@ -577,22 +602,26 @@ export default function AdminListingsPage() {
                                                             )}
                                                         </div>
                                                         <div className="min-w-0 max-w-xs">
-                                                            {(Boolean(item.is_boosted) || Boolean(item.featured)) && (
-                                                                <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                                                                    {Boolean(item.is_boosted) && (
-                                                                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md">
-                                                                            <Rocket className="w-2.5 h-2.5 text-amber-800" />
-                                                                            <span>Boosted</span>
-                                                                        </span>
-                                                                    )}
-                                                                    {Boolean(item.featured) && (
-                                                                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md">
-                                                                            <Star className="w-2.5 h-2.5 text-emerald-800 fill-emerald-800" />
-                                                                            <span>Empfohlen</span>
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                                                                {isCampunaClub && (
+                                                                    <span className="inline-flex items-center gap-1 bg-forest text-gold border border-gold/40 text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-xs">
+                                                                        <Crown className="w-2.5 h-2.5 text-gold" />
+                                                                        <span>Campuna Club</span>
+                                                                    </span>
+                                                                )}
+                                                                {Boolean(item.is_boosted) && (
+                                                                    <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md">
+                                                                        <Rocket className="w-2.5 h-2.5 text-amber-800" />
+                                                                        <span>Boosted</span>
+                                                                    </span>
+                                                                )}
+                                                                {Boolean(item.featured) && (
+                                                                    <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-md">
+                                                                        <Star className="w-2.5 h-2.5 text-emerald-800 fill-emerald-800" />
+                                                                        <span>Empfohlen</span>
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => {
@@ -629,17 +658,19 @@ export default function AdminListingsPage() {
                                                 <td className="py-3.5 px-4">
                                                     <div className="space-y-0.5">
                                                         <div className="font-semibold text-slate-800 text-xs flex items-center gap-1.5">
-                                                            {item.seller?.type === 'COMMERCIAL' ? (
+                                                            {isCampunaClub ? (
+                                                                <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                                            ) : item.seller?.type === 'COMMERCIAL' ? (
                                                                 <Building2 className="w-3 h-3 text-forest shrink-0" />
                                                             ) : (
                                                                 <User className="w-3 h-3 text-slate-400 shrink-0" />
                                                             )}
-                                                            <span className="truncate max-w-[120px]" title={item.seller?.name}>
+                                                            <span className="truncate max-w-[120px] font-bold" title={item.seller?.name}>
                                                                 {item.seller?.name}
                                                             </span>
                                                         </div>
-                                                        <div className="text-[11px] text-slate-400 truncate max-w-[120px]">
-                                                            {item.seller?.email}
+                                                        <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                                                            {isCampunaClub ? 'Offizielles Profil' : item.seller?.email}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -669,6 +700,26 @@ export default function AdminListingsPage() {
                                                 {/* 8. Moderation Actions */}
                                                 <td className="py-3.5 px-5 text-right whitespace-nowrap">
                                                     <div className="inline-flex items-center gap-1">
+
+                                                        {/* Edit Action Button */}
+                                                        <button
+                                                            onClick={() => router.push(`/admin/inserat-erstellen?edit=${item.id}`)}
+                                                            title="Inserat bearbeiten"
+                                                            className="p-1.5 text-slate-500 hover:text-forest hover:bg-forest/10 rounded-lg transition-colors cursor-pointer"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </button>
+
+                                                        {/* Live Link Button */}
+                                                        <a
+                                                            href={`/inserate/${item.slug || item.id}`}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            title="Live auf Marktplatz ansehen"
+                                                            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                                        >
+                                                            <ExternalLink className="w-4 h-4" />
+                                                        </a>
 
                                                         {/* Feature / Empfehlen Toggle */}
                                                         <button
@@ -793,6 +844,7 @@ export default function AdminListingsPage() {
                             listings.map((item) => {
                                 const mainImage = item.images?.[0] ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
                                 const isBoosted = Boolean(item.is_boosted);
+                                const isCampunaClub = Boolean(item.is_campuna_club);
                                 const features = [
                                     item.category || 'Camping Zubehör',
                                     item.subcategory,
@@ -825,6 +877,11 @@ export default function AdminListingsPage() {
                                                 />
                                                 {/* Top Status & Boost Badges */}
                                                 <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
+                                                    {isCampunaClub && (
+                                                        <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-forest text-gold border border-gold/40 shadow-xs flex items-center gap-1 font-sans">
+                                                            <Crown className="w-2.5 h-2.5 text-gold" /> Club
+                                                        </span>
+                                                    )}
                                                     {item.status === 'APPROVED' && (
                                                         <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-700 text-white shadow-xs">
                                                             Veröffentlicht
@@ -894,7 +951,9 @@ export default function AdminListingsPage() {
                                                 {/* Seller & Date Info */}
                                                 <div className="flex items-center justify-between text-[11px] text-charcoal/50 pt-1">
                                                     <div className="flex items-center gap-1.5 truncate">
-                                                        {item.seller?.type === 'COMMERCIAL' ? (
+                                                        {isCampunaClub ? (
+                                                            <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                                        ) : item.seller?.type === 'COMMERCIAL' ? (
                                                             <Building2 className="w-3.5 h-3.5 text-forest shrink-0" />
                                                         ) : (
                                                             <User className="w-3.5 h-3.5 text-charcoal/40 shrink-0" />
@@ -918,35 +977,45 @@ export default function AdminListingsPage() {
                                             </div>
                                         </div>
 
-                                        {/* 3 Admin Action Buttons Footer */}
-                                        <div className="p-4 sm:p-5 pt-0 mt-2 border-t border-beige/60 pt-3 grid grid-cols-3 gap-2">
-                                            {/* 1. Feature / Empfehlen Toggle Button */}
+                                        {/* Action Buttons Footer */}
+                                        <div className="p-4 sm:p-5 pt-0 mt-2 border-t border-beige/60 pt-3 grid grid-cols-4 gap-1.5">
+                                            {/* 1. Edit Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => router.push(`/admin/inserat-erstellen?edit=${item.id}`)}
+                                                title="Inserat bearbeiten"
+                                                className="flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-[#faf8f3] hover:bg-forest hover:text-sand text-slate-700 border border-slate-200"
+                                            >
+                                                <Pencil className="w-3.5 h-3.5" />
+                                                <span className="hidden sm:inline text-[11px]">Edit</span>
+                                            </button>
+
+                                            {/* 2. Feature / Empfehlen Toggle Button */}
                                             <button
                                                 type="button"
                                                 onClick={() => handleToggleFeatured(item)}
                                                 disabled={actionLoading}
                                                 title={item.featured ? "Empfehlung entfernen" : "Als Feature markieren"}
-                                                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs border ${
-                                                    item.featured
-                                                        ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-800'
-                                                        : 'bg-[#faf8f3] hover:bg-sand text-charcoal border-beige'
-                                                }`}
+                                                className={`flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border ${item.featured
+                                                    ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-800'
+                                                    : 'bg-[#faf8f3] hover:bg-sand text-charcoal border-beige'
+                                                    }`}
                                             >
                                                 <Star className={`w-3.5 h-3.5 ${item.featured ? 'fill-gold text-gold' : 'text-charcoal/60'}`} />
-                                                <span className="truncate">{item.featured ? 'Featured' : 'Feature'}</span>
+                                                <span className="hidden sm:inline text-[11px] truncate">{item.featured ? 'Aktiv' : 'Stern'}</span>
                                             </button>
 
-                                            {/* 2. Block / Sperren Button */}
+                                            {/* 3. Block / Sperren Button */}
                                             {item.status === 'REJECTED' ? (
                                                 <button
                                                     type="button"
                                                     onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
                                                     disabled={actionLoading}
                                                     title="Inserat entsperren / freigeben"
-                                                    className="flex items-center justify-center gap-1.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 border border-emerald-200 py-2 px-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                                    className="flex items-center justify-center gap-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 border border-emerald-200 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
                                                 >
                                                     <CheckCircle2 className="w-3.5 h-3.5" />
-                                                    <span className="truncate">Freigeben</span>
+                                                    <span className="hidden sm:inline text-[11px] truncate">Frei</span>
                                                 </button>
                                             ) : (
                                                 <button
@@ -957,14 +1026,14 @@ export default function AdminListingsPage() {
                                                     }}
                                                     disabled={actionLoading}
                                                     title="Inserat sperren / ablehnen"
-                                                    className="flex items-center justify-center gap-1.5 bg-amber-50/90 hover:bg-amber-600 hover:text-white text-amber-800 border border-amber-200/90 py-2 px-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                                    className="flex items-center justify-center gap-1 bg-amber-50/90 hover:bg-amber-600 hover:text-white text-amber-800 border border-amber-200/90 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
                                                 >
                                                     <XCircle className="w-3.5 h-3.5" />
-                                                    <span className="truncate">Sperren</span>
+                                                    <span className="hidden sm:inline text-[11px] truncate">Sperren</span>
                                                 </button>
                                             )}
 
-                                            {/* 3. Delete / Löschen Button */}
+                                            {/* 4. Delete / Löschen Button */}
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -973,10 +1042,10 @@ export default function AdminListingsPage() {
                                                 }}
                                                 disabled={actionLoading}
                                                 title="Inserat endgültig löschen"
-                                                className="flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 py-2 px-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                                className="flex items-center justify-center gap-1 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
-                                                <span className="truncate">Löschen</span>
+                                                <span className="hidden sm:inline text-[11px] truncate">Löschen</span>
                                             </button>
                                         </div>
                                     </div>
@@ -1030,6 +1099,11 @@ export default function AdminListingsPage() {
                         <div className="p-5 sm:p-6 border-b border-[#E8EAEF] flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
+                                    {selectedListing.is_campuna_club && (
+                                        <span className="inline-flex items-center gap-1 bg-forest text-gold border border-gold/40 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">
+                                            <Crown className="w-3 h-3 text-gold" /> Campuna Club
+                                        </span>
+                                    )}
                                     {renderStatusBadge(selectedListing.status)}
                                     <span className="text-xs text-slate-400 font-mono">
                                         ID: {selectedListing.id}
@@ -1039,16 +1113,59 @@ export default function AdminListingsPage() {
                                     {selectedListing.title}
                                 </h2>
                             </div>
-                            <button
-                                onClick={() => setDetailModalOpen(false)}
-                                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                            >
-                                ✕
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        setDetailModalOpen(false);
+                                        router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl border border-forest/20 bg-sand/50 text-forest text-xs font-bold hover:bg-forest hover:text-sand transition-all flex items-center gap-1.5 cursor-pointer"
+                                    title="Inserat bearbeiten"
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    <span>Bearbeiten</span>
+                                </button>
+                                <button
+                                    onClick={() => setDetailModalOpen(false)}
+                                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                >
+                                    ✕
+                                </button>
+                            </div>
                         </div>
 
                         {/* Modal Body */}
                         <div className="p-5 sm:p-6 space-y-6 flex-1">
+
+                            {/* Campuna Club Official Banner */}
+                            {selectedListing.is_campuna_club && (
+                                <div className="p-4 rounded-2xl bg-gradient-to-r from-forest via-[#003807] to-[#002204] text-white border border-gold/40 flex items-center justify-between gap-3 shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 text-gold flex items-center justify-center font-bold">
+                                            <Crown className="w-5 h-5 text-gold" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                                                <span>Offizielles Campuna Club Inserat</span>
+                                                <span className="text-[9px] px-2 py-0.2 rounded-full bg-gold/20 text-gold font-mono font-bold">BUSINESS</span>
+                                            </h4>
+                                            <p className="text-[11px] text-sand/80 mt-0.5">
+                                                Veröffentlicht unter dem offiziellen Business-Profil des Campuna Clubs.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setDetailModalOpen(false);
+                                            router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
+                                        }}
+                                        className="px-3.5 py-1.5 rounded-xl bg-gold text-forest text-xs font-bold hover:bg-white transition-all flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
+                                    >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                        <span>Bearbeiten</span>
+                                    </button>
+                                </div>
+                            )}
 
                             {/* 1. Image Gallery */}
                             {selectedListing.images?.length > 0 ? (
@@ -1135,21 +1252,23 @@ export default function AdminListingsPage() {
                                 </h4>
                                 <div className="p-4 bg-slate-50 border border-[#E8EAEF] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-forest text-sand font-bold flex items-center justify-center text-sm">
-                                            {selectedListing.seller?.name?.charAt(0) || 'U'}
+                                        <div className="w-10 h-10 rounded-full bg-forest text-gold font-bold flex items-center justify-center text-sm border border-gold/30">
+                                            {selectedListing.is_campuna_club ? <Crown className="w-5 h-5 text-gold" /> : (selectedListing.seller?.name?.charAt(0) || 'U')}
                                         </div>
                                         <div>
                                             <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
                                                 <span>{selectedListing.seller?.name}</span>
-                                                <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${selectedListing.seller?.type === 'COMMERCIAL'
+                                                <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${selectedListing.is_campuna_club
+                                                    ? 'bg-forest text-gold border border-gold/40'
+                                                    : selectedListing.seller?.type === 'COMMERCIAL'
                                                     ? 'bg-amber-100 text-amber-900'
                                                     : 'bg-slate-200 text-slate-700'
                                                     }`}>
-                                                    {selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'}
+                                                    {selectedListing.is_campuna_club ? 'Campuna Club Business' : (selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat')}
                                                 </span>
                                             </div>
                                             <div className="text-xs text-slate-500">
-                                                {selectedListing.seller?.email}
+                                                {selectedListing.is_campuna_club ? 'Offizielles Business-Konto' : selectedListing.seller?.email}
                                             </div>
                                         </div>
                                     </div>
@@ -1167,8 +1286,19 @@ export default function AdminListingsPage() {
                         {/* Modal Actions Footer */}
                         <div className="p-4 sm:p-5 bg-slate-50 border-t border-[#E8EAEF] flex flex-wrap items-center justify-between gap-3 sticky bottom-0 rounded-b-3xl">
                             <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => {
+                                        setDetailModalOpen(false);
+                                        router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
+                                    }}
+                                    className="px-3.5 py-2 rounded-xl bg-sand/60 border border-gold/40 text-xs font-bold text-forest hover:bg-gold transition-all flex items-center gap-1.5 cursor-pointer"
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    <span>Bearbeiten</span>
+                                </button>
+
                                 <a
-                                    href={`/inserate/${selectedListing.id}`}
+                                    href={`/inserate/${selectedListing.slug || selectedListing.id}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="px-3.5 py-2 rounded-xl bg-white border border-[#E2E4E8] text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-all"

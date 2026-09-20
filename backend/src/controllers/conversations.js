@@ -331,7 +331,7 @@ export const getConversations = async (req, res) => {
                   AND sender_id <> $1 
                   AND is_read = false
             ) unread ON true
-            WHERE c.buyer_id = $1 OR c.seller_id = $1
+            WHERE c.buyer_id = $1 OR c.seller_id = $1 OR (u_s.role = 'ADMIN') OR (l.user_id = $1)
             ORDER BY c.updated_at DESC
         `;
 
@@ -346,7 +346,7 @@ export const getConversations = async (req, res) => {
                     id: row.seller_id,
                     role_in_chat: 'SELLER',
                     name: row.seller_type === 'COMMERCIAL'
-                        ? (row.seller_company_name || 'Gewerblicher Anbieter')
+                        ? (row.seller_company_name || 'Campuna Club')
                         : (`${row.seller_first_name || ''} ${row.seller_last_name || ''}`.trim() || 'Privatverkäufer'),
                     type: row.seller_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                     avatar: row.seller_type === 'COMMERCIAL' ? (row.seller_logo || row.seller_avatar) : row.seller_avatar
@@ -411,12 +411,15 @@ export const getConversations = async (req, res) => {
 export const getUnreadCount = async (req, res) => {
     try {
         const userId = req.user.id;
+        const isAdmin = req.user.role === 'ADMIN';
 
         const result = await pool.query(
             `SELECT COUNT(*)::int as count 
              FROM messages m 
              JOIN conversations c ON m.conversation_id = c.id 
-             WHERE (c.buyer_id = $1 OR c.seller_id = $1) 
+             JOIN users u_s ON c.seller_id = u_s.id
+             LEFT JOIN listings l ON c.listing_id = l.id
+             WHERE (c.buyer_id = $1 OR c.seller_id = $1 ${isAdmin ? "OR u_s.role = 'ADMIN' OR l.user_id = $1" : ''}) 
                AND m.sender_id <> $1 
                AND m.is_read = false`,
             [userId]
@@ -623,8 +626,9 @@ export const sendMessage = async (req, res) => {
         const conv = convRes.rows[0];
         const isBuyer = String(conv.buyer_id).toLowerCase() === String(userId).toLowerCase();
         const isSeller = String(conv.seller_id).toLowerCase() === String(userId).toLowerCase();
+        const isAdmin = req.user?.role === 'ADMIN';
 
-        if (!isBuyer && !isSeller) {
+        if (!isBuyer && !isSeller && !isAdmin) {
             return res.status(403).json({ success: false, error: 'Keine Berechtigung zum Senden in dieser Unterhaltung.' });
         }
 

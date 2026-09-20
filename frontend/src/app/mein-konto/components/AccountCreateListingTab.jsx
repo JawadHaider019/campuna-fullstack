@@ -150,6 +150,7 @@ export default function AccountCreateListingTab({
         await new Promise(r => setTimeout(r, 450));
 
         try {
+            const hasExistingText = Boolean(description && description.trim());
             const generated = generateAutoDescription({
                 title: title.trim(),
                 category,
@@ -159,13 +160,20 @@ export default function AccountCreateListingTab({
                 isNegotiable,
                 location: location.trim(),
                 sellerName,
-                style: selectedStyle
+                style: selectedStyle,
+                userNotes: description.trim()
             });
 
             setDescription(generated);
-            toast.success('Beschreibung erfolgreich generiert! Du kannst sie jetzt beliebig anpassen.', {
-                icon: '✨'
-            });
+            if (hasExistingText) {
+                toast.success('Beschreibung basierend auf deinen Stichpunkten & Angaben optimiert!', {
+                    icon: '✨'
+                });
+            } else {
+                toast.success('Beschreibung erfolgreich generiert! Du kannst sie jetzt beliebig anpassen.', {
+                    icon: '✨'
+                });
+            }
         } catch (err) {
             console.error('Error generating auto description:', err);
             toast.error('Fehler beim Generieren der Beschreibung.');
@@ -837,14 +845,14 @@ export default function AccountCreateListingTab({
 
                         <div className="space-y-1.5">
                             <textarea
-                                rows={8}
+                                rows={9}
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                                placeholder="Beschreibe dein Inserat detailliert: Ausstattung, Wartungshistorie, Maße, Zubehör und eventuelle Besonderheiten... Oder nutze oben den Button '✨ Auto-Beschreibung' für einen passgenauen Entwurf!"
+                                placeholder="Gib hier deine Stichpunkte, Ausstattungsmerkmale oder Notizen ein (z. B. Solar 200W, Thule Markise, TÜV neu, Nichtraucher, Allrad, 4 Schlafplätze...) und klicke oben auf '✨ Auto-Beschreibung', um daraus automatisch einen perfekten Anzeigentext zu erstellen – oder verfasse deinen Text direkt frei Hand!"
                                 className="w-full bg-[#faf8f3] border border-beige rounded-2xl p-4 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all leading-relaxed font-normal"
                             />
                             <p className="text-[10px] text-charcoal/50 font-sans">
-                                💡 <strong>Tipp:</strong> Die automatische Beschreibung orientiert sich an deinem Titel, deiner Kategorie und dem Zustand. Du kannst sie anschließend beliebig editieren.
+                                💡 <strong>Tipp:</strong> Wenn du bereits Stichpunkte oder Notizen im Feld hast, baut die Auto-Generierung deine Angaben direkt strukturiert in den Inseratstext ein!
                             </p>
                         </div>
                     </div>

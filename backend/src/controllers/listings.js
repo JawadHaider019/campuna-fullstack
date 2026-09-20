@@ -59,9 +59,9 @@ export const createListing = async (req, res) => {
             ).catch(() => {});
 
             await pool.query(
-                `INSERT INTO company_profiles (user_id, company_name, updated_at)
-                 VALUES ($1, 'Campuna Official', NOW())
-                 ON CONFLICT (user_id) DO NOTHING`,
+                `INSERT INTO company_profiles (user_id, company_name, tier, updated_at)
+                 VALUES ($1, 'Campuna Club', 'BUSINESS', NOW())
+                 ON CONFLICT (user_id) DO UPDATE SET company_name = 'Campuna Club', tier = 'BUSINESS'`,
                 [id]
             ).catch(() => {});
         }
@@ -95,6 +95,8 @@ export const createListing = async (req, res) => {
         const initialStatus = isAdmin ? 'APPROVED' : 'REVIEW';
         const listingPhone = req.body.phone && String(req.body.phone).trim() !== '' ? String(req.body.phone).trim() : null;
 
+        const initialFeatured = isAdmin && (req.body.featured === 'true' || req.body.featured === true);
+
         // 6. Create Listing in single table
         const insertRes = await pool.query(
             `INSERT INTO listings (
@@ -102,7 +104,7 @@ export const createListing = async (req, res) => {
                 condition, category, subcategory, status, featured, boosted_until, images, created_at, updated_at
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7, $8, $9,
-                $10, $11, $12, $13, false, NULL, $14, NOW(), NOW()
+                $10, $11, $12, $13, $14, NULL, $15, NOW(), NOW()
             ) RETURNING *`,
             [
                 listingId,
@@ -118,6 +120,7 @@ export const createListing = async (req, res) => {
                 category,
                 subcategory || '',
                 initialStatus,
+                initialFeatured,
                 imageUrls
             ]
         );
@@ -258,9 +261,13 @@ export const getAllListings = async (req, res) => {
                 l.created_at,
                 l.updated_at,
                 u.user_type as seller_type,
+                u.role as seller_role,
                 pp.first_name,
                 pp.last_name,
-                cp.company_name
+                pp.profile_image_url as private_avatar,
+                cp.company_name,
+                cp.logo_url as company_logo,
+                cp.tier as company_tier
             FROM listings l
             LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN private_profiles pp ON u.id = pp.user_id
@@ -274,10 +281,15 @@ export const getAllListings = async (req, res) => {
         const result = await pool.query(query);
 
         const mappedListings = result.rows.map(row => {
-            const isCommercial = row.seller_type === 'COMMERCIAL';
-            const sellerName = isCommercial
+            const isCampunaClub = row.seller_role === 'ADMIN' || row.company_name === 'Campuna Club';
+            const isCommercial = row.seller_type === 'COMMERCIAL' || isCampunaClub;
+            const sellerName = isCampunaClub
+                ? 'Campuna Club'
+                : isCommercial
                 ? (row.company_name || 'Gewerblicher Anbieter')
                 : (`${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Privatanbieter');
+
+            const sellerAvatar = isCampunaClub ? '/logo.webp' : (isCommercial ? row.company_logo : row.private_avatar);
 
             let imagesArray = [];
             if (Array.isArray(row.images)) {
@@ -307,11 +319,15 @@ export const getAllListings = async (req, res) => {
                 boosted_until: row.boosted_until,
                 is_boosted: Boolean(row.is_boosted),
                 images: imagesArray,
+                is_campuna_club: isCampunaClub,
                 created_at: row.created_at,
                 updated_at: row.updated_at,
                 seller: {
                     name: sellerName,
                     type: isCommercial ? 'Gewerblich' : 'Privat',
+                    avatar: sellerAvatar || '',
+                    tier: isCampunaClub ? 'BUSINESS' : (row.company_tier || 'FREE'),
+                    is_campuna_club: isCampunaClub,
                     verified: true
                 }
             };
@@ -382,7 +398,7 @@ export const getListingDetail = async (req, res) => {
         }
 
         let profile = null;
-        if (user.user_type === 'COMMERCIAL') {
+        if (user.user_type === 'COMMERCIAL' || user.role === 'ADMIN') {
             const cpRes = await pool.query('SELECT * FROM company_profiles WHERE user_id = $1', [listing.user_id]);
             profile = cpRes.rows[0];
         } else {
@@ -390,10 +406,30 @@ export const getListingDetail = async (req, res) => {
             profile = ppRes.rows[0];
         }
 
-        const sellerType = user.user_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat';
-        const sellerName = user.user_type === 'COMMERCIAL'
-            ? (profile?.company_name || 'Gewerblicher Anbieter')
-            : (`${profile?.first_name || ''} ${profile?.last_name || ''}`.trim() || 'Privatverkäufer');
+        const isAuthenticated = Boolean(req.user);
+        const isCampunaClub = user.role === 'ADMIN' || profile?.company_name === 'Campuna Club';
+        const sellerType = isCampunaClub ? 'Gewerblich' : (user.user_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat');
+        
+        // Privacy Compliance: Private seller full surname and phone number are protected behind registration
+        let sellerName = 'Privatverkäufer';
+        if (isCampunaClub) {
+            sellerName = 'Campuna Club';
+        } else if (user.user_type === 'COMMERCIAL') {
+            sellerName = profile?.company_name || 'Gewerblicher Anbieter';
+        } else {
+            const firstName = profile?.first_name ? profile.first_name.trim() : '';
+            const lastName = profile?.last_name ? profile.last_name.trim() : '';
+            if (isAuthenticated) {
+                sellerName = `${firstName} ${lastName}`.trim() || 'Privatverkäufer';
+            } else {
+                // For unauthenticated visitors: Show only first name + initial
+                const lastInitial = lastName ? `${lastName.charAt(0)}.` : '';
+                sellerName = `${firstName} ${lastInitial}`.trim() || 'Privatanbieter';
+            }
+        }
+
+        const sellerAvatar = isCampunaClub ? '/logo.webp' : (profile?.logo_url || profile?.profile_image_url || '');
+        const sellerTier = isCampunaClub ? 'BUSINESS' : (profile?.tier || 'FREE');
 
         const achRes = await pool.query('SELECT * FROM user_achievements WHERE user_id = $1', [listing.user_id]);
         const achievements = achRes.rows || [];
@@ -409,22 +445,36 @@ export const getListingDetail = async (req, res) => {
             }
         }
 
-        const sellerPhone = listing.phone || profile?.phone || '';
+        const rawPhone = listing.phone || profile?.phone || '';
+        const hasPhone = Boolean(rawPhone && rawPhone.trim() !== '');
+        
+        // Privacy: Only expose full phone number to logged-in users (or if official Campuna Club)
+        const isPhoneProtected = hasPhone && !isAuthenticated && !isCampunaClub;
+        const visiblePhone = (isAuthenticated || isCampunaClub) ? rawPhone : null;
 
         return res.status(200).json({
             success: true,
             listing: {
                 ...listing,
-                phone: sellerPhone,
+                phone: visiblePhone,
+                has_phone: hasPhone,
+                is_phone_protected: isPhoneProtected,
                 price: parseFloat(listing.price) || 0,
                 featured: Boolean(listing.featured),
                 boosted_until: listing.boosted_until,
                 is_boosted: Boolean(listing.is_boosted),
                 images: imagesArray,
+                is_campuna_club: isCampunaClub,
+                is_own_listing: isCampunaClub || (req.user && req.user.id === listing.user_id),
                 seller: {
                     name: sellerName,
                     type: sellerType,
-                    phone: sellerPhone,
+                    avatar: sellerAvatar,
+                    tier: sellerTier,
+                    is_campuna_club: isCampunaClub,
+                    phone: visiblePhone,
+                    has_phone: hasPhone,
+                    is_phone_protected: isPhoneProtected,
                     verified: true,
                     achievements
                 }
@@ -743,6 +793,10 @@ export const updateListing = async (req, res) => {
             ? (String(req.body.phone).trim() !== '' ? String(req.body.phone).trim() : null)
             : existingListing.phone;
 
+        const updateFeatured = (isAdmin && req.body.featured !== undefined)
+            ? (req.body.featured === 'true' || req.body.featured === true)
+            : existingListing.featured;
+
         // 6. Update listing: Set status to 'REVIEW' for regular users or preserve for ADMIN
         const updateRes = await pool.query(
             `UPDATE listings
@@ -758,11 +812,12 @@ export const updateListing = async (req, res) => {
                  subcategory = $10,
                  images = $11,
                  status = $12,
-                 reviewed_by_id = CASE WHEN $13 = TRUE THEN $14::uuid ELSE NULL END,
-                 reviewed_by_type = CASE WHEN $13 = TRUE THEN 'ADMIN' ELSE NULL END,
-                 reviewed_at = CASE WHEN $13 = TRUE THEN NOW() ELSE NULL END,
+                 featured = $13,
+                 reviewed_by_id = CASE WHEN $14 = TRUE THEN $15::uuid ELSE NULL END,
+                 reviewed_by_type = CASE WHEN $14 = TRUE THEN 'ADMIN' ELSE NULL END,
+                 reviewed_at = CASE WHEN $14 = TRUE THEN NOW() ELSE NULL END,
                  updated_at = NOW()
-             WHERE id = $15
+             WHERE id = $16
              RETURNING *`,
             [
                 title,
@@ -777,6 +832,7 @@ export const updateListing = async (req, res) => {
                 subcategory || '',
                 finalImages,
                 targetStatus,
+                updateFeatured,
                 isAdmin,
                 isAdmin ? userId : null,
                 id

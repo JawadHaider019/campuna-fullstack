@@ -19,9 +19,12 @@ import {
     BookOpen,
     ArrowUpRight,
     Loader2,
+    Crown,
+    MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminDashboardStats } from '@/api/admin';
+import { getUnreadMessagesCount } from '@/api/conversations';
 import { logoutUser } from '@/api/auth';
 import { toast } from 'react-hot-toast';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
@@ -34,6 +37,7 @@ export default function AdminLayout({ children }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
     const [pendingReportsCount, setPendingReportsCount] = useState(0);
+    const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
 
@@ -56,7 +60,7 @@ export default function AdminLayout({ children }) {
         }
     }, [mounted, isLoggedIn, user, router]);
 
-    // Load review queue & report count for live badges
+    // Load review queue, report count & unread messages for live badges
     useEffect(() => {
         if (mounted && isLoggedIn && user?.role === 'ADMIN') {
             getAdminDashboardStats()
@@ -71,6 +75,14 @@ export default function AdminLayout({ children }) {
                     }
                 })
                 .catch(() => { });
+
+            getUnreadMessagesCount()
+                .then(res => {
+                    if (res.success && typeof res.unread_count === 'number') {
+                        setUnreadMessagesCount(res.unread_count);
+                    }
+                })
+                .catch(() => { });
         }
     }, [mounted, isLoggedIn, user, pathname]);
 
@@ -82,6 +94,13 @@ export default function AdminLayout({ children }) {
             icon: BarChart3,
             badge: pendingCount > 0 ? String(pendingCount) : null,
             badgeColor: 'bg-amber-500 text-slate-900 font-black'
+        },
+        {
+            label: 'Nachrichten',
+            path: '/admin/nachrichten',
+            icon: MessageSquare,
+            badge: unreadMessagesCount > 0 ? String(unreadMessagesCount) : null,
+            badgeColor: 'bg-emerald-500 text-white font-black'
         },
         {
             label: 'Meldungen',
@@ -196,23 +215,28 @@ export default function AdminLayout({ children }) {
                     </div>
                 </div>
 
-                {/* Bottom User Account Pill */}
-                <div className="space-y-3 pt-6 border-t border-white/10">
-                    <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold px-1 block">
-                        USER ACCOUNT
-                    </span>
+                {/* Bottom User Account Pill: Campuna Club Business Profile */}
+                <div className="space-y-3 pt-4 border-t border-white/10">
+                    <div className="flex items-center justify-between px-1">
+                        <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold block">
+                            OFFIZIELLER ACCOUNT
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-mono">
+                            <Crown className="w-2.5 h-2.5 text-gold" /> BUSINESS
+                        </span>
+                    </div>
 
-                    <div className="flex items-center justify-between min-w-0">
+                    <div className="flex items-center justify-between min-w-0 bg-white/5 p-2 rounded-2xl border border-white/10">
                         <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-bold text-xs flex items-center justify-center border-2 border-gold/40 shadow-sm shrink-0">
-                                AD
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-extrabold text-xs flex items-center justify-center border-2 border-gold/60 shadow-sm shrink-0">
+                                CC
                             </div>
                             <div className="min-w-0 truncate text-left">
-                                <h5 className="text-xs font-bold text-white truncate leading-tight">
-                                    Campuna Admin
+                                <h5 className="text-xs font-bold text-white truncate leading-tight flex items-center gap-1">
+                                    <span>Campuna Club</span>
                                 </h5>
-                                <p className="text-[10px] font-mono text-gold/70 truncate">
-                                    #campuna-admin
+                                <p className="text-[10px] font-mono text-sand/60 truncate">
+                                    Business-Profil (Admin)
                                 </p>
                             </div>
                         </div>
