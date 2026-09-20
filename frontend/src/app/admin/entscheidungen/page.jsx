@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
 import {
@@ -496,7 +497,7 @@ export default function AdminDecisionsPage() {
                     </div>
                 ) : (
                     decisions.map((item) => {
-                        const mainImage = item.images?.[0] || '/logo.webp';
+                        const mainImage = item.images?.[0] ? getImageUrl(item.images[0], '/logo.webp') : '/logo.webp';
                         const isBorderline50 = item.ai?.score >= 31 && item.ai?.score < 75;
                         const needsAdminAction = item.listing_status === 'REVIEW' || item.ai?.moderation_status === 'PENDING';
 
@@ -758,7 +759,7 @@ export default function AdminDecisionsPage() {
                                 <div className="space-y-3">
                                     <div className="relative aspect-video sm:aspect-2/1 bg-slate-900 rounded-2xl overflow-hidden shadow-inner">
                                         <Image
-                                            src={selectedDecision.images[activeImageIdx] || selectedDecision.images[0] || '/logo.webp'}
+                                            src={selectedDecision.images[activeImageIdx] ? getImageUrl(selectedDecision.images[activeImageIdx], '/logo.webp') : (selectedDecision.images[0] ? getImageUrl(selectedDecision.images[0], '/logo.webp') : '/logo.webp')}
                                             alt={selectedDecision.title}
                                             fill
                                             className="object-contain"
@@ -776,7 +777,7 @@ export default function AdminDecisionsPage() {
                                                     }`}
                                                 >
                                                     <Image
-                                                        src={img}
+                                                        src={getImageUrl(img, '/logo.webp')}
                                                         alt={`Bild ${idx + 1}`}
                                                         fill
                                                         className="object-cover"
