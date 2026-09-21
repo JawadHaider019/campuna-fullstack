@@ -30,7 +30,8 @@ import {
     Eye,
     Building2,
     ShieldCheck,
-    Crown
+    Crown,
+    Briefcase
 } from 'lucide-react';
 import { CATEGORIES } from '@/data';
 import { createListing, updateListing, getListingDetail } from '@/api/listings';
@@ -344,7 +345,7 @@ function AdminListingFormContent() {
             if (isEditMode) {
                 const res = await updateListing(editId, formData);
                 if (res.data?.success || res.status === 200) {
-                    toast.success('Campuna Club Inserat erfolgreich aktualisiert!');
+                    toast.success('Business Inserat erfolgreich aktualisiert!');
                     router.push('/admin/inserate');
                 } else {
                     toast.error(res.data?.error || 'Aktualisierung fehlgeschlagen.');
@@ -352,7 +353,7 @@ function AdminListingFormContent() {
             } else {
                 const res = await createListing(formData);
                 if (res.data?.success || res.status === 201) {
-                    toast.success('Inserat erfolgreich als Campuna Club veröffentlicht!');
+                    toast.success('Inserat erfolgreich als Business Inserat veröffentlicht!');
                     router.push('/admin/inserate');
                 } else {
                     toast.error(res.data?.error || 'Erstellung fehlgeschlagen.');
@@ -370,7 +371,7 @@ function AdminListingFormContent() {
         return (
             <div className="min-h-[50vh] flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-8 h-8 text-forest animate-spin" />
-                <p className="text-xs text-slate-500 font-medium">Campuna Club Inserat wird geladen...</p>
+                <p className="text-xs text-slate-500 font-medium">Inserat wird geladen...</p>
             </div>
         );
     }
@@ -391,15 +392,15 @@ function AdminListingFormContent() {
                     </button>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black font-sans text-slate-900 tracking-tight flex items-center gap-2.5 flex-wrap">
-                            <span>{isEditMode ? 'Campuna Club Inserat bearbeiten' : 'Neues Inserat erstellen'}</span>
-                            <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-forest text-gold border border-gold/40 shadow-xs">
-                                <Crown className="w-3 h-3 text-gold" /> Campuna Club
+                            <span>{isEditMode ? 'Offizielles Business Inserat bearbeiten' : 'Neues Business Inserat erstellen'}</span>
+                            <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-[#062c19] text-amber-300 border border-amber-400/40 shadow-xs">
+                                <Briefcase className="w-3 h-3 text-amber-400" /> Business
                             </span>
                         </h1>
                         <p className="text-xs text-slate-500 mt-0.5">
                             {isEditMode
-                                ? 'Passe Angaben, Fotos und Details für dieses offizielle Campuna Club Inserat an.'
-                                : 'Veröffentliche Inserate im Namen des offiziellen Campuna Club Business-Profils mit sofortiger administrativer Freigabe.'
+                                ? 'Passe Angaben, Fotos und Details für dieses offizielle Business Inserat an.'
+                                : 'Veröffentliche Inserate im Namen des offiziellen Business-Profils mit sofortiger administrativer Freigabe.'
                             }
                         </p>
                     </div>
@@ -906,6 +907,14 @@ function AdminListingFormContent() {
                                     </div>
                                 )}
 
+
+                                {/* Top Badges */}
+                                <div className="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none z-10">
+                                    <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md border border-yellow-100/90 flex items-center gap-1">
+                                        <Rocket className="w-2.5 h-2.5 text-slate-950" />
+                                        <span>HERVORGEHOBEN</span>
+                                    </span>
+                                </div>
 
                                 {/* Location Badge */}
                                 <div className="absolute bottom-3 right-3 flex items-center justify-end pointer-events-none text-white/90 z-10">

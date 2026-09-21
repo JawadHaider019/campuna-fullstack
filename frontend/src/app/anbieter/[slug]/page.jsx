@@ -40,6 +40,7 @@ import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
+import { ListingBadgesRow } from '@/app/components/ListingBadge';
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
 
@@ -134,6 +135,7 @@ function normalizeListing(item) {
     images = images.map(img => getImageUrl(img, DEFAULT_IMAGE));
 
     const sellerType = item.seller?.type || item.listing_user_type || 'Gewerblich';
+    const sellerTier = item.seller?.tier || item.company_tier || item.seller_tier || item.tier || 'FREE';
 
     let features = [];
     if (Array.isArray(item.features) && item.features.length > 0) {
@@ -163,6 +165,15 @@ function normalizeListing(item) {
         location,
         images,
         sellerType,
+        seller_tier: sellerTier,
+        company_tier: sellerTier,
+        tier: sellerTier,
+        seller: {
+            name: item.seller?.name || (sellerType === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatanbieter'),
+            type: sellerType,
+            tier: sellerTier,
+            verified: true
+        },
         features,
         featured: isFeatured,
         boosted_until: item.boosted_until,
@@ -227,21 +238,7 @@ const ListingCard = React.memo(({ item: rawItem }) => {
                 />
                 {/* Top Badges */}
                 <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 gap-2">
-                    <div className="flex items-center gap-1.5 flex-wrap pointer-events-none">
-                        {/* Boosted Badge */}
-                        {item.is_boosted && (
-                            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
-                                <Rocket className="w-2.5 h-2.5 text-slate-950" />
-                                <span>BOOSTED</span>
-                            </span>
-                        )}
-
-                        {/* Seller Type Badge */}
-                        <span className="bg-forest/90 text-white text-[8px] font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1">
-                            <ShieldCheck className="w-2.5 h-2.5 text-white" />
-                            {item.sellerType}
-                        </span>
-                    </div>
+                    <ListingBadgesRow item={item} />
 
                     <button
                         type="button"
@@ -457,9 +454,10 @@ export default function ProviderDetails() {
                     address: matchedStaticUser.address || matchedStaticUser.location || 'Deutschland',
                     impressum: 'https://' + slugifyName(matchedStaticUser.name) + '.de/impressum',
                     memberSince: formatMemberSince(matchedStaticUser.memberSince),
-                    isStrategic: matchedStaticUser.account_type === 'COMMERCIAL',
-                    tier: matchedStaticUser.account_type === 'COMMERCIAL' ? 'BUSINESS' : 'FREE',
-                    achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
+                    isStrategic: Boolean(matchedStaticUser.isStrategic || matchedStaticUser.is_strategic_partner),
+                    isBusiness: Boolean(matchedStaticUser.tier === 'BUSINESS' || matchedStaticUser.isBusiness),
+                    tier: matchedStaticUser.tier || 'FREE',
+                    achievements: matchedStaticUser.achievements || [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
                 });
 
                 setCoverSrc(matchedStaticUser.coverImage || DEFAULT_COVER);
@@ -502,8 +500,9 @@ export default function ProviderDetails() {
                     address: matchedMock.location ? `${matchedMock.location}, Deutschland` : 'Deutschland',
                     impressum: 'https://' + slugifyName(matchedMock.name) + '.de/impressum',
                     memberSince: '01.01.2024',
-                    isStrategic: true,
-                    tier: 'BUSINESS',
+                    isStrategic: Boolean(matchedMock.isStrategic || matchedMock.is_strategic_partner),
+                    isBusiness: Boolean(matchedMock.tier === 'BUSINESS' || matchedMock.isBusiness),
+                    tier: matchedMock.tier || 'FREE',
                     achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
                 });
 

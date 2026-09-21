@@ -27,7 +27,7 @@ const WhyCampuna = React.memo(function WhyCampuna() {
     ];
 
     return (
-        <section className="py-16 md:py-24 bg-sand relative overflow-hidden">
+        <section id="why-campuna" className="py-16 md:py-24 bg-sand relative overflow-hidden scroll-mt-24">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
                 {/* Section Header */}

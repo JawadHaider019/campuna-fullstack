@@ -10,6 +10,7 @@ import CategoriesSection from '@/app/components/CategoriesSection';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
+import { ListingBadgesRow } from '@/app/components/ListingBadge';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -186,10 +187,9 @@ export default function FavoritesPage() {
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                     onError={(e) => { e.currentTarget.src = '/hero.webp'; }}
                                                 />
-                                                <span className="absolute top-3 left-3 bg-forest text-white text-[8px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
-                                                    <ShieldCheck className="w-3 h-3 text-gold" />
-                                                    {item.seller?.type || item.listing_user_type || 'Privat'}
-                                                </span>
+                                                <div className="absolute top-3 left-3 pointer-events-none z-10">
+                                                    <ListingBadgesRow item={item} />
+                                                </div>
 
                                                 <button
                                                     onClick={(e) => {

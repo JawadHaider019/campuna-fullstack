@@ -36,20 +36,23 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
   ];
 
 
-  const scrollToSection = (id) => {
+  const scrollToSection = (id, behavior = 'smooth') => {
+    if (typeof window === 'undefined') return false;
+
     if (id === 'top') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior });
       return true;
     }
     const element = document.getElementById(id);
     if (element) {
-      const navHeaderOffset = 90;
+      const isMobile = window.innerWidth < 768;
+      const navHeaderOffset = isMobile ? 80 : 100;
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-      const offsetPosition = elementPosition - navHeaderOffset;
+      const offsetPosition = Math.max(0, elementPosition - navHeaderOffset);
 
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior
       });
       return true;
     }
@@ -60,14 +63,21 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
     setIsOpen(false);
 
     if (path) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('campuna_scroll_target');
+      }
       router.push(path);
       return;
     }
 
     if (id === 'top') {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('campuna_scroll_target');
+      }
       if (isHomepage) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         window.history.replaceState(null, '', window.location.pathname);
+        setActiveSection('top');
       } else {
         router.push('/');
       }
@@ -75,9 +85,13 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
     }
 
     if (isHomepage) {
-      scrollToSection(id);
+      scrollToSection(id, 'smooth');
       window.history.replaceState(null, '', `#${id}`);
+      setActiveSection(id);
     } else {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('campuna_scroll_target', id);
+      }
       router.push(`/#${id}`);
     }
   };
@@ -121,15 +135,52 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isHomepage]);
 
-  // Handle hash scrolling on initial page load
+  // Handle cross-page and initial hash scrolling to section
   useEffect(() => {
-    if (typeof window !== 'undefined' && isHomepage && window.location.hash) {
-      const targetId = window.location.hash.replace('#', '');
-      setTimeout(() => {
-        scrollToSection(targetId);
-      }, 200);
-    }
-  }, [isHomepage]);
+    if (typeof window === 'undefined' || !isHomepage) return;
+
+    const performScrollToTarget = () => {
+      const storedTarget = sessionStorage.getItem('campuna_scroll_target');
+      const hashTarget = window.location.hash ? window.location.hash.replace('#', '') : '';
+      const targetId = storedTarget || hashTarget;
+
+      if (!targetId || targetId === 'top') return;
+
+      let attempts = 0;
+      const maxAttempts = 20;
+
+      const attemptScroll = () => {
+        attempts++;
+        const success = scrollToSection(targetId, 'smooth');
+        if (success) {
+          sessionStorage.removeItem('campuna_scroll_target');
+          setActiveSection(targetId);
+          // Refine scroll position once dynamic images/sections settle
+          if (attempts <= 5) {
+            setTimeout(() => {
+              scrollToSection(targetId, 'smooth');
+            }, 350);
+          }
+        } else if (attempts < maxAttempts) {
+          setTimeout(attemptScroll, 80);
+        } else {
+          sessionStorage.removeItem('campuna_scroll_target');
+        }
+      };
+
+      // Allow Next.js page DOM to mount before calculating offsets
+      setTimeout(attemptScroll, 60);
+    };
+
+    performScrollToTarget();
+
+    const handleHashChange = () => {
+      performScrollToTarget();
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [pathname, isHomepage]);
 
   return (
     <>

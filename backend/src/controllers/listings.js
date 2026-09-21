@@ -281,15 +281,17 @@ export const getAllListings = async (req, res) => {
         const result = await pool.query(query);
 
         const mappedListings = result.rows.map(row => {
-            const isCampunaClub = row.seller_role === 'ADMIN' || row.company_name === 'Campuna Club';
+            const isAdminListing = row.seller_role === 'ADMIN';
+            const isCampunaClub = isAdminListing || row.company_name === 'Campuna Club';
             const isCommercial = row.seller_type === 'COMMERCIAL' || isCampunaClub;
-            const sellerName = isCampunaClub
-                ? 'Campuna Club'
+            const sellerName = isAdminListing
+                ? (row.company_name || 'Campuna Administration')
                 : isCommercial
                 ? (row.company_name || 'Gewerblicher Anbieter')
                 : (`${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Privatanbieter');
 
-            const sellerAvatar = isCampunaClub ? '/logo.webp' : (isCommercial ? row.company_logo : row.private_avatar);
+            const sellerAvatar = isAdminListing ? '/logo.webp' : (isCommercial ? row.company_logo : row.private_avatar);
+            const isBoosted = Boolean(row.is_boosted || isAdminListing);
 
             let imagesArray = [];
             if (Array.isArray(row.images)) {
@@ -317,16 +319,21 @@ export const getAllListings = async (req, res) => {
                 status: row.status,
                 featured: Boolean(row.featured),
                 boosted_until: row.boosted_until,
-                is_boosted: Boolean(row.is_boosted),
+                is_boosted: isBoosted,
                 images: imagesArray,
+                seller_role: row.seller_role,
+                role: row.seller_role,
+                is_admin: isAdminListing,
                 is_campuna_club: isCampunaClub,
                 created_at: row.created_at,
                 updated_at: row.updated_at,
                 seller: {
                     name: sellerName,
-                    type: isCommercial ? 'Gewerblich' : 'Privat',
+                    type: isAdminListing ? 'Admin' : (isCommercial ? 'Gewerblich' : 'Privat'),
                     avatar: sellerAvatar || '',
-                    tier: isCampunaClub ? 'BUSINESS' : (row.company_tier || 'FREE'),
+                    tier: isAdminListing ? 'ADMIN' : (row.company_tier || 'FREE'),
+                    role: row.seller_role,
+                    is_admin: isAdminListing,
                     is_campuna_club: isCampunaClub,
                     verified: true
                 }
@@ -378,14 +385,16 @@ export const getListingDetail = async (req, res) => {
             if (!isOwner && !isAdmin) {
                 return res.status(404).json({
                     success: false,
-                    error: 'Inserat nicht gefunden oder noch nicht freigegeben.'
+                    error: 'Dieses Inserat befindet sich derzeit in Prüfung und ist noch nicht öffentlich verfügbar.'
                 });
             }
         }
 
-        // Retrieve profile details based on account type
-        const userRes = await pool.query('SELECT user_type, role, email, is_suspended FROM users WHERE id = $1', [listing.user_id]);
-        const user = userRes.rows[0] || {};
+        const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [listing.user_id]);
+        if (userRes.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Verkäufer nicht gefunden.' });
+        }
+        const user = userRes.rows[0];
 
         if (user.is_suspended) {
             const isAdmin = req.user && (req.user.role === 'ADMIN');
@@ -407,13 +416,14 @@ export const getListingDetail = async (req, res) => {
         }
 
         const isAuthenticated = Boolean(req.user);
-        const isCampunaClub = user.role === 'ADMIN' || profile?.company_name === 'Campuna Club';
-        const sellerType = isCampunaClub ? 'Gewerblich' : (user.user_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat');
+        const isAdminListing = user.role === 'ADMIN';
+        const isCampunaClub = isAdminListing || profile?.company_name === 'Campuna Club';
+        const sellerType = isAdminListing ? 'Admin' : (user.user_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat');
         
         // Privacy Compliance: Private seller full surname and phone number are protected behind registration
         let sellerName = 'Privatverkäufer';
-        if (isCampunaClub) {
-            sellerName = 'Campuna Club';
+        if (isAdminListing) {
+            sellerName = profile?.company_name || 'Campuna Administration';
         } else if (user.user_type === 'COMMERCIAL') {
             sellerName = profile?.company_name || 'Gewerblicher Anbieter';
         } else {
@@ -428,8 +438,9 @@ export const getListingDetail = async (req, res) => {
             }
         }
 
-        const sellerAvatar = isCampunaClub ? '/logo.webp' : (profile?.logo_url || profile?.profile_image_url || '');
-        const sellerTier = isCampunaClub ? 'BUSINESS' : (profile?.tier || 'FREE');
+        const sellerAvatar = isAdminListing ? '/logo.webp' : (profile?.logo_url || profile?.profile_image_url || '');
+        const sellerTier = isAdminListing ? 'ADMIN' : (profile?.tier || 'FREE');
+        const isBoosted = Boolean(listing.is_boosted || isAdminListing);
 
         const achRes = await pool.query('SELECT * FROM user_achievements WHERE user_id = $1', [listing.user_id]);
         const achievements = achRes.rows || [];
@@ -448,7 +459,7 @@ export const getListingDetail = async (req, res) => {
         const rawPhone = listing.phone || profile?.phone || '';
         const hasPhone = Boolean(rawPhone && rawPhone.trim() !== '');
         
-        // Privacy: Only expose full phone number to logged-in users (or if official Campuna Club)
+        // Privacy: Only expose full phone number to logged-in users (or if official Campuna Club / Admin)
         const isPhoneProtected = hasPhone && !isAuthenticated && !isCampunaClub;
         const visiblePhone = (isAuthenticated || isCampunaClub) ? rawPhone : null;
 
@@ -462,8 +473,11 @@ export const getListingDetail = async (req, res) => {
                 price: parseFloat(listing.price) || 0,
                 featured: Boolean(listing.featured),
                 boosted_until: listing.boosted_until,
-                is_boosted: Boolean(listing.is_boosted),
+                is_boosted: isBoosted,
                 images: imagesArray,
+                seller_role: user.role,
+                role: user.role,
+                is_admin: isAdminListing,
                 is_campuna_club: isCampunaClub,
                 is_own_listing: isCampunaClub || (req.user && req.user.id === listing.user_id),
                 seller: {
@@ -471,6 +485,8 @@ export const getListingDetail = async (req, res) => {
                     type: sellerType,
                     avatar: sellerAvatar,
                     tier: sellerTier,
+                    role: user.role,
+                    is_admin: isAdminListing,
                     is_campuna_club: isCampunaClub,
                     phone: visiblePhone,
                     has_phone: hasPhone,

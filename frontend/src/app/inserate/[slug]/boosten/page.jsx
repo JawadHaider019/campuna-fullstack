@@ -286,7 +286,7 @@ export default function BoostListingPage() {
                                 Dein Inserat ist jetzt hervorgehoben!
                             </h1>
                             <p className="text-xs sm:text-sm text-charcoal/70 max-w-md mx-auto leading-relaxed font-light">
-                                Dein Angebot profitiert ab sofort von maximaler Sichtbarkeit, Top-Platzierung in Suchergebnissen und dem goldenen Boost-Badge.
+                                Dein Angebot profitiert ab sofort von maximaler Sichtbarkeit, Top-Platzierung in Suchergebnissen und dem goldenen Hervorgehoben-Badge.
                             </p>
                         </div>
 
@@ -668,7 +668,7 @@ export default function BoostListingPage() {
                                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                                         <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1">
                                             <Rocket className="w-3 h-3 text-slate-950" />
-                                            <span>BOOSTED</span>
+                                            <span>HERVORGEHOBEN</span>
                                         </span>
                                     </div>
                                 </div>

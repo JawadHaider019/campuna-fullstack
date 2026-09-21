@@ -10,6 +10,7 @@ import { useFavoritesStore } from '@/store/useFavoritesStore';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import { getImageUrl } from '@/utils/imageUrl';
+import { ListingBadgesRow } from '@/app/components/ListingBadge';
 
 // Map URL slugs → internal category names
 const SLUG_TO_CATEGORY = {
@@ -189,8 +190,29 @@ function mapListing(item) {
         features.push('Camping');
     }
 
-    const resolvedSellerType = item.listing_user_type || item.seller?.type || (category === 'Mieten & Vermieten' || (item.subcategory && item.subcategory.toLowerCase().includes('mieten')) ? 'Gewerblich' : 'Privat');
-    const sellerName = item.seller?.name || (resolvedSellerType === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer');
+    const sellerRole = item.seller_role || item.role || item.seller?.role || '';
+    const isAdmin = Boolean(
+        sellerRole === 'ADMIN' ||
+        item.is_admin === true ||
+        item.seller?.is_admin === true ||
+        item.is_campuna_club === true ||
+        item.seller?.is_campuna_club === true
+    );
+
+    const isBoosted = Boolean(
+        item.is_boosted || 
+        (item.boosted_until && new Date(item.boosted_until) > new Date()) ||
+        isAdmin
+    );
+    const isFeatured = Boolean(item.featured);
+
+    const sellerTier = isAdmin ? 'ADMIN' : (
+        item.seller?.tier ||
+        item.company_tier ||
+        item.seller_tier ||
+        item.tier ||
+        'FREE'
+    );
 
     return {
         id,
@@ -205,17 +227,28 @@ function mapListing(item) {
         rating,
         reviewsCount: (sum % 15) + 3,
         images,
+        seller_role: sellerRole,
+        role: sellerRole,
+        is_admin: isAdmin,
+        is_campuna_club: Boolean(item.is_campuna_club || item.seller?.is_campuna_club),
         seller: {
-            name: sellerName,
+            name: isAdmin ? 'Campuna' : sellerName,
             verified: true,
-            type: resolvedSellerType,
+            type: isAdmin ? 'Admin' : resolvedSellerType,
+            tier: sellerTier,
+            role: sellerRole,
+            is_admin: isAdmin,
+            is_campuna_club: Boolean(item.is_campuna_club || item.seller?.is_campuna_club)
         },
-        listing_user_type: resolvedSellerType,
+        listing_user_type: isAdmin ? 'Admin' : resolvedSellerType,
+        seller_tier: sellerTier,
+        company_tier: sellerTier,
+        tier: sellerTier,
         features,
         isExclusive: sum % 3 === 0,
-        featured: Boolean(item.featured),
+        featured: isFeatured,
         boosted_until: item.boosted_until,
-        is_boosted: Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date())),
+        is_boosted: isBoosted,
         created_at: item.created_at
     };
 }
@@ -240,12 +273,6 @@ function ListingCard({ item }) {
     const displayLoc = item.displayLocation || item.location || '';
     const cityOnly = displayLoc.split(',')[0].trim();
 
-    const isBoosted = Boolean(
-        item.is_boosted || 
-        (item.boosted_until && new Date(item.boosted_until) > new Date())
-    );
-    const isFeatured = Boolean(item.featured);
-
     return (
         <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -267,21 +294,7 @@ function ListingCard({ item }) {
 
                 {/* Top badge row */}
                 <div className="absolute top-2 sm:top-3 inset-x-2 sm:inset-x-3 flex items-center justify-between z-20 gap-1.5">
-                    <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap pointer-events-none">
-                        {/* Boosted Badge */}
-                        {isBoosted && (
-                            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[7px] sm:text-[8px] font-black uppercase tracking-wider px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
-                                <Rocket className="w-2 sm:w-2.5 h-2 sm:h-2.5 text-slate-950" />
-                                <span>BOOSTED</span>
-                            </span>
-                        )}
-
-                        {/* Seller Type Badge */}
-                        <span className="bg-forest/90 flex items-center gap-0.5 sm:gap-1 justify-center text-white text-[7px] sm:text-[8px] font-semibold uppercase tracking-widest px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full shadow-md backdrop-blur-md pointer-events-none">
-                            <ShieldCheck className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-white" />
-                            {item.listing_user_type || item.seller?.type || 'Privat'}
-                        </span>
-                    </div>
+                    <ListingBadgesRow item={item} />
 
                     <button
                         type="button"

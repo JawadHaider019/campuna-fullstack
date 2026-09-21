@@ -1996,7 +1996,7 @@ export default function MeinKontoPage() {
                                                                                 </span>
                                                                                 {isBoosted && (
                                                                                     <span className="px-2 py-0.2 rounded-md text-[9px] font-black uppercase bg-gold/20 text-gold-dark flex items-center gap-0.5">
-                                                                                        Geboostet
+                                                                                        Hervorgehoben
                                                                                     </span>
                                                                                 )}
                                                                             </div>
@@ -2438,7 +2438,7 @@ export default function MeinKontoPage() {
                                             </div>
                                         </button>
 
-                                        {/* 4. Geboostet (Boosted Ads) */}
+                                        {/* 4. Hervorgehoben (Promoted Ads) */}
                                         <button
                                             type="button"
                                             onClick={() => setListingStatusFilter('BOOSTED')}
@@ -2450,7 +2450,7 @@ export default function MeinKontoPage() {
                                         >
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-charcoal/50 group-hover:text-gold-dark transition-colors">
-                                                    Geboostet
+                                                    Hervorgehoben
                                                 </span>
                                                 <div className="w-8 h-8 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold-dark shrink-0 group-hover:bg-gold group-hover:text-forest transition-colors shadow-xs">
                                                     <Zap className="w-4 h-4" />
@@ -2479,7 +2479,7 @@ export default function MeinKontoPage() {
                                                 { id: 'ALL', label: `Alle (${userListings.length})` },
                                                 { id: 'APPROVED', label: `Veröffentlicht (${userListings.filter(l => l.status === 'APPROVED').length})` },
                                                 { id: 'REVIEW', label: `In Prüfung (${userListings.filter(l => l.status === 'REVIEW').length})` },
-                                                { id: 'BOOSTED', label: 'Geboostet' },
+                                                { id: 'BOOSTED', label: 'Hervorgehoben' },
                                             ].map(tab => (
                                                 <button
                                                     key={tab.id}
@@ -2579,7 +2579,7 @@ export default function MeinKontoPage() {
                                                                     </span>
                                                                     {isBoosted && (
                                                                         <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest shadow-xs flex items-center gap-1 font-sans">
-                                                                            <Rocket className="w-2.5 h-2.5" /> Geboostet
+                                                                            <Rocket className="w-2.5 h-2.5" /> Hervorgehoben
                                                                         </span>
                                                                     )}
                                                                 </div>

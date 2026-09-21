@@ -395,7 +395,7 @@ export default function UserDashboard({
                                                     </span>
                                                     {isBoosted && (
                                                         <span className="px-2 py-0.2 rounded-md text-[9px] font-black uppercase bg-gold/20 text-gold-dark">
-                                                            Geboostet
+                                                            Hervorgehoben
                                                         </span>
                                                     )}
                                                 </div>

@@ -8,6 +8,7 @@ import { getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { STATIC_LISTINGS } from '@/data';
 import { getImageUrl } from '@/utils/imageUrl';
+import { ListingBadgesRow } from '@/app/components/ListingBadge';
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
 
@@ -34,14 +35,17 @@ function normalizeListing(item) {
     }
     images = images.map(img => getImageUrl(img, DEFAULT_IMAGE));
 
-    const sellerType = item.seller?.type || item.listing_user_type || 'Privat';
-    const isCampunaClub = Boolean(
-        item.is_campuna_club ||
-        item.seller?.is_campuna_club ||
-        item.seller?.name === 'Campuna Club' ||
-        item.seller_name === 'Campuna Club' ||
-        item.company_name === 'Campuna Club'
+    const sellerRole = item.seller_role || item.role || item.seller?.role || '';
+    const isAdmin = Boolean(
+        sellerRole === 'ADMIN' ||
+        item.is_admin === true ||
+        item.seller?.is_admin === true ||
+        item.is_campuna_club === true ||
+        item.seller?.is_campuna_club === true
     );
+
+    const sellerType = isAdmin ? 'Admin' : (item.seller?.type || item.listing_user_type || item.seller_type || 'Privat');
+    const sellerTier = isAdmin ? 'ADMIN' : (item.seller?.tier || item.company_tier || item.seller_tier || item.tier || 'FREE');
 
     let features = [];
     if (Array.isArray(item.features) && item.features.length > 0) {
@@ -56,7 +60,8 @@ function normalizeListing(item) {
 
     const isBoosted = Boolean(
         item.is_boosted || 
-        (item.boosted_until && new Date(item.boosted_until) > new Date())
+        (item.boosted_until && new Date(item.boosted_until) > new Date()) ||
+        isAdmin
     );
     const isFeatured = Boolean(item.featured);
 
@@ -69,7 +74,23 @@ function normalizeListing(item) {
         location,
         images,
         sellerType,
-        is_campuna_club: isCampunaClub,
+        seller_type: sellerType,
+        seller_role: sellerRole,
+        role: sellerRole,
+        is_admin: isAdmin,
+        is_campuna_club: Boolean(item.is_campuna_club || item.seller?.is_campuna_club),
+        seller_tier: sellerTier,
+        company_tier: sellerTier,
+        tier: sellerTier,
+        seller: {
+            name: item.seller?.name || item.seller_name || (isAdmin ? 'Campuna' : (sellerType === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatanbieter')),
+            type: sellerType,
+            tier: sellerTier,
+            role: sellerRole,
+            is_admin: isAdmin,
+            is_campuna_club: Boolean(item.is_campuna_club || item.seller?.is_campuna_club),
+            verified: true
+        },
         features,
         featured: isFeatured,
         boosted_until: item.boosted_until,
@@ -129,32 +150,7 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
                 />
                 {/* Top Badges */}
                 <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 gap-2">
-                    <div className="flex items-center gap-1.5 flex-wrap pointer-events-none">
-                        {/* Boosted Badge */}
-                        {item.is_boosted && (
-                            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[8px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1 backdrop-blur-md">
-                                <Rocket className="w-2.5 h-2.5 text-slate-950" />
-                                <span>BOOSTED</span>
-                            </span>
-                        )}
-
-                        {/* Campuna Club vs Seller Type Badge */}
-                        {item.is_campuna_club ? (
-                            <span className="bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-lg border border-yellow-200 flex items-center gap-1">
-                                <Crown className="w-2.5 h-2.5 fill-slate-950" />
-                                <span>CAMPUNA CLUB</span>
-                            </span>
-                        ) : (
-                            <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md backdrop-blur-md flex items-center gap-1 ${
-                                (item.sellerType === 'Gewerblich' || item.listing_user_type === 'Gewerblich')
-                                    ? 'bg-[#0B3B24] text-white border border-emerald-400/30'
-                                    : 'bg-[#107C41] text-white border border-emerald-300/30'
-                            }`}>
-                                <ShieldCheck className="w-2.5 h-2.5 text-white" />
-                                <span>{(item.sellerType || item.listing_user_type || 'Privat').toUpperCase()}</span>
-                            </span>
-                        )}
-                    </div>
+                    <ListingBadgesRow item={item} />
 
                     <button
                         type="button"

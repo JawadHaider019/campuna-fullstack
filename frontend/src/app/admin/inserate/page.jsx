@@ -33,7 +33,8 @@ import {
     Rocket,
     Phone,
     Pencil,
-    Crown
+    Crown,
+    Briefcase
 } from 'lucide-react';
 import {
     getAdminListings,
@@ -603,16 +604,10 @@ export default function AdminListingsPage() {
                                                         </div>
                                                         <div className="min-w-0 max-w-xs">
                                                             <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                                                                {isCampunaClub && (
-                                                                    <span className="inline-flex items-center gap-1 bg-forest text-gold border border-gold/40 text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-xs">
-                                                                        <Crown className="w-2.5 h-2.5 text-gold" />
-                                                                        <span>Campuna Club</span>
-                                                                    </span>
-                                                                )}
-                                                                {Boolean(item.is_boosted) && (
+                                                                {(Boolean(item.is_boosted) || isCampunaClub) && (
                                                                     <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md">
                                                                         <Rocket className="w-2.5 h-2.5 text-amber-800" />
-                                                                        <span>Boosted</span>
+                                                                        <span>Hervorgehoben</span>
                                                                     </span>
                                                                 )}
                                                                 {Boolean(item.featured) && (
@@ -904,7 +899,7 @@ export default function AdminListingsPage() {
                                                     )}
                                                     {isBoosted && (
                                                         <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest shadow-xs flex items-center gap-1 font-sans">
-                                                            <Rocket className="w-2.5 h-2.5" /> Geboostet
+                                                            <Rocket className="w-2.5 h-2.5" /> Hervorgehoben
                                                         </span>
                                                     )}
                                                     {Boolean(item.featured) && (
@@ -1100,8 +1095,8 @@ export default function AdminListingsPage() {
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
                                     {selectedListing.is_campuna_club && (
-                                        <span className="inline-flex items-center gap-1 bg-forest text-gold border border-gold/40 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">
-                                            <Crown className="w-3 h-3 text-gold" /> Campuna Club
+                                        <span className="inline-flex items-center gap-1 bg-[#062c19] text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">
+                                            <Briefcase className="w-3 h-3 text-amber-400" /> Business
                                         </span>
                                     )}
                                     {renderStatusBadge(selectedListing.status)}
@@ -1137,20 +1132,20 @@ export default function AdminListingsPage() {
                         {/* Modal Body */}
                         <div className="p-5 sm:p-6 space-y-6 flex-1">
 
-                            {/* Campuna Club Official Banner */}
+                            {/* Official Business Banner */}
                             {selectedListing.is_campuna_club && (
                                 <div className="p-4 rounded-2xl bg-gradient-to-r from-forest via-[#003807] to-[#002204] text-white border border-gold/40 flex items-center justify-between gap-3 shadow-sm">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-xl bg-white/10 text-gold flex items-center justify-center font-bold">
-                                            <Crown className="w-5 h-5 text-gold" />
+                                            <Briefcase className="w-5 h-5 text-gold" />
                                         </div>
                                         <div>
                                             <h4 className="text-xs font-black text-white flex items-center gap-1.5">
-                                                <span>Offizielles Campuna Club Inserat</span>
+                                                <span>Offizielles Business Inserat</span>
                                                 <span className="text-[9px] px-2 py-0.2 rounded-full bg-gold/20 text-gold font-mono font-bold">BUSINESS</span>
                                             </h4>
                                             <p className="text-[11px] text-sand/80 mt-0.5">
-                                                Veröffentlicht unter dem offiziellen Business-Profil des Campuna Clubs.
+                                                Veröffentlicht unter dem offiziellen Business-Profil.
                                             </p>
                                         </div>
                                     </div>
@@ -1253,22 +1248,22 @@ export default function AdminListingsPage() {
                                 <div className="p-4 bg-slate-50 border border-[#E8EAEF] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-forest text-gold font-bold flex items-center justify-center text-sm border border-gold/30">
-                                            {selectedListing.is_campuna_club ? <Crown className="w-5 h-5 text-gold" /> : (selectedListing.seller?.name?.charAt(0) || 'U')}
+                                            {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? <Briefcase className="w-5 h-5 text-gold" /> : (selectedListing.seller?.name?.charAt(0) || 'U')}
                                         </div>
                                         <div>
                                             <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
                                                 <span>{selectedListing.seller?.name}</span>
-                                                <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${selectedListing.is_campuna_club
-                                                    ? 'bg-forest text-gold border border-gold/40'
+                                                <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS')
+                                                    ? 'bg-[#062c19] text-amber-300 border border-amber-400/40'
                                                     : selectedListing.seller?.type === 'COMMERCIAL'
-                                                    ? 'bg-amber-100 text-amber-900'
-                                                    : 'bg-slate-200 text-slate-700'
+                                                    ? 'bg-emerald-900 text-white border border-emerald-400/30'
+                                                    : 'bg-emerald-700 text-white'
                                                     }`}>
-                                                    {selectedListing.is_campuna_club ? 'Campuna Club Business' : (selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat')}
+                                                    {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? 'Business' : (selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat')}
                                                 </span>
                                             </div>
                                             <div className="text-xs text-slate-500">
-                                                {selectedListing.is_campuna_club ? 'Offizielles Business-Konto' : selectedListing.seller?.email}
+                                                {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? 'Offizielles Business-Konto' : selectedListing.seller?.email}
                                             </div>
                                         </div>
                                     </div>

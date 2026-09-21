@@ -13,6 +13,7 @@ export const STATIC_USERS = [
         contact_person: 'Markus Huber',
         account_type: 'COMMERCIAL',
         sellerType: 'Gewerblich',
+        tier: 'BUSINESS',
         verified: true,
         email: 'info@alpencaravan-muenchen.de',
         phone: '+49 89 7412980',
@@ -37,6 +38,7 @@ export const STATIC_USERS = [
         contact_person: 'Karsten Lehmann',
         account_type: 'COMMERCIAL',
         sellerType: 'Gewerblich',
+        tier: 'FREE',
         verified: true,
         email: 'service@gasandgo-berlin.de',
         phone: '+49 30 8912400',
@@ -58,6 +60,7 @@ export const STATIC_USERS = [
         name: 'Stefan & Laura Bergmann',
         account_type: 'PRIVATE',
         sellerType: 'Privat',
+        tier: 'FREE',
         verified: true,
         email: 'stefan.bergmann.camp@gmx.de',
         phone: '+49 176 8923411',
@@ -78,6 +81,7 @@ export const STATIC_USERS = [
         name: "Maximilian 'Max' Weidinger",
         account_type: 'PRIVATE',
         sellerType: 'Privat',
+        tier: 'FREE',
         verified: true,
         email: 'max.weidinger.outdoor@web.de',
         phone: '+49 151 4459021',
@@ -116,9 +120,10 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-6001',
         seller_user_id: 'usr_stefan_bergmann',
         seller: {
-            name: 'Privatverkäufer',
+            name: 'Stefan & Laura Bergmann',
             verified: true,
             type: 'Privat',
+            tier: 'FREE',
             location: 'Braunsbach, Baden-Württemberg'
         },
         listing_user_type: 'Privat',
@@ -130,7 +135,7 @@ export const STATIC_LISTINGS = [
         description: 'Klassischer Hobby 600 in gepflegtem Liebhaber-Zustand. Solide Technik, gemütlicher Ausbau und sofort einsatzbereit für die nächste Reise.'
     },
 
-    // 2. Mobile Gasprüfung G607 und G608
+    // 2. Mobile Gasprüfung G607 und G608 (Gewerblich Free + Hervorgehoben)
     {
         id: 'lst_gas_and_go',
         slug: 'mobile-gasprufung-g607-und-g608-berlin-gg07',
@@ -154,6 +159,7 @@ export const STATIC_LISTINGS = [
             name: 'GAS&GO Mobiler Gasservice',
             verified: true,
             type: 'Gewerblich',
+            tier: 'FREE',
             location: 'Berlin'
         },
         listing_user_type: 'Gewerblich',
@@ -186,9 +192,10 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-4723',
         seller_user_id: 'usr_stefan_bergmann',
         seller: {
-            name: 'Privatverkäufer',
+            name: 'Stefan & Laura Bergmann',
             verified: true,
             type: 'Privat',
+            tier: 'FREE',
             location: 'Mönchengladbach'
         },
         listing_user_type: 'Privat',
@@ -200,7 +207,7 @@ export const STATIC_LISTINGS = [
         description: 'Moderner Familienwohnwagen Adria Altea 472PK mit Etagenbetten für Kinder und Doppelbett für Eltern. Leicht und sehr gepflegt.'
     },
 
-    // 4. Carthago c tourer 150 QB
+    // 4. Carthago c tourer 150 QB (Business + Hervorgehoben)
     {
         id: 'lst_carthago_150',
         slug: 'carthago-c-tourer-150-qb-dortmund-ct15',
@@ -221,12 +228,15 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-1504',
         seller_user_id: 'usr_alpen_caravan',
         seller: {
-            name: 'Privatverkäufer',
+            name: 'Alpen Caravan & Reisemobile GmbH',
             verified: true,
-            type: 'Privat',
+            type: 'Gewerblich',
+            tier: 'BUSINESS',
             location: 'Dortmund'
         },
-        listing_user_type: 'Privat',
+        listing_user_type: 'Gewerblich',
+        company_tier: 'BUSINESS',
+        tier: 'BUSINESS',
         images: [
             'https://images.unsplash.com/photo-1542401886-65d6c61db217?auto=format&fit=crop&w=1200&q=80',
             'https://images.unsplash.com/photo-1513313778780-9ae4807465f0?auto=format&fit=crop&w=1200&q=80'
@@ -256,9 +266,10 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-5605',
         seller_user_id: 'usr_stefan_bergmann',
         seller: {
-            name: 'Privatverkäufer',
+            name: 'Stefan & Laura Bergmann',
             verified: true,
             type: 'Privat',
+            tier: 'FREE',
             location: 'Sonsbeck'
         },
         listing_user_type: 'Privat',
@@ -291,9 +302,10 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-6906',
         seller_user_id: 'usr_max_weidinger',
         seller: {
-            name: 'Privatverkäufer',
+            name: "Maximilian 'Max' Weidinger",
             verified: true,
             type: 'Privat',
+            tier: 'FREE',
             location: 'Marktrodach'
         },
         listing_user_type: 'Privat',
@@ -305,7 +317,7 @@ export const STATIC_LISTINGS = [
         description: 'Robustes Schlauchboot mit festem Aluboden und Motorspiegel. Inklusive Sitzbänken, Paddeln und Tragetasche.'
     },
 
-    // 7. LMC Explorer Sportline i655 G
+    // 7. LMC Explorer Sportline i655 G (Commercial Business)
     {
         id: 'lst_lmc_explorer',
         slug: 'lmc-explorer-sportline-i655-g-duisburg-lmc65',
@@ -326,12 +338,15 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-6557',
         seller_user_id: 'usr_alpen_caravan',
         seller: {
-            name: 'Privatverkäufer',
+            name: 'Alpen Caravan & Reisemobile GmbH',
             verified: true,
-            type: 'Privat',
+            type: 'Gewerblich',
+            tier: 'BUSINESS',
             location: 'Duisburg Süd'
         },
-        listing_user_type: 'Privat',
+        listing_user_type: 'Gewerblich',
+        company_tier: 'BUSINESS',
+        tier: 'BUSINESS',
         images: [
             'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?auto=format&fit=crop&w=1200&q=80',
             'https://images.unsplash.com/photo-1513313778780-9ae4807465f0?auto=format&fit=crop&w=1200&q=80'
@@ -340,7 +355,7 @@ export const STATIC_LISTINGS = [
         description: 'Vollintegriertes Wohnmobil LMC Explorer Sportline i655 G mit Heckgarage, Einzelbetten und holzfreier LLT-Technik.'
     },
 
-    // 8. VW T6 Camper Van Bulli, GPS
+    // 8. VW T6 Camper Van Bulli, GPS (Privat + Hervorgehoben)
     {
         id: 'lst_vw_t6_bulli',
         slug: 'vw-t6-camper-van-bulli-gps-erfurt-vt63',
@@ -361,9 +376,10 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-3258',
         seller_user_id: 'usr_max_weidinger',
         seller: {
-            name: 'Privatverkäufer',
+            name: "Maximilian 'Max' Weidinger",
             verified: true,
             type: 'Privat',
+            tier: 'FREE',
             location: 'Erfurt'
         },
         listing_user_type: 'Privat',
@@ -375,7 +391,7 @@ export const STATIC_LISTINGS = [
         description: 'Zweifarbiger VW T6 Camper Van mit Schlafdach/Aufstelldach, Küchenzeile, Standheizung und Navigationssystem.'
     },
 
-    // 9. Fendt Apero Bianco 495
+    // 9. Fendt Apero Bianco 495 (Business + Hervorgehoben)
     {
         id: 'lst_fendt_apero',
         slug: 'fendt-apero-bianco-495-herzogenaurach-fb49',
@@ -396,12 +412,15 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-4959',
         seller_user_id: 'usr_alpen_caravan',
         seller: {
-            name: 'Gewerblicher Anbieter',
+            name: 'Alpen Caravan & Reisemobile GmbH',
             verified: true,
             type: 'Gewerblich',
+            tier: 'BUSINESS',
             location: 'Herzogenaurach'
         },
         listing_user_type: 'Gewerblich',
+        company_tier: 'BUSINESS',
+        tier: 'BUSINESS',
         images: [
             'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1200&q=80',
             'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&w=1200&q=80'
@@ -431,9 +450,10 @@ export const STATIC_LISTINGS = [
         anzeigeNr: 'CP-2210',
         seller_user_id: 'usr_max_weidinger',
         seller: {
-            name: 'Privatverkäufer',
+            name: "Maximilian 'Max' Weidinger",
             verified: true,
             type: 'Privat',
+            tier: 'FREE',
             location: 'Trebbin'
         },
         listing_user_type: 'Privat',
@@ -445,3 +465,4 @@ export const STATIC_LISTINGS = [
         description: 'Westfield Ambassador 2 Camping-Klappstuhl / Beinauflage in neuwertigem Zustand. Hochwertiges 3D Mesh-Gewebe, wetterfest und atmungsaktiv.'
     }
 ];
+

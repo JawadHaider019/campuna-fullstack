@@ -9,6 +9,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { getImageUrl } from '@/utils/imageUrl';
+import { ListingBadgesRow } from '@/app/components/ListingBadge';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -210,16 +211,8 @@ export default function AccountFavoritesTab({ onNavigateToListings }) {
                                             />
                                             
                                             {/* Badges */}
-                                            <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
-                                                {isBoosted && (
-                                                    <span className="bg-gradient-to-r from-gold to-gold-dark text-forest font-black text-[9px] uppercase px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
-                                                        <Rocket className="w-2.5 h-2.5" /> Boosted
-                                                    </span>
-                                                )}
-                                                <span className="bg-forest/90 backdrop-blur-xs text-sand text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-xs flex items-center gap-1 w-fit">
-                                                    <ShieldCheck className="w-2.5 h-2.5 text-gold" />
-                                                    {item.seller?.type || item.listing_user_type || 'Privat'}
-                                                </span>
+                                            <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none">
+                                                <ListingBadgesRow item={item} size="xs" />
                                             </div>
 
                                             {/* Remove Favorite Button */}

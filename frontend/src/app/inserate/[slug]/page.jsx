@@ -39,7 +39,9 @@ import {
     Mail,
     MessageCircle,
     UserPlus,
-    Shield
+    Shield,
+    Briefcase,
+    Building2
 } from 'lucide-react';
 import { getListingDetail, getAllListings, reportListing } from '@/api/listings';
 import { createOrGetConversation } from '@/api/conversations';
@@ -52,6 +54,7 @@ import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
+import { SellerAccountBadge, PromotedBadge } from '@/app/components/ListingBadge';
 
 function slugifyTitle(title = '') {
     return title
@@ -634,39 +637,42 @@ export default function ListingDetailPage() {
                 className="flex items-center gap-3 text-left border-b border-forest/5 pb-4 cursor-pointer group/seller hover:opacity-90 transition-opacity"
             >
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center font-display text-lg font-bold select-none shadow shrink-0 group-hover/seller:ring-2 group-hover/seller:ring-gold/50 transition-all ${
-                    (seller.is_campuna_club || seller.name === 'Campuna Club' || listing.is_campuna_club)
-                        ? 'bg-gradient-to-br from-amber-500 via-forest to-emerald-950 text-amber-300 ring-2 ring-amber-400/40 shadow-lg'
+                    (seller.tier === 'BUSINESS' || listing.company_tier === 'BUSINESS')
+                        ? 'bg-gradient-to-br from-forest to-emerald-950 text-amber-300 ring-2 ring-amber-400/40 shadow-lg'
                         : 'bg-forest text-white'
                 }`}>
-                    {(seller.is_campuna_club || seller.name === 'Campuna Club' || listing.is_campuna_club) ? (
-                        <Crown className="w-6 h-6 text-amber-300 fill-amber-400/30" />
-                    ) : (
-                        seller.name.charAt(0).toUpperCase()
-                    )}
+                    {seller.name.charAt(0).toUpperCase()}
                 </div>
                 <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-display font-bold text-charcoal sm:text-base leading-tight group-hover/seller:text-forest transition-colors">
                             {seller.name}
                         </span>
-                        {(seller.is_campuna_club || seller.name === 'Campuna Club' || listing.is_campuna_club) && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-wider uppercase bg-amber-50 text-amber-800 border border-amber-300/80 px-2 py-0.5 rounded-full shadow-xs">
-                                <Crown className="w-2.5 h-2.5 text-amber-600 fill-amber-500" />
-                                Club
+                        {(seller.tier === 'BUSINESS' || listing.company_tier === 'BUSINESS') ? (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-wider uppercase bg-[#062c19] text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full shadow-xs">
+                                <Briefcase className="w-2.5 h-2.5 text-amber-400" />
+                                Business
                             </span>
-                        )}
+                        ) : (seller.type === 'Gewerblich' || listing.listing_user_type === 'Gewerblich') ? (
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-wider uppercase bg-[#0B3B24] text-emerald-200 border border-emerald-400/30 px-2 py-0.5 rounded-full shadow-xs">
+                                <Building2 className="w-2.5 h-2.5 text-emerald-300" />
+                                Gewerblich
+                            </span>
+                        ) : null}
                         {seller.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
                             <PioneerBadge size="xs" text="Pioneer" />
                         )}
                     </div>
                     <span className="text-[11px] text-charcoal/50 font-bold block mt-0.5">
-                        {(seller.is_campuna_club || seller.name === 'Campuna Club' || listing.is_campuna_club) ? (
+                        {(seller.tier === 'BUSINESS' || listing.company_tier === 'BUSINESS') ? (
                             <span className="text-emerald-800 font-semibold flex items-center gap-1">
                                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 inline shrink-0" />
-                                Offizieller Business Partner
+                                Gewerblicher Business-Partner
                             </span>
+                        ) : seller.type === 'Gewerblich' ? (
+                            `${seller.name} (Gewerblicher Anbieter)`
                         ) : (
-                            `${seller.name} (${seller.type}er Nutzer)`
+                            `${seller.name} (Privatanbieter)`
                         )}
                     </span>
                 </div>
@@ -789,12 +795,12 @@ export default function ListingDetailPage() {
                         variant="light"
                     />
                     <div className="flex flex-wrap items-center gap-2.5">
-                        {/* Boosted Badge */}
-                        {(listing.is_boosted || (listing.boosted_until && new Date(listing.boosted_until) > new Date())) && (
-                            <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[10px] sm:text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-full shadow-md border border-yellow-100/90 flex items-center gap-1.5">
-                                <Rocket className="w-3.5 h-3.5 text-slate-950" />
-                                <span>BOOSTED</span>
-                            </span>
+                        {/* Account Status Badge: Privat | Gewerblich | Business (automatically hidden for Admin) */}
+                        <SellerAccountBadge item={{ ...listing, seller }} size="md" />
+
+                        {/* Promoted Badge: Hervorgehoben */}
+                        {(listing.is_boosted || (listing.boosted_until && new Date(listing.boosted_until) > new Date()) || listing.seller_role === 'ADMIN' || listing.role === 'ADMIN' || listing.is_admin || listing.is_campuna_club || seller?.is_admin || seller?.is_campuna_club) && (
+                            <PromotedBadge size="md" />
                         )}
 
                         {isSold && (
