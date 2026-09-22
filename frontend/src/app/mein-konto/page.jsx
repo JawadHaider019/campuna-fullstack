@@ -389,15 +389,47 @@ export default function MeinKontoPage() {
         return userListings.filter(l => l.status === 'APPROVED').length;
     }, [userListings]);
 
+    // Commercial Pioneer Criteria Evaluation
+    const commercialPioneerCriteria = useMemo(() => {
+        if (!isCommercial) return null;
+        const source = isEditing ? draft : (profile || {});
+        const hasLogo = Boolean(source?.logo_url && String(source.logo_url).trim());
+        const hasBio = Boolean(source?.bio && String(source.bio).trim().length >= 20);
+        const hasCompanyName = Boolean(source?.company_name && String(source.company_name).trim());
+        const hasPhone = Boolean(source?.phone && String(source.phone).trim());
+        const hasLocation = Boolean((source?.location && String(source.location).trim()) || (source?.company_address && String(source.company_address).trim()));
+        const isVerified = Boolean(user?.email_verified);
+        const hasListings = approvedListingsCount >= 3;
+
+        const list = [
+            { id: 'verified', label: 'Verifiziertes gewerbliches Konto', detail: 'E-Mail-Adresse bestätigt', met: isVerified },
+            { id: 'logo', label: 'Firmenlogo hinterlegt', detail: 'Offizielles Profil-/Firmenlogo', met: hasLogo },
+            { id: 'bio', label: 'Unternehmensbeschreibung', detail: 'Mindestens 20 Zeichen', met: hasBio },
+            { id: 'contact', label: 'Vollständige Unternehmens- & Kontaktdaten', detail: 'Firmenname, Telefon & Standort/Adresse', met: hasCompanyName && hasPhone && hasLocation },
+            { id: 'listings', label: 'Mindestens 3 freigegebene Inserate', detail: 'Von der Moderation geprüft', met: hasListings, value: `${approvedListingsCount} / 3` }
+        ];
+
+        const allMet = isVerified && hasLogo && hasBio && hasCompanyName && hasPhone && hasLocation && hasListings;
+        const isProfileOnlyComplete = hasLogo && hasBio && hasCompanyName && hasPhone && hasLocation;
+
+        return {
+            list,
+            allMet,
+            isProfileOnlyComplete,
+            metCount: list.filter(i => i.met).length,
+            totalCount: list.length
+        };
+    }, [isCommercial, isEditing, draft, profile, user, approvedListingsCount]);
+
     const isProfileComplete = useMemo(() => {
         if (!profile) return false;
         if (isCommercial) {
-            return Boolean(profile.company_name && profile.bio && profile.location);
+            return Boolean(commercialPioneerCriteria?.isProfileOnlyComplete);
         }
-        return Boolean(profile.first_name && profile.last_name && profile.bio);
-    }, [profile, isCommercial]);
+        return Boolean(profile.first_name && profile.last_name && profile.bio && profile.location);
+    }, [profile, isCommercial, commercialPioneerCriteria]);
 
-    // Spotlight Requirements Evaluation
+    // Spotlight Requirements Evaluation (Spotlight requires active Business subscription + complete profile)
     const spotlightRequirements = useMemo(() => {
         const source = isEditing ? draft : (profile || {});
         const hasLogo = Boolean(source?.logo_url && String(source.logo_url).trim());
@@ -407,8 +439,10 @@ export default function MeinKontoPage() {
         const hasLocation = Boolean((source?.location && String(source.location).trim()) || (source?.company_address && String(source.company_address).trim()));
         const isVerified = Boolean(user?.email_verified);
         const isCommercialUser = isCommercial;
+        const isBusinessSubscriber = Boolean(subDetails?.is_business);
 
         const list = [
+            { id: 'business_plan', label: 'Aktiver Campuna Business Plan (29 €/Monat)', met: isBusinessSubscriber },
             { id: 'logo', label: 'Firmenlogo / Profilbild', met: hasLogo },
             { id: 'cover', label: 'Titelbild / Banner', met: hasCover },
             { id: 'bio', label: 'Unternehmensbeschreibung (mind. 20 Zeichen)', met: hasBio },
@@ -427,12 +461,13 @@ export default function MeinKontoPage() {
             hasLocation,
             isVerified,
             isCommercial: isCommercialUser,
+            isBusinessSubscriber,
             list,
             metCount,
             totalCount: list.length,
-            allMet: hasLogo && hasCover && hasBio && hasPhone && hasLocation && isVerified && isCommercialUser,
+            allMet: isBusinessSubscriber && hasLogo && hasCover && hasBio && hasPhone && hasLocation && isVerified && isCommercialUser,
         };
-    }, [isEditing, draft, profile, isCommercial, user]);
+    }, [isEditing, draft, profile, isCommercial, user, subDetails]);
 
     const hasPaidSpotlight = Boolean(
         profile?.has_paid_spotlight ||
@@ -646,6 +681,17 @@ export default function MeinKontoPage() {
             fetchUnreadCount();
             fetchFavorites();
 
+            // Background polling every 20s to ensure real-time notification sync
+            const interval = setInterval(() => {
+                fetchUnreadCount();
+            }, 20000);
+
+            const handleFocus = () => {
+                fetchUnreadCount();
+            };
+            window.addEventListener('focus', handleFocus);
+            window.addEventListener('campuna-unread-sync', handleFocus);
+
             // Check if tab is requested via query param (e.g., ?tab=nachrichten or ?tab=favoriten or ?tab=create_listing)
             if (typeof window !== 'undefined') {
                 const params = new URLSearchParams(window.location.search);
@@ -660,6 +706,12 @@ export default function MeinKontoPage() {
                     setActiveTab('create_listing');
                 }
             }
+
+            return () => {
+                clearInterval(interval);
+                window.removeEventListener('focus', handleFocus);
+                window.removeEventListener('campuna-unread-sync', handleFocus);
+            };
         }
     }, [mounted, isLoggedIn, user?.role, fetchUnreadCount, fetchFavorites]);
 
@@ -694,17 +746,25 @@ export default function MeinKontoPage() {
     };
 
     const handleCreateListingClick = () => {
-        const limit = 3;
         const activeApprovedListings = userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status));
         const isBusinessUser = subDetails.is_business;
-        const isAtLimit = !isBusinessUser && activeApprovedListings.length >= limit;
 
-        if (isAtLimit) {
-            setLimitModalOpen(true);
+        if (isCommercial) {
+            const limit = isBusinessUser ? 25 : 3;
+            if (activeApprovedListings.length >= limit) {
+                setLimitModalOpen(true);
+                return;
+            }
         } else {
-            setEditingListingId(null);
-            handleTabChange('create_listing');
+            // Private user: internal limit is 10 active listings
+            if (activeApprovedListings.length >= 10) {
+                setLimitModalOpen(true);
+                return;
+            }
         }
+
+        setEditingListingId(null);
+        handleTabChange('create_listing');
     };
 
     const handleEditListing = (listingId) => {
@@ -1103,7 +1163,13 @@ export default function MeinKontoPage() {
         ] : []),
         { id: 'dashboard', label: subDetails.is_business ? 'Mein Profil' : 'Mein Profil & Übersicht', icon: User },
         { id: 'inserate', label: 'Meine Inserate', icon: Rocket },
-        { id: 'nachrichten', label: 'Nachrichten', icon: MessageSquare },
+        { 
+            id: 'nachrichten', 
+            label: 'Nachrichten', 
+            icon: MessageSquare,
+            hasNotification: unreadMessagesCount > 0,
+            badge: unreadMessagesCount > 0 ? String(unreadMessagesCount) : null
+        },
         { id: 'favoriten', label: 'Merkzettel', icon: Heart },
         ...(profileType === 'COMMERCIAL' ? [
             { id: 'finanzen', label: 'Abonnement', icon: CreditCard }
@@ -1224,13 +1290,28 @@ export default function MeinKontoPage() {
                             <button
                                 key={item.id}
                                 onClick={() => handleTabChange(item.id)}
-                                className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-xs ${isActive
+                                className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-xs relative ${isActive
                                     ? 'bg-forest text-sand shadow-sm shadow-forest/20 font-black'
                                     : 'bg-white text-charcoal/70 hover:bg-[#faf8f3] border border-beige'
                                     }`}
                             >
-                                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-gold' : 'text-forest'}`} />
+                                <div className="relative flex items-center justify-center shrink-0">
+                                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-gold' : 'text-forest'}`} />
+                                    {item.hasNotification && (
+                                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                        </span>
+                                    )}
+                                </div>
                                 <span className="whitespace-nowrap">{item.label}</span>
+                                {item.badge && (
+                                    <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black leading-none ${
+                                        isActive ? 'bg-gold text-forest' : 'bg-rose-500 text-white'
+                                    }`}>
+                                        {item.badge}
+                                    </span>
+                                )}
                             </button>
                         );
                     })}
@@ -1283,23 +1364,48 @@ export default function MeinKontoPage() {
                                                 type="button"
                                                 onClick={() => handleTabChange(item.id)}
                                                 className={`w-full h-10 flex items-center ${
-                                                    sidebarCollapsed ? 'justify-center' : 'justify-start gap-3'
+                                                    sidebarCollapsed ? 'justify-center' : 'justify-between'
                                                 } px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all duration-200 cursor-pointer ${
                                                     isActive
                                                         ? 'bg-gold text-forest font-bold shadow-md shadow-gold/20'
                                                         : 'text-sand/75 hover:text-white hover:bg-white/10 font-medium'
                                                 }`}
                                             >
-                                                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-forest' : 'text-sand/60 group-hover:text-gold'}`} />
-                                                {!sidebarCollapsed && (
-                                                    <span className="truncate leading-none">{item.label}</span>
+                                                <div className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} min-w-0`}>
+                                                    <div className="relative flex items-center justify-center shrink-0">
+                                                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-forest' : 'text-sand/60 group-hover:text-gold'}`} />
+                                                        {item.hasNotification && (
+                                                            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {!sidebarCollapsed && (
+                                                        <span className="truncate leading-none">{item.label}</span>
+                                                    )}
+                                                </div>
+
+                                                {!sidebarCollapsed && item.badge && (
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                                                        isActive
+                                                            ? 'bg-forest text-sand'
+                                                            : 'bg-rose-500 text-white shadow-xs'
+                                                    }`}>
+                                                        {item.badge}
+                                                    </span>
                                                 )}
                                             </button>
 
                                             {/* Floating Tooltip in collapsed mode */}
                                             {sidebarCollapsed && (
-                                                <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-950/95 text-white text-[11px] font-bold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 z-50">
-                                                    {item.label}
+                                                <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-slate-950/95 text-white text-[11px] font-bold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-xl border border-white/10 z-50 flex items-center gap-1.5">
+                                                    <span>{item.label}</span>
+                                                    {item.hasNotification && (
+                                                        <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-500 text-white">
+                                                            {item.badge || 'neu'}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>
@@ -1332,7 +1438,7 @@ export default function MeinKontoPage() {
                                             <span className="text-[10px] font-black uppercase tracking-widest">Campuna Business</span>
                                         </div>
                                         <p className="text-[11px] text-sand/80 font-sans leading-relaxed">
-                                            Bis zu 25 Inserate, Spotlight & Händler-Tools freischalten.
+                                            Bis zu 25 Inserate, professionelles Firmenprofil & Business-Tools freischalten.
                                         </p>
                                         <button
                                             type="button"
@@ -1473,7 +1579,7 @@ export default function MeinKontoPage() {
                                     <div className="space-y-6">
                                         <TabHeader
                                             title="Campuna Business Cockpit"
-                                            subtitle="Schalte professionelle Händler-Werkzeuge, unbegrenzte Inserate und Live-Analysen frei"
+                                            subtitle="Schalte professionelle Business-Werkzeuge, bis zu 25 Inserate und Live-Analysen frei"
                                             icon={CreditCard}
                                             badge={
                                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-gold/20 text-gold-dark border border-gold/40">
@@ -1488,13 +1594,13 @@ export default function MeinKontoPage() {
                                             <div className="relative z-10 max-w-2xl space-y-4">
                                                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase bg-gold text-forest shadow-md">
                                                     <Sparkles className="w-3.5 h-3.5 fill-forest" />
-                                                    Exklusiv für Händler & Power-Seller
+                                                    Exklusiv für Unternehmen & professionelle Anbieter
                                                 </span>
                                                 <h2 className="text-3xl sm:text-4xl font-black text-sand font-display tracking-tight">
                                                     Maximiere deinen Camping-Erfolg mit dem Campuna Business Plan
                                                 </h2>
                                                 <p className="text-sm text-sand/80 leading-relaxed font-sans">
-                                                    Erhalte Zugriff auf bis zu 25 aktive Fahrzeug- & Zubehör-Inserate, automatische Spotlight-Rotation auf der Startseite, Echtzeit-Reichweitenanalysen, direkte Käufer-Leads und 1.000 monatliche Campuna Credits.
+                                                    Erhalte Zugriff auf bis zu 25 aktive Inserate, ein professionelles Firmenprofil mit individuellem Cover & Bio, Echtzeit-Reichweitenanalysen, direkte Kundenanfragen-Pipeline sowie die exklusive Berechtigung zur flexiblen Spotlight-Buchung.
                                                 </p>
                                                 <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
                                                     <button
@@ -1515,14 +1621,14 @@ export default function MeinKontoPage() {
                                                         <Rocket className="w-4 h-4" />
                                                     </div>
                                                     <h4 className="font-bold text-sm text-sand">Bis zu 25 Inserate</h4>
-                                                    <p className="text-xs text-sand/60">Erweitere dein Kontingent von 3 auf 25 gleichzeitig aktive Inserate.</p>
+                                                    <p className="text-xs text-sand/60">Erweitere dein Kontingent von 3 auf bis zu 25 gleichzeitig aktive Inserate.</p>
                                                 </div>
                                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                                                     <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
                                                         <Sparkles className="w-4 h-4" />
                                                     </div>
-                                                    <h4 className="font-bold text-sm text-sand">Spotlight-Rotation</h4>
-                                                    <p className="text-xs text-sand/60">Automatische Einbindung deines Profils in das Campuna Spotlight der Startseite.</p>
+                                                    <h4 className="font-bold text-sm text-sand">Spotlight-Berechtigung</h4>
+                                                    <p className="text-xs text-sand/60">Exklusiver Zugang zur flexiblen Buchung reichweitenstarker Homepage-Spotlights.</p>
                                                 </div>
                                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                                                     <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
@@ -1535,8 +1641,8 @@ export default function MeinKontoPage() {
                                                     <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
                                                         <ShieldCheck className="w-4 h-4" />
                                                     </div>
-                                                    <h4 className="font-bold text-sm text-sand">Händler-Siegel & Cover</h4>
-                                                    <p className="text-xs text-sand/60">Eigenes Schaufenster-Cover, 1.000 Zeichen Bio und verifiziertes Händler-Siegel.</p>
+                                                    <h4 className="font-bold text-sm text-sand">Gewerbe-Siegel & Firmen-Cover</h4>
+                                                    <p className="text-xs text-sand/60">Individuelles Firmen-Cover, 1.000 Zeichen Bio und verifiziertes Unternehmens-Siegel.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1886,7 +1992,9 @@ export default function MeinKontoPage() {
                                                                 ? `Dein Unternehmen rotiert aktiv im Spotlight auf der Campuna-Startseite (noch ${spotlightDaysLeft} ${spotlightDaysLeft === 1 ? 'Tag' : 'Tage'}).`
                                                                 : isSpotlightPaused
                                                                 ? `Spotlight ist für noch ${spotlightDaysLeft} ${spotlightDaysLeft === 1 ? 'Tag' : 'Tage'} gebucht, pausiert jedoch, da dein Profil unvollständig ist. Bitte ergänze die fehlenden Angaben, damit dein Unternehmen auf der Startseite live ausgespielt wird.`
-                                                                : 'Präsentiere dein Unternehmen prominent auf der Campuna Startseite für maximale Händler-Reichweite.'}
+                                                                : subDetails.is_business
+                                                                ? 'Präsentiere dein Unternehmen prominent auf der Campuna Startseite für maximale Reichweite rund ums Camping.'
+                                                                : 'Exklusiv für Campuna Business Kunden: Buche flexible Spotlight-Platzierungen für maximale Sichtbarkeit auf der Startseite.'}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1908,7 +2016,9 @@ export default function MeinKontoPage() {
                                                             ? 'Spotlight verlängern' 
                                                             : isSpotlightPaused 
                                                             ? 'Profil vervollständigen' 
-                                                            : 'Spotlight buchen'}
+                                                            : subDetails.is_business
+                                                            ? 'Spotlight buchen'
+                                                            : 'Spotlight ansehen'}
                                                     </span>
                                                 </button>
                                             </div>
@@ -2021,20 +2131,20 @@ export default function MeinKontoPage() {
                                                                                 type="button"
                                                                                 onClick={() => handleOpenBoostModal(item)}
                                                                                 className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gold/15 border border-beige hover:border-gold text-[10px] font-bold text-charcoal transition-all cursor-pointer flex items-center gap-1 shadow-xs"
-                                                                                title="Mit Campuna Credits boosten"
+                                                                                title="Mit Campuna Credits hervorheben"
                                                                             >
                                                                                 <Rocket className="w-3 h-3 text-gold-dark" />
-                                                                                <span className="hidden sm:inline">Boosten</span>
+                                                                                <span className="hidden sm:inline">Hervorheben</span>
                                                                             </button>
                                                                         ) : (
                                                                             <button
                                                                                 type="button"
                                                                                 disabled
                                                                                 className="px-2.5 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-[10px] font-bold text-stone-400 cursor-not-allowed flex items-center gap-1 opacity-60"
-                                                                                title="Boosten ist nur für freigegebene Inserate verfügbar"
+                                                                                title="Hervorheben ist nur für freigegebene Inserate verfügbar"
                                                                             >
                                                                                 <Rocket className="w-3 h-3 text-stone-400" />
-                                                                                <span className="hidden sm:inline">Boosten</span>
+                                                                                <span className="hidden sm:inline">Hervorheben</span>
                                                                             </button>
                                                                         )}
                                                                         <button
@@ -2093,9 +2203,9 @@ export default function MeinKontoPage() {
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="font-bold text-charcoal">Campuna Business Status aktiv</p>
-                                                                <p className="text-[11px] text-charcoal/60">Unbegrenzte Inserate und Premium Support freigeschaltet.</p>
+                                                                <p className="text-[11px] text-charcoal/60">Bis zu 25 Inserate und professionelle Business-Tools freigeschaltet.</p>
                                                             </div>
-                                                            <span className="text-[10px] text-emerald-600 font-bold shrink-0">Premium</span>
+                                                            <span className="text-[10px] text-emerald-600 font-bold shrink-0">Business</span>
                                                         </div>
                                                     )}
 
@@ -2105,7 +2215,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="font-bold text-charcoal">Campuna Credits Wallet bereit</p>
-                                                            <p className="text-[11px] text-charcoal/60">{Number(creditBalance).toLocaleString('de-DE')} CC verfügbar für Boosts & Spotlight.</p>
+                                                            <p className="text-[11px] text-charcoal/60">{Number(creditBalance).toLocaleString('de-DE')} CC verfügbar für Inserate-Highlights & Spotlight.</p>
                                                         </div>
                                                         <span className="text-[10px] text-charcoal/40 shrink-0">Live</span>
                                                     </div>
@@ -2130,7 +2240,7 @@ export default function MeinKontoPage() {
                                                     <div>
                                                         <h4 className="text-xl font-black text-charcoal">Kostenloses Privatkonto</h4>
                                                         <p className="text-xs text-charcoal/70 mt-1 leading-relaxed">
-                                                            Dauerhaft kostenfreie Nutzung. Erstelle und verwalte bis zu 3 Inserate ohne monatliche Fixkosten oder Abonnement.
+                                                            Dauerhaft kostenfreie Nutzung. Erstelle und verwalte deine Inserate ohne monatliche Fixkosten oder Abonnement.
                                                         </p>
                                                     </div>
 
@@ -2141,7 +2251,7 @@ export default function MeinKontoPage() {
                                                                 <span className="font-bold">Aktive Inserate:</span>
                                                             </div>
                                                             <span className="font-mono font-black text-forest">
-                                                                {userListings.filter(l => l.status === 'APPROVED').length} / 3 aktiv
+                                                                {userListings.filter(l => l.status === 'APPROVED').length} {userListings.filter(l => l.status === 'APPROVED').length === 1 ? 'Inserat aktiv' : 'Inserate aktiv'}
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center gap-2">
@@ -2184,8 +2294,8 @@ export default function MeinKontoPage() {
                                                         <h4 className="text-xl font-black text-white">{subDetails.is_business ? 'Campuna Business Plan' : 'Business Free Plan'}</h4>
                                                         <p className="text-xs text-sand/80 mt-1 leading-relaxed">
                                                             {subDetails.is_business
-                                                                ? 'Bis zu 25 Fahrzeug- & Zubehör-Inserate, Spotlight-Rotation und erweiterte Sichtbarkeit.'
-                                                                : 'Erstelle bis zu 3 kostenfreie Inserate als Händler auf Campuna.'}
+                                                                ? 'Bis zu 25 Inserate, professionelles Firmenprofil & Business-Tools.'
+                                                                : 'Erstelle bis zu 3 kostenfreie Inserate als gewerblicher Anbieter auf Campuna.'}
                                                         </p>
                                                     </div>
 
@@ -2196,7 +2306,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                            <span>{subDetails.is_business ? 'Automatische Spotlight-Rotation auf Startseite' : 'Basis-Sichtbarkeit'}</span>
+                                                            <span>{subDetails.is_business ? 'Berechtigt zur Spotlight-Buchung' : 'Basis-Sichtbarkeit'}</span>
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
@@ -2208,7 +2318,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2">
                                                             <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                            <span>{subDetails.is_business ? '+ 1.000 Campuna Credits inklusive' : 'Inserate boosten mit Credits'}</span>
+                                                            <span>{subDetails.is_business ? '+ 1.000 Campuna Credits monatlich' : 'Inserate mit Credits hervorheben'}</span>
                                                         </div>
                                                     </div>
 
@@ -2254,7 +2364,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div>
                                                             <h3 className="font-bold text-charcoal text-sm">Credits & Freunde</h3>
-                                                            <p className="text-[11px] text-charcoal/50 font-medium">Guthaben für Boosts</p>
+                                                            <p className="text-[11px] text-charcoal/50 font-medium">Guthaben für Inserate-Highlights & Spotlight</p>
                                                         </div>
                                                     </div>
 
@@ -2264,7 +2374,7 @@ export default function MeinKontoPage() {
                                                 </div>
 
                                                 <p className="text-xs text-charcoal/60 leading-relaxed">
-                                                    Lade andere Camper oder Händler ein und erhalte sofort Campuna Credits für jede erfolgreiche Registrierung.
+                                                    Lade andere Camper oder gewerbliche Partner ein und erhalte sofort Campuna Credits für jede erfolgreiche Registrierung.
                                                 </p>
 
                                                 {user?.referral_code && (
@@ -2366,7 +2476,7 @@ export default function MeinKontoPage() {
                                                 <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 text-[10px] text-sand/70">
                                                     <span>Alle Fahrzeuge</span>
                                                     <span className="font-bold text-gold flex items-center gap-0.5">
-                                                        {subDetails.is_business ? '∞ Kontingent' : `${userListings.length}/3 Free`}
+                                                        {isCommercial ? (subDetails.is_business ? 'Bis zu 25 Inserate' : `${userListings.length}/3 Free`) : 'Kostenlos aktiv'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -2558,7 +2668,11 @@ export default function MeinKontoPage() {
                                                 return (
                                                     <div
                                                         key={item.id}
-                                                        className="listing-card group relative flex flex-col h-full bg-white rounded-2xl overflow-hidden border border-forest/10 hover:border-forest/25 shadow-xs hover:shadow-md transition-all duration-300 select-none justify-between"
+                                                        className={`listing-card group relative flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-300 select-none justify-between ${
+                                                            isBoosted
+                                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_16px_-2px_rgba(202,152,43,0.16)] hover:shadow-[0_6px_20px_-2px_rgba(202,152,43,0.24)]'
+                                                                : 'bg-white border border-forest/10 hover:border-forest/25 shadow-xs hover:shadow-md'
+                                                        }`}
                                                     >
                                                         <div>
                                                             {/* Compact Image */}
@@ -2650,20 +2764,20 @@ export default function MeinKontoPage() {
                                                                     type="button"
                                                                     onClick={() => handleOpenBoostModal(item)}
                                                                     className="flex-1 flex items-center justify-center gap-1 bg-gradient-to-r from-gold via-[#ffd269] to-gold hover:brightness-105 text-forest font-bold py-1.5 px-2 rounded-xl text-[11px] transition-all cursor-pointer shadow-2xs"
-                                                                    title="Mit Campuna Credits boosten"
+                                                                    title="Mit Campuna Credits hervorheben"
                                                                 >
                                                                     <Rocket className="w-3 h-3 text-forest" />
-                                                                    <span>Boosten</span>
+                                                                    <span>Hervorheben</span>
                                                                 </button>
                                                             ) : (
                                                                 <button
                                                                     type="button"
                                                                     disabled
                                                                     className="flex-1 flex items-center justify-center gap-1 bg-stone-100 border border-stone-200 text-stone-400 font-bold py-1.5 px-2 rounded-xl text-[11px] cursor-not-allowed opacity-60"
-                                                                    title="Boosten ist nur für freigegebene Inserate verfügbar"
+                                                                    title="Hervorheben ist nur für freigegebene Inserate verfügbar"
                                                                 >
                                                                     <Rocket className="w-3 h-3 text-stone-400" />
-                                                                    <span>Boosten</span>
+                                                                    <span>Hervorheben</span>
                                                                 </button>
                                                             )}
 
@@ -2722,7 +2836,7 @@ export default function MeinKontoPage() {
                                                 <div>
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         <h2 className="text-lg sm:text-xl font-black text-forest">
-                                                            {subDetails.is_business ? 'Campuna Premium Plan' : 'Free Standard Plan'}
+                                                            {subDetails.is_business ? 'Campuna Business Plan' : 'Business Free Plan'}
                                                         </h2>
                                                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 ${subDetails.is_business ? 'bg-emerald-100 text-emerald-800' : 'bg-forest/10 text-forest'}`}>
                                                             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -2732,7 +2846,7 @@ export default function MeinKontoPage() {
                                                     <p className="text-xs text-charcoal/60 mt-0.5 font-medium">
                                                         {subDetails.is_business 
                                                             ? `Monatlich 29,00 € • Automatische Verlängerung am: ${subDetails.expires_at ? new Date(subDetails.expires_at).toLocaleDateString('de-DE') : 'in 30 Tagen'}`
-                                                            : '0,00 € / Monat • Dauerhaft kostenloser Basis-Tarif für Camper & Händler'}
+                                                            : '0,00 € / Monat • Dauerhaft kostenloser Basis-Tarif für Unternehmen & professionelle Anbieter'}
                                                     </p>
                                                 </div>
                                             </div>
@@ -2762,7 +2876,7 @@ export default function MeinKontoPage() {
                                                         onClick={() => router.push('/abo/kasse')}
                                                         className="px-5 py-2.5 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-gold/25 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
                                                     >
-                                                        <span>Auf Premium upgraden (29 €)</span>
+                                                        <span>Auf Business upgraden (29 €)</span>
                                                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
                                                     </button>
                                                 )}
@@ -2819,14 +2933,14 @@ export default function MeinKontoPage() {
 
                                             {/* Metric 3: Cover & Branding */}
                                             <div className="p-4 bg-[#faf8f3] rounded-2xl border border-beige space-y-2">
-                                                <span className="font-bold text-charcoal/60 uppercase tracking-wider text-[10px]">Spotlight & Branding</span>
+                                                <span className="font-bold text-charcoal/60 uppercase tracking-wider text-[10px]">Firmenprofil & Branding</span>
                                                 <div className="text-xl font-black text-charcoal">
-                                                    {subDetails.is_business ? 'Spotlight & Cover' : 'Basis-Präsenz'}
+                                                    {subDetails.is_business ? 'Firmenprofil & Cover' : 'Basis-Präsenz'}
                                                 </div>
                                                 <p className="text-[11px] text-charcoal/60">
                                                     {subDetails.is_business
-                                                        ? 'Automatische Spotlight-Rotation & Firmen-Cover aktiv.'
-                                                        : 'Basis-Layout ohne Titelbild & Spotlight-Rotation.'}
+                                                        ? 'Individuelles Firmen-Cover, 1.000 Zeichen Bio & Spotlight-Berechtigung.'
+                                                        : 'Basis-Layout ohne individuelles Cover & ohne Spotlight-Option.'}
                                                 </p>
                                             </div>
                                         </div>
@@ -2835,7 +2949,7 @@ export default function MeinKontoPage() {
                                     {/* ── 2. MIDDLE SECTION: VERFÜGBARE TARIFE IM VERGLEICH (OTHER PLANS) ── */}
                                     <div className="space-y-4">
                                         <div>
-                                            <h3 className="text-lg font-black text-forest">Gewerbliche Tarife & Optionen</h3>
+                                            <h3 className="text-lg font-black text-forest">Tarife für Unternehmen & professionelle Anbieter</h3>
                                             <p className="text-xs text-charcoal/60">Wähle die passende Lösung für dein Unternehmen und deine Fahrzeugangebote</p>
                                         </div>
 
@@ -2868,7 +2982,7 @@ export default function MeinKontoPage() {
                                                             <span className="text-3xl font-black text-charcoal font-mono">0 €</span>
                                                             <span className="text-xs text-charcoal/60 font-medium">/ dauerhaft kostenlos</span>
                                                         </div>
-                                                        <p className="text-xs text-charcoal/60 mt-1">Kostenloser Einstieg für gewerbliche Händler und Werkstätten.</p>
+                                                        <p className="text-xs text-charcoal/60 mt-1">Kostenloser Einstieg für Unternehmen und professionelle Anbieter rund ums Camping.</p>
                                                     </div>
 
                                                     <div className="space-y-2.5 pt-3 border-t border-beige text-xs text-charcoal/80">
@@ -2882,7 +2996,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
-                                                            <span>Inserate einzeln hervorheben (ab 4,99 €)</span>
+                                                            <span>Inserate mit Credits hervorheben (ab 4,99 €)</span>
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
@@ -2890,11 +3004,11 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2.5 text-charcoal/40">
                                                             <X className="w-4 h-4 text-charcoal/30 shrink-0" />
-                                                            <span className="line-through">Spotlight-Rotation auf Startseite</span>
+                                                            <span className="line-through">Keine Spotlight-Buchung möglich</span>
                                                         </div>
                                                         <div className="flex items-center gap-2.5 text-charcoal/40">
                                                             <X className="w-4 h-4 text-charcoal/30 shrink-0" />
-                                                            <span className="line-through">Individuelles Firmen-Cover</span>
+                                                            <span className="line-through">Kein individuelles Firmen-Cover</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2921,7 +3035,7 @@ export default function MeinKontoPage() {
                                                 {/* Top Ribbon / Badge */}
                                                 <div className="absolute top-0 right-0">
                                                     <span className="bg-gradient-to-r from-gold via-[#dfbe7f] to-gold text-forest text-[9px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl shadow-xs">
-                                                        {subDetails.is_business ? 'Aktiver Plan' : 'Empfohlen für Händler'}
+                                                        {subDetails.is_business ? 'Aktiver Plan' : 'Empfohlen für gewerbliche Anbieter'}
                                                     </span>
                                                 </div>
 
@@ -2943,7 +3057,7 @@ export default function MeinKontoPage() {
                                                             <span className={`text-xs font-medium ${subDetails.is_business ? 'text-sand/80' : 'text-charcoal/60'}`}>/ Monat (inkl. MwSt.)</span>
                                                         </div>
                                                         <p className={`text-xs mt-1 ${subDetails.is_business ? 'text-sand/70' : 'text-charcoal/60'}`}>
-                                                            Für professionelle Camping-Händler, Vermieter und Ausbauer.
+                                                            Für Unternehmen und professionelle Anbieter rund ums Camping.
                                                         </p>
                                                     </div>
 
@@ -2962,7 +3076,11 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>Präsenz im Verzeichnis</strong> „Alle Händler / Anbieter“</span>
+                                                            <span><strong>Präsenz im Verzeichnis</strong> für Camping-Anbieter</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2.5">
+                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
+                                                            <span><strong>Spotlight-Berechtigung:</strong> Exklusiv berechtigt zur flexiblen Spotlight-Buchung</span>
                                                         </div>
                                                         <div className="flex items-center gap-2.5">
                                                             <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
@@ -3029,8 +3147,8 @@ export default function MeinKontoPage() {
                                 <div className="space-y-6">
                                     {/* Top Tab Header */}
                                     <TabHeader
-                                        title="Campuna Credits & Freunde"
-                                        subtitle="Nutze deine gesammelten Credits für Inserate-Boosts und verdiene neue durch Weiterempfehlungen"
+                                        title="Campuna Credits & Empfehlungen"
+                                        subtitle={isCommercial ? "Nutze Credits flexibel für Inserate-Highlights & Spotlight-Buchungen und sichere dir neue durch Weiterempfehlungen" : "Nutze Credits flexibel für Inserate-Highlights und sichere dir neue durch Weiterempfehlungen"}
                                         icon={Gift}
                                         action={
                                             <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/40 text-gold-dark px-3.5 py-1.5 rounded-full text-xs font-black font-mono shadow-xs">
@@ -3051,7 +3169,7 @@ export default function MeinKontoPage() {
                                                     {Number(creditBalance).toLocaleString('de-DE')} CC
                                                 </div>
                                                 <p className="text-xs sm:text-sm text-sand/80 leading-relaxed max-w-xl pt-1">
-                                                    1 Credit = 1 Cent Gegenwert. Verwende Credits flexibel für 7-, 14- oder 30-Tage Reichweiten-Boosts deiner Inserate.
+                                                    1 Credit = 1 Cent Gegenwert. Verwende Credits flexibel für 7-, 14- oder 30-Tage Inserate-Highlights{isCommercial ? ' sowie Spotlight-Buchungen' : ''}.
                                                 </p>
                                             </div>
 
@@ -3092,7 +3210,7 @@ export default function MeinKontoPage() {
                                                         <Gift className="w-4 h-4" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-bold text-charcoal text-sm">Freunde & Händler einladen</h3>
+                                                        <h3 className="font-bold text-charcoal text-sm">Freunde & Partner einladen</h3>
                                                         <p className="text-[11px] text-charcoal/50 font-medium">Verteile deinen persönlichen Einladungscode</p>
                                                     </div>
                                                 </div>
@@ -3106,7 +3224,7 @@ export default function MeinKontoPage() {
                                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                                                         <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
                                                             <span className="text-xs font-black text-forest font-mono">1. Teilen</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Gib deinen Link oder Code an Camping-Freunde und Händler weiter.</p>
+                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Gib deinen Link oder Code an Camping-Freunde und Partner weiter.</p>
                                                         </div>
                                                         <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
                                                             <span className="text-xs font-black text-forest font-mono">2. Registrieren</span>
@@ -3114,7 +3232,7 @@ export default function MeinKontoPage() {
                                                         </div>
                                                         <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
                                                             <span className="text-xs font-black text-forest font-mono">3. Beide profitieren</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Privat: 500 CC nach 1. freigegebenem Inserat. Gewerblich: 1.000 CC nach vollständigem Firmenprofil.</p>
+                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Privat: 500 CC nach 1. Inserat. Gewerblich: 1.000 CC nach vollständigem Firmenprofil.</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -3140,7 +3258,7 @@ export default function MeinKontoPage() {
                                             {referralsList.length === 0 ? (
                                                 <div className="py-8 text-center bg-[#faf8f3] rounded-2xl border border-dashed border-beige p-6 space-y-2">
                                                     <p className="text-xs text-charcoal/60 font-medium">Noch keine Einladungen vorhanden.</p>
-                                                    <p className="text-[11px] text-charcoal/40">Teile deinen Code mit Camping-Freunden!</p>
+                                                    <p className="text-[11px] text-charcoal/40">Teile deinen Code mit Camping-Freunden & Partnern!</p>
                                                 </div>
                                             ) : (
                                                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
@@ -3169,7 +3287,7 @@ export default function MeinKontoPage() {
                                                 </div>
                                                 <div>
                                                     <h3 className="font-bold text-charcoal text-sm">Guthaben aufladen (Credits-Pakete)</h3>
-                                                    <p className="text-[11px] text-charcoal/50 font-medium">Kaufe Campuna Credits für flexible Reichweiten-Boosts deiner Inserate</p>
+                                                    <p className="text-[11px] text-charcoal/50 font-medium">Kaufe Campuna Credits für flexible Inserate-Highlights{isCommercial ? ' & Spotlight-Buchungen' : ''}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -3179,7 +3297,7 @@ export default function MeinKontoPage() {
                                                 { credits: 500, priceEur: '4,99 €', label: '7 Tage Inserat-Highlight', popular: false },
                                                 { credits: 800, priceEur: '7,99 €', label: '14 Tage Inserat-Highlight', popular: true },
                                                 { credits: 1300, priceEur: '12,99 €', label: '30 Tage Inserat-Highlight', popular: false },
-                                                { credits: 2500, priceEur: '24,99 €', label: 'Großes Spar-Paket', popular: false, badge: 'Spar-Tipp' },
+                                                { credits: 2500, priceEur: '24,99 €', label: '2.500 CC Guthaben', popular: false },
                                             ].map((pkg) => (
                                                 <div
                                                     key={pkg.credits}
@@ -3238,7 +3356,7 @@ export default function MeinKontoPage() {
                                         {creditTransactions.length === 0 ? (
                                             <div className="py-8 text-center bg-[#faf8f3] rounded-2xl border border-dashed border-beige p-6 space-y-1">
                                                 <p className="text-xs text-charcoal/60 font-medium">Noch keine Transaktionen aufgezeichnet.</p>
-                                                <p className="text-[11px] text-charcoal/40">Sobald du Guthaben auflädst, Freunde einlädst oder Inserate boostest, erscheinen die Einträge hier.</p>
+                                                <p className="text-[11px] text-charcoal/40">Sobald du Guthaben auflädst, Freunde einlädst oder Inserate hervorhebst, erscheinen die Einträge hier.</p>
                                             </div>
                                         ) : (
                                             <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
@@ -3283,14 +3401,14 @@ export default function MeinKontoPage() {
                                     {/* Top Tab Header */}
                                     <TabHeader
                                         title={pioneerBadge ? "Campuna Pioneer Status" : "Campuna Pioneer Badge erhalten"}
-                                        subtitle={pioneerBadge ? "Exklusiver Status & dauerhafte Vorteile für die ersten 300 qualifizierten Campuna Mitglieder" : "Werde einer der ersten 300 Pioniere auf Campuna und sichere dir lebenslange Vorteile für dein Profil & deine Inserate"}
+                                        subtitle={pioneerBadge ? "Exklusiver Status & dauerhafte Auszeichnung für die ersten 300 aktiven Campuna Mitglieder" : "Werde einer der ersten 300 Campuna Pioniere und sichere dir deinen dauerhaften Pioneer-Status."}
                                         icon={Award}
                                         badge={
                                             pioneerBadge ? (
                                                 <PioneerBadge size="sm" text="Campuna Pioneer" />
                                             ) : (
                                                 <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gold/15 text-gold-dark border border-gold/30 flex items-center gap-1">
-                                                    <Sparkles className="w-3 h-3 text-gold-dark" /> Badge erhalten (In Qualifikation)
+                                                    <Sparkles className="w-3 h-3 text-gold-dark" /> In Qualifikation
                                                 </span>
                                             )
                                         }
@@ -3304,7 +3422,7 @@ export default function MeinKontoPage() {
                                             </span>
                                             <h2 className="text-2xl sm:text-3xl font-black text-white">Campuna Pioneer Award</h2>
                                             <p className="text-xs sm:text-sm text-sand/80 leading-relaxed">
-                                                Als Pioneer gehörst du zu den ersten 300 geprüften Mitgliedern der Campuna Plattform. Dein Profil und deine Inserate erhalten dauerhaft den goldenen Pioneer-Badge für maximales Vertrauen.
+                                                Als Pioneer gehörst du zu den ersten 300 aktiven Mitgliedern der Campuna Plattform. Dein Profil und deine Inserate erhalten dauerhaft den goldenen Pioneer-Badge als besondere Anerkennung für dein frühes Engagement auf Campuna.
                                             </p>
                                         </div>
 
@@ -3328,50 +3446,71 @@ export default function MeinKontoPage() {
                                             </div>
 
                                             <div className="space-y-3 text-xs">
-                                                <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${isProfileComplete ? 'bg-forest' : 'bg-stone-300'}`}>
-                                                            <Check className="w-3.5 h-3.5" />
+                                                {isCommercial && commercialPioneerCriteria ? (
+                                                    commercialPioneerCriteria.list.map((item) => (
+                                                        <div key={item.id} className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0 ${item.met ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                                    <Check className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                <div>
+                                                                    <span className="font-bold text-charcoal block">{item.label}</span>
+                                                                    <span className="text-[11px] text-charcoal/50">{item.detail}</span>
+                                                                </div>
+                                                            </div>
+                                                            <span className={`font-black uppercase text-[10px] shrink-0 ${item.met ? 'text-emerald-600' : 'text-charcoal/40'}`}>
+                                                                {item.value || (item.met ? 'Erfüllt' : 'Ausstehend')}
+                                                            </span>
                                                         </div>
-                                                        <div>
-                                                            <span className="font-bold text-charcoal block">Profil vollständig ausgefüllt</span>
-                                                            <span className="text-[11px] text-charcoal/50">Name, Bio und Standort hinterlegt</span>
+                                                    ))
+                                                ) : (
+                                                    <>
+                                                        <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${isProfileComplete ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                                    <Check className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                <div>
+                                                                    <span className="font-bold text-charcoal block">Profil vollständig ausgefüllt</span>
+                                                                    <span className="text-[11px] text-charcoal/50">Name, Bio und Standort hinterlegt</span>
+                                                                </div>
+                                                            </div>
+                                                            <span className={`font-black uppercase text-[10px] ${isProfileComplete ? 'text-emerald-600' : 'text-charcoal/40'}`}>
+                                                                {isProfileComplete ? 'Erfüllt' : 'Ausstehend'}
+                                                            </span>
                                                         </div>
-                                                    </div>
-                                                    <span className={`font-black uppercase text-[10px] ${isProfileComplete ? 'text-emerald-600' : 'text-charcoal/40'}`}>
-                                                        {isProfileComplete ? 'Erfüllt' : 'Ausstehend'}
-                                                    </span>
-                                                </div>
 
-                                                <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${approvedListingsCount >= 3 ? 'bg-forest' : 'bg-stone-300'}`}>
-                                                            <Check className="w-3.5 h-3.5" />
+                                                        <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${approvedListingsCount >= 3 ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                                    <Check className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                <div>
+                                                                    <span className="font-bold text-charcoal block">Mindestens 3 freigegebene Inserate</span>
+                                                                    <span className="text-[11px] text-charcoal/50">Von der Moderation genehmigt</span>
+                                                                </div>
+                                                            </div>
+                                                            <span className="font-black font-mono text-forest">
+                                                                {approvedListingsCount} / 3
+                                                            </span>
                                                         </div>
-                                                        <div>
-                                                            <span className="font-bold text-charcoal block">Mindestens 3 freigegebene Inserate</span>
-                                                            <span className="text-[11px] text-charcoal/50">Von der Moderation genehmigt</span>
-                                                        </div>
-                                                    </div>
-                                                    <span className="font-black font-mono text-forest">
-                                                        {approvedListingsCount} / 3
-                                                    </span>
-                                                </div>
 
-                                                <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-white bg-forest">
-                                                            <Check className="w-3.5 h-3.5" />
+                                                        <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${user?.email_verified ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                                    <Check className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                <div>
+                                                                    <span className="font-bold text-charcoal block">Konto verifiziert</span>
+                                                                    <span className="text-[11px] text-charcoal/50">E-Mail-Adresse bestätigt</span>
+                                                                </div>
+                                                            </div>
+                                                            <span className={`font-black uppercase text-[10px] ${user?.email_verified ? 'text-emerald-600' : 'text-charcoal/40'}`}>
+                                                                {user?.email_verified ? 'Erfüllt' : 'Ausstehend'}
+                                                            </span>
                                                         </div>
-                                                        <div>
-                                                            <span className="font-bold text-charcoal block">Konto verifiziert</span>
-                                                            <span className="text-[11px] text-charcoal/50">Authentifiziertes Benutzerkonto</span>
-                                                        </div>
-                                                    </div>
-                                                    <span className="font-black uppercase text-[10px] text-emerald-600">
-                                                        Erfüllt
-                                                    </span>
-                                                </div>
+                                                    </>
+                                                )}
                                             </div>
 
                                             <div className="pt-2">
@@ -3380,7 +3519,7 @@ export default function MeinKontoPage() {
                                                         <Sparkles className="w-4 h-4 text-gold-dark" />
                                                         <span>Glückwunsch! Du bist Campuna Pioneer</span>
                                                     </div>
-                                                ) : !isProfileComplete ? (
+                                                ) : !(isCommercial ? commercialPioneerCriteria?.isProfileOnlyComplete : isProfileComplete) ? (
                                                     <button
                                                         type="button"
                                                         onClick={() => { setIsEditing(true); setActiveTab('dashboard'); }}
@@ -3411,7 +3550,7 @@ export default function MeinKontoPage() {
                                                     </div>
                                                     <div>
                                                         <h3 className="font-bold text-charcoal text-sm">Exklusive Vorteile</h3>
-                                                        <p className="text-[11px] text-charcoal/50 font-medium">Dauerhafte Auszeichnungen</p>
+                                                        <p className="text-[11px] text-charcoal/50 font-medium">Dauerhafte Auszeichnung</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -3422,7 +3561,7 @@ export default function MeinKontoPage() {
                                                         <Crown className="w-3.5 h-3.5 text-gold-dark" /> Goldener Badge im Profil & Inseraten
                                                     </h5>
                                                     <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Dein Account sticht mit einem exklusiven Siegel hervor und signalisiert Käufern maximale Zuverlässigkeit und Vertrauen.
+                                                        Dein Account sticht mit einem exklusiven Siegel hervor und zeichnet dich als frühen Unterstützer und aktives Mitglied der ersten Stunde aus.
                                                     </p>
                                                 </div>
 
@@ -3431,16 +3570,16 @@ export default function MeinKontoPage() {
                                                         <Sparkles className="w-3.5 h-3.5 text-gold-dark" /> 1.000 CC Einmal-Bonus
                                                     </h5>
                                                     <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Einmalige Prämie von 1.000 Campuna Credits direkt nach erfolgreicher Qualifikation (nutzbar für Inserate-Boosts & Spotlight).
+                                                        Einmalige Prämie von 1.000 Campuna Credits direkt nach erfolgreicher Qualifikation (nutzbar für Inserate-Highlights{isCommercial ? ' & Spotlight-Buchungen' : ''}).
                                                     </p>
                                                 </div>
 
                                                 <div className="p-3.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
                                                     <h5 className="font-bold text-charcoal flex items-center gap-1.5">
-                                                        <Award className="w-3.5 h-3.5 text-gold-dark" /> Lebenslanger Gründer- & Pionierstatus
+                                                        <Award className="w-3.5 h-3.5 text-gold-dark" /> Dauerhafter Pioneer-Status
                                                     </h5>
                                                     <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Als Pioneer verlierst du deinen Rang nie – streng limitiert auf die ersten 300 geprüften Mitglieder auf Campuna.
+                                                        Als Pioneer bleibt dein Ehrenstatus dauerhaft erhalten – streng limitiert auf die ersten 300 aktiven Mitglieder auf Campuna.
                                                     </p>
                                                 </div>
                                             </div>
@@ -3520,9 +3659,23 @@ export default function MeinKontoPage() {
                                     ))}
                                 </div>
 
-                                {!spotlightRequirements.allMet && (
+                                {!subDetails?.is_business ? (
+                                    <div className="mt-2 p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div className="space-y-0.5">
+                                            <span className="font-bold block">Campuna Business Plan erforderlich</span>
+                                            <span className="text-[11px] text-amber-800">Spotlight-Buchungen stehen exklusiv aktiven Campuna Business Partnern zur Verfügung.</span>
+                                        </div>
+                                        <Link
+                                            href="/abo/kasse"
+                                            onClick={() => setSpotlightModalOpen(false)}
+                                            className="inline-flex items-center gap-1 font-bold text-xs bg-forest hover:bg-[#004d0a] text-sand px-3 py-1.5 rounded-xl cursor-pointer shrink-0 transition-colors shadow-xs"
+                                        >
+                                            Auf Business upgraden &rarr;
+                                        </Link>
+                                    </div>
+                                ) : !spotlightRequirements.allMet ? (
                                     <div className="mt-2 p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 flex items-center justify-between gap-2">
-                                        <span>Vervollständige dein Profil, um Spotlight freizuschalten.</span>
+                                        <span>Vervollständige dein Firmenprofil, um Spotlight freizuschalten.</span>
                                         <button
                                             type="button"
                                             onClick={() => {
@@ -3534,7 +3687,7 @@ export default function MeinKontoPage() {
                                             Jetzt bearbeiten &rarr;
                                         </button>
                                     </div>
-                                )}
+                                ) : null}
                             </div>
 
                             {/* Duration Packages */}
@@ -3628,6 +3781,8 @@ export default function MeinKontoPage() {
                                     <span>
                                         {bookingSpotlight
                                             ? 'Wird aktiviert...'
+                                            : !subDetails?.is_business
+                                            ? 'Campuna Business erforderlich'
                                             : !spotlightRequirements.allMet
                                             ? 'Profil unvollständig'
                                             : spotlightPaymentMethod === 'CREDIT'
@@ -3687,7 +3842,7 @@ export default function MeinKontoPage() {
                                         { credits: 500, priceEur: '4,99 €', sub: '7 Tage' },
                                         { credits: 800, priceEur: '7,99 €', sub: '14 Tage', popular: true },
                                         { credits: 1300, priceEur: '12,99 €', sub: '30 Tage' },
-                                        { credits: 2500, priceEur: '24,99 €', sub: 'Spar-Paket' },
+                                        { credits: 2500, priceEur: '24,99 €', sub: '2.500 CC' },
                                     ].map((pkg) => (
                                         <button
                                             key={pkg.credits}
@@ -3805,24 +3960,34 @@ export default function MeinKontoPage() {
                             </div>
                             <div>
                                 <h3 className="font-black text-charcoal text-lg">
-                                    Inserate-Limit erreicht ({userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length} / {subDetails.is_business ? 25 : 3})
+                                    {isCommercial
+                                        ? `Inserate-Limit erreicht (${userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length} / ${subDetails.is_business ? 25 : 3})`
+                                        : 'Veröffentlichung nicht möglich'}
                                 </h3>
                                 <p className="text-xs text-charcoal/70 leading-relaxed mt-1">
-                                    {profileType === 'COMMERCIAL'
+                                    {isCommercial
                                         ? (!subDetails.is_business
-                                            ? 'Im kostenfreien Business Free Tarif können maximal 3 Inserate gleichzeitig aktiv sein. Mit dem Business Plan kannst du bis zu 25 Inserate gleichzeitig schalten!'
+                                            ? 'Im kostenfreien Business Free Tarif können maximal 3 Inserate gleichzeitig aktiv sein. Mit dem Campuna Business Plan kannst du bis zu 25 Inserate gleichzeitig schalten!'
                                             : 'Du hast das maximale Limit von 25 aktiven Inseraten erreicht.')
-                                        : 'Im kostenlosen Privatkonto können maximal 3 Inserate gleichzeitig aktiv sein.'}
+                                        : 'Ungewöhnlich hohe Inseratsaktivität deutet auf eine gewerbliche Nutzung hin. Wenn du gewerblich Inserate aufgeben möchtest, erstelle bitte ein gewerbliches Anbieterkonto oder wende dich an unseren Support.'}
                                 </p>
                             </div>
                             <div className="flex gap-2">
-                                {profileType === 'COMMERCIAL' && !subDetails.is_business ? (
+                                {isCommercial && !subDetails.is_business ? (
                                     <button
                                         type="button"
                                         onClick={() => { setLimitModalOpen(false); router.push('/abo/kasse'); }}
                                         className="flex-1 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-gold/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                                     >
                                         Auf Business Upgraden
+                                    </button>
+                                ) : !isCommercial ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => { setLimitModalOpen(false); router.push('/registrieren?type=commercial'); }}
+                                        className="flex-1 bg-forest hover:bg-[#004d0a] text-sand py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
+                                    >
+                                        Gewerbekonto erstellen
                                     </button>
                                 ) : (
                                     <button
@@ -4034,7 +4199,7 @@ export default function MeinKontoPage() {
                                         </div>
                                         <h3 className="font-display font-black text-charcoal text-2xl">Campuna Pioneer Mitglied</h3>
                                         <p className="text-xs sm:text-sm text-charcoal/70 leading-relaxed max-w-md mx-auto">
-                                            Glückwunsch! Du gehörst zu den ersten 300 geprüften Mitgliedern auf Campuna. Dein Profil und all deine Inserate tragen dauerhaft den goldenen Pioneer-Badge.
+                                            Glückwunsch! Du gehörst zu den ersten 300 aktiven Mitgliedern auf Campuna. Dein Profil und all deine Inserate tragen dauerhaft den goldenen Pioneer-Badge als besondere Anerkennung für dein frühes Engagement auf Campuna.
                                         </p>
                                     </div>
 
@@ -4045,11 +4210,11 @@ export default function MeinKontoPage() {
                                         </div>
                                         <div className="flex items-center gap-2 font-bold text-forest">
                                             <CheckCircle2 className="w-4 h-4 text-gold-dark shrink-0" />
-                                            <span>Maximales Vertrauen & Seriosität bei Interessenten</span>
+                                            <span>Besondere Anerkennung als einer der ersten aktiven Campuna-Pioniere</span>
                                         </div>
                                         <div className="flex items-center gap-2 font-bold text-forest">
                                             <CheckCircle2 className="w-4 h-4 text-gold-dark shrink-0" />
-                                            <span>Lebenslanger Early-Supporter Status gesichert</span>
+                                            <span>Dauerhafter Pioneer-Status gesichert</span>
                                         </div>
                                     </div>
 
@@ -4079,7 +4244,7 @@ export default function MeinKontoPage() {
                                             Campuna Pioneer Badge erhalten
                                         </h3>
                                         <p className="text-xs text-charcoal/70 leading-relaxed max-w-md mx-auto">
-                                            Sichere dir das exklusive Campuna Pioneer Abzeichen für maximales Vertrauen bei Interessenten und dauerhaften Gründerstatus auf Campuna.
+                                            Werde einer der ersten 300 Campuna Pioniere und sichere dir deinen dauerhaften Pioneer-Status als Anerkennung für dein frühes Engagement auf Campuna.
                                         </p>
                                     </div>
 
@@ -4092,8 +4257,8 @@ export default function MeinKontoPage() {
                                         </div>
                                         <div className="p-2.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
                                             <ShieldCheck className="w-4 h-4 text-gold-dark mx-auto" />
-                                            <span className="font-bold text-[11px] text-charcoal block leading-tight">Höchstes Vertrauen</span>
-                                            <span className="text-[9px] text-charcoal/50 block">Geprüfter Pionier</span>
+                                            <span className="font-bold text-[11px] text-charcoal block leading-tight">Frühes Engagement</span>
+                                            <span className="text-[9px] text-charcoal/50 block">Aktiver Pionier</span>
                                         </div>
                                         <div className="p-2.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
                                             <Award className="w-4 h-4 text-gold-dark mx-auto" />
@@ -4107,38 +4272,60 @@ export default function MeinKontoPage() {
                                         <div className="flex items-center justify-between font-bold text-charcoal pb-1.5 border-b border-beige/60">
                                             <span>Deine Qualifikation:</span>
                                             <span className="text-forest font-mono text-[11px]">
-                                                {(isProfileComplete ? 1 : 0) + (approvedListingsCount >= 3 ? 1 : 0)} / 2 Kriterien
+                                                {isCommercial && commercialPioneerCriteria ? (
+                                                    `${commercialPioneerCriteria.metCount} / ${commercialPioneerCriteria.totalCount} Kriterien`
+                                                ) : (
+                                                    `${(isProfileComplete ? 1 : 0) + (approvedListingsCount >= 3 ? 1 : 0)} / 2 Kriterien`
+                                                )}
                                             </span>
                                         </div>
 
-                                        <div className="flex items-center justify-between py-1">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${isProfileComplete ? 'bg-forest' : 'bg-stone-300'}`}>
-                                                    <Check className="w-3 h-3" />
+                                        {isCommercial && commercialPioneerCriteria ? (
+                                            commercialPioneerCriteria.list.map((item) => (
+                                                <div key={item.id} className="flex items-center justify-between py-1 border-b border-beige/30 last:border-0">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white ${item.met ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                            <Check className="w-2.5 h-2.5" />
+                                                        </div>
+                                                        <span className="text-[11px] font-medium text-charcoal">{item.label}</span>
+                                                    </div>
+                                                    <span className={`text-[10px] font-black uppercase ${item.met ? 'text-emerald-600' : 'text-charcoal/40'}`}>
+                                                        {item.met ? (item.id === 'listings' ? `${approvedListingsCount} / 3` : 'Erledigt') : (item.id === 'listings' ? `${approvedListingsCount} / 3` : 'Ausstehend')}
+                                                    </span>
                                                 </div>
-                                                <span className="text-[11px] font-medium text-charcoal">Profil vollständig ausgefüllt</span>
-                                            </div>
-                                            <span className={`text-[10px] font-black uppercase ${isProfileComplete ? 'text-emerald-600' : 'text-charcoal/40'}`}>
-                                                {isProfileComplete ? 'Erledigt' : 'Ausstehend'}
-                                            </span>
-                                        </div>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <div className="flex items-center justify-between py-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${isProfileComplete ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                            <Check className="w-3 h-3" />
+                                                        </div>
+                                                        <span className="text-[11px] font-medium text-charcoal">Profil vollständig ausgefüllt</span>
+                                                    </div>
+                                                    <span className={`text-[10px] font-black uppercase ${isProfileComplete ? 'text-emerald-600' : 'text-charcoal/40'}`}>
+                                                        {isProfileComplete ? 'Erledigt' : 'Ausstehend'}
+                                                    </span>
+                                                </div>
 
-                                        <div className="flex items-center justify-between py-1">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${approvedListingsCount >= 3 ? 'bg-forest' : 'bg-stone-300'}`}>
-                                                    <Check className="w-3 h-3" />
+                                                <div className="flex items-center justify-between py-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${approvedListingsCount >= 3 ? 'bg-forest' : 'bg-stone-300'}`}>
+                                                            <Check className="w-3 h-3" />
+                                                        </div>
+                                                        <span className="text-[11px] font-medium text-charcoal">Mindestens 3 freigegebene Inserate</span>
+                                                    </div>
+                                                    <span className={`text-[10px] font-black font-mono ${approvedListingsCount >= 3 ? 'text-emerald-600' : 'text-forest'}`}>
+                                                        {approvedListingsCount} / 3
+                                                    </span>
                                                 </div>
-                                                <span className="text-[11px] font-medium text-charcoal">Mindestens 3 freigegebene Inserate</span>
-                                            </div>
-                                            <span className={`text-[10px] font-black font-mono ${approvedListingsCount >= 3 ? 'text-emerald-600' : 'text-forest'}`}>
-                                                {approvedListingsCount} / 3
-                                            </span>
-                                        </div>
+                                            </>
+                                        )}
                                     </div>
 
                                     {/* Action Buttons */}
                                     <div className="space-y-2 pt-1">
-                                        {!isProfileComplete ? (
+                                        {!(isCommercial ? commercialPioneerCriteria?.isProfileOnlyComplete : isProfileComplete) ? (
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -4330,7 +4517,7 @@ export default function MeinKontoPage() {
                                         <span className="text-lg sm:text-xl font-sans text-sand">Credits</span>
                                     </div>
                                     <p className="text-[11px] text-sand/70">
-                                        Einsatzbereit für Spotlight-Boosts & Top-Platzierungen
+                                        Einsatzbereit für Inserat-Highlights & Top-Platzierungen
                                     </p>
                                 </div>
                             )}
@@ -4360,7 +4547,7 @@ export default function MeinKontoPage() {
                                     }}
                                     className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-forest hover:bg-[#004d0a] text-sand text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 hover:scale-[1.02]"
                                 >
-                                    <span>{celebrationReward.type === 'LISTING_APPROVED' ? 'Inserate anzeigen' : 'Credits ansehen & boosten'}</span>
+                                    <span>{celebrationReward.type === 'LISTING_APPROVED' ? 'Inserate anzeigen' : 'Credits ansehen & Inserat hervorheben'}</span>
                                     <ArrowRight className="w-3.5 h-3.5 text-gold" />
                                 </button>
                                 <button

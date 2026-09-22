@@ -30,7 +30,10 @@ export async function seedMarketplaceData() {
                 location: 'München, Bayern',
                 isStrategicPartner: true,
                 tier: 'BUSINESS',
-                logo: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=300&q=80',
+                logo: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=400&q=80',
+                coverImage: 'https://images.unsplash.com/photo-1513311068348-19c8fbdc0bb6?auto=format&fit=crop&w=1200&q=80',
+                bio: 'Offizieller Vertragshändler für Hymer, Dethleffs und Pössl im Großraum München. Über 25 Jahre Erfahrung in Verkauf, Meisterwerkstatt und Camping-Zubehör.',
+                phone: '+49 89 4523910',
                 address: 'Wasserburger Landstr. 142, 81827 München'
             },
             {
@@ -39,7 +42,10 @@ export async function seedMarketplaceData() {
                 location: 'Kempten, Bayern',
                 isStrategicPartner: true,
                 tier: 'BUSINESS',
-                logo: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=300&q=80',
+                logo: 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?auto=format&fit=crop&w=400&q=80',
+                coverImage: 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&w=1200&q=80',
+                bio: 'Spezialist für allradgetriebene 4x4 Offroad-Campervans, Expeditionsmobile und maßgeschneiderte Campingausbauten im Allgäu.',
+                phone: '+49 831 960240',
                 address: 'Allgäuer Str. 88, 87435 Kempten'
             },
             {
@@ -47,8 +53,11 @@ export async function seedMarketplaceData() {
                 companyName: 'Campingwelt Nord GmbH',
                 location: 'Hamburg',
                 isStrategicPartner: false,
-                tier: 'FREE',
-                logo: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=300&q=80',
+                tier: 'BUSINESS',
+                logo: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=400&q=80',
+                coverImage: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80',
+                bio: 'Dein Vertragspartner für Wohnwagen, Vorzelte & Campingzubehör an der Nordseeküste. Fachberatung und Meister-Werkstattservice.',
+                phone: '+49 4841 77230',
                 address: 'Kieler Str. 301, 22525 Hamburg'
             },
             {
@@ -57,7 +66,10 @@ export async function seedMarketplaceData() {
                 location: 'Köln, NRW',
                 isStrategicPartner: false,
                 tier: 'BUSINESS',
-                logo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+                logo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+                coverImage: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=80',
+                bio: 'Premium Individualausbauten für Kastenwagen und Bullis. Exklusive Solaranlagen, Aufstelldächer und Lithium-Bordnetze in Köln.',
+                phone: '+49 221 890456',
                 address: 'Aachener Str. 512, 50933 Köln'
             }
         ];
@@ -77,20 +89,29 @@ export async function seedMarketplaceData() {
             insertedCommercialUserIds.push(userId);
 
             await client.query(`
-                INSERT INTO company_profiles (user_id, company_name, location, company_address, logo_url, is_strategic_partner, tier, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, NOW() - INTERVAL '15 days', NOW())
+                INSERT INTO company_profiles (
+                    user_id, company_name, location, company_address, logo_url, cover_image_url, bio, phone, is_strategic_partner, spotlight_until, tier, created_at, updated_at
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW() + INTERVAL '30 days', $10, NOW() - INTERVAL '15 days', NOW())
                 ON CONFLICT (user_id) DO UPDATE SET 
                     company_name = EXCLUDED.company_name,
                     is_strategic_partner = EXCLUDED.is_strategic_partner,
                     tier = EXCLUDED.tier,
-                    logo_url = EXCLUDED.logo_url;
-            `, [userId, c.companyName, c.location, c.address, c.logo, c.isStrategicPartner, c.tier]);
+                    logo_url = EXCLUDED.logo_url,
+                    cover_image_url = EXCLUDED.cover_image_url,
+                    bio = EXCLUDED.bio,
+                    phone = EXCLUDED.phone,
+                    spotlight_until = EXCLUDED.spotlight_until,
+                    location = EXCLUDED.location,
+                    company_address = EXCLUDED.company_address;
+            `, [userId, c.companyName, c.location, c.address, c.logo, c.coverImage, c.bio, c.phone, c.isStrategicPartner, c.tier]);
 
             // Add active subscription if BUSINESS
             if (c.tier === 'BUSINESS') {
                 await client.query(`
                     INSERT INTO subscriptions (user_id, plan_id, status, started_at, expires_at, amount_paid_cents, payment_method, created_at, updated_at)
-                    VALUES ($1, 2, 'ACTIVE', NOW() - INTERVAL '10 days', NOW() + INTERVAL '20 days', 2900, 'CREDIT', NOW() - INTERVAL '10 days', NOW());
+                    VALUES ($1, 2, 'ACTIVE', NOW() - INTERVAL '10 days', NOW() + INTERVAL '20 days', 2900, 'CREDIT', NOW() - INTERVAL '10 days', NOW())
+                    ON CONFLICT DO NOTHING;
                 `, [userId]);
             }
         }

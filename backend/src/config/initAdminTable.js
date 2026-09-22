@@ -92,9 +92,9 @@ async function main() {
         INSERT INTO subscriptions (user_id, plan_id, status, started_at, expires_at, payment_method, notes, created_at, updated_at)
         SELECT u.id, p.id, 'ACTIVE', NOW(), NOW() + INTERVAL '90 days', 'PROMO', '3 Monate Campuna Business Willkommensphase', NOW(), NOW()
         FROM users u
-        CROSS JOIN plans p
-        WHERE u.user_type = 'COMMERCIAL'
-          AND p.name = 'BUSINESS'
+        INNER JOIN plans p ON p.name = 'BUSINESS'
+        WHERE (u.user_type = 'COMMERCIAL' OR u.account_type = 'COMMERCIAL')
+          AND EXISTS (SELECT 1 FROM users u2 WHERE u2.id = u.id)
           AND NOT EXISTS (
               SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.status = 'ACTIVE'
           );

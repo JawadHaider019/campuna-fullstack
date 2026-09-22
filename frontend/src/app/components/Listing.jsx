@@ -138,7 +138,11 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
     return (
         <div
             onClick={() => onCardClick(item)}
-            className="listing-card group relative flex-shrink-0 w-[300px] md:w-[320px] flex flex-col h-full bg-white rounded-[24px] overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-lg transition-all duration-300 select-none cursor-pointer"
+            className={`listing-card group relative flex-shrink-0 w-[300px] md:w-[320px] flex flex-col h-full rounded-[24px] overflow-hidden transition-all duration-300 select-none cursor-pointer ${
+                item.is_boosted
+                    ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
+                    : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-lg'
+            }`}
         >
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
                 <img

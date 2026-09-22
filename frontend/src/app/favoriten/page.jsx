@@ -11,6 +11,7 @@ import Breadcrumbs from '@/app/components/Breadcrumbs';
 import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
+import { isListingBoosted } from '@/utils/sellerBadge';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -168,6 +169,7 @@ export default function FavoritesPage() {
                                     : (typeof item.images === 'string' ? item.images : '/hero.webp');
                                 const slug = item.slug || buildListingSlug(item.title, item.id);
                                 const priceNum = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
+                                const isBoosted = isListingBoosted(item);
 
                                 return (
                                     <motion.div
@@ -176,7 +178,11 @@ export default function FavoritesPage() {
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
-                                        className="group bg-white rounded-3xl overflow-hidden border border-forest/10 hover:border-forest/20 hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                                        className={`group rounded-3xl overflow-hidden transition-all duration-300 flex flex-col justify-between ${
+                                            isBoosted
+                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
+                                                : 'bg-white border border-forest/10 hover:border-forest/20 hover:shadow-xl'
+                                        }`}
                                     >
                                         <div>
                                             {/* Image */}

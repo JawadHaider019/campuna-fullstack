@@ -167,7 +167,7 @@ export default function UserDashboard({
                     <div className="text-xl sm:text-2xl font-black text-gold-dark font-mono">
                         {Number(creditBalance).toLocaleString('de-DE')} CC
                     </div>
-                    <p className="text-[11px] text-charcoal/50">Für Reichweiten-Boosts</p>
+                    <p className="text-[11px] text-charcoal/50">Für Inserat-Highlights & Spotlight</p>
                 </div>
             </div>
 
@@ -416,7 +416,7 @@ export default function UserDashboard({
                                                     }`}
                                             >
                                                 <Rocket className="w-3 h-3 text-gold-dark" />
-                                                <span>{isBoosted ? 'Aktiv' : 'Boosten'}</span>
+                                                <span>{isBoosted ? 'Aktiv' : 'Hervorheben'}</span>
                                             </button>
 
                                             <button

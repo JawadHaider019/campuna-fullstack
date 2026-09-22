@@ -41,6 +41,8 @@ import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
+import { isListingBoosted } from '@/utils/sellerBadge';
+import CategoriesSection from '@/app/components/CategoriesSection';
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
 
@@ -223,10 +225,16 @@ const ListingCard = React.memo(({ item: rawItem }) => {
         router.push(`/inserate/${item.slug}`);
     };
 
+    const isBoosted = isListingBoosted(item);
+
     return (
         <div
             onClick={handleCardClick}
-            className="listing-card group relative w-full flex flex-col h-full bg-white rounded-[24px] overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 select-none cursor-pointer"
+            className={`listing-card group relative w-full flex flex-col h-full rounded-[24px] overflow-hidden transition-all duration-300 select-none cursor-pointer ${
+                isBoosted
+                    ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
+                    : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl'
+            }`}
         >
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
                 <img
@@ -687,9 +695,14 @@ export default function ProviderDetails() {
                                 </div>
                                 <div className="space-y-3 flex-1 min-w-0">
                                     {/* Name */}
-                                    <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
-                                        {provider.name}
-                                    </h1>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
+                                            {provider.name}
+                                        </h1>
+                                        {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
+                                            <PioneerBadge size="sm" text="Pioneer" />
+                                        )}
+                                    </div>
 
                                     {/* Location */}
                                     {provider.location && (
@@ -735,9 +748,6 @@ export default function ProviderDetails() {
                                     <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sand text-forest border border-beige shadow-sm">
                                         Privatverkäufer
                                     </span>
-                                    {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
-                                        <PioneerBadge size="sm" text="Pioneer" />
-                                    )}
                                 </div>
 
                                 {/* Right Bottom: CTA & Listing count */}
@@ -785,7 +795,7 @@ export default function ProviderDetails() {
                                             <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
                                                 {provider.name}
                                             </h1>
-                                            {provider.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
+                                            {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
                                                 <PioneerBadge size="sm" text="Pioneer" />
                                             )}
                                             {provider.tier === 'BUSINESS' && (
@@ -976,6 +986,15 @@ export default function ProviderDetails() {
                     </section>
                 )}
 
+                {/* ── All Categories Slider ── */}
+                <div className="mt-14 md:mt-20 pt-8 border-t border-forest/10">
+                    <CategoriesSection
+                        title="Entdecke alle Camping-Kategorien"
+                        badge="Kategorien"
+                        align="center"
+                    />
+                </div>
+
             </main>
 
             {/* ── Contact / Chat Modal popup (Matched to Listing Chat Modal) ── */}
@@ -1013,9 +1032,14 @@ export default function ProviderDetails() {
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <span className="text-[10px] font-bold text-forest uppercase tracking-wider block truncate">
-                                        {provider.name} ({provider.type})
-                                    </span>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[10px] font-bold text-forest uppercase tracking-wider truncate">
+                                            {provider.name} ({provider.type})
+                                        </span>
+                                        {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
+                                            <PioneerBadge size="xs" text="Pioneer" />
+                                        )}
+                                    </div>
                                     <h4 className="font-display font-bold text-sm text-charcoal truncate">
                                         {provider.name}
                                     </h4>

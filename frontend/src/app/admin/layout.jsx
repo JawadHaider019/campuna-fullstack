@@ -60,29 +60,42 @@ export default function AdminLayout({ children }) {
         }
     }, [mounted, isLoggedIn, user, router]);
 
-    // Load review queue, report count & unread messages for live badges
+    // Load review queue, report count & unread messages for live badges with 20s background polling
     useEffect(() => {
         if (mounted && isLoggedIn && user?.role === 'ADMIN') {
-            getAdminDashboardStats()
-                .then(res => {
-                    if (res.data?.success) {
-                        if (res.data.stats?.listings?.review !== undefined) {
-                            setPendingCount(res.data.stats.listings.review);
+            const fetchAdminBadges = () => {
+                getAdminDashboardStats()
+                    .then(res => {
+                        if (res.data?.success) {
+                            if (res.data.stats?.listings?.review !== undefined) {
+                                setPendingCount(res.data.stats.listings.review);
+                            }
+                            if (res.data.stats?.reports?.pending !== undefined) {
+                                setPendingReportsCount(res.data.stats.reports.pending);
+                            }
                         }
-                        if (res.data.stats?.reports?.pending !== undefined) {
-                            setPendingReportsCount(res.data.stats.reports.pending);
-                        }
-                    }
-                })
-                .catch(() => { });
+                    })
+                    .catch(() => { });
 
-            getUnreadMessagesCount()
-                .then(res => {
-                    if (res.success && typeof res.unread_count === 'number') {
-                        setUnreadMessagesCount(res.unread_count);
-                    }
-                })
-                .catch(() => { });
+                getUnreadMessagesCount()
+                    .then(res => {
+                        if (res.success && typeof res.unread_count === 'number') {
+                            setUnreadMessagesCount(res.unread_count);
+                        }
+                    })
+                    .catch(() => { });
+            };
+
+            fetchAdminBadges();
+            const interval = setInterval(fetchAdminBadges, 20000);
+            window.addEventListener('focus', fetchAdminBadges);
+            window.addEventListener('campuna-unread-sync', fetchAdminBadges);
+
+            return () => {
+                clearInterval(interval);
+                window.removeEventListener('focus', fetchAdminBadges);
+                window.removeEventListener('campuna-unread-sync', fetchAdminBadges);
+            };
         }
     }, [mounted, isLoggedIn, user, pathname]);
 
@@ -93,21 +106,24 @@ export default function AdminLayout({ children }) {
             path: '/admin/inserate',
             icon: BarChart3,
             badge: pendingCount > 0 ? String(pendingCount) : null,
-            badgeColor: 'bg-amber-500 text-slate-900 font-black'
+            badgeColor: 'bg-amber-500 text-slate-900 font-black',
+            hasDot: pendingCount > 0
         },
         {
             label: 'Nachrichten',
             path: '/admin/nachrichten',
             icon: MessageSquare,
             badge: unreadMessagesCount > 0 ? String(unreadMessagesCount) : null,
-            badgeColor: 'bg-emerald-500 text-white font-black'
+            badgeColor: 'bg-emerald-500 text-white font-black',
+            hasDot: unreadMessagesCount > 0
         },
         {
             label: 'Meldungen',
             path: '/admin/meldungen',
             icon: Flag,
             badge: pendingReportsCount > 0 ? String(pendingReportsCount) : null,
-            badgeColor: 'bg-rose-500 text-white font-black'
+            badgeColor: 'bg-rose-500 text-white font-black',
+            hasDot: pendingReportsCount > 0
         },
         { label: 'KI-Entscheidungen', path: '/admin/entscheidungen', icon: Sparkles, badge: 'KI' },
         { label: 'Blog & Ratgeber', path: '/admin/blogs', icon: BookOpen },
@@ -204,10 +220,26 @@ export default function AdminLayout({ children }) {
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-forest' : 'text-sand/50'}`} />
+                                            <div className="relative flex items-center justify-center shrink-0">
+                                                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-forest' : 'text-sand/50'}`} />
+                                                {item.hasDot && (
+                                                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span>{item.label}</span>
                                         </div>
-
+                                        {item.badge && (
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                                item.hasDot
+                                                    ? 'bg-rose-500 text-white font-black shadow-xs'
+                                                    : (item.badgeColor || 'bg-white/10 text-sand')
+                                            }`}>
+                                                {item.badge}
+                                            </span>
+                                        )}
                                     </button>
                                 );
                             })}
@@ -300,9 +332,24 @@ export default function AdminLayout({ children }) {
                                             }`}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <Icon className="w-4 h-4" />
+                                            <div className="relative flex items-center justify-center shrink-0">
+                                                <Icon className="w-4 h-4" />
+                                                {item.hasDot && (
+                                                    <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                                    </span>
+                                                )}
+                                            </div>
                                             <span>{item.label}</span>
                                         </div>
+                                        {item.badge && (
+                                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                                                item.hasDot ? 'bg-rose-500 text-white font-black' : (item.badgeColor || 'bg-white/10 text-sand')
+                                            }`}>
+                                                {item.badge}
+                                            </span>
+                                        )}
                                     </button>
                                 );
                             })}

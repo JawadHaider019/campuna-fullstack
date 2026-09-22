@@ -705,7 +705,7 @@ export default function CheckoutBillingPage() {
                                     Campuna Business
                                 </h3>
                                 <p className="text-xs text-charcoal/50 font-sans mt-0.5">
-                                    Bis zu 25 Inserate, Firmen-Cover, Händler-Präsenz & Statistiken
+                                    Bis zu 25 Inserate, professionelles Firmenprofil & Business-Tools
                                 </p>
                             </div>
 
@@ -715,7 +715,7 @@ export default function CheckoutBillingPage() {
                                     'Bis zu 25 aktive Inserate gleichzeitig',
                                     'Professionelles Firmen-Cover & Logo',
                                     'Erweitertes Firmenprofil (1.000 Zeichen)',
-                                    'Präsenz im Bereich „Alle Händler / Anbieter“',
+                                    'Präsenz im Verzeichnis für Camping-Anbieter',
                                     'Detaillierte Besucher- & Leadstatistiken',
                                     'Monatlich flexibel kündbar',
                                 ].map((f, i) => (

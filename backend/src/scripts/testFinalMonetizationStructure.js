@@ -42,6 +42,11 @@ async function runTests() {
              VALUES ($1, 'Incomplete Camper GmbH', NOW(), NOW())`,
             [commUser1.id]
         );
+        await pool.query(
+            `INSERT INTO subscriptions (user_id, plan_id, status, started_at, expires_at, created_at, updated_at)
+             VALUES ($1, (SELECT id FROM plans WHERE name = 'BUSINESS' LIMIT 1), 'ACTIVE', NOW(), NOW() + INTERVAL '30 days', NOW(), NOW())`,
+            [commUser1.id]
+        );
 
         const mockReqIncomplete = {
             user: { id: commUser1.id, user_type: 'COMMERCIAL' },
@@ -78,6 +83,12 @@ async function runTests() {
         await pool.query(
             `INSERT INTO company_profiles (user_id, company_name, bio, location, phone, logo_url, cover_image_url, created_at, updated_at)
              VALUES ($1, 'Alpen Caravans GmbH', 'Professioneller Reisemobil- & Wohnwagenhändler mit über 20 Jahren Erfahrung in Bayern.', 'München, Deutschland', '+49 89 1234567', '/uploads/test-logo.jpg', '/uploads/test-cover.jpg', NOW(), NOW())`,
+            [commUser2.id]
+        );
+
+        await pool.query(
+            `INSERT INTO subscriptions (user_id, plan_id, status, started_at, expires_at, created_at, updated_at)
+             VALUES ($1, (SELECT id FROM plans WHERE name = 'BUSINESS' LIMIT 1), 'ACTIVE', NOW(), NOW() + INTERVAL '30 days', NOW(), NOW())`,
             [commUser2.id]
         );
 

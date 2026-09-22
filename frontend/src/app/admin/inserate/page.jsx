@@ -852,7 +852,11 @@ export default function AdminListingsPage() {
                                 return (
                                     <div
                                         key={item.id}
-                                        className="listing-card group relative flex flex-col h-full bg-white rounded-[24px] overflow-hidden border border-forest/10 hover:border-forest/20 shadow-sm hover:shadow-md transition-all duration-300 select-none justify-between"
+                                        className={`listing-card group relative flex flex-col h-full rounded-[24px] overflow-hidden transition-all duration-300 select-none justify-between ${
+                                            isBoosted || isCampunaClub
+                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_16px_-2px_rgba(202,152,43,0.16)] hover:shadow-[0_6px_20px_-2px_rgba(202,152,43,0.24)]'
+                                                : 'bg-white border border-forest/10 hover:border-forest/20 shadow-sm hover:shadow-md'
+                                        }`}
                                     >
                                         <div>
                                             {/* Aspect 16/9 Image */}

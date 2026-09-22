@@ -272,6 +272,12 @@ export const createOrGetConversation = async (req, res) => {
 export const getConversations = async (req, res) => {
     try {
         const userId = req.user.id;
+        const isAdmin = req.user?.role === 'ADMIN';
+
+        const whereClause = isAdmin
+            ? ""
+            : "WHERE (c.buyer_id = $1 OR c.seller_id = $1)";
+        const queryParams = isAdmin ? [] : [userId];
 
         const query = `
             SELECT 
@@ -328,21 +334,22 @@ export const getConversations = async (req, res) => {
                 SELECT COUNT(*) as count
                 FROM messages
                 WHERE conversation_id = c.id 
-                  AND sender_id <> $1 
-                  AND is_read = false
+                  ${isAdmin ? "AND is_read = false" : "AND sender_id <> $1 AND is_read = false"}
             ) unread ON true
-            WHERE c.buyer_id = $1 OR c.seller_id = $1 OR (u_s.role = 'ADMIN') OR (l.user_id = $1)
+            ${whereClause}
             ORDER BY c.updated_at DESC
         `;
 
-        const result = await pool.query(query, [userId]);
+        const result = await pool.query(query, queryParams);
 
         const conversations = result.rows.map(row => {
             const isBuyer = String(row.buyer_id).toLowerCase() === String(userId).toLowerCase();
+            const isSeller = String(row.seller_id).toLowerCase() === String(userId).toLowerCase();
             
             // Determine other party info
-            const otherUser = isBuyer
-                ? {
+            let otherUser;
+            if (isBuyer) {
+                otherUser = {
                     id: row.seller_id,
                     role_in_chat: 'SELLER',
                     name: row.seller_type === 'COMMERCIAL'
@@ -350,8 +357,9 @@ export const getConversations = async (req, res) => {
                         : (`${row.seller_first_name || ''} ${row.seller_last_name || ''}`.trim() || 'Privatverkäufer'),
                     type: row.seller_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                     avatar: row.seller_type === 'COMMERCIAL' ? (row.seller_logo || row.seller_avatar) : row.seller_avatar
-                }
-                : {
+                };
+            } else if (isSeller) {
+                otherUser = {
                     id: row.buyer_id,
                     role_in_chat: 'BUYER',
                     name: row.buyer_type === 'COMMERCIAL'
@@ -360,6 +368,18 @@ export const getConversations = async (req, res) => {
                     type: row.buyer_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                     avatar: row.buyer_type === 'COMMERCIAL' ? (row.buyer_logo || row.buyer_avatar) : row.buyer_avatar
                 };
+            } else {
+                // Admin viewing a conversation
+                otherUser = {
+                    id: row.buyer_id,
+                    role_in_chat: 'BUYER',
+                    name: row.buyer_type === 'COMMERCIAL'
+                        ? (row.buyer_company_name || 'Gewerblicher Interessent')
+                        : (`${row.buyer_first_name || ''} ${row.buyer_last_name || ''}`.trim() || 'Interessent'),
+                    type: row.buyer_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
+                    avatar: row.buyer_type === 'COMMERCIAL' ? (row.buyer_logo || row.buyer_avatar) : row.buyer_avatar
+                };
+            }
 
             const images = parseImages(row.listing_images);
 
@@ -411,19 +431,26 @@ export const getConversations = async (req, res) => {
 export const getUnreadCount = async (req, res) => {
     try {
         const userId = req.user.id;
-        const isAdmin = req.user.role === 'ADMIN';
+        const isAdmin = req.user?.role === 'ADMIN';
 
-        const result = await pool.query(
-            `SELECT COUNT(*)::int as count 
-             FROM messages m 
-             JOIN conversations c ON m.conversation_id = c.id 
-             JOIN users u_s ON c.seller_id = u_s.id
-             LEFT JOIN listings l ON c.listing_id = l.id
-             WHERE (c.buyer_id = $1 OR c.seller_id = $1 ${isAdmin ? "OR u_s.role = 'ADMIN' OR l.user_id = $1" : ''}) 
-               AND m.sender_id <> $1 
-               AND m.is_read = false`,
-            [userId]
-        );
+        let result;
+        if (isAdmin) {
+            result = await pool.query(
+                `SELECT COUNT(*)::int as count 
+                 FROM messages m 
+                 WHERE m.is_read = false`
+            );
+        } else {
+            result = await pool.query(
+                `SELECT COUNT(*)::int as count 
+                 FROM messages m 
+                 JOIN conversations c ON m.conversation_id = c.id 
+                 WHERE (c.buyer_id = $1 OR c.seller_id = $1) 
+                   AND m.sender_id <> $1 
+                   AND m.is_read = false`,
+                [userId]
+            );
+        }
 
         const unreadCount = result.rows[0]?.count || 0;
 

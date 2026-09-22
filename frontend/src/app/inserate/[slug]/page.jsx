@@ -54,7 +54,9 @@ import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
-import { SellerAccountBadge, PromotedBadge } from '@/app/components/ListingBadge';
+import { SellerAccountBadge, PromotedBadge, ListingBadgesRow } from '@/app/components/ListingBadge';
+import CategoriesSection from '@/app/components/CategoriesSection';
+import { isListingBoosted } from '@/utils/sellerBadge';
 
 function slugifyTitle(title = '') {
     return title
@@ -238,12 +240,6 @@ export default function ListingDetailPage() {
         window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
     };
 
-    const handleShareTelegram = () => {
-        const url = getCleanShareUrl();
-        const text = encodeURIComponent(listing?.title || 'Camping Inserat auf Campuna');
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
-    };
-
     const handleShareEmail = () => {
         const url = getCleanShareUrl();
         const subject = encodeURIComponent(`Camping-Inserat: ${listing?.title || 'Angebot auf Campuna'}`);
@@ -323,7 +319,7 @@ export default function ListingDetailPage() {
                                 ? apiMatch.images
                                 : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
                             const images = rawImages.map(img => getImageUrl(img, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'));
-
+                            const isPioneer = Boolean(apiMatch.is_pioneer || apiMatch.seller?.is_pioneer || apiMatch.seller?.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
                             foundListing = {
                                 id: apiMatch.id,
                                 title: apiMatch.title || 'Camping Angebot',
@@ -334,6 +330,7 @@ export default function ListingDetailPage() {
                                 displayLocation: apiMatch.location || 'Deutschland',
                                 images,
                                 is_campuna_club: Boolean(apiMatch.is_campuna_club || apiMatch.seller?.is_campuna_club),
+                                is_pioneer: isPioneer,
                                 seller: {
                                     name: apiMatch.seller?.name || (apiMatch.seller?.type === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer'),
                                     verified: true,
@@ -341,7 +338,8 @@ export default function ListingDetailPage() {
                                     avatar: apiMatch.seller?.avatar || '',
                                     tier: apiMatch.seller?.tier || 'FREE',
                                     is_campuna_club: Boolean(apiMatch.is_campuna_club || apiMatch.seller?.is_campuna_club),
-                                    achievements: apiMatch.seller?.achievements || []
+                                    is_pioneer: isPioneer,
+                                    achievements: apiMatch.seller?.achievements || (isPioneer ? [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }] : [])
                                 },
                                 features: [apiMatch.condition, apiMatch.subcategory].filter(Boolean),
                                 isNegotiable: apiMatch.negotiable || false,
@@ -382,6 +380,7 @@ export default function ListingDetailPage() {
                                     ? match.images
                                     : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
                                 const images = rawImages.map(img => getImageUrl(img, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'));
+                                const isPioneer = Boolean(match.is_pioneer || match.seller?.is_pioneer || match.seller?.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
 
                                 foundListing = {
                                     id: match.id,
@@ -393,6 +392,7 @@ export default function ListingDetailPage() {
                                     displayLocation: match.location || 'Deutschland',
                                     images,
                                     is_campuna_club: Boolean(match.is_campuna_club || match.seller?.is_campuna_club),
+                                    is_pioneer: isPioneer,
                                     seller: {
                                         name: match.seller?.name || (match.seller?.type === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer'),
                                         verified: true,
@@ -400,7 +400,8 @@ export default function ListingDetailPage() {
                                         avatar: match.seller?.avatar || '',
                                         tier: match.seller?.tier || 'FREE',
                                         is_campuna_club: Boolean(match.is_campuna_club || match.seller?.is_campuna_club),
-                                        achievements: match.seller?.achievements || []
+                                        is_pioneer: isPioneer,
+                                        achievements: match.seller?.achievements || (isPioneer ? [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }] : [])
                                     },
                                     features: [match.condition, match.subcategory].filter(Boolean),
                                     isNegotiable: match.negotiable || false,
@@ -602,6 +603,23 @@ export default function ListingDetailPage() {
         )
     );
 
+    // Format display seller name: if not logged in, mask with 1st letter and *** (e.g. M***, S***)
+    const isBusinessPartner = Boolean(seller?.tier === 'BUSINESS' || listing?.company_tier === 'BUSINESS' || seller?.is_business);
+    const rawSellerName = seller?.name || (seller?.type === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatanbieter');
+    const displaySellerName = (isLoggedIn || isBusinessPartner)
+        ? rawSellerName
+        : `${rawSellerName.trim().charAt(0).toUpperCase()}***`;
+
+    const isSellerPioneer = Boolean(
+        listing?.is_pioneer ||
+        listing?.isPioneer ||
+        listing?.seller_is_pioneer ||
+        seller?.is_pioneer ||
+        seller?.isPioneer ||
+        (seller?.achievements && Array.isArray(seller.achievements) && seller.achievements.some(a => a.badge_key === 'CAMPUNA_PIONEER')) ||
+        (listing?.achievements && Array.isArray(listing.achievements) && listing.achievements.some(a => a.badge_key === 'CAMPUNA_PIONEER'))
+    );
+
     const displayTitle = title;
 
     const renderSidebarContent = () => (
@@ -626,7 +644,7 @@ export default function ListingDetailPage() {
             {/* Seller Details */}
             <div
                 onClick={() => {
-                    const sellerSlug = `/anbieter/${slugifyTitle(seller.name)}-${listing.user_id || listing.owner_user_id || listing.ownerUserId || ''}`;
+                    const sellerSlug = `/anbieter/${slugifyTitle(seller?.name || 'anbieter')}-${listing.user_id || listing.owner_user_id || listing.ownerUserId || ''}`;
                     if (!isLoggedIn) {
                         setPrivacyModalContext('profile');
                         setIsPrivacyAuthModalOpen(true);
@@ -637,42 +655,42 @@ export default function ListingDetailPage() {
                 className="flex items-center gap-3 text-left border-b border-forest/5 pb-4 cursor-pointer group/seller hover:opacity-90 transition-opacity"
             >
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center font-display text-lg font-bold select-none shadow shrink-0 group-hover/seller:ring-2 group-hover/seller:ring-gold/50 transition-all ${
-                    (seller.tier === 'BUSINESS' || listing.company_tier === 'BUSINESS')
+                    (seller?.tier === 'BUSINESS' || listing?.company_tier === 'BUSINESS')
                         ? 'bg-gradient-to-br from-forest to-emerald-950 text-amber-300 ring-2 ring-amber-400/40 shadow-lg'
                         : 'bg-forest text-white'
                 }`}>
-                    {seller.name.charAt(0).toUpperCase()}
+                    {displaySellerName.charAt(0).toUpperCase()}
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-display font-bold text-charcoal sm:text-base leading-tight group-hover/seller:text-forest transition-colors">
-                            {seller.name}
+                            {displaySellerName}
                         </span>
-                        {(seller.tier === 'BUSINESS' || listing.company_tier === 'BUSINESS') ? (
+                        {(seller?.tier === 'BUSINESS' || listing?.company_tier === 'BUSINESS') ? (
                             <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-wider uppercase bg-[#062c19] text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full shadow-xs">
                                 <Briefcase className="w-2.5 h-2.5 text-amber-400" />
                                 Business
                             </span>
-                        ) : (seller.type === 'Gewerblich' || listing.listing_user_type === 'Gewerblich') ? (
+                        ) : (seller?.type === 'Gewerblich' || listing?.listing_user_type === 'Gewerblich') ? (
                             <span className="inline-flex items-center gap-1 text-[9px] font-black tracking-wider uppercase bg-[#0B3B24] text-emerald-200 border border-emerald-400/30 px-2 py-0.5 rounded-full shadow-xs">
                                 <Building2 className="w-2.5 h-2.5 text-emerald-300" />
                                 Gewerblich
                             </span>
                         ) : null}
-                        {seller.achievements?.find(a => a.badge_key === 'CAMPUNA_PIONEER') && (
+                        {isSellerPioneer && (
                             <PioneerBadge size="xs" text="Pioneer" />
                         )}
                     </div>
-                    <span className="text-[11px] text-charcoal/50 font-bold block mt-0.5">
-                        {(seller.tier === 'BUSINESS' || listing.company_tier === 'BUSINESS') ? (
+                    <span className="text-[11px] text-charcoal/50 font-medium block mt-0.5">
+                        {(seller?.tier === 'BUSINESS' || listing?.company_tier === 'BUSINESS') ? (
                             <span className="text-emerald-800 font-semibold flex items-center gap-1">
                                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 inline shrink-0" />
                                 Gewerblicher Business-Partner
                             </span>
-                        ) : seller.type === 'Gewerblich' ? (
-                            `${seller.name} (Gewerblicher Anbieter)`
+                        ) : seller?.type === 'Gewerblich' ? (
+                            'Gewerblicher Anbieter'
                         ) : (
-                            `${seller.name} (Privatanbieter)`
+                            'Privatanbieter'
                         )}
                     </span>
                 </div>
@@ -698,7 +716,7 @@ export default function ListingDetailPage() {
                             className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-sans font-bold py-2.5 px-3 rounded-lg shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center transition-all hover:shadow-md"
                         >
                             <Rocket className="w-3.5 h-3.5 shrink-0 text-amber-100" />
-                            Boosten
+                            Hervorheben
                         </Link>
                     </div>
                 </div>
@@ -797,6 +815,11 @@ export default function ListingDetailPage() {
                     <div className="flex flex-wrap items-center gap-2.5">
                         {/* Account Status Badge: Privat | Gewerblich | Business (automatically hidden for Admin) */}
                         <SellerAccountBadge item={{ ...listing, seller }} size="md" />
+
+                        {/* Pioneer Badge */}
+                        {isSellerPioneer && (
+                            <PioneerBadge size="md" text="Campuna Pioneer" />
+                        )}
 
                         {/* Promoted Badge: Hervorgehoben */}
                         {(listing.is_boosted || (listing.boosted_until && new Date(listing.boosted_until) > new Date()) || listing.seller_role === 'ADMIN' || listing.role === 'ADMIN' || listing.is_admin || listing.is_campuna_club || seller?.is_admin || seller?.is_campuna_club) && (
@@ -1073,12 +1096,16 @@ export default function ListingDetailPage() {
                         >
                             {relatedListings.map((item) => {
                                 const slug = buildListingSlug(item.title, item.id);
-                                const userType = item.listing_user_type || (item.seller?.type === 'Gewerblich' ? 'Gewerblich' : 'Privat');
+                                const isBoosted = isListingBoosted(item);
                                 return (
                                     <div
                                         key={item.id}
                                         onClick={() => router.push(`/inserate/${slug}`)}
-                                        className="group relative flex flex-col bg-white rounded-[24px] overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 cursor-pointer h-full shrink-0 w-[270px] sm:w-[calc(50%-0.625rem)] lg:w-[calc(25%-0.9375rem)] snap-start text-left"
+                                        className={`group relative flex flex-col rounded-[24px] overflow-hidden transition-all duration-300 cursor-pointer h-full shrink-0 w-[270px] sm:w-[calc(50%-0.625rem)] lg:w-[calc(25%-0.9375rem)] snap-start text-left select-none ${
+                                            isBoosted
+                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
+                                                : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl'
+                                        }`}
                                     >
                                         {/* Image Area */}
                                         <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
@@ -1091,25 +1118,22 @@ export default function ListingDetailPage() {
                                             />
 
                                             {/* Top Bar inside image card */}
-                                            <div className="absolute top-4 inset-x-4 flex items-center justify-between">
-                                                <span className="bg-forest flex items-center gap-1 justify-center text-gold text-[8px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-lg backdrop-blur-md font-sans">
-                                                    <ShieldCheck className="w-3 h-3 text-gold" />
-                                                    {userType}
-                                                </span>
+                                            <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20">
+                                                <ListingBadgesRow item={item} />
                                             </div>
 
                                             {/* Location overlay */}
-                                            <div className="absolute bottom-4 right-0 inset-x-4 flex items-center justify-end pointer-events-none text-white/90">
-                                                <div className="bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full text-[9px] flex items-center gap-1 font-sans">
-                                                    <MapPin className="w-3 h-3 text-gold shrink-0" />
+                                            <div className="absolute bottom-3 right-3 flex items-center justify-end pointer-events-none text-white/90 z-10">
+                                                <div className="bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full text-[9px] flex items-center gap-1 font-sans">
+                                                    <MapPin className="w-2.5 h-2.5 text-gold shrink-0" />
                                                     <span>{item.displayLocation || item.location}</span>
                                                 </div>
                                             </div>
 
                                             {/* Hover CTA */}
                                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                                <div className="bg-white text-forest px-5 py-3 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center space-x-2 shadow-lg scale-95 group-hover:scale-100 transition-all duration-300">
-                                                    <Eye className="w-4 h-4" />
+                                                <div className="bg-white text-forest px-4.5 py-2.5 rounded-full text-xs font-semibold uppercase tracking-wider flex items-center space-x-1.5 shadow-lg scale-95 group-hover:scale-100 transition-all duration-300">
+                                                    <Eye className="w-3.5 h-3.5" />
                                                     <span>Inserat ansehen</span>
                                                 </div>
                                             </div>
@@ -1180,6 +1204,14 @@ export default function ListingDetailPage() {
                     </section>
                 )}
 
+                {/* ── All Categories Slider at bottom of listing detail page ── */}
+                <div className="mt-14 md:mt-20 pt-8 border-t border-forest/10">
+                    <CategoriesSection
+                        title="Entdecke alle Camping-Kategorien"
+                        badge="Kategorien"
+                        align="center"
+                    />
+                </div>
 
             </div>
 
@@ -1278,9 +1310,14 @@ export default function ListingDetailPage() {
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <span className="text-[10px] font-bold text-forest uppercase tracking-wider block truncate">
-                                        {seller.name} ({seller.type})
-                                    </span>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="text-[10px] font-bold text-forest uppercase tracking-wider truncate">
+                                            {displaySellerName} ({seller.type})
+                                        </span>
+                                        {isSellerPioneer && (
+                                            <PioneerBadge size="xs" text="Pioneer" />
+                                        )}
+                                    </div>
                                     <h4 className="font-display font-bold text-sm text-charcoal truncate">
                                         {listing.title}
                                     </h4>
@@ -1302,7 +1339,7 @@ export default function ListingDetailPage() {
                             <form onSubmit={handleSendDirectMessage} className="p-6 space-y-4 font-sans">
                                 <div>
                                     <label className="block text-xs font-bold text-charcoal mb-1">
-                                        Nachricht an {seller.name}
+                                        Nachricht an {displaySellerName}
                                     </label>
                                     <p className="text-[11px] text-charcoal/60 mb-3">
                                         Starte eine direkte Unterhaltung. Deine Nachricht wird sicher über das Campuna-Nachrichtensystem zugestellt.
@@ -1599,68 +1636,44 @@ export default function ListingDetailPage() {
                                     </div>
                                 </div>
 
-                                {/* Link Copy Field */}
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-charcoal/80">
-                                        Öffentlicher Inserats-Link
-                                    </label>
-                                    <div className="flex items-center gap-2 bg-[#faf8f3] border border-beige rounded-2xl p-2 pl-3.5">
-                                        <span className="text-xs text-charcoal/70 font-mono truncate flex-1 select-all">
-                                            {getCleanShareUrl()}
-                                        </span>
+                                {/* Social Sharing Action Grid */}
+                                <div className="space-y-2">
+                                    <div className="grid grid-cols-3 gap-2.5">
+                                        {/* Link kopieren */}
                                         <button
                                             type="button"
                                             onClick={handleCopyCleanUrl}
-                                            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 shadow-xs ${
+                                            className={`p-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group shadow-2xs ${
                                                 copied
-                                                    ? 'bg-emerald-700 text-white'
-                                                    : 'bg-forest hover:bg-gold text-white hover:text-forest'
+                                                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                                                    : 'bg-[#faf8f3] hover:bg-sand/50 border-beige text-charcoal/80 hover:text-forest'
                                             }`}
                                         >
                                             {copied ? (
-                                                <>
-                                                    <Check className="w-3.5 h-3.5" />
-                                                    <span>Kopiert!</span>
-                                                </>
+                                                <Check className="w-5 h-5 text-emerald-700 animate-scale" />
                                             ) : (
-                                                <>
-                                                    <Copy className="w-3.5 h-3.5" />
-                                                    <span>Kopieren</span>
-                                                </>
+                                                <Copy className="w-5 h-5 text-forest group-hover:scale-110 transition-transform" />
                                             )}
+                                            <span className="text-[11px] font-bold">
+                                                {copied ? 'Kopiert!' : 'Link kopieren'}
+                                            </span>
                                         </button>
-                                    </div>
-                                </div>
 
-                                {/* Social Sharing Action Grid */}
-                                <div className="space-y-2">
-                                    <span className="text-xs font-bold text-charcoal/80">Direkt teilen via:</span>
-                                    <div className="grid grid-cols-3 gap-2">
                                         {/* WhatsApp */}
                                         <button
                                             type="button"
                                             onClick={handleShareWhatsApp}
-                                            className="p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#128C7E] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group"
+                                            className="p-3.5 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#128C7E] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group shadow-2xs"
                                         >
                                             <MessageCircle className="w-5 h-5 text-[#25D366] group-hover:scale-110 transition-transform" />
                                             <span className="text-[11px] font-bold">WhatsApp</span>
-                                        </button>
-
-                                        {/* Telegram */}
-                                        <button
-                                            type="button"
-                                            onClick={handleShareTelegram}
-                                            className="p-3 rounded-2xl bg-[#0088cc]/10 hover:bg-[#0088cc]/20 border border-[#0088cc]/30 text-[#0088cc] flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group"
-                                        >
-                                            <Send className="w-5 h-5 text-[#0088cc] group-hover:scale-110 transition-transform" />
-                                            <span className="text-[11px] font-bold">Telegram</span>
                                         </button>
 
                                         {/* E-Mail */}
                                         <button
                                             type="button"
                                             onClick={handleShareEmail}
-                                            className="p-3 rounded-2xl bg-forest/10 hover:bg-forest/20 border border-forest/25 text-forest flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group"
+                                            className="p-3.5 rounded-2xl bg-forest/10 hover:bg-forest/20 border border-forest/25 text-forest flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer group shadow-2xs"
                                         >
                                             <Mail className="w-5 h-5 text-forest group-hover:scale-110 transition-transform" />
                                             <span className="text-[11px] font-bold">E-Mail</span>

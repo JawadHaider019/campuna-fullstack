@@ -364,9 +364,12 @@ export const updateMyProfile = async (req, res) => {
 export const getPublicProfile = async (req, res) => {
     try {
         const { userId } = req.params;
+        const rawUserId = String(userId || '').trim();
+        const uuidMatch = rawUserId.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+        const targetUserId = uuidMatch ? uuidMatch[1] : rawUserId;
 
         const user = await db.orm.public.User
-            .where((u) => u.id.eq(userId))
+            .where((u) => u.id.eq(targetUserId))
             .first();
 
         if (!user || user.is_suspended) {
@@ -374,12 +377,12 @@ export const getPublicProfile = async (req, res) => {
         }
 
         const achievements = await db.orm.public.UserAchievement
-            .where({ user_id: userId })
+            .where({ user_id: targetUserId })
             .all();
 
         if (user.user_type === 'PRIVATE') {
             const profile = await db.orm.public.PrivateProfile
-                .where((p) => p.user_id.eq(userId))
+                .where((p) => p.user_id.eq(targetUserId))
                 .first();
 
             if (!profile) {
@@ -398,7 +401,7 @@ export const getPublicProfile = async (req, res) => {
         }
 
         if (user.user_type === 'COMMERCIAL') {
-            const rawCpRes = await pool.query('SELECT * FROM company_profiles WHERE user_id = $1', [userId]);
+            const rawCpRes = await pool.query('SELECT * FROM company_profiles WHERE user_id = $1', [targetUserId]);
             const profile = rawCpRes.rows[0];
 
             if (!profile) {
@@ -406,7 +409,7 @@ export const getPublicProfile = async (req, res) => {
             }
 
             const activeSub = await db.orm.public.Subscription
-                .where({ user_id: userId, status: 'ACTIVE' })
+                .where({ user_id: targetUserId, status: 'ACTIVE' })
                 .include('plan')
                 .first()
                 .catch(() => null);
@@ -447,7 +450,7 @@ export const getPublicProfile = async (req, res) => {
 
         // Default fallback for any other user type (ADMIN, etc.)
         const fallbackProfile = await db.orm.public.PrivateProfile
-            .where((p) => p.user_id.eq(userId))
+            .where((p) => p.user_id.eq(targetUserId))
             .first();
 
         if (!fallbackProfile) {
@@ -649,7 +652,25 @@ export const bookSpotlight = async (req, res) => {
             });
         }
 
-        // 2. Fetch company profile & validate completeness
+        // 2. Enforce active Campuna Business subscription
+        const subRes = await pool.query(
+            `SELECT s.id, p.name as plan_name 
+             FROM subscriptions s 
+             JOIN plans p ON s.plan_id = p.id 
+             WHERE s.user_id = $1 AND s.status = 'ACTIVE' AND p.name = 'BUSINESS'
+             LIMIT 1`,
+            [userId]
+        );
+
+        if (subRes.rows.length === 0) {
+            return res.status(403).json({
+                success: false,
+                error: 'Campuna Spotlight ist exklusiv für aktive Campuna Business Kunden verfügbar. Bitte upgrade zuerst auf den Business-Tarif (29 €/Monat).',
+                requires_business_plan: true
+            });
+        }
+
+        // 3. Fetch company profile & validate completeness
         const profileRes = await pool.query('SELECT * FROM company_profiles WHERE user_id = $1', [userId]);
         if (profileRes.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Firmenprofil nicht gefunden.' });

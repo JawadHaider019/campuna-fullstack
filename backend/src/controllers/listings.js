@@ -35,19 +35,35 @@ export const createListing = async (req, res) => {
         );
         const activeCount = parseInt(countRes.rows[0]?.count || 0, 10);
 
-        // 3. Fetch subscription-based listing limit (bypassed for ADMIN)
+        // 3. Fetch listing limit (bypassed for ADMIN)
         if (!isAdmin) {
-            const features = await getUserFeatures(id);
-            const limit = features.listing_limit; // -1 = unlimited
+            const userType = req.user.user_type || (await pool.query('SELECT user_type FROM users WHERE id = $1', [id])).rows[0]?.user_type || 'PRIVATE';
+            
+            if (userType !== 'COMMERCIAL') {
+                // Private user: internal limit is 10 active listings
+                const PRIVATE_LIMIT = 10;
+                if (activeCount >= PRIVATE_LIMIT) {
+                    return res.status(403).json({
+                        success: false,
+                        error: 'Veröffentlichung nicht möglich: Ungewöhnlich hohe Inseratsaktivität deutet auf eine gewerbliche Nutzung hin. Bitte erstelle ein gewerbliches Anbieterkonto oder wende dich an unseren Support.',
+                        limit_reached: true,
+                        account_type: 'PRIVATE'
+                    });
+                }
+            } else {
+                // Commercial user: check subscription limits (FREE: 3, BUSINESS: 25)
+                const features = await getUserFeatures(id);
+                const limit = features.listing_limit; // 3 for FREE, 25 for BUSINESS
 
-            if (limit !== -1 && activeCount >= limit) {
-                return res.status(403).json({
-                    success: false,
-                    error: `Du hast das Limit von ${limit} aktiven Anzeigen erreicht. Upgrade auf Business, um unbegrenzt Anzeigen zu erstellen.`,
-                    upgrade_required: true,
-                    current_plan: features.plan_name,
-                    listing_limit: limit,
-                });
+                if (limit !== -1 && activeCount >= limit) {
+                    return res.status(403).json({
+                        success: false,
+                        error: `Du hast das Limit von ${limit} aktiven Inseraten im aktuellen Tarif erreicht. Upgrade auf den Campuna Business Plan, um bis zu 25 Inserate zu veröffentlichen.`,
+                        upgrade_required: true,
+                        current_plan: features.plan_name,
+                        listing_limit: limit,
+                    });
+                }
             }
         } else {
             // Ensure admin exists in users and company_profiles for foreign key constraints
@@ -267,11 +283,17 @@ export const getAllListings = async (req, res) => {
                 pp.profile_image_url as private_avatar,
                 cp.company_name,
                 cp.logo_url as company_logo,
-                cp.tier as company_tier
+                cp.tier as company_tier,
+                COALESCE(pioneer_stat.has_pioneer, FALSE) as is_pioneer
             FROM listings l
             LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN private_profiles pp ON u.id = pp.user_id
             LEFT JOIN company_profiles cp ON u.id = cp.user_id
+            LEFT JOIN (
+                SELECT DISTINCT user_id, TRUE as has_pioneer 
+                FROM user_achievements 
+                WHERE badge_key = 'CAMPUNA_PIONEER'
+            ) pioneer_stat ON u.id = pioneer_stat.user_id
             WHERE l.status = 'APPROVED' AND (u.is_suspended IS FALSE OR u.is_suspended IS NULL)
             ORDER BY 
                 (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) DESC,
@@ -284,6 +306,7 @@ export const getAllListings = async (req, res) => {
             const isAdminListing = row.seller_role === 'ADMIN';
             const isCampunaClub = isAdminListing || row.company_name === 'Campuna Club';
             const isCommercial = row.seller_type === 'COMMERCIAL' || isCampunaClub;
+            const isPioneer = Boolean(row.is_pioneer);
             const sellerName = isAdminListing
                 ? (row.company_name || 'Campuna Administration')
                 : isCommercial
@@ -320,6 +343,7 @@ export const getAllListings = async (req, res) => {
                 featured: Boolean(row.featured),
                 boosted_until: row.boosted_until,
                 is_boosted: isBoosted,
+                is_pioneer: isPioneer,
                 images: imagesArray,
                 seller_role: row.seller_role,
                 role: row.seller_role,
@@ -335,7 +359,9 @@ export const getAllListings = async (req, res) => {
                     role: row.seller_role,
                     is_admin: isAdminListing,
                     is_campuna_club: isCampunaClub,
-                    verified: true
+                    is_pioneer: isPioneer,
+                    verified: true,
+                    achievements: isPioneer ? [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }] : []
                 }
             };
         });
@@ -357,17 +383,26 @@ export const getAllListings = async (req, res) => {
 export const getListingDetail = async (req, res) => {
     try {
         const { id } = req.params;
-
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const rawId = String(id || '').trim();
+        const uuidMatch = rawId.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+        const targetUuid = uuidMatch ? uuidMatch[1] : null;
         
         let query;
         let params;
-        if (uuidRegex.test(id)) {
-            query = `SELECT l.*, (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted FROM listings l WHERE l.id = $1`;
-            params = [id];
+        if (targetUuid) {
+            query = `SELECT l.*, (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted FROM listings l WHERE l.id = $1 LIMIT 1`;
+            params = [targetUuid];
         } else {
-            query = `SELECT l.*, (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted FROM listings l WHERE l.slug = $1`;
-            params = [id];
+            query = `
+                SELECT l.*, (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted 
+                FROM listings l 
+                WHERE l.slug = $1 
+                   OR l.id::text = $1 
+                   OR lower(l.title) = lower($1)
+                   OR lower(replace(l.title, ' ', '-')) = lower($1)
+                LIMIT 1
+            `;
+            params = [rawId];
         }
 
         const result = await pool.query(query, params);
@@ -444,6 +479,7 @@ export const getListingDetail = async (req, res) => {
 
         const achRes = await pool.query('SELECT * FROM user_achievements WHERE user_id = $1', [listing.user_id]);
         const achievements = achRes.rows || [];
+        const isPioneer = achievements.some(a => a.badge_key === 'CAMPUNA_PIONEER');
 
         let imagesArray = [];
         if (Array.isArray(listing.images)) {
@@ -474,6 +510,7 @@ export const getListingDetail = async (req, res) => {
                 featured: Boolean(listing.featured),
                 boosted_until: listing.boosted_until,
                 is_boosted: isBoosted,
+                is_pioneer: isPioneer,
                 images: imagesArray,
                 seller_role: user.role,
                 role: user.role,
@@ -488,6 +525,7 @@ export const getListingDetail = async (req, res) => {
                     role: user.role,
                     is_admin: isAdminListing,
                     is_campuna_club: isCampunaClub,
+                    is_pioneer: isPioneer,
                     phone: visiblePhone,
                     has_phone: hasPhone,
                     is_phone_protected: isPhoneProtected,
@@ -509,9 +547,12 @@ export const getListingDetail = async (req, res) => {
 export const getListingsByUser = async (req, res) => {
     try {
         const { userId } = req.params;
+        const rawUserId = String(userId || '').trim();
+        const uuidMatch = rawUserId.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+        const targetUserId = uuidMatch ? uuidMatch[1] : rawUserId;
 
         // Check if seller is suspended
-        const userCheck = await pool.query('SELECT is_suspended FROM users WHERE id = $1', [userId]);
+        const userCheck = await pool.query('SELECT is_suspended FROM users WHERE id = $1', [targetUserId]);
         if (userCheck.rowCount === 0 || userCheck.rows[0].is_suspended) {
             return res.status(404).json({ success: false, error: 'Verkäufer nicht gefunden oder gesperrt.' });
         }
@@ -527,7 +568,7 @@ export const getListingsByUser = async (req, res) => {
                 l.featured DESC,
                 l.created_at DESC
         `;
-        const result = await pool.query(query, [userId]);
+        const result = await pool.query(query, [targetUserId]);
 
         const listings = result.rows.map(row => {
             let imagesArray = [];

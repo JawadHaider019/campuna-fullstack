@@ -37,7 +37,7 @@ const FEATURE_ROWS = [
 ];
 
 const TESTIMONIALS = [
-    { name: 'Camping Müller GmbH', text: 'Mit dem Business-Tarif haben wir unsere Buchungen um 40% gesteigert. Die 25 Inserate und die Spotlight-Präsenz machen einen riesigen Unterschied!', plan: 'Business' },
+    { name: 'Camping Müller GmbH', text: 'Mit dem Business-Tarif haben wir unsere Buchungen um 40% gesteigert. Die 25 Inserate und die professionellen Business-Tools machen einen riesigen Unterschied!', plan: 'Business' },
     { name: 'Outdoor Reisen Wagner', text: 'Die Reichweite und die detaillierten Statistiken haben uns geholfen, stetig neue Kunden zu gewinnen. Absolut empfehlenswert.', plan: 'Business' },
     { name: 'CamperWorld Bayern', text: 'Die Statistiken zeigen uns genau, welche Anzeigen funktionieren. Ein echter Gamechanger für unser Marketing.', plan: 'Business' },
 ];
@@ -223,7 +223,7 @@ export default function AboPage() {
                         <span className="text-gold font-medium">Mehr Buchungen.</span>
                     </h1>
                     <p className="font-sans text-sm sm:text-base md:text-lg text-white/70 max-w-2xl mx-auto mb-8 leading-relaxed font-light">
-                        Das Business-Abo gibt deinem Unternehmen den professionellen Auftritt, den es verdient — mit bis zu 25 Anzeigen, automatischer Spotlight-Präsenz und detaillierten Statistiken.
+                        Das Business-Abo gibt deinem Unternehmen den professionellen Auftritt, den es verdient — mit bis zu 25 Inseraten, Firmen-Cover, Business-Tools und exklusiver Spotlight-Berechtigung.
                     </p>
 
                     <div>
@@ -347,7 +347,7 @@ export default function AboPage() {
                                     <span className="text-white/50 font-sans text-sm mb-2">/ Monat</span>
                                 </div>
                                 <p className="text-white/60 font-sans text-sm leading-relaxed">
-                                    Für professionelle Campinganbieter, die wachsen wollen.
+                                    Für Unternehmen und professionelle Anbieter rund ums Camping.
                                 </p>
                             </div>
 
@@ -356,7 +356,7 @@ export default function AboPage() {
                                     'Bis zu 25 aktive Inserate',
                                     'Professionelles Firmen-Cover & Logo',
                                     'Erweitertes Firmenprofil (1.000 Zeichen)',
-                                    'Präsenz im Bereich „Alle Händler / Anbieter“',
+                                    'Präsenz im Verzeichnis für Camping-Anbieter',
                                     'Performance-Statistiken & Cockpit-Analytics',
                                     'Monatlich flexibel kündbar',
                                 ].map((f) => (

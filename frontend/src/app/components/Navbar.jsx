@@ -7,13 +7,21 @@ import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import WelcomeBar from './WelcomeBar';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useChatStore } from '@/store/useChatStore';
 
-export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
+export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAlertCount }) {
   const [mounted, setMounted] = useState(false);
   const storeIsLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const user = useAuthStore((state) => state.user);
   const isLoggedIn = mounted ? (propIsLoggedIn ?? storeIsLoggedIn) : false;
   const isAdmin = mounted && isLoggedIn && user?.role === 'ADMIN';
+
+  const chatUnreadCount = useChatStore((state) => state.unreadCount);
+  const fetchUnreadCount = useChatStore((state) => state.fetchUnreadCount);
+  const effectiveAlertCount = (typeof propAlertCount === 'number' && propAlertCount > 0)
+    ? propAlertCount
+    : (mounted && isLoggedIn ? chatUnreadCount : 0);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('top');
@@ -23,6 +31,34 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Sync unread messages count for logged in user (with 20s polling & focus handler)
+  useEffect(() => {
+    if (mounted && isLoggedIn) {
+      fetchUnreadCount();
+
+      const interval = setInterval(() => {
+        fetchUnreadCount();
+      }, 20000);
+
+      const handleFocus = () => {
+        fetchUnreadCount();
+      };
+
+      const handleSync = () => {
+        fetchUnreadCount();
+      };
+
+      window.addEventListener('focus', handleFocus);
+      window.addEventListener('campuna-unread-sync', handleSync);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('focus', handleFocus);
+        window.removeEventListener('campuna-unread-sync', handleSync);
+      };
+    }
+  }, [mounted, isLoggedIn, fetchUnreadCount]);
 
   const isHomepage = pathname === '/';
 
@@ -245,6 +281,12 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
 
                   <ShieldCheck className="w-4 h-4 shrink-0 text-gold group-hover:text-amber-300 group-hover:scale-115 group-hover:rotate-6 transition-all duration-500 ease-out" />
                   <span className="relative z-10 text-white tracking-wide">Admin Panel</span>
+                  {effectiveAlertCount > 0 && (
+                    <span className="relative flex h-2.5 w-2.5 ml-0.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    </span>
+                  )}
                 </button>
               ) : (
                 <button
@@ -253,14 +295,14 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                 >
                   <User className="w-4 h-4 shrink-0" />
                   <div className="relative">
-                    <span className="whitespace-nowrap flex items-center gap-1">
+                    <span className="whitespace-nowrap flex items-center gap-1.5">
                       {isLoggedIn ? 'Konto' : 'Einloggen'}
-                      {isLoggedIn && alertCount > 0 && (
+                      {isLoggedIn && effectiveAlertCount > 0 && (
                         <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
                           <Bell className="w-3.5 h-3.5 shrink-0" />
-                          <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                           </span>
                         </span>
                       )}
@@ -279,7 +321,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
               >
                 <div className="relative">
                   {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                  {isLoggedIn && alertCount > 0 && (
+                  {isLoggedIn && effectiveAlertCount > 0 && (
                     <span className="absolute top-0 -right-1 flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
@@ -333,6 +375,12 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                       <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-out pointer-events-none" />
                       <ShieldCheck className="w-4.5 h-4.5 shrink-0 text-gold group-hover:text-amber-300 group-hover:scale-115 transition-all duration-500" />
                       <span className="relative z-10 text-white tracking-wide">Admin Panel</span>
+                      {effectiveAlertCount > 0 && (
+                        <span className="relative flex h-2.5 w-2.5 ml-1">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                        </span>
+                      )}
                     </button>
                   ) : (
                     <button
@@ -344,14 +392,14 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount = 0 }) {
                     >
                       <User className="w-4 h-4 shrink-0" />
                       <div className="relative">
-                        <span className="whitespace-nowrap flex items-center gap-1">
+                        <span className="whitespace-nowrap flex items-center gap-1.5">
                           {isLoggedIn ? 'Konto' : 'Einloggen'}
-                          {isLoggedIn && alertCount > 0 && (
+                          {isLoggedIn && effectiveAlertCount > 0 && (
                             <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
                               <Bell className="w-3.5 h-3.5 shrink-0" />
-                              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                              <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                               </span>
                             </span>
                           )}

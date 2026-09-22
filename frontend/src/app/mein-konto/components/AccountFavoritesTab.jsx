@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { getImageUrl } from '@/utils/imageUrl';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
+import { isListingBoosted } from '@/utils/sellerBadge';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -185,7 +186,7 @@ export default function AccountFavoritesTab({ onNavigateToListings }) {
                                 : (typeof item.images === 'string' ? item.images : '/hero.webp');
                             const slug = item.slug || buildListingSlug(item.title, item.id);
                             const priceNum = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
-                            const isBoosted = item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date());
+                            const isBoosted = isListingBoosted(item);
 
                             return (
                                 <motion.div
@@ -195,7 +196,11 @@ export default function AccountFavoritesTab({ onNavigateToListings }) {
                                     animate={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     transition={{ duration: 0.2 }}
-                                    className="group bg-white rounded-2xl overflow-hidden border border-beige hover:border-forest/25 hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+                                    className={`group rounded-2xl overflow-hidden transition-all duration-300 flex flex-col justify-between ${
+                                        isBoosted
+                                            ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_16px_-2px_rgba(202,152,43,0.16)] hover:shadow-[0_6px_20px_-2px_rgba(202,152,43,0.24)]'
+                                            : 'bg-white border border-beige hover:border-forest/25 hover:shadow-md'
+                                    }`}
                                 >
                                     <div>
                                         {/* Compact Image Area */}

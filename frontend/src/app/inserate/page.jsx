@@ -27,6 +27,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
+import { isListingBoosted } from '@/utils/sellerBadge';
 
 // Map API subcategory or tags to pre-defined mapping
 const CATEGORY_SUBCATEGORIES = {
@@ -551,6 +552,7 @@ function ListingCard({ item }) {
 
     const displayLoc = item.displayLocation || item.location || '';
     const cityOnly = displayLoc.split(',')[0].trim();
+    const isBoosted = isListingBoosted(item);
 
     return (
         <motion.div
@@ -558,7 +560,11 @@ function ListingCard({ item }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             onClick={handleCardClick}
-            className="group relative flex flex-col bg-white rounded-2xl md:rounded-3xl overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 cursor-pointer h-full select-none"
+            className={`group relative flex flex-col rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer h-full select-none ${
+                isBoosted
+                    ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
+                    : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl'
+            }`}
         >
             {/* Image Container */}
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-sand/20">

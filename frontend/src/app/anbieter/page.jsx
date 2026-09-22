@@ -117,10 +117,13 @@ function ProviderCard({ partner, onAuthRequired }) {
 
                 {/* Provider Info */}
                 <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                         <h3 className="font-display text-base sm:text-lg font-bold text-charcoal group-hover:text-forest transition-colors duration-200 line-clamp-1">
                             {partner.name}
                         </h3>
+                        {isPioneer && (
+                            <PioneerBadge size="xs" text="Pioneer" />
+                        )}
                     </div>
 
                     {/* Location & Type below heading */}

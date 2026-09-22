@@ -20,6 +20,11 @@ export const useAuthStore = create(
                 } catch (e) {
                     console.error('Favorites sync on login error:', e);
                 }
+                try {
+                    import('./useChatStore').then(mod => {
+                        mod.useChatStore.getState().fetchUnreadCount();
+                    });
+                } catch (e) {}
             },
 
             /** Called on logout */
@@ -28,6 +33,11 @@ export const useAuthStore = create(
                 try {
                     import('./useFavoritesStore').then(mod => {
                         mod.useFavoritesStore.getState().clearFavorites();
+                    });
+                } catch (e) {}
+                try {
+                    import('./useChatStore').then(mod => {
+                        mod.useChatStore.getState().setUnreadCount(0);
                     });
                 } catch (e) {}
             },

@@ -20,6 +20,10 @@ export const checkAndAwardPioneerBadge = async (userId) => {
             return { success: false, error: 'Benutzer nicht gefunden.' };
         }
 
+        if (!user.email_verified) {
+            return { success: false, error: 'Die E-Mail-Adresse muss vor der Pioneer-Auszeichnung verifiziert sein.' };
+        }
+
         let isProfileComplete = false;
         if (user.user_type === 'PRIVATE') {
             const profile = await db.orm.public.PrivateProfile
@@ -29,8 +33,7 @@ export const checkAndAwardPioneerBadge = async (userId) => {
                 profile.first_name && profile.first_name.trim() !== '' &&
                 profile.last_name && profile.last_name.trim() !== '' &&
                 profile.bio && profile.bio.trim() !== '' &&
-                profile.location && profile.location.trim() !== '' &&
-                profile.profile_image_url && profile.profile_image_url.trim() !== ''
+                profile.location && profile.location.trim() !== ''
             ) {
                 isProfileComplete = true;
             }
@@ -40,16 +43,22 @@ export const checkAndAwardPioneerBadge = async (userId) => {
                 .first();
             if (profile && 
                 profile.company_name && profile.company_name.trim() !== '' &&
-                profile.bio && profile.bio.trim() !== '' &&
-                profile.location && profile.location.trim() !== '' &&
-                profile.logo_url && profile.logo_url.trim() !== ''
+                profile.bio && profile.bio.trim().length >= 20 &&
+                (profile.location?.trim() || profile.company_address?.trim()) &&
+                profile.logo_url && profile.logo_url.trim() !== '' &&
+                profile.phone && profile.phone.trim() !== ''
             ) {
                 isProfileComplete = true;
             }
         }
 
         if (!isProfileComplete) {
-            return { success: false, error: 'Profil ist unvollständig. Bitte Vorname, Nachname/Firmenname, Info, Standort und Profilbild ausfüllen.' };
+            return { 
+                success: false, 
+                error: user.user_type === 'COMMERCIAL'
+                    ? 'Unternehmensprofil ist unvollständig (Firmenname, Logo, Beschreibung ab 20 Zeichen, Telefon und Standort erforderlich).'
+                    : 'Profil ist unvollständig. Bitte Vorname, Nachname, Info und Standort ausfüllen.' 
+            };
         }
 
         // 2. Count active approved listings owned by the user (status = 'APPROVED')

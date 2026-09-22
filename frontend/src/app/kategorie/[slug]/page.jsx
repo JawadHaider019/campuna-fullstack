@@ -11,6 +11,7 @@ import CategoriesSection from '@/app/components/CategoriesSection';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import { getImageUrl } from '@/utils/imageUrl';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
+import { isListingBoosted } from '@/utils/sellerBadge';
 
 // Map URL slugs → internal category names
 const SLUG_TO_CATEGORY = {
@@ -190,6 +191,10 @@ function mapListing(item) {
         features.push('Camping');
     }
 
+    const resolvedSellerType = item.listing_user_type || item.seller?.type || (category === 'Mieten & Vermieten' || (item.subcategory && item.subcategory.toLowerCase().includes('mieten')) ? 'Gewerblich' : 'Privat');
+    const sellerName = item.seller?.name || (resolvedSellerType === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer');
+    const isPioneer = Boolean(item.is_pioneer || item.seller?.is_pioneer || item.seller?.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
+
     const sellerRole = item.seller_role || item.role || item.seller?.role || '';
     const isAdmin = Boolean(
         sellerRole === 'ADMIN' ||
@@ -231,6 +236,7 @@ function mapListing(item) {
         role: sellerRole,
         is_admin: isAdmin,
         is_campuna_club: Boolean(item.is_campuna_club || item.seller?.is_campuna_club),
+        is_pioneer: isPioneer,
         seller: {
             name: isAdmin ? 'Campuna' : sellerName,
             verified: true,
@@ -238,7 +244,9 @@ function mapListing(item) {
             tier: sellerTier,
             role: sellerRole,
             is_admin: isAdmin,
-            is_campuna_club: Boolean(item.is_campuna_club || item.seller?.is_campuna_club)
+            is_campuna_club: Boolean(item.is_campuna_club || item.seller?.is_campuna_club),
+            is_pioneer: isPioneer,
+            achievements: item.seller?.achievements || (isPioneer ? [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }] : [])
         },
         listing_user_type: isAdmin ? 'Admin' : resolvedSellerType,
         seller_tier: sellerTier,
@@ -272,6 +280,7 @@ function ListingCard({ item }) {
 
     const displayLoc = item.displayLocation || item.location || '';
     const cityOnly = displayLoc.split(',')[0].trim();
+    const isBoosted = isListingBoosted(item);
 
     return (
         <motion.div
@@ -279,7 +288,11 @@ function ListingCard({ item }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             onClick={handleCardClick}
-            className="group relative flex flex-col bg-white rounded-[16px] sm:rounded-[24px] overflow-hidden border border-forest/5 hover:border-forest/10 hover:shadow-xl transition-all duration-300 cursor-pointer h-full select-none"
+            className={`group relative flex flex-col rounded-[16px] sm:rounded-[24px] overflow-hidden transition-all duration-300 cursor-pointer h-full select-none ${
+                isBoosted
+                    ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
+                    : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl'
+            }`}
         >
             {/* Image Area */}
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">

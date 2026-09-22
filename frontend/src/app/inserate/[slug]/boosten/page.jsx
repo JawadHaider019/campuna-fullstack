@@ -297,7 +297,7 @@ export default function BoostListingPage() {
                                 <span className="font-bold text-charcoal truncate max-w-[200px]">{listing.title}</span>
                             </div>
                             <div className="flex items-center justify-between pb-2 border-b border-forest/10">
-                                <span className="text-charcoal/60">Boost-Laufzeit:</span>
+                                <span className="text-charcoal/60">Laufzeit:</span>
                                 <span className="font-bold text-forest">{selectedDays} Tage (bis {calculatedEndDate})</span>
                             </div>
                             <div className="flex items-center justify-between">
@@ -371,7 +371,7 @@ export default function BoostListingPage() {
                         </h1>
 
                         <p className="text-xs sm:text-sm text-sand/80 leading-relaxed font-light">
-                            Hervorgehobene Inserate werden in der Campuna-Suche und in passenden Kategorien ganz oben ausgespielt und stechen durch das goldene Boost-Badge sofort ins Auge.
+                            Hervorgehobene Inserate werden in der Campuna-Suche und in passenden Kategorien ganz oben ausgespielt und stechen durch das goldene Hervorgehoben-Badge sofort ins Auge.
                         </p>
                     </div>
                 </div>
@@ -384,7 +384,7 @@ export default function BoostListingPage() {
                             <strong className="font-bold">Dieses Inserat ist aktuell bereits aktiv hervorgehoben</strong>
                             {listing.boosted_until && (
                                 <span> (bis {new Date(listing.boosted_until).toLocaleDateString('de-DE')})</span>
-                            )}. Durch erneutes Buchen verlängerst du die Boost-Laufzeit nahtlos.
+                            )}. Durch erneutes Buchen verlängerst du die Hervorhebungs-Laufzeit nahtlos.
                         </div>
                     </div>
                 )}
@@ -433,7 +433,7 @@ export default function BoostListingPage() {
                                         1
                                     </span>
                                     <h2 className="font-display font-bold text-base sm:text-lg text-charcoal">
-                                        Laufzeit für den Boost wählen
+                                        Laufzeit für die Hervorhebung wählen
                                     </h2>
                                 </div>
                                 <span className="text-xs text-charcoal/50 font-medium">
@@ -651,13 +651,13 @@ export default function BoostListingPage() {
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-forest uppercase tracking-wider flex items-center gap-1.5">
                                     <Eye className="w-4 h-4" />
-                                    Live-Vorschau deines Boosts
+                                    Live-Vorschau der Hervorhebung
                                 </span>
                                 <span className="text-[10px] text-charcoal/50">So sehen es Käufer</span>
                             </div>
 
                             {/* Simulated Boosted Listing Card */}
-                            <div className="rounded-2xl overflow-hidden border-2 border-amber-300/80 shadow-md bg-white relative">
+                            <div className="rounded-2xl overflow-hidden border border-amber-300/60 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.22)] bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] relative">
                                 <div className="relative aspect-[16/10] w-full bg-sand/30">
                                     <img
                                         src={getImageUrl(listingImage)}

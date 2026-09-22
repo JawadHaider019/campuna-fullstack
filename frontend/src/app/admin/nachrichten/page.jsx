@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -59,7 +59,7 @@ const QUICK_REPLIES = [
     'Das Inserat ist leider bereits reserviert / vergeben.'
 ];
 
-export default function AdminMessagesPage() {
+function AdminMessagesContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const activeConvIdFromQuery = searchParams.get('id');
@@ -188,10 +188,11 @@ export default function AdminMessagesPage() {
                     }
                 }
 
-                // If on desktop and no user selected, default to first user
+                // If on desktop and no user selected, default to first user with no conversation opened yet
                 if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
                     if (!selectedUserId && list.length > 0) {
-                        setSelectedUserId(list[0].other_user?.id);
+                        const firstUser = list[0].other_user?.id;
+                        setSelectedUserId(firstUser);
                     }
                 }
             }
@@ -253,49 +254,48 @@ export default function AdminMessagesPage() {
         }
     }, [selectedConvId, fetchConversationDetail]);
 
-    // Auto-scroll on messages change
+    // Scroll to bottom on messages update
     useEffect(() => {
-        scrollToBottom(false);
+        scrollToBottom(true);
     }, [messages, scrollToBottom]);
 
-    // ── 5. User & Step Navigation Handlers ───────────────────────────────
+    // Handle selecting a contact (Side 1: Users on left -> shows Listings on right)
     const handleSelectContact = (contactId) => {
         setSelectedUserId(contactId);
         setSelectedConvId(null);
         setMobileStep('listings');
     };
 
+    // Handle selecting a listing conversation (Side 2: Listings on left -> shows Chat on right)
     const handleSelectListingConversation = (convId) => {
         setSelectedConvId(convId);
         setMobileStep('chat');
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.set('id', convId);
-            window.history.replaceState(null, '', url.toString());
-        }
+        router.replace(`/admin/nachrichten?id=${encodeURIComponent(convId)}`, { scroll: false });
     };
 
+    // Handle going back to Contacts list (Returns to Side 1: Users on left, Listings on right)
     const handleBackToContacts = () => {
         setSelectedConvId(null);
         setMobileStep('contacts');
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('id');
-            window.history.replaceState(null, '', url.toString());
-        }
+        router.replace('/admin/nachrichten', { scroll: false });
     };
 
+    // Handle going back to Listings list on mobile
     const handleBackToListings = () => {
         setSelectedConvId(null);
         setMobileStep('listings');
-        if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('id');
-            window.history.replaceState(null, '', url.toString());
+        router.replace('/admin/nachrichten', { scroll: false });
+    };
+
+    // Apply quick reply
+    const handleApplyQuickReply = (text) => {
+        setNewMessageText(text);
+        if (textareaRef.current) {
+            textareaRef.current.focus();
         }
     };
 
-    // ── 6. Send Message / Reply ───────────────────────────────────────────
+    // ── Send Message ──────────────────────────────────────────────────
     const handleSendMessage = async (e) => {
         if (e) e.preventDefault();
         const text = newMessageText.trim();
@@ -308,9 +308,7 @@ export default function AdminMessagesPage() {
             if (res.success && sentMsg) {
                 setMessages((prev) => [...prev, sentMsg]);
                 setNewMessageText('');
-                scrollToBottom(true);
 
-                // Update last message in conversations list
                 setConversations((prev) =>
                     prev.map((c) =>
                         c.id === selectedConvId
@@ -327,30 +325,19 @@ export default function AdminMessagesPage() {
                     textareaRef.current.style.height = 'auto';
                 }
             } else {
-                toast.error(res.error || res.message || 'Fehler beim Senden der Antwort.');
+                toast.error(res.error || res.message || 'Fehler beim Senden.');
             }
         } catch (err) {
-            console.error('Error sending message:', err);
-            toast.error(err.response?.data?.error || 'Nachricht konnte nicht gesendet werden.');
+            console.error('Error sending admin message:', err);
+            toast.error(err.response?.data?.error || err.message || 'Fehler beim Senden.');
         } finally {
             setIsSending(false);
         }
     };
 
-    const handleApplyQuickReply = (text) => {
-        setNewMessageText(text);
-        if (textareaRef.current) {
-            textareaRef.current.focus();
-        }
-    };
-
-    const isChatOpen = Boolean(selectedConvId);
-
     // ─────────────────────────────────────────────────────────────────────────
-    // SUB-VIEWS FOR 3-TIER HIERARCHY: CONTACTS -> LISTINGS -> CHAT
+    // 1. CONTACTS LIST VIEW
     // ─────────────────────────────────────────────────────────────────────────
-
-    // 1. Level 1: Contacts List View
     const renderContactsList = () => (
         <div className="flex flex-col h-full bg-[#fdfcf9]">
             {/* Header & Search */}
@@ -358,7 +345,7 @@ export default function AdminMessagesPage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <span className="font-display font-bold text-sm sm:text-base text-charcoal">
-                            Nachrichten & Kontakte
+                            Kontakte
                         </span>
                         <span className="bg-sand text-forest font-bold text-xs px-2 py-0.5 rounded-full font-mono">
                             {groupedContacts.length}
@@ -390,36 +377,32 @@ export default function AdminMessagesPage() {
                 </div>
 
                 {/* Filter Tabs */}
-                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pt-0.5 text-[11px] font-bold">
-                    <button
-                        onClick={() => setFilterTab('ALL')}
-                        className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
-                            filterTab === 'ALL'
-                                ? 'bg-forest text-sand shadow-xs font-black'
-                                : 'bg-sand/40 text-charcoal/70 hover:bg-sand'
-                        }`}
-                    >
-                        <span>Alle ({conversations.length})</span>
-                    </button>
-                    <button
-                        onClick={() => setFilterTab('UNREAD')}
-                        className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
-                            filterTab === 'UNREAD'
-                                ? 'bg-forest text-sand shadow-xs font-black'
-                                : 'bg-sand/40 text-charcoal/70 hover:bg-sand'
-                        }`}
-                    >
-                        <span>Ungelesen</span>
-                        {totalUnreadCount > 0 && (
-                            <span className="bg-gold text-forest text-[9px] px-1 rounded-full font-mono">
-                                {totalUnreadCount}
-                            </span>
-                        )}
-                    </button>
+                <div className="flex items-center gap-1 pt-0.5 text-[11px] font-bold">
+                    {[
+                        { id: 'ALL', label: 'Alle' },
+                        { id: 'UNREAD', label: 'Ungelesen', badge: totalUnreadCount > 0 ? totalUnreadCount : undefined }
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setFilterTab(tab.id)}
+                            className={`px-3 py-1 rounded-full whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                                filterTab === tab.id
+                                    ? 'bg-forest text-sand shadow-xs font-black'
+                                    : 'bg-sand/40 text-charcoal/70 hover:bg-sand'
+                            }`}
+                        >
+                            <span>{tab.label}</span>
+                            {tab.badge && (
+                                <span className="bg-gold text-forest text-[9px] px-1 rounded-full font-mono font-bold">
+                                    {tab.badge}
+                                </span>
+                            )}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* Contacts Scroll List */}
+            {/* Contacts List Items */}
             <div className="flex-1 overflow-y-auto divide-y divide-beige/60">
                 {loadingList ? (
                     <div className="p-8 flex flex-col items-center justify-center text-center space-y-2 text-charcoal/60">
@@ -435,7 +418,7 @@ export default function AdminMessagesPage() {
                         <p className="text-[11px] leading-relaxed max-w-[200px]">
                             {searchQuery
                                 ? 'Keine Treffer für deine Suche.'
-                                : 'Sobald Nutzer Anfragen zu Campuna Club Inseraten stellen, erscheinen sie hier.'}
+                                : 'Aktuell liegen keine Kundenunterhaltungen vor.'}
                         </p>
                     </div>
                 ) : (
@@ -448,7 +431,7 @@ export default function AdminMessagesPage() {
                             <div
                                 key={contactGroup.userId}
                                 onClick={() => handleSelectContact(contactGroup.userId)}
-                                className={`p-3.5 transition-all cursor-pointer relative flex gap-3 items-start ${
+                                className={`p-3 sm:p-3.5 transition-all cursor-pointer relative flex gap-3 items-start ${
                                     isSelected
                                         ? 'bg-white border-l-4 border-l-forest shadow-xs'
                                         : hasUnread
@@ -473,10 +456,10 @@ export default function AdminMessagesPage() {
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-1 mb-0.5">
-                                        <span className="font-display font-bold text-xs text-charcoal truncate">
+                                        <span className="font-display font-bold text-xs sm:text-sm text-charcoal truncate">
                                             {contactGroup.user?.name || 'Benutzer'}
                                         </span>
-                                        <span className="text-[10px] text-charcoal/45 shrink-0">
+                                        <span className="text-[10px] text-charcoal/45 shrink-0 font-mono">
                                             {contactGroup.latestUpdatedAt
                                                 ? formatMessageTime(contactGroup.latestUpdatedAt)
                                                 : ''}
@@ -486,11 +469,11 @@ export default function AdminMessagesPage() {
                                     {/* Badges */}
                                     <div className="flex items-center gap-1.5 mb-1">
                                         <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-sand text-forest uppercase shrink-0">
-                                            {contactGroup.user?.type || 'Privat'}
+                                            {contactGroup.user?.type || 'Interessent'}
                                         </span>
-                                        <span className="text-[10px] font-medium text-forest bg-forest/5 px-1.5 py-0.2 rounded flex items-center gap-1 shrink-0">
+                                        <span className="text-[10px] font-bold text-forest bg-forest/5 px-1.5 py-0.2 rounded flex items-center gap-1 shrink-0">
                                             <Layers className="w-2.5 h-2.5" />
-                                            {listingsCount} {listingsCount === 1 ? 'Unterhaltung' : 'Unterhaltungen'}
+                                            {listingsCount} {listingsCount === 1 ? 'Inserat' : 'Inserate'}
                                         </span>
                                     </div>
 
@@ -520,7 +503,7 @@ export default function AdminMessagesPage() {
                                         </p>
 
                                         {hasUnread && (
-                                            <span className="bg-gold-dark text-white font-bold text-[9px] min-w-4 h-4 px-1 rounded-full flex items-center justify-center shrink-0">
+                                            <span className="bg-gold-dark text-white font-bold text-[9px] min-w-4 h-4 px-1 rounded-full flex items-center justify-center shrink-0 shadow-xs animate-pulse">
                                                 {contactGroup.totalUnreadCount}
                                             </span>
                                         )}
@@ -534,8 +517,10 @@ export default function AdminMessagesPage() {
         </div>
     );
 
-    // 2. Level 2: Listings List View for Active Contact
-    const renderListingsList = (isSidebarMode = false) => {
+    // ─────────────────────────────────────────────────────────────────────────
+    // 2. LISTINGS OF ACTIVE CONTACT
+    // ─────────────────────────────────────────────────────────────────────────
+    const renderListingsList = () => {
         if (!activeContactGroup) {
             return (
                 <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3 bg-[#fdfcf9]">
@@ -546,7 +531,7 @@ export default function AdminMessagesPage() {
                         Kein Kontakt ausgewählt
                     </h3>
                     <p className="text-xs text-charcoal/60 max-w-sm leading-relaxed">
-                        Wähle links eine Person oder Firma aus, um die zugehörigen Inserat-Unterhaltungen anzuzeigen.
+                        Wähle links eine Person aus, um die zugehörigen Inserate anzuzeigen.
                     </p>
                 </div>
             );
@@ -558,19 +543,20 @@ export default function AdminMessagesPage() {
                 <div className="p-3.5 sm:p-4 border-b border-beige bg-white space-y-2 shrink-0">
                     <button
                         onClick={handleBackToContacts}
-                        className="flex items-center gap-1.5 text-xs font-bold text-forest hover:text-gold-dark transition-colors cursor-pointer group"
+                        className={`${selectedConvId ? 'flex' : 'lg:hidden flex'} items-center gap-1.5 text-xs font-bold text-forest hover:text-gold-dark transition-colors cursor-pointer group`}
                     >
                         <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span>Zurück zu Kontakten</span>
+                        <span>Zurück zu allen Kontakten</span>
                     </button>
 
                     <div className="flex items-center gap-2.5 pt-1">
                         <div className="w-9 h-9 rounded-full bg-forest text-sand font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
                             {activeContactGroup.user?.avatar ? (
                                 <img
-                                    src={activeContactGroup.user.avatar}
+                                    src={getImageUrl(activeContactGroup.user.avatar)}
                                     alt={activeContactGroup.user.name}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                 />
                             ) : (
                                 activeContactGroup.user?.name?.charAt(0).toUpperCase() || 'U'
@@ -587,22 +573,22 @@ export default function AdminMessagesPage() {
                             </div>
                             <p className="text-[11px] text-charcoal/50 truncate">
                                 {activeContactGroup.conversations.length}{' '}
-                                {activeContactGroup.conversations.length === 1 ? 'Unterhaltung' : 'Unterhaltungen'}
+                                {activeContactGroup.conversations.length === 1 ? 'aktives Inserat' : 'aktive Inserate'}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                {/* Listings & Inquiries Items */}
+                {/* Listings Items */}
                 <div className="flex-1 p-3.5 sm:p-4 overflow-y-auto space-y-2.5 divide-y divide-beige/40">
                     <div className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider mb-2 flex items-center gap-1.5 pb-1">
                         <Layers className="w-3.5 h-3.5 text-forest" />
-                        <span>Unterhaltungen mit {activeContactGroup.user?.name}</span>
+                        <span>Inserate mit {activeContactGroup.user?.name}</span>
                     </div>
 
                     {activeContactGroup.conversations.map((conv) => {
                         const isSelected = selectedConvId === conv.id;
-                        const hasUnread = conv.unread_count > 0;
+                        const hasUnread = (conv.unread_count || 0) > 0;
                         const hasListing = Boolean(conv.listing && (conv.listing.title || conv.listing.id));
 
                         return (
@@ -625,6 +611,13 @@ export default function AdminMessagesPage() {
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                 onError={(e) => { e.currentTarget.src = '/hero-campuna.webp'; }}
                                             />
+                                        ) : activeContactGroup.user?.avatar ? (
+                                            <img
+                                                src={getImageUrl(activeContactGroup.user.avatar)}
+                                                alt={activeContactGroup.user.name}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                            />
                                         ) : (
                                             <Building2 className="w-6 h-6 text-forest/70" />
                                         )}
@@ -633,13 +626,13 @@ export default function AdminMessagesPage() {
                                     {/* Info */}
                                     <div className="min-w-0 flex-1 space-y-0.5">
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded uppercase bg-emerald-100 text-emerald-800">
-                                                Kaufanfrage
+                                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded uppercase bg-sand text-forest">
+                                                {hasListing ? 'Kaufanfrage' : 'Direktanfrage'}
                                             </span>
-                                            {conv.listing?.location && (
+                                            {(conv.listing?.location || activeContactGroup.user?.location) && (
                                                 <span className="text-[10px] text-charcoal/50 flex items-center gap-0.5 truncate">
                                                     <MapPin className="w-3 h-3 text-gold-dark" />
-                                                    {conv.listing.location}
+                                                    {conv.listing?.location || activeContactGroup.user?.location || 'Deutschland'}
                                                 </span>
                                             )}
                                         </div>
@@ -647,7 +640,7 @@ export default function AdminMessagesPage() {
                                         <h4 className="font-display font-bold text-xs sm:text-sm text-charcoal group-hover:text-forest transition-colors truncate">
                                             {hasListing
                                                 ? conv.listing.title
-                                                : `Anfrage von ${activeContactGroup.user?.name || 'Interessent'}`}
+                                                : `Allgemeine Kontaktanfrage an ${activeContactGroup.user?.name || 'den Anbieter'}`}
                                         </h4>
 
                                         <div className="flex items-baseline gap-2">
@@ -674,7 +667,7 @@ export default function AdminMessagesPage() {
                                 {/* Right Arrow / Unread */}
                                 <div className="flex items-center gap-2 shrink-0 self-center">
                                     {hasUnread && (
-                                        <span className="bg-gold-dark text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full shadow-xs">
+                                        <span className="bg-gold-dark text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full shadow-xs animate-pulse">
                                             {conv.unread_count}
                                         </span>
                                     )}
@@ -690,7 +683,9 @@ export default function AdminMessagesPage() {
         );
     };
 
-    // 3. Level 3: Active Live Chat Thread View
+    // ─────────────────────────────────────────────────────────────────────────
+    // 3. ACTIVE CHAT THREAD VIEW
+    // ─────────────────────────────────────────────────────────────────────────
     const renderChatThread = () => {
         if (!selectedConvId || !activeConversation) {
             return (
@@ -702,7 +697,7 @@ export default function AdminMessagesPage() {
                         Keine Unterhaltung ausgewählt
                     </h3>
                     <p className="text-xs text-charcoal/60 max-w-sm leading-relaxed">
-                        Wähle ein Inserat aus, um den Chat zu öffnen.
+                        Wähle links ein Inserat aus, um den Chat für dieses Inserat zu öffnen.
                     </p>
                 </div>
             );
@@ -729,6 +724,7 @@ export default function AdminMessagesPage() {
                                     src={getImageUrl(activeConversation.other_user.avatar)}
                                     alt={activeConversation.other_user.name}
                                     className="w-full h-full object-cover"
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                 />
                             ) : (
                                 activeConversation.other_user?.name?.charAt(0).toUpperCase() || 'U'
@@ -741,12 +737,14 @@ export default function AdminMessagesPage() {
                                 <h3 className="font-display font-bold text-xs sm:text-sm text-charcoal truncate">
                                     {activeConversation.other_user?.name}
                                 </h3>
-                                <span className="text-[9px] font-bold bg-sand text-forest px-1.5 py-0.2 rounded-full shrink-0">
-                                    {activeConversation.other_user?.type || 'Käufer'}
+                                <span className="text-[9px] font-bold bg-sand text-forest px-1.5 py-0.2 rounded-full shrink-0 uppercase">
+                                    {activeConversation.other_user?.type || 'Interessent'}
                                 </span>
                             </div>
                             <p className="text-[10px] text-charcoal/50 truncate">
-                                Interessent für Campuna Club Inserat
+                                {activeConversation.listing && (activeConversation.listing.title || activeConversation.listing.id)
+                                    ? 'Interessent für Inserat'
+                                    : 'Direktanfrage'}
                             </p>
                         </div>
                     </div>
@@ -771,7 +769,7 @@ export default function AdminMessagesPage() {
                                 <span className="block text-[10px] font-bold text-forest truncate">
                                     {activeConversation.listing.title}
                                 </span>
-                                <span className="font-display font-extrabold text-[11px] text-charcoal">
+                                <span className="font-display font-extrabold text-[11px] text-charcoal font-mono">
                                     {activeConversation.listing.price ? `${activeConversation.listing.price.toLocaleString('de-DE')} €` : 'Auf Anfrage'}
                                 </span>
                             </div>
@@ -833,7 +831,7 @@ export default function AdminMessagesPage() {
                                     </div>
 
                                     {/* Timestamp & Delivery */}
-                                    <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-charcoal/45">
+                                    <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-charcoal/45 font-mono">
                                         <span>{formatMessageTime(msg.created_at)}</span>
                                         {isMine && (
                                             <span>
@@ -857,7 +855,7 @@ export default function AdminMessagesPage() {
                     )}
                 </div>
 
-                {/* Reply Input Box (Firmly Attached to Bottom) */}
+                {/* Reply Input Box */}
                 <div className="p-3 sm:p-4 bg-white border-t border-beige space-y-2 sticky bottom-0 z-10 shrink-0">
                     {/* Quick Presets */}
                     <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-[11px]">
@@ -913,7 +911,7 @@ export default function AdminMessagesPage() {
 
     return (
         <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-6">
-            {/* ─── Top Page Header (Matching Inserate / Benutzer / Meldungen) ─── */}
+            {/* ── Top Page Header ── */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold shrink-0">
@@ -952,34 +950,32 @@ export default function AdminMessagesPage() {
                 </div>
             </div>
 
-            {/* ── Main Chat Shell Container (Height fitted to screen, pinned bottom input) ── */}
+            {/* ── Main Chat Shell Container (2 Sides Only) ── */}
             <div className="bg-white rounded-3xl border border-[#E8EAEF] shadow-2xs overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-235px)] min-h-[580px] max-h-[860px]">
                 
                 {/* ═════════════════════════════════════════════════════════════
-                    PANEL 1 (LEFT ON DESKTOP):
-                    - Desktop Mode 1 (No Chat Open): Contacts List
-                    - Desktop Mode 2 (Chat Open): Listings of Active Contact
-                    - Mobile: Managed smoothly via mobileStep state
+                    SIDE 1 (LEFT PANEL):
+                    - If no listing selected: Users on Left
+                    - If listing selected: Listings on Left (with "← Zurück zu Kontakten")
                    ═════════════════════════════════════════════════════════════ */}
                 <div
                     className={`w-full lg:w-80 xl:w-96 lg:border-r border-beige flex flex-col shrink-0 overflow-hidden ${
                         mobileStep === 'contacts'
                             ? 'flex'
-                            : !isChatOpen && mobileStep === 'listings'
+                            : !selectedConvId && mobileStep === 'listings'
                             ? 'hidden lg:flex'
-                            : isChatOpen
+                            : selectedConvId && mobileStep === 'chat'
                             ? 'hidden lg:flex'
-                            : 'hidden lg:flex'
+                            : 'flex'
                     }`}
                 >
-                    {!isChatOpen ? renderContactsList() : renderListingsList(true)}
+                    {!selectedConvId ? renderContactsList() : renderListingsList()}
                 </div>
 
                 {/* ═════════════════════════════════════════════════════════════
-                    PANEL 2 (RIGHT ON DESKTOP):
-                    - Desktop Mode 1 (No Chat Open): Listings of Active Contact
-                    - Desktop Mode 2 (Chat Open): Live Chat Thread
-                    - Mobile: Shows Listings (if mobileStep === 'listings') or Chat (if mobileStep === 'chat')
+                    SIDE 2 (RIGHT PANEL):
+                    - If no listing selected: Listings on Right
+                    - If listing selected: Live Chat on Right
                    ═════════════════════════════════════════════════════════════ */}
                 <div
                     className={`flex-1 flex flex-col bg-white overflow-hidden ${
@@ -992,9 +988,21 @@ export default function AdminMessagesPage() {
                             : 'hidden lg:flex'
                     }`}
                 >
-                    {!isChatOpen ? renderListingsList(false) : renderChatThread()}
+                    {!selectedConvId ? renderListingsList() : renderChatThread()}
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AdminMessagesPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-forest animate-spin" />
+            </div>
+        }>
+            <AdminMessagesContent />
+        </Suspense>
     );
 }

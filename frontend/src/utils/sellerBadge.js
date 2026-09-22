@@ -113,3 +113,28 @@ export function getSellerBadgeInfo(itemOrUser) {
         isPrivate: true
     };
 }
+
+/**
+ * Helper to determine if a listing is boosted / highlighted / admin-promoted
+ */
+export function isListingBoosted(item) {
+    if (!item) return false;
+    const sellerObj = item.seller || item;
+    const isAdmin = Boolean(
+        item.seller_role === 'ADMIN' ||
+        item.role === 'ADMIN' ||
+        item.seller_type === 'ADMIN' ||
+        sellerObj.role === 'ADMIN' ||
+        sellerObj.type === 'ADMIN' ||
+        item.is_admin === true ||
+        sellerObj.is_admin === true ||
+        item.is_campuna_club === true ||
+        sellerObj.is_campuna_club === true
+    );
+    return Boolean(
+        item.is_boosted ||
+        item.boosted ||
+        (item.boosted_until && new Date(item.boosted_until) > new Date()) ||
+        isAdmin
+    );
+}

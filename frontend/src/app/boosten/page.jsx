@@ -82,7 +82,7 @@ function BoostenRouter() {
                     <Breadcrumbs
                         items={[
                             { label: 'Mein Konto', href: '/mein-konto' },
-                            { label: 'Inserat hervorheben (Boost)', href: '#' }
+                            { label: 'Inserat hervorheben', href: '#' }
                         ]}
                     />
 
@@ -90,13 +90,13 @@ function BoostenRouter() {
                         <div className="space-y-2">
                             <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-gold/20 text-gold px-3 py-1 rounded-full border border-gold/40">
                                 <Rocket className="w-3.5 h-3.5 text-gold" />
-                                Inserat Boosten
+                                Inserat hervorheben
                             </span>
                             <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-white">
                                 Wähle das Inserat aus, das du hervorheben möchtest
                             </h1>
                             <p className="text-xs text-sand/80 font-light">
-                                Erhalte bis zu 5x mehr Anfragen durch Top-Platzierungen und das goldene Boost-Badge.
+                                Erhalte bis zu 5x mehr Anfragen durch Top-Platzierungen und das goldene Hervorgehoben-Badge.
                             </p>
                         </div>
                     </div>
@@ -140,7 +140,7 @@ function BoostenRouter() {
                                         <div className="flex items-center gap-1.5 mb-1">
                                             {isBoosted ? (
                                                 <span className="text-[9px] font-black uppercase tracking-wider bg-gold text-forest px-2 py-0.2 rounded-full">
-                                                    Bereits Geboostet
+                                                    Bereits Hervorgehoben
                                                 </span>
                                             ) : (
                                                 <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.2 rounded-full">

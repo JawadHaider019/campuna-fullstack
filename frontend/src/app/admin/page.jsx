@@ -37,6 +37,7 @@ import {
     exportAdminDataCsv,
     batchAiModerationScan
 } from '@/api/admin';
+import { getImageUrl } from '@/utils/imageUrl';
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -422,11 +423,12 @@ export default function AdminDashboard() {
                                             <div className="w-14 h-12 rounded-xl bg-slate-200 relative overflow-hidden shrink-0 border border-slate-300/60">
                                                 {item.image ? (
                                                     <Image
-                                                        src={item.image}
+                                                        src={getImageUrl(item.image)}
                                                         alt={item.title}
                                                         fill
                                                         sizes="60px"
                                                         className="object-cover"
+                                                        unoptimized
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-slate-400">
@@ -707,7 +709,12 @@ export default function AdminDashboard() {
                                                         : 'bg-blue-100 text-blue-800 border border-blue-200'
                                                     }`}>
                                                     {u.avatar ? (
-                                                        <Image src={u.avatar} alt={u.name} width={32} height={32} className="w-full h-full object-cover rounded-full" />
+                                                        <img
+                                                            src={getImageUrl(u.avatar, 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80')}
+                                                            alt={u.name}
+                                                            className="w-full h-full object-cover rounded-full"
+                                                            onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'; }}
+                                                        />
                                                     ) : (
                                                         u.name?.slice(0, 2).toUpperCase() || 'CP'
                                                     )}

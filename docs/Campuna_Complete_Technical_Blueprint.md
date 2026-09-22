@@ -64,7 +64,7 @@ AI Moderation ──┬──► Approved ──► PUBLIC
                 ├──► Rejected ──► REJECTED
                 └──► Manual Review ──► Admin Decision
 ```
-- Free private users can create a maximum of **3 active listings** (configurable in settings).
+- Private accounts have permanently free listings with no publicly advertised limit. An internal system safeguard caps active listings at **10 active listings**; an 11th listing triggers a commercial activity review.
 - **Pioneer Award**: Granted after email confirmation and $\ge 3$ approved listings, subject to the first 300 qualified-user limit.
 
 ---

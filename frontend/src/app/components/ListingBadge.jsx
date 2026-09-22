@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { ShieldCheck, Building2, Briefcase, Rocket } from 'lucide-react';
-import { getSellerBadgeInfo } from '@/utils/sellerBadge';
+import { getSellerBadgeInfo, isListingBoosted } from '@/utils/sellerBadge';
 
 /**
  * Account badge component for Private / Gewerblich / Business
@@ -87,14 +87,7 @@ export function PromotedBadge({ className = '', size = 'sm' }) {
  */
 export function ListingBadgesRow({ item, className = '', size = 'sm' }) {
     const info = getSellerBadgeInfo(item);
-    const isBoosted = Boolean(
-        item?.is_boosted || 
-        item?.boosted ||
-        (item?.boosted_until && new Date(item.boosted_until) > new Date())
-    );
-
-    // If admin listing or boosted listing, show Hervorgehoben badge
-    const showPromoted = isBoosted || info.isAdmin;
+    const showPromoted = isListingBoosted(item);
 
     return (
         <div className={`flex items-center gap-1.5 flex-wrap pointer-events-none ${className}`}>
