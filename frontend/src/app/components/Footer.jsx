@@ -76,7 +76,7 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/how_campuna_works" className="hover:text-forest transition-colors font-[400]">
+                                <Link href="/so-funktioniert-campuna" className="hover:text-forest transition-colors font-[400]">
                                     So funktioniert Campuna
                                 </Link>
                             </li>
@@ -112,22 +112,22 @@ export default function Footer() {
                         </h3>
                         <ul className="space-y-3 font-sans text-[14px] text-charcoal/80">
                             <li>
-                                <Link href="/faq_hilfe" className="hover:text-forest transition-colors font-[400]">
+                                <Link href="/faq-hilfe" className="hover:text-forest transition-colors font-[400]">
                                     Hilfe & FAQ
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/contact_kontakt" className="hover:text-forest transition-colors font-[400]">
+                                <Link href="/kontakt" className="hover:text-forest transition-colors font-[400]">
                                     Kontakt
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/act_safely__sicher_handeln" className="hover:text-forest transition-colors font-[400]">
+                                <Link href="/sicher-handeln" className="hover:text-forest transition-colors font-[400]">
                                     Sicher handeln
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/missing_anything__fehlt_dir_etwas" className="hover:text-forest transition-colors font-[400] leading-tight block">
+                                <Link href="/fehlt-dir-etwas" className="hover:text-forest transition-colors font-[400] leading-tight block">
                                     Fehlt dir etwas? Sag es uns
                                 </Link>
                             </li>
@@ -151,7 +151,7 @@ export default function Footer() {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/datenschutzerkl_rung" className="hover:text-forest transition-colors font-[400]">
+                                <Link href="/datenschutz" className="hover:text-forest transition-colors font-[400]">
                                     Datenschutz
                                 </Link>
                             </li>
@@ -172,7 +172,7 @@ export default function Footer() {
                     </p>
 
                     <div className="flex items-center gap-5 justify-center">
-                        <a href="https://www.facebook.com/people/campunade/61580574896053/" target="_blank" rel="noopener noreferrer" className="hover:opacity-75 transition-opacity" aria-label="Facebook">
+                        <a href="https://www.facebook.com/profile.php?id=61580574896053" target="_blank" rel="noopener noreferrer" className="hover:opacity-75 transition-opacity" aria-label="Facebook">
                             <svg className="w-6 h-6 text-forest fill-current" viewBox="0 0 24 24">
                                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                             </svg>

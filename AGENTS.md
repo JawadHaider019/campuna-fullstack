@@ -23,3 +23,11 @@ Whenever working on the Campuna project (backend, database, API routes, or Next.
 6. **Campuna Pioneer Program**: First 300 qualified users (email verified + complete profile + 3 approved listings). Rewards: permanent Pioneer badge + one-time 1,000 CC bonus (no permanent algorithmic ranking advantage).
 7. **AI Moderation Engine**: Separate current status (`listings.status`) from decision history (`listing_moderation`).
 8. **Business Monetization**: €29/month recurring professional presence for predictable platform cash flow.
+
+## 9. Campuna — SEO, AEO, GEO, UX & Conversion Agent
+Whenever performing SEO, AEO, GEO, UX, or conversion optimization tasks across Campuna:
+- Always operate under the principles defined in [.agents/rules/seo-ux-conversion-agent.md](file:///d:/Projects/campuna%20fullstack/.agents/rules/seo-ux-conversion-agent.md).
+- **Core goal**: Relevanter deutscher Traffic → Starke UX & Trust → Hohe Conversion (Registrierungen, Inserate, Chats, gewerbliche Buchungen).
+- **Benchmark**: Orientierung an Best Practices von [Second.Place](https://second.place/de) für Marktplatz-UX, Filterung, Inseratsdetailseiten und Händlerdarstellung.
+- **Sprache**: Konsequent Deutsch (`de-DE` / `/de/...`).
+
