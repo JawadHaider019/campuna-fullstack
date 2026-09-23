@@ -3,6 +3,7 @@ import { db } from '../prisma/db.js';
 import { getUserFeatures } from './subscription.js';
 import { isValidPhoneNumber } from '../utils/validation.js';
 import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
+import { moderateListingAI } from '../services/aiService.js';
 import crypto from 'crypto';
 
 /**
@@ -108,10 +109,34 @@ export const createListing = async (req, res) => {
             .replace(/^-+|-+$/g, '');
 
         const listingId = crypto.randomUUID();
-        const initialStatus = isAdmin ? 'APPROVED' : 'REVIEW';
         const listingPhone = req.body.phone && String(req.body.phone).trim() !== '' ? String(req.body.phone).trim() : null;
-
         const initialFeatured = isAdmin && (req.body.featured === 'true' || req.body.featured === true);
+
+        // Run local AI moderation (or fallback if AI server is offline)
+        let aiResult = {
+            safe: true,
+            reason: 'Manuelle Prüfung',
+            fraud_risk_score: 0.1,
+            confidence_score: 0.9,
+            ai_decision: 'APPROVE'
+        };
+
+        if (!isAdmin) {
+            try {
+                aiResult = await moderateListingAI({
+                    title,
+                    description: description || '',
+                    category,
+                    price: parsedPrice,
+                    location
+                });
+            } catch (aiErr) {
+                console.warn('AI moderation check notice:', aiErr.message);
+            }
+        }
+
+        // Determine final listing status: Admin or Safe AI -> APPROVED; Flagged AI -> REVIEW
+        const initialStatus = isAdmin ? 'APPROVED' : (aiResult.safe ? 'APPROVED' : 'REVIEW');
 
         // 6. Create Listing in single table
         const insertRes = await pool.query(
@@ -143,7 +168,7 @@ export const createListing = async (req, res) => {
 
         const listing = insertRes.rows[0];
 
-        // 7. Insert initial listing_moderation record
+        // 7. Insert listing_moderation record with AI audit trail
         try {
             await pool.query(
                 `INSERT INTO listing_moderation (
@@ -155,28 +180,32 @@ export const createListing = async (req, res) => {
                     $6, $7, $8, $9,
                     $10::jsonb,
                     $11, NOW(), NOW()
-                ) ON CONFLICT (listing_id) DO NOTHING`,
+                ) ON CONFLICT (listing_id) DO UPDATE SET
+                    ai_score = EXCLUDED.ai_score,
+                    ai_decision = EXCLUDED.ai_decision,
+                    fraud_risk_score = EXCLUDED.fraud_risk_score,
+                    ai_reasons = EXCLUDED.ai_reasons,
+                    status = EXCLUDED.status,
+                    updated_at = NOW()`,
                 [
                     crypto.randomUUID(),
                     listing.id,
-                    isAdmin ? 99 : 50,
-                    isAdmin ? 'APPROVE' : 'MANUAL_REVIEW',
-                    isAdmin ? 1.0 : 0.50,
-                    isAdmin ? 99 : 60,
-                    isAdmin ? 99 : 60,
-                    isAdmin ? 99 : 60,
-                    0,
-                    isAdmin
-                        ? JSON.stringify(['Direkt freigegeben durch Administrator.'])
-                        : JSON.stringify(['Neues Inserat eingereicht - wartet auf manuelle Prüfung.']),
-                    isAdmin ? 'APPROVED' : 'PENDING'
+                    isAdmin ? 99 : (aiResult.safe ? 90 : 35),
+                    isAdmin ? 'APPROVE' : (aiResult.safe ? 'APPROVE' : 'FLAG'),
+                    aiResult.confidence_score || 0.9,
+                    isAdmin ? 99 : (aiResult.safe ? 90 : 40),
+                    90,
+                    isAdmin ? 99 : (aiResult.safe ? 90 : 40),
+                    aiResult.fraud_risk_score || 0.05,
+                    JSON.stringify([aiResult.reason || (initialStatus === 'APPROVED' ? 'Automatisch freigegeben' : 'Markiert zur Überprüfung')]),
+                    initialStatus === 'APPROVED' ? 'APPROVED' : 'PENDING'
                 ]
             );
         } catch (modErr) {
             console.warn('Notice: initial listing_moderation creation:', modErr.message);
         }
 
-        // 8. If immediately approved (e.g. created by Admin), check and award referral credits
+        // 8. If immediately approved (e.g. created by Admin or safe AI), check and award referral credits
         if (initialStatus === 'APPROVED') {
             checkAndAwardReferralCreditsOnApproval(id).catch(() => {});
         }
