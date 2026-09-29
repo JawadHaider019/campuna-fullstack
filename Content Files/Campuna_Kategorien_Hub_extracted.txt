@@ -1,0 +1,234 @@
+CAMPUNA
+Categories Hub Page SEO Template
+/kategorien: the hub that links all 9 category pages
+For the development team. Instructions in English. All website copy in German (highlighted blocks). German copy is final: copy 1:1, do not translate or rephrase. No em dashes and no en dashes anywhere in visible copy.
+File: campuna-kategorien-hub-template.html  ·  Preview: preview_kategorien_hub.png
+0. Structure analysis of the approved design
+The approved design is a homepage section: eyebrow "KATEGORIEN", the headline "Camping hat viele Seiten. Wir bringen sie zusammen." and 9 icon cards. As a standalone hub page that is thin content: 9 icons with 2-word labels give Google almost no text and give the category pages almost no anchor context. The following sections were ADDED. Build all of them.
+A. Intro paragraph under the H1
+Two sentences of context with the primary entities (Kategorien, Camping, ganz Deutschland, kostenlos inserieren). Keeps the hero visually identical, adds crawlable text.
+B. Breadcrumb + BreadcrumbList schema
+Startseite › Kategorien. Two levels, visible and in schema.
+C. Category detail blocks (the SEO core)
+One block per category: small tag, H2 with the category name linked, 45 to 60 words of keyword copy with an in-text deep link, subcategory chips, "Zur Kategorie" button. This turns the hub into 9 rich, descriptive internal links instead of 9 icons, and creates crawl paths to every subcategory PLP.
+D. Stats strip
+9 Kategorien · ganz Deutschland · private Inserate kostenlos, ohne Provision · direkter Kontakt. Trust + entity reinforcement directly under the cards.
+E. Beliebte Suchen
+8 chips with the highest-volume cross-site searches, each a deep link (wohnmobil gebraucht kaufen, vorzelt, dachzelt, tiny house kaufen, kastenwagen, stellplatz, gasprüfung, fahrradträger).
+F. Sell CTA band
+The hub also serves sellers choosing where to list. Dark green band with "Kostenlos inserieren".
+G. FAQ + FAQPage schema
+4 hub questions (which categories exist, where does my listing belong, is listing free, Marktplatz vs. Kategorien). Visible text matches schema word for word. First item open by default.
+Fixed from the design
+Card labels "Camping Zubehör" and "Camping Services" are written with hyphen (Camping-Zubehör, Camping-Services): correct German orthography and consistent with the category page H1s and the footer. Emoji icons in the template are placeholders: replace with the final SVG line icon set, aria-hidden="true", labels stay real text.
+1. Meta title + description (copy-paste)
+Paste into <head> of /kategorien. Title 46 chars, description 148 chars. Limits: title max 60, description max 155.
+<title>Alle Camping-Kategorien im Überblick | Campuna</title>
+<meta name="description" content="Neun Kategorien, ein Marktplatz: Wohnmobile, Zelte, Zubehör, Stellplätze, Tiny Houses, Boote und mehr. Entdecke alle Camping-Kategorien auf Campuna.">
+<link rel="canonical" href="https://campuna.de/kategorien">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Alle Camping-Kategorien im Überblick | Campuna">
+<meta property="og:description" content="Neun Kategorien, ein Marktplatz: Wohnmobile, Zelte, Zubehör, Stellplätze, Tiny Houses, Boote und mehr.">
+<meta property="og:url" content="https://campuna.de/kategorien">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-kategorien.jpg">
+<meta property="og:locale" content="de_DE">
+<meta name="twitter:card" content="summary_large_image">
+ 
+H1 (exactly one, from the design):
+Camping hat viele Seiten. Wir bringen sie zusammen.
+2. Section-by-section build order + final German copy
+2.1 Hero
+Eyebrow: KATEGORIEN
+H1: Camping hat viele Seiten. Wir bringen sie zusammen.
+Intro: Campuna bündelt alles rund ums Camping in neun Kategorien: von Fahrzeugen über Ausrüstung bis zu Stellplätzen und Services. Wähle deine Kategorie und entdecke Angebote aus ganz Deutschland, oder inseriere kostenlos, was du abgeben möchtest.
+Breadcrumb: Startseite › Kategorien
+2.2 The 9 icon cards (design replica)
+Grid of 9, one row on desktop, wrapping to 5/3/2 columns on smaller screens. Every card is a real link to the clean category URL. Order and labels:
+Card label
+Links to
+Camping-Zubehör
+https://campuna.de/zubehoer
+Wohnmobile & Camper
+https://campuna.de/wohnmobile
+Zelte & Dachzelte
+https://campuna.de/zelte
+Fahrräder & Träger
+https://campuna.de/fahrraeder-traeger
+Stellplätze & Campingplätze
+https://campuna.de/stellplaetze
+Camping-Services
+https://campuna.de/services
+Tiny Houses
+https://campuna.de/tiny-houses
+Mieten & Vermieten
+https://campuna.de/mieten
+Boote & Wassersport
+https://campuna.de/boote
+2.3 Stats strip
+9 Kategorien für alles rund ums Camping · Angebote aus ganz Deutschland · Private Inserate kostenlos, ohne Provision · Direkter Kontakt ohne Zwischenhändler
+2.4 Category detail blocks (Finde deinen Bereich)
+Eyebrow: ALLE KATEGORIEN  ·  H2: Finde deinen Bereich
+Lead: Jede Kategorie hat eigene Unterkategorien und Filter. Hier siehst du auf einen Blick, was wohin gehört und was dich in jedem Bereich erwartet.
+9 blocks, each: icon, category tag, H2 (category name, linked), copy, subcategory chips, "Zur Kategorie →" button. Full German copy per block is in the HTML file, section "details": copy 1:1. A listing-count slot per block may be added from the database; omit it when unavailable, never show a wrong number. Chips link to subcategory PLPs; until a subcategory PLP is live, point its chip to the parent category URL, never to a 404.
+2.5 Beliebte Suchen
+Eyebrow: BELIEBTE SUCHEN  ·  H2: Wonach andere gerade suchen
+Chips: Wohnmobil gebraucht kaufen · Vorzelt für Wohnwagen · Dachzelt · Tiny House kaufen · Kastenwagen gebraucht · Stellplatz Wohnmobil · Gasprüfung Wohnmobil · Fahrradträger Wohnmobil
+2.6 Sell CTA band
+VERKAUFEN  ·  Egal welche Kategorie: Dein Inserat ist in Minuten online.  ·  Wähle die passende Kategorie, lade Fotos hoch, fertig. Privat kostenlos, ohne Provision.  ·  Button: Kostenlos inserieren
+2.7 FAQ
+Häufige Fragen zu den Kategorien
+4 questions, full text in the HTML and in the FAQPage schema (section 4). Visible accordion text must match the schema verbatim. First question open by default.
+3. Hub page rules
+Every card and every CTA links to the clean category URL (/zubehoer, /wohnmobile, ...). Never to /inserate?kategorie=... and never JS-only navigation.
+The page canonicals to itself (https://campuna.de/kategorien). No parameters exist on this page.
+One H1 (the design headline). Category names are H2. FAQ questions are H3.
+Listing counts, when shown, come from the database at render time and equal reality. Omit when unavailable.
+Subcategory chips link to subcategory PLPs; a chip whose PLP is not live yet points to the parent category instead. No link on this page may 404.
+Emoji icons are placeholders for the final SVG icon set (aria-hidden="true"). Labels stay real text, never text in images.
+Header marks Kategorien as active. This page is linked from the main navigation on every page: it is the strongest internal-link distributor after the homepage. Keep it in the top nav.
+All visible copy pure human German, du-form. No em dashes, no en dashes. Hyphens in compounds (Camping-Zubehör, Camping-Services, Camping-Marktplatz) are correct and stay.
+4. Schema markup (copy-paste JSON-LD)
+Three blocks, each in its own <script type="application/ld+json"> before </head>. Extracted 1:1 from the template HTML. Organization and WebSite schema live only on the homepage; this page references them via @id.
+4.1 BreadcrumbList
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Startseite",
+      "item": "https://campuna.de/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Kategorien",
+      "item": "https://campuna.de/kategorien"
+    }
+  ]
+}
+4.2 CollectionPage + ItemList (the 9 categories, static)
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://campuna.de/kategorien#collection",
+  "url": "https://campuna.de/kategorien",
+  "name": "Alle Camping-Kategorien im Überblick",
+  "inLanguage": "de-DE",
+  "isPartOf": {
+    "@id": "https://campuna.de/#website"
+  },
+  "about": {
+    "@id": "https://campuna.de/#organization"
+  },
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": 9,
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Camping-Zubehör",
+        "url": "https://campuna.de/zubehoer"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Wohnmobile & Camper",
+        "url": "https://campuna.de/wohnmobile"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Zelte & Dachzelte",
+        "url": "https://campuna.de/zelte"
+      },
+      {
+        "@type": "ListItem",
+        "position": 4,
+        "name": "Fahrräder & Träger",
+        "url": "https://campuna.de/fahrraeder-traeger"
+      },
+      {
+        "@type": "ListItem",
+        "position": 5,
+        "name": "Stellplätze & Campingplätze",
+        "url": "https://campuna.de/stellplaetze"
+      },
+      {
+        "@type": "ListItem",
+        "position": 6,
+        "name": "Camping-Services",
+        "url": "https://campuna.de/services"
+      },
+      {
+        "@type": "ListItem",
+        "position": 7,
+        "name": "Tiny Houses",
+        "url": "https://campuna.de/tiny-houses"
+      },
+      {
+        "@type": "ListItem",
+        "position": 8,
+        "name": "Mieten & Vermieten",
+        "url": "https://campuna.de/mieten"
+      },
+      {
+        "@type": "ListItem",
+        "position": 9,
+        "name": "Boote & Wassersport",
+        "url": "https://campuna.de/boote"
+      }
+    ]
+  }
+}
+4.3 FAQPage
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://campuna.de/kategorien#faq",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Welche Kategorien gibt es auf Campuna?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Campuna hat neun Kategorien: Camping-Zubehör, Wohnmobile und Camper, Zelte und Dachzelte, Fahrräder und Träger, Stellplätze und Campingplätze, Camping-Services, Tiny Houses, Mieten und Vermieten sowie Boote und Wassersport. So findest du alles rund ums Camping an einem Ort."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "In welche Kategorie gehört mein Inserat?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Wähle die Kategorie, in der Käufer dein Angebot suchen würden: Fahrzeuge unter Wohnmobile und Camper, Ausrüstung unter Camping-Zubehör, Übernachtungsplätze unter Stellplätze und Campingplätze. Beim Erstellen deines Inserats schlägt dir Campuna die passende Unterkategorie vor. Die Kategorie kannst du später jederzeit ändern."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Kann ich in allen Kategorien kostenlos inserieren?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ja. Private Inserate sind in allen neun Kategorien kostenlos, ohne Provision und ohne versteckte Gebühren. Gewerbliche Anbieter wie Händler, Vermieter oder Werkstätten präsentieren sich mit einem Anbieterprofil. Die Konditionen dafür findest du auf der Seite Preise."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Was ist der Unterschied zwischen Marktplatz und Kategorien?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Der Marktplatz zeigt dir alle aktuellen Inserate aus ganz Deutschland in einer Liste mit Filtern. Die Kategorien führen dich direkt zu einem Themenbereich, zum Beispiel nur Wohnmobile oder nur Zelte. Beide Wege führen zu denselben Angeboten, du startest nur unterschiedlich."
+      }
+    }
+  ]
+}
+5. Pre-launch verification checklist
+Title 60 max, description 155 max, exactly one H1 (this template: 46 / 148 / 1).
+Zero em dashes and zero en dashes in visible copy (checked: 0).
+All 3 JSON-LD blocks parse (validator.schema.org + Google Rich Results Test); FAQ text matches visible text verbatim.
+All 9 category links resolve 200 to the clean URLs; subcategory chips resolve 200 (parent fallback where sub-PLP not live).
+Breadcrumb visible and matching schema.
+Mobile: cards wrap 5/3/2 columns, detail blocks stack, tap targets 44px min, no horizontal scroll.
+Icons replaced with final SVG set, aria-hidden, labels as text.
+Page reachable from the top navigation sitewide and from the homepage KATEGORIEN section headline.

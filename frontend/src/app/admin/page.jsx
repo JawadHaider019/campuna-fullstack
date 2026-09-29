@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus,
     ArrowUpRight,
@@ -13,14 +14,12 @@ import {
     Eye,
     ShieldCheck,
     Sparkles,
-    Download,
     Layers,
     UserCheck,
     ChevronRight,
     Building2,
     User,
     Award,
-    AlertTriangle,
     CreditCard,
     DollarSign,
     Activity,
@@ -30,13 +29,17 @@ import {
     Filter,
     ArrowRight,
     Flag,
-    MessageSquare
+    MessageSquare,
+    Coins,
+    Wallet,
+    Flame,
+    Gem,
+    ArrowDownRight,
+    Rocket,
+    Hexagon,
+    BarChart3
 } from 'lucide-react';
-import {
-    getAdminDashboardStats,
-    exportAdminDataCsv,
-    batchAiModerationScan
-} from '@/api/admin';
+import { getAdminDashboardStats } from '@/api/admin';
 import { getImageUrl } from '@/utils/imageUrl';
 
 export default function AdminDashboard() {
@@ -45,8 +48,6 @@ export default function AdminDashboard() {
     // Stats and Data State
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [exportLoading, setExportLoading] = useState(false);
-    const [batchScanLoading, setBatchScanLoading] = useState(false);
     const [feedback, setFeedback] = useState(null);
 
     const showFeedback = (msg, type = 'success') => {
@@ -74,46 +75,6 @@ export default function AdminDashboard() {
         loadDashboardData();
     }, [loadDashboardData]);
 
-    // Export CSV Download Trigger
-    const handleExportCsv = async () => {
-        setExportLoading(true);
-        try {
-            const response = await exportAdminDataCsv();
-            const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `campuna_daten_export_${new Date().toISOString().slice(0, 10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
-            showFeedback("CSV-Export erfolgreich heruntergeladen!", "success");
-        } catch (err) {
-            console.error("Export error:", err);
-            showFeedback("Fehler beim Erstellen des CSV-Exports.", "error");
-        } finally {
-            setExportLoading(false);
-        }
-    };
-
-    // Batch AI Scan Trigger
-    const handleBatchAiScan = async () => {
-        setBatchScanLoading(true);
-        try {
-            const res = await batchAiModerationScan();
-            if (res.data?.success) {
-                showFeedback(res.data.message || "KI-Batch-Prüfung abgeschlossen!", "success");
-                loadDashboardData();
-            }
-        } catch (err) {
-            console.error("Batch AI error:", err);
-            showFeedback("Fehler bei der KI-Gesamtprüfung.", "error");
-        } finally {
-            setBatchScanLoading(false);
-        }
-    };
-
     // Format currency
     const formatEuro = (amount) => {
         return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount || 0);
@@ -129,36 +90,71 @@ export default function AdminDashboard() {
     const arcLength = Math.PI * radius; // ~125.66
     const strokeDashoffset = arcLength - (arcLength * approvalRate) / 100;
 
+    // Framer motion variants for subtle staggered dashboard entrance
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.08,
+                delayChildren: 0.05
+            }
+        }
+    };
+
+    const cardVariants = {
+        hidden: { opacity: 0, y: 16 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
+        }
+    };
+
     return (
-        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
+        <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="w-full max-w-[1440px] mx-auto space-y-6 pb-10"
+        >
 
             {/* ─── Feedback Toast Banner (Stable Fixed DOM) ─── */}
             <div className="fixed top-6 right-6 z-50 pointer-events-none">
-                {feedback && (
-                    <div
-                        className={`pointer-events-auto px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 backdrop-blur-md text-xs font-bold transition-all duration-300 ${
-                            feedback.type === 'error'
-                                ? 'bg-rose-900 text-white border-rose-700 shadow-rose-900/30'
-                                : 'bg-emerald-950 text-sand border-emerald-700 shadow-emerald-950/40'
-                        }`}
-                    >
-                        <span className="shrink-0">
-                            {feedback.type === 'error' ? (
-                                <AlertTriangle className="w-4 h-4 text-rose-300" />
-                            ) : (
-                                <CheckCircle2 className="w-4 h-4 text-gold" />
-                            )}
-                        </span>
-                        <span>{feedback.msg}</span>
-                    </div>
-                )}
+                <AnimatePresence>
+                    {feedback && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                            transition={{ duration: 0.3 }}
+                            className={`pointer-events-auto px-5 py-3.5 rounded-2xl shadow-xl border flex items-center gap-3 backdrop-blur-md text-xs font-bold ${
+                                feedback.type === 'error'
+                                    ? 'bg-rose-900 text-white border-rose-700 shadow-rose-900/30'
+                                    : 'bg-emerald-950 text-sand border-emerald-700 shadow-emerald-950/40'
+                            }`}
+                        >
+                            <span className="shrink-0">
+                                {feedback.type === 'error' ? (
+                                    <AlertTriangle className="w-4 h-4 text-rose-300" />
+                                ) : (
+                                    <CheckCircle2 className="w-4 h-4 text-gold" />
+                                )}
+                            </span>
+                            <span>{feedback.msg}</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* ─── Top Command Center Header ─── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
+            <motion.div
+                variants={cardVariants}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs"
+            >
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold shrink-0">
-                        <Activity className="w-5 h-5" />
+                        <BarChart3 className="w-5 h-5" />
                     </div>
                     <div>
                         <h1 className="text-xl sm:text-2xl font-black font-sans text-slate-900 tracking-tight">
@@ -171,23 +167,26 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="flex items-center gap-2.5">
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => router.push('/admin/inserat-erstellen')}
                         className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-[#002B06] hover:text-gold transition-all duration-200 cursor-pointer shadow-sm border border-gold/30 shrink-0"
                     >
                         <Plus className="w-4 h-4 text-gold" />
                         <span>Neues Inserat erstellen</span>
-                    </button>
+                    </motion.button>
                 </div>
-            </div>
+            </motion.div>
 
             {/* ─── Row 1: 6 Primary Bento KPI Cards ─── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
+            <motion.div variants={cardVariants} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3.5">
 
                 {/* 1. Gesamt-Inserate & Marktwert (Forest Highlight Card) */}
-                <div
+                <motion.div
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
                     onClick={() => router.push('/admin/inserate')}
-                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[145px] border border-forest/30 cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[145px] border border-forest/30 cursor-pointer group"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-sand/80 uppercase tracking-wider">
@@ -206,12 +205,13 @@ export default function AdminDashboard() {
                             <span>{formatEuro(stats?.listings?.totalActiveValue)}</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 2. Moderations-Warteschlange (Urgent Review Queue) */}
-                <div
+                <motion.div
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
                     onClick={() => router.push('/admin/inserate?status=REVIEW')}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group hover:border-amber-300 transition-colors"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -243,12 +243,13 @@ export default function AdminDashboard() {
                             )}
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 3. Meldungen (Offene Benutzermeldungen) */}
-                <div
+                <motion.div
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
                     onClick={() => router.push('/admin/meldungen')}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group hover:border-rose-300 transition-colors"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -280,12 +281,13 @@ export default function AdminDashboard() {
                             )}
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 4. Campuna Pioneer Club (Live / 300) */}
-                <div
+                <motion.div
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
                     onClick={() => router.push('/admin/benutzer')}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group hover:border-amber-300 transition-colors"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -313,12 +315,13 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 5. Monetarisierung & Business Tier */}
-                <div
+                <motion.div
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
                     onClick={() => router.push('/admin/benutzer?type=COMMERCIAL')}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group hover:border-emerald-300 transition-colors"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -337,12 +340,13 @@ export default function AdminDashboard() {
                             <span className="text-slate-400">{`${stats?.users?.strategicPartners || 0} Partner`}</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 6. Benutzer & Händler */}
-                <div
+                <motion.div
+                    whileHover={{ y: -3, transition: { duration: 0.2 } }}
                     onClick={() => router.push('/admin/benutzer')}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group hover:border-blue-300 transition-colors"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -361,12 +365,12 @@ export default function AdminDashboard() {
                             <span>{`${stats?.users?.private || 0} Privat`}</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-            </div>
+            </motion.div>
 
             {/* ─── Row 2: Live Moderation Queue & Quality Diagnostics ─── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <motion.div variants={cardVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
                 {/* 2-Column Wide: Interaktive Moderations-Warteschlange */}
                 <div className="lg:col-span-2 bg-white border border-[#E8EAEF] rounded-3xl p-6 shadow-2xs flex flex-col justify-between">
@@ -414,8 +418,9 @@ export default function AdminDashboard() {
                         ) : (
                             <div className="space-y-3">
                                 {stats.pendingQueue.map((item) => (
-                                    <div
+                                    <motion.div
                                         key={`queue-item-${item.id}`}
+                                        whileHover={{ scale: 1.01, transition: { duration: 0.15 } }}
                                         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50/70 hover:bg-slate-50 border border-slate-200/80 transition-all"
                                     >
                                         {/* Image & Main Info */}
@@ -481,7 +486,7 @@ export default function AdminDashboard() {
                                                 <Eye className="w-4 h-4" />
                                             </button>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         )}
@@ -586,64 +591,201 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-            </div>
+            </motion.div>
+
+            {/* ─── NEW WIDGET: Campuna Credit Ledger & Monetarisierungs-Zentrale ─── */}
+            <motion.div variants={cardVariants} className="bg-white border border-[#E8EAEF] rounded-3xl p-6 shadow-2xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-[#F2F4F7]">
+                    <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-700 flex items-center justify-center font-bold shrink-0">
+                            <Coins className="w-5 h-5 text-gold-dark" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-sm sm:text-base font-bold text-slate-900">
+                                    Campuna Credit Ledger & Umsatz-Analytik
+                                </h2>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sand text-forest border border-forest/10">
+                                    1 CC = 0,01 €
+                                </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                                Revisionssichere Übersicht aller Credits, Buchungen, Spotlight-Platzierungen und wiederkehrenden Business-Abos.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => router.push('/admin/benutzer?type=COMMERCIAL')}
+                            className="px-3.5 py-1.5 rounded-xl bg-sand/60 hover:bg-sand text-forest text-xs font-bold border border-forest/10 transition-colors cursor-pointer"
+                        >
+                            Händler verwalten
+                        </button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* 1. Ausgegebene Credits */}
+                    <motion.div whileHover={{ y: -2 }} className="p-4 rounded-2xl bg-[#FBFBF9] border border-slate-200/70 hover:border-gold/50 transition-all flex flex-col justify-between">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-600">Vergebene Credits</span>
+                            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                <ArrowUpRight className="w-4 h-4" />
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <div className="text-2xl font-black text-slate-900 font-sans">
+                                {loading ? '...' : (stats?.monetization?.creditsEarned || 0).toLocaleString('de-DE')} <span className="text-xs font-semibold text-gold-dark">CC</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+                                <span>Gegenwert:</span>
+                                <span className="font-bold text-emerald-700">{formatEuro(((stats?.monetization?.creditsEarned || 0) * 0.01))}</span>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* 2. Eingelöste Credits (Boosts/Spotlights) */}
+                    <motion.div whileHover={{ y: -2 }} className="p-4 rounded-2xl bg-[#FBFBF9] border border-slate-200/70 hover:border-gold/50 transition-all flex flex-col justify-between">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-600">Eingelöste Credits</span>
+                            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+                                <ArrowDownRight className="w-4 h-4" />
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <div className="text-2xl font-black text-slate-900 font-sans">
+                                {loading ? '...' : (stats?.monetization?.creditsSpent || 0).toLocaleString('de-DE')} <span className="text-xs font-semibold text-gold-dark">CC</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                                <span className="text-slate-500">Transaktionen:</span>
+                                <span className="font-bold text-slate-800">{stats?.monetization?.creditTransactionsCount || 0} Ledger-Einträge</span>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* 3. Aktive Boosts & Spotlights */}
+                    <motion.div whileHover={{ y: -2 }} className="p-4 rounded-2xl bg-[#FBFBF9] border border-slate-200/70 hover:border-gold/50 transition-all flex flex-col justify-between">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-600">Aktive Boosts</span>
+                            <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
+                                <Flame className="w-4 h-4 text-purple-600" />
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <div className="text-2xl font-black text-slate-900 font-sans flex items-baseline gap-1.5">
+                                <span>{loading ? '...' : (stats?.monetization?.activeBoosts || 0)}</span>
+                                <span className="text-xs font-semibold text-slate-400">gebucht</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                                <span>Spotlight-Plätze:</span>
+                                <span className="font-bold text-purple-700">{stats?.monetization?.activeSpotlights || 0} aktiv</span>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* 4. Business Abos (29€/Mo) & MRR */}
+                    <motion.div whileHover={{ y: -2 }} className="p-4 rounded-2xl bg-gradient-to-br from-forest/10 via-sand/30 to-gold/10 border border-forest/15 hover:border-forest/40 transition-all flex flex-col justify-between">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-forest">Business MRR (29 €/Mo)</span>
+                            <div className="w-7 h-7 rounded-lg bg-forest text-sand flex items-center justify-center font-bold">
+                                <Rocket className="w-4 h-4 text-gold" />
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <div className="text-2xl font-black text-forest font-sans">
+                                {loading ? '...' : formatEuro(stats?.monetization?.estimatedMRR || 0)}
+                            </div>
+                            <div className="text-[11px] text-charcoal/75 mt-1 flex items-center justify-between">
+                                <span>{stats?.monetization?.businessTierUsers || stats?.monetization?.activeSubscriptions || 0} Händler im Business-Tarif</span>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            </motion.div>
 
             {/* ─── Row 3: 7-Day Ingestion Trend, Newest Users & Categories ─── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <motion.div variants={cardVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-                {/* 1. 7-Tage Marktplatz-Aktivität (Real Ingestion Bar Chart) */}
+                {/* 1. 7-Tage Marktplatz-Aktivität (Premium Interactive Bar Chart) */}
                 <div className="bg-white border border-[#E8EAEF] rounded-3xl p-6 shadow-2xs flex flex-col justify-between">
                     <div>
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold shrink-0">
+                                <div className="w-7 h-7 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold shrink-0">
                                     <TrendingUp className="w-4 h-4" />
                                 </div>
                                 <div>
                                     <h3 className="text-xs font-bold text-slate-800">
                                         Inserate-Zuwachs
                                     </h3>
-                                    <p className="text-[10px] text-slate-400">Letzte 7 Tage</p>
+                                    <p className="text-[10px] text-slate-400">Tägliche Neueinstellungen (7 Tage)</p>
                                 </div>
                             </div>
 
-                            <span className="text-[10px] font-bold text-slate-500 px-2 py-0.5 rounded-full bg-slate-100">
+                            <span className="text-[10px] font-bold text-forest px-2.5 py-1 rounded-full bg-sand border border-forest/10">
                                 {`+${stats?.dailyActivity?.reduce((s, d) => s + parseInt(d.listings_count, 10), 0) || 0} diese Woche`}
                             </span>
                         </div>
 
-                        {/* Vertical Pill Bar Chart */}
-                        <div className="flex items-end justify-between h-40 pt-6 px-2 gap-1.5">
+                        {/* Modern Styled Bar Chart with Direct Values */}
+                        <div className="flex items-end justify-between h-44 pt-6 px-1 gap-2">
                             {stats?.dailyActivity && stats.dailyActivity.length > 0 ? (
                                 stats.dailyActivity.map((item, idx) => {
                                     const val = parseInt(item.listings_count, 10);
-                                    const heightPercent = maxDayVal > 0 ? Math.max(12, Math.round((val / maxDayVal) * 100)) : 15;
+                                    const heightPercent = maxDayVal > 0 ? Math.max(8, Math.round((val / maxDayVal) * 100)) : 8;
                                     const isToday = idx === stats.dailyActivity.length - 1;
 
+                                    // German weekday mapping
+                                    const dateObj = new Date(item.day);
+                                    const dayNameDe = !isNaN(dateObj.getTime())
+                                        ? ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][dateObj.getDay()]
+                                        : (item.day_name || item.formatted_date);
+
                                     return (
-                                        <div key={`daily-bar-${idx}`} className="flex flex-col items-center gap-2 flex-1 relative group">
-                                            {/* Hover Tooltip */}
-                                            <div className="absolute -top-7 bg-slate-900 text-white font-bold text-[9px] px-2 py-0.5 rounded-md shadow-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 pointer-events-none">
-                                                {`${item.formatted_date}: ${val} Inserate`}
+                                        <div key={`daily-bar-${idx}`} className="flex flex-col items-center gap-1.5 flex-1 relative group cursor-pointer">
+                                            {/* Hover Floating Tooltip */}
+                                            <div className="absolute -top-9 bg-slate-900 text-white font-bold text-[10px] px-2.5 py-1 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none z-20 whitespace-nowrap flex items-center gap-1 border border-white/10">
+                                                <span className="text-gold">{item.formatted_date}:</span>
+                                                <span>{val === 1 ? '1 Inserat' : `${val} Inserate`}</span>
                                             </div>
 
-                                            {/* Bar Container */}
-                                            <div className="w-full max-w-[32px] h-28 bg-[#F4F5F7] rounded-full flex flex-col justify-end p-0.5 overflow-hidden">
-                                                <div
-                                                    className={`w-full rounded-full transition-all duration-500 ${isToday
-                                                            ? 'bg-gradient-to-t from-[#003807] to-forest'
+                                            {/* Direct Value Label on top of bar */}
+                                            <span className={`text-[10px] font-bold leading-none transition-colors ${
+                                                val > 0 
+                                                    ? (isToday ? 'text-forest' : 'text-slate-700') 
+                                                    : 'text-slate-300'
+                                            }`}>
+                                                {val}
+                                            </span>
+
+                                            {/* Bar Track & Fill */}
+                                            <div className="w-full max-w-[28px] sm:max-w-[34px] h-28 bg-[#F4F5F7] rounded-2xl flex flex-col justify-end p-0.5 overflow-hidden group-hover:bg-slate-200/70 transition-colors">
+                                                <motion.div
+                                                    initial={{ height: 0 }}
+                                                    animate={{ height: `${heightPercent}%` }}
+                                                    transition={{ duration: 0.7, delay: idx * 0.06, ease: [0.22, 1, 0.36, 1] }}
+                                                    className={`w-full rounded-xl transition-all duration-300 ${
+                                                        isToday
+                                                            ? 'bg-gradient-to-t from-forest to-[#008A15] shadow-xs'
                                                             : val > 0
-                                                                ? 'bg-forest/80'
-                                                                : 'bg-slate-300/50'
-                                                        }`}
-                                                    style={{ height: `${heightPercent}%` }}
+                                                                ? 'bg-gradient-to-t from-forest/80 to-forest/60 group-hover:from-forest group-hover:to-forest/80'
+                                                                : 'bg-slate-300/40'
+                                                    }`}
                                                 />
                                             </div>
 
-                                            {/* Day Label */}
-                                            <span className={`text-[10px] font-semibold ${isToday ? 'text-forest font-bold' : 'text-slate-400'}`}>
-                                                {item.day_name || item.formatted_date}
-                                            </span>
+                                            {/* Weekday & Date Label */}
+                                            <div className="flex flex-col items-center text-center">
+                                                <span className={`text-[11px] leading-tight font-bold ${
+                                                    isToday ? 'text-forest font-black' : 'text-slate-700'
+                                                }`}>
+                                                    {dayNameDe}
+                                                </span>
+                                                <span className="text-[9px] text-slate-400 font-medium">
+                                                    {item.formatted_date}
+                                                </span>
+                                            </div>
                                         </div>
                                     );
                                 })
@@ -655,9 +797,12 @@ export default function AdminDashboard() {
                         </div>
                     </div>
 
-                    <div className="pt-3 mt-3 border-t border-[#F2F4F7] flex items-center justify-between text-[10px] text-slate-400">
-                        <span>Aktuelle Woche</span>
-                        <span className="font-semibold text-slate-700">Tägliche Aggregation</span>
+                    <div className="pt-3 mt-4 border-t border-[#F2F4F7] flex items-center justify-between text-[10px] text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-forest inline-block" />
+                            <span>Aktivste Tage hervorgehoben</span>
+                        </span>
+                        <span className="font-semibold text-slate-600">7-Tage-Verlauf</span>
                     </div>
                 </div>
 
@@ -800,8 +945,8 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-            </div>
+            </motion.div>
 
-        </div>
+        </motion.div>
     );
 }

@@ -17,7 +17,7 @@ export async function initBlogPostsTable() {
                 tags TEXT[] DEFAULT ARRAY[]::TEXT[],
                 image_url TEXT,
                 images TEXT[] DEFAULT ARRAY[]::TEXT[],
-                author_name VARCHAR(100) DEFAULT 'Campuna Redaktion',
+                author_name VARCHAR(100) DEFAULT 'Campuna Club',
                 author_avatar TEXT DEFAULT '/logo.webp',
                 read_time VARCHAR(50) DEFAULT '5 Min.',
                 featured BOOLEAN DEFAULT FALSE,

@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useSyncExternalStore, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
+
+const emptySubscribe = () => () => {};
 
 /**
  * Direct route for /nachrichten/:id
@@ -15,27 +17,23 @@ export default function ConversationRedirectPage() {
     const router = useRouter();
     const id = params?.id;
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
     const returnTarget = id
         ? `/mein-konto?tab=nachrichten&id=${encodeURIComponent(id)}`
         : '/mein-konto?tab=nachrichten';
 
     useEffect(() => {
-        if (mounted && isLoggedIn) {
+        if (isMounted && isLoggedIn) {
             if (id) {
                 router.replace(`/mein-konto?tab=nachrichten&id=${encodeURIComponent(id)}`);
             } else {
                 router.replace('/mein-konto?tab=nachrichten');
             }
         }
-    }, [mounted, isLoggedIn, id, router]);
+    }, [isMounted, isLoggedIn, id, router]);
 
-    if (!mounted) {
+    if (!isMounted) {
         return <CircleLoader size="lg" color="forest" fullPage />;
     }
 

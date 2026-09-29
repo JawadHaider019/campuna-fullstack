@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import { getUnreadMessagesCount, getConversations } from '@/api/conversations';
+import { getSocket } from '@/utils/socket';
 
 export const useChatStore = create((set, get) => ({
     unreadCount: 0,
     conversations: [],
     isLoadingConversations: false,
+    socketInitialized: false,
 
     fetchUnreadCount: async () => {
         try {
@@ -26,6 +28,12 @@ export const useChatStore = create((set, get) => ({
         }));
     },
 
+    incrementUnreadCount: (amount = 1) => {
+        set((state) => ({
+            unreadCount: state.unreadCount + amount
+        }));
+    },
+
     fetchConversations: async () => {
         set({ isLoadingConversations: true });
         try {
@@ -44,5 +52,26 @@ export const useChatStore = create((set, get) => ({
             set({ isLoadingConversations: false });
         }
         return [];
+    },
+
+    // Initialize global real-time listeners
+    initGlobalSocket: (token) => {
+        const socket = getSocket(token);
+        if (!socket) return null;
+
+        // Clean any existing message_received listeners before binding to avoid duplicates
+        socket.off('message_received');
+        socket.on('message_received', ({ conversationId, message }) => {
+            get().fetchUnreadCount();
+            get().fetchConversations();
+        });
+
+        socket.off('admin_new_message');
+        socket.on('admin_new_message', () => {
+            get().fetchUnreadCount();
+        });
+
+        set({ socketInitialized: true });
+        return socket;
     }
 }));

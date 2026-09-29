@@ -206,6 +206,139 @@ export const getAdminUsers = async (req, res) => {
 };
 
 /**
+ * GET /api/admin/users/:id
+ * Returns single user details with full profile, all listings, and achievements.
+ */
+export const getAdminUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Security check: validate UUID pattern
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!id || !uuidRegex.test(id)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Ungültige Benutzer-ID.'
+            });
+        }
+
+        const userQuery = `
+            SELECT 
+                u.id,
+                u.email,
+                u.role,
+                u.user_type,
+                u.referral_code,
+                u.email_verified,
+                u.is_suspended,
+                u.created_at,
+                u.updated_at,
+                -- Private profile
+                pp.first_name as private_first_name,
+                pp.last_name as private_last_name,
+                pp.profile_image_url as private_avatar,
+                pp.location as private_location,
+                pp.bio as private_bio,
+                -- Company profile
+                cp.company_name,
+                cp.first_name as company_first_name,
+                cp.last_name as company_last_name,
+                cp.logo_url as company_logo,
+                cp.cover_image_url as company_cover,
+                cp.location as company_location,
+                cp.phone as company_phone,
+                cp.website_url as company_website,
+                cp.bio as company_description,
+                cp.tier as company_tier,
+                -- Credits
+                COALESCE((SELECT SUM(amount) FROM credit_transactions WHERE user_id = u.id), 0) as credit_balance,
+                -- Pioneer
+                COALESCE((SELECT TRUE FROM user_achievements WHERE user_id = u.id AND badge_key = 'CAMPUNA_PIONEER' LIMIT 1), FALSE) as has_pioneer_badge
+            FROM users u
+            LEFT JOIN private_profiles pp ON u.id = pp.user_id
+            LEFT JOIN company_profiles cp ON u.id = cp.user_id
+            WHERE u.id = $1
+        `;
+
+        const userRes = await pool.query(userQuery, [id]);
+        if (userRes.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Benutzer nicht gefunden.'
+            });
+        }
+
+        const row = userRes.rows[0];
+        const isCommercial = row.user_type === 'COMMERCIAL';
+        const displayName = isCommercial 
+            ? (row.company_name || `${row.company_first_name || ''} ${row.company_last_name || ''}`.trim() || 'Gewerblicher Anbieter')
+            : (`${row.private_first_name || ''} ${row.private_last_name || ''}`.trim() || 'Privatnutzer');
+
+        // Fetch user listings
+        const listingsRes = await pool.query(`
+            SELECT id, title, slug, price, status, images, location, created_at
+            FROM listings
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+        `, [id]);
+
+        const listings = listingsRes.rows.map(l => {
+            let imgs = [];
+            if (Array.isArray(l.images)) {
+                imgs = l.images;
+            } else if (typeof l.images === 'string') {
+                const raw = l.images.trim();
+                if (raw.startsWith('{') && raw.endsWith('}')) {
+                    imgs = raw.slice(1, -1).split(',').map(s => s.replace(/^"|"$/g, '').trim()).filter(Boolean);
+                } else {
+                    try { imgs = JSON.parse(raw); } catch { imgs = [raw]; }
+                }
+            }
+            return {
+                ...l,
+                main_image: imgs[0] || '/collection/wohnmobile-hero.png',
+                price: parseFloat(l.price) || 0
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: row.id,
+                email: row.email,
+                role: row.role,
+                user_type: row.user_type,
+                name: displayName,
+                avatar: isCommercial ? (row.company_logo || '') : (row.private_avatar || ''),
+                cover: isCommercial ? (row.company_cover || '') : '',
+                location: isCommercial ? (row.company_location || '') : (row.private_location || ''),
+                phone: row.company_phone || '',
+                website: row.company_website || '',
+                bio: isCommercial ? (row.company_description || '') : (row.private_bio || ''),
+                tier: row.company_tier || 'FREE',
+                referral_code: row.referral_code,
+                email_verified: row.email_verified,
+                is_suspended: row.is_suspended,
+                credit_balance: parseInt(row.credit_balance || 0, 10),
+                has_pioneer_badge: Boolean(row.has_pioneer_badge),
+                total_listings: listings.length,
+                active_listings: listings.filter(l => l.status === 'APPROVED').length,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+                listings
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ getAdminUserById error:', error.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Fehler beim Abrufen der Benutzerdetails.'
+        });
+    }
+};
+
+/**
  * PATCH /api/admin/users/:id/suspend
  * Toggles suspension status for a user.
  */

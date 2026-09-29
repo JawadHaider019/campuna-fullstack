@@ -18,6 +18,9 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
 
   const chatUnreadCount = useChatStore((state) => state.unreadCount);
   const fetchUnreadCount = useChatStore((state) => state.fetchUnreadCount);
+  const initGlobalSocket = useChatStore((state) => state.initGlobalSocket);
+  const disconnectSocket = useChatStore((state) => state.disconnectSocket);
+  const token = useAuthStore((state) => state.accessToken);
   const effectiveAlertCount = (typeof propAlertCount === 'number' && propAlertCount > 0)
     ? propAlertCount
     : (mounted && isLoggedIn ? chatUnreadCount : 0);
@@ -32,14 +35,17 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
     setMounted(true);
   }, []);
 
-  // Sync unread messages count for logged in user (with 20s polling & focus handler)
+  // Initialize Real-time Socket & sync unread messages count for logged in user
   useEffect(() => {
     if (mounted && isLoggedIn) {
       fetchUnreadCount();
+      if (token) {
+        initGlobalSocket(token);
+      }
 
       const interval = setInterval(() => {
         fetchUnreadCount();
-      }, 20000);
+      }, 30000);
 
       const handleFocus = () => {
         fetchUnreadCount();
@@ -57,19 +63,45 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
         window.removeEventListener('focus', handleFocus);
         window.removeEventListener('campuna-unread-sync', handleSync);
       };
+    } else if (mounted && !isLoggedIn) {
+      disconnectSocket();
     }
-  }, [mounted, isLoggedIn, fetchUnreadCount]);
+  }, [mounted, isLoggedIn, token, fetchUnreadCount, initGlobalSocket, disconnectSocket]);
+
+  const [hasSpotlight, setHasSpotlight] = useState(false);
+
+  useEffect(() => {
+    const handleSpotlightStatus = (e) => {
+      setHasSpotlight(Boolean(e.detail?.hasSpotlight));
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('campuna-spotlight-status', handleSpotlightStatus);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('campuna-spotlight-status', handleSpotlightStatus);
+      }
+    };
+  }, []);
 
   const isHomepage = pathname === '/';
 
-  const navLinks = [
+  const baseNavLinks = [
     { label: 'Startseite', id: 'top' },
-    { label: 'Über uns', path: '/uber_campuna' },
+    { label: 'Kategorien', path: '/kategorien' },
+    { label: 'Über uns', path: '/uber-campuna' },
     { label: 'Zum Stöbern', id: 'exclusive-offers' },
-    { label: 'Spotlight', id: 'campuna-spotlight' },
+    { label: 'Spotlight', id: 'campuna-spotlight', requiresData: true },
     { label: 'Entdecke', id: 'tool' },
     { label: 'Ratgeber', id: 'journal' },
   ];
+
+  const navLinks = baseNavLinks.filter(link => {
+    if (link.requiresData && link.id === 'campuna-spotlight') {
+      return hasSpotlight;
+    }
+    return true;
+  });
 
 
   const scrollToSection = (id, behavior = 'smooth') => {
@@ -117,6 +149,11 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
       } else {
         router.push('/');
       }
+      return;
+    }
+
+    if (id === 'tool') {
+      window.dispatchEvent(new CustomEvent('open-campuna-tools-modal', { detail: { tool: 'payload' } }));
       return;
     }
 
@@ -220,13 +257,14 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
 
   return (
     <>
-      {/* Welcome Bar at top when not scrolled on homepage */}
+      {/* Welcome Bar at top on homepage */}
       {isHomepage && <WelcomeBar isLoggedIn={isLoggedIn} />}
 
       <nav
         id="main-navbar"
-        className={`fixed left-0 w-full z-50 transition-all duration-300 bg-white py-4 ${isScrolled || !isHomepage ? 'top-0 ' : 'top-[75px] sm:top-[65px] md:top-[75px] lg:top-[64px]'
-          }`}
+        className={`fixed left-0 w-full z-40 transition-all duration-300 bg-white py-3.5 sm:py-4 ${
+          !isHomepage ? 'top-0' : 'top-9 sm:top-10'
+        }`}
       >
         <div className="max-w-8xl mx-auto px-4 md:px-12">
           <div className="flex items-center justify-between">
@@ -237,20 +275,43 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                 alt="Campuna® – Dein Camping-Marktplatz"
                 width={120}
                 height={38}
+                priority
                 className="w-[120px] h-[38px] object-contain transition-opacity duration-300 group-hover:opacity-80"
               />
               <span className="text-2xl sm:text-3xl font-normal text-forest ml-0.5 -mt-1 select-none leading-none">®</span>
             </button>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-6 xl:space-x-8">
+            <motion.div 
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: { opacity: 0 },
+                visible: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.07,
+                    delayChildren: 0.1
+                  }
+                }
+              }}
+              className="hidden lg:flex items-center space-x-6 xl:space-x-8"
+            >
               {navLinks.map((link) => {
                 const isActive = link.path
                   ? (pathname === link.path || (link.path === '/uber_campuna' && (pathname === '/about' || pathname === '/about_us')))
                   : (isHomepage && activeSection === link.id);
                 return (
-                  <button
+                  <motion.button
                     key={link.id || link.path}
+                    variants={{
+                      hidden: { opacity: 0, y: -10 },
+                      visible: { 
+                        opacity: 1, 
+                        y: 0,
+                        transition: { duration: 0.4, ease: [0.21, 0.47, 0.32, 0.98] } 
+                      }
+                    }}
                     onClick={() => handleNavClick(link.id, link.path)}
                     className={`relative font-sans text-sm font-medium tracking-wide transition-colors duration-200 py-1 cursor-pointer ${isActive ? 'text-gold font-semibold' : 'text-forest hover:text-gold'
                       }`}
@@ -265,52 +326,63 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                         className="absolute bottom-0 left-0 right-0 h-[2px] bg-gold rounded-full origin-center"
                       />
                     )}
-                  </button>
+                  </motion.button>
                 );
               })}
 
               {/* Admin Panel Button or User Account Button */}
-              {isAdmin ? (
-                <button
-                  onClick={() => router.push('/admin')}
-                  className="relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-[#0A2218] via-forest to-[#0A2218] hover:from-forest hover:to-[#0A2218] text-white border border-gold/45 hover:border-gold font-sans text-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-full shadow-[0_2px_12px_rgba(0,99,13,0.25)] hover:shadow-[0_4px_22px_rgba(200,169,107,0.4)] hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-out group ml-1 cursor-pointer"
-                  title="Zum Administrationsbereich"
-                >
-                  {/* Lazy shimmer beam on hover */}
-                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-out pointer-events-none" />
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, scale: 0.9 },
+                  visible: { 
+                    opacity: 1, 
+                    scale: 1,
+                    transition: { duration: 0.4, ease: [0.21, 0.47, 0.32, 0.98] } 
+                  }
+                }}
+              >
+                {isAdmin ? (
+                  <button
+                    onClick={() => router.push('/admin')}
+                    className="relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-[#0A2218] via-forest to-[#0A2218] hover:from-forest hover:to-[#0A2218] text-white border border-gold/45 hover:border-gold font-sans text-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-full shadow-[0_2px_12px_rgba(0,99,13,0.25)] hover:shadow-[0_4px_22px_rgba(200,169,107,0.4)] hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-out group ml-1 cursor-pointer"
+                    title="Zum Administrationsbereich"
+                  >
+                    {/* Lazy shimmer beam on hover */}
+                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-1000 ease-out pointer-events-none" />
 
-                  <ShieldCheck className="w-4 h-4 shrink-0 text-gold group-hover:text-amber-300 group-hover:scale-115 group-hover:rotate-6 transition-all duration-500 ease-out" />
-                  <span className="relative z-10 text-white tracking-wide">Admin Panel</span>
-                  {effectiveAlertCount > 0 && (
-                    <span className="relative flex h-2.5 w-2.5 ml-0.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                    </span>
-                  )}
-                </button>
-              ) : (
-                <button
-                  onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/login')}
-                  className="relative flex items-center space-x-2 bg-forest text-sand hover:bg-gold hover:text-forest py-2.5 px-5 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg min-w-[135px] justify-center group ml-1 cursor-pointer"
-                >
-                  <User className="w-4 h-4 shrink-0" />
-                  <div className="relative">
-                    <span className="whitespace-nowrap flex items-center gap-1.5">
-                      {isLoggedIn ? 'Konto' : 'Einloggen'}
-                      {isLoggedIn && effectiveAlertCount > 0 && (
-                        <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
-                          <Bell className="w-3.5 h-3.5 shrink-0" />
-                          <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-gold group-hover:text-amber-300 group-hover:scale-115 group-hover:rotate-6 transition-all duration-500 ease-out" />
+                    <span className="relative z-10 text-white tracking-wide">Admin Panel</span>
+                    {effectiveAlertCount > 0 && (
+                      <span className="relative flex h-2.5 w-2.5 ml-0.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/login')}
+                    className="relative flex items-center space-x-2 bg-forest text-sand hover:bg-gold hover:text-forest py-2.5 px-5 rounded-full font-sans text-xs font-semibold uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-lg min-w-[135px] justify-center group ml-1 cursor-pointer"
+                  >
+                    <User className="w-4 h-4 shrink-0" />
+                    <div className="relative">
+                      <span className="whitespace-nowrap flex items-center gap-1.5">
+                        {isLoggedIn ? 'Konto' : 'Einloggen'}
+                        {isLoggedIn && effectiveAlertCount > 0 && (
+                          <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
+                            <Bell className="w-3.5 h-3.5 shrink-0" />
+                            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                            </span>
                           </span>
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                </button>
-              )}
-            </div>
+                        )}
+                      </span>
+                    </div>
+                  </button>
+                )}
+              </motion.div>
+            </motion.div>
 
             {/* Mobile menu trigger */}
             <div className="flex lg:hidden items-center space-x-1 sm:space-x-2">
@@ -343,21 +415,36 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
               transition={{ duration: 0.25 }}
               className="lg:hidden absolute top-full left-0 w-full bg-white/95 backdrop-blur-lg border-b border-forest/10 shadow-xl"
             >
-              <div className="px-6 py-6 flex flex-col space-y-4">
+              <motion.div 
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.05, delayChildren: 0.05 }
+                  }
+                }}
+                className="px-6 py-6 flex flex-col space-y-4"
+              >
                 {navLinks.map((link) => {
                   const isActive = link.path
                     ? (pathname === link.path || (link.path === '/uber_campuna' && (pathname === '/about' || pathname === '/about_us')))
                     : (isHomepage && activeSection === link.id);
                   return (
-                    <button
+                    <motion.button
                       key={link.id || link.path}
+                      variants={{
+                        hidden: { opacity: 0, x: -15 },
+                        visible: { opacity: 1, x: 0, transition: { duration: 0.3 } }
+                      }}
                       onClick={() => handleNavClick(link.id, link.path)}
                       className={`font-sans text-base font-medium text-left transition-colors duration-200 flex items-center justify-between py-1.5 cursor-pointer ${isActive ? 'text-gold font-bold' : 'text-forest hover:text-gold'
                         }`}
                     >
                       <span>{link.label}</span>
                       {isActive && <div className="w-2 h-2 rounded-full bg-gold" />}
-                    </button>
+                    </motion.button>
                   );
                 })}
 
@@ -408,7 +495,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                     </button>
                   )}
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

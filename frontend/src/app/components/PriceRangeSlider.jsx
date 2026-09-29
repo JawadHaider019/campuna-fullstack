@@ -81,7 +81,14 @@ export default function PriceRangeSlider({
     }, [draggingHandle, getValueFromClientX, numMin, numMax, minLimit, maxLimit, minPrice, maxPrice, applyPriceChange]);
 
     // End drag
-    const handlePointerUp = useCallback(() => {
+    const handlePointerUp = useCallback((e) => {
+        if (e && e.target && typeof e.target.hasPointerCapture === 'function' && e.target.hasPointerCapture(e.pointerId)) {
+            try {
+                e.target.releasePointerCapture(e.pointerId);
+            } catch {
+                // Ignore safe release errors
+            }
+        }
         setDraggingHandle(null);
     }, []);
 
@@ -170,7 +177,17 @@ export default function PriceRangeSlider({
                         aria-label="Mindestpreis Regler"
                         onPointerDown={(e) => {
                             e.stopPropagation();
+                            try {
+                                e.currentTarget.setPointerCapture(e.pointerId);
+                            } catch {}
                             setDraggingHandle('min');
+                        }}
+                        onPointerUp={(e) => {
+                            if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+                                try {
+                                    e.currentTarget.releasePointerCapture(e.pointerId);
+                                } catch {}
+                            }
                         }}
                         className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4.5 h-4.5 rounded-full bg-white border-2 border-forest shadow-md hover:scale-115 focus:outline-none transition-transform cursor-grab active:cursor-grabbing z-10 flex items-center justify-center ${
                             draggingHandle === 'min' ? 'scale-120 ring-4 ring-forest/20' : ''
@@ -193,7 +210,17 @@ export default function PriceRangeSlider({
                         aria-label="Höchstpreis Regler"
                         onPointerDown={(e) => {
                             e.stopPropagation();
+                            try {
+                                e.currentTarget.setPointerCapture(e.pointerId);
+                            } catch {}
                             setDraggingHandle('max');
+                        }}
+                        onPointerUp={(e) => {
+                            if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+                                try {
+                                    e.currentTarget.releasePointerCapture(e.pointerId);
+                                } catch {}
+                            }
                         }}
                         className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4.5 h-4.5 rounded-full bg-white border-2 border-forest shadow-md hover:scale-115 focus:outline-none transition-transform cursor-grab active:cursor-grabbing z-10 flex items-center justify-center ${
                             draggingHandle === 'max' ? 'scale-120 ring-4 ring-forest/20' : ''

@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import { checkAndAwardPioneerBadge } from './badge.js';
 import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
+import { moderateListingAI } from '../services/aiService.js';
 
 /**
  * GET /api/admin/decisions
@@ -39,30 +40,21 @@ export const getAdminDecisions = async (req, res) => {
         }
 
         if (filter === 'MANUAL_REVIEW') {
-            // Only listings that are genuinely pending manual review (not yet approved or rejected)
+            // Listings with AI score between 40 and 60 (Manual Review zone)
             conditions.push(`(
-                l.status NOT IN ('APPROVED', 'REJECTED')
-                AND COALESCE(m.status, 'PENDING') NOT IN ('APPROVED', 'APPROVED_BY_ADMIN', 'REJECTED', 'REJECTED_BY_ADMIN')
-                AND (
-                    l.status = 'REVIEW'
-                    OR COALESCE(m.status, 'PENDING') = 'PENDING'
-                    OR m.ai_decision = 'MANUAL_REVIEW'
-                    OR (m.ai_score >= 31 AND m.ai_score < 75)
-                )
+                (COALESCE(m.ai_score, 50) >= 40 AND COALESCE(m.ai_score, 50) <= 60)
+                OR l.status = 'REVIEW'
+                OR m.ai_decision = 'MANUAL_REVIEW'
             )`);
         } else if (filter === 'AUTO_APPROVED' || filter === 'APPROVED') {
-            // All approved listings (both AI auto-approved and manually approved by admin)
+            // Listings with AI score > 60
             conditions.push(`(
-                l.status = 'APPROVED'
-                OR COALESCE(m.status, '') IN ('APPROVED', 'APPROVED_BY_ADMIN')
-                OR (l.status NOT IN ('REJECTED', 'REVIEW') AND (m.ai_decision = 'AUTO_APPROVED' OR m.ai_score >= 75))
+                COALESCE(m.ai_score, 50) > 60
             )`);
         } else if (filter === 'AUTO_REJECTED' || filter === 'REJECTED') {
-            // All rejected listings (both AI auto-rejected and manually rejected by admin)
+            // Listings with AI score < 40
             conditions.push(`(
-                l.status = 'REJECTED'
-                OR COALESCE(m.status, '') IN ('REJECTED', 'REJECTED_BY_ADMIN')
-                OR (l.status != 'APPROVED' AND (m.ai_decision = 'AUTO_REJECTED' OR m.ai_score <= 30))
+                COALESCE(m.ai_score, 50) < 40
             )`);
         } else if (filter === 'PENDING') {
             conditions.push(`(
@@ -141,24 +133,15 @@ export const getAdminDecisions = async (req, res) => {
             SELECT 
                 COUNT(*) as total_processed,
                 COUNT(CASE WHEN (
-                    l.status NOT IN ('APPROVED', 'REJECTED')
-                    AND COALESCE(m.status, 'PENDING') NOT IN ('APPROVED', 'APPROVED_BY_ADMIN', 'REJECTED', 'REJECTED_BY_ADMIN')
-                    AND (
-                        l.status = 'REVIEW'
-                        OR COALESCE(m.status, 'PENDING') = 'PENDING'
-                        OR m.ai_decision = 'MANUAL_REVIEW'
-                        OR (m.ai_score >= 31 AND m.ai_score < 75)
-                    )
+                    (COALESCE(m.ai_score, 50) >= 40 AND COALESCE(m.ai_score, 50) <= 60)
+                    OR l.status = 'REVIEW'
+                    OR m.ai_decision = 'MANUAL_REVIEW'
                 ) THEN 1 END) as manual_review_count,
                 COUNT(CASE WHEN (
-                    l.status = 'APPROVED'
-                    OR COALESCE(m.status, '') IN ('APPROVED', 'APPROVED_BY_ADMIN')
-                    OR (l.status NOT IN ('REJECTED', 'REVIEW') AND (m.ai_decision = 'AUTO_APPROVED' OR m.ai_score >= 75))
+                    COALESCE(m.ai_score, 50) > 60
                 ) THEN 1 END) as auto_approved_count,
                 COUNT(CASE WHEN (
-                    l.status = 'REJECTED'
-                    OR COALESCE(m.status, '') IN ('REJECTED', 'REJECTED_BY_ADMIN')
-                    OR (l.status != 'APPROVED' AND (m.ai_decision = 'AUTO_REJECTED' OR m.ai_score <= 30))
+                    COALESCE(m.ai_score, 50) < 40
                 ) THEN 1 END) as auto_rejected_count,
                 COALESCE(AVG(m.ai_score), 50) as avg_score
             FROM listings l
@@ -283,48 +266,67 @@ export const simulateAiScan = async (req, res) => {
         }
         const listing = listingRes.rows[0];
 
-        // Determine score (either target provided, or generated)
-        let score = target_score !== undefined ? parseInt(target_score, 10) : 50;
-        if (isNaN(score)) score = 50;
-
-        let decision = 'MANUAL_REVIEW';
-        let confidence = 0.50;
-        let textScore = Math.min(100, Math.max(0, score + Math.floor(Math.random() * 10 - 5)));
-        let imageScore = Math.min(100, Math.max(0, score + Math.floor(Math.random() * 12 - 6)));
-        let priceScore = Math.min(100, Math.max(0, score + Math.floor(Math.random() * 8 - 4)));
-        let fraudRisk = Math.max(0, 100 - score);
+        // Determine score (either target provided, or run through AI model)
+        let score;
+        let decision;
+        let confidence;
+        let textScore;
+        let imageScore;
+        let priceScore;
+        let fraudRisk;
         let reasons = [];
-        let newListingStatus = listing.status;
+        let newListingStatus;
 
-        if (score >= 75) {
+        if (target_score !== undefined && !isNaN(parseInt(target_score, 10))) {
+            score = Math.max(1, Math.min(100, parseInt(target_score, 10)));
+            textScore = Math.min(100, Math.max(0, score + Math.floor(Math.random() * 10 - 5)));
+            imageScore = Math.min(100, Math.max(0, score + Math.floor(Math.random() * 12 - 6)));
+            priceScore = Math.min(100, Math.max(0, score + Math.floor(Math.random() * 8 - 4)));
+            fraudRisk = Math.max(0, 100 - score);
+        } else {
+            const aiRes = await moderateListingAI({
+                title: listing.title,
+                description: listing.description || '',
+                category: listing.category || '',
+                subcategory: listing.subcategory || '',
+                price: listing.price || 0,
+                location: listing.location || ''
+            });
+            score = aiRes.score || 50;
+            textScore = aiRes.text_score || score;
+            imageScore = 85;
+            priceScore = aiRes.price_score || 85;
+            fraudRisk = aiRes.fraud_risk_score || 10;
+            reasons = [aiRes.reason];
+        }
+
+        if (score > 60) {
             decision = 'AUTO_APPROVED';
             confidence = 0.95;
             newListingStatus = 'APPROVED';
             reasons = [
                 `Hohe Konformität festgestellt (Gesamtscore ${score}/100)`,
-                'Textbeschreibung ist detailliert, präzise und frei von verbotenen Begriffen',
-                'Produktbilder sind klar, authentisch und weisen keine Duplikate auf',
+                'Textbeschreibung ist detailliert, präzise und frei von verbotenen Begriffen (keine Drogen, Waffen, 18+ Inhalte)',
+                'Produktbilder sind klar und authentisch',
                 'Preis liegt im optimalen Marktdurchschnitt der Kategorie'
             ];
-        } else if (score <= 30) {
+        } else if (score < 40) {
             decision = 'AUTO_REJECTED';
             confidence = 0.92;
             newListingStatus = 'REJECTED';
             reasons = [
-                `Kritische Auffälligkeiten erkannt (Gesamtscore ${score}/100)`,
-                'Möglicher Spam- oder unvollständiger Textaufbau erkannt',
-                'Bildauflösung unzureichend oder Verstoß gegen Inhaltsrichtlinien',
-                'Auffällige Preisabweichung zum Marktwert (> 70% Differenz)'
+                `Kritische Auffälligkeiten oder Richtlinienverstoß erkannt (Gesamtscore ${score}/100)`,
+                'Möglicher Verstoß gegen Inhaltsrichtlinien (Drogen, Waffen, 18+ Inhalte oder Betrugsverdacht)',
+                'Unzureichende Angaben oder auffällige Preisabweichung zum Marktwert'
             ];
         } else {
-            // Score around 50 -> Needs Manual Admin Review!
+            // Score 40 to 60 -> Needs Manual Admin Review!
             decision = 'MANUAL_REVIEW';
-            confidence = 0.50;
+            confidence = 0.60;
             newListingStatus = 'REVIEW';
             reasons = [
-                `Score ${score}/100: Borderline-Einstufung – Weder klare Freigabe noch Ablehnung möglich`,
-                'Bildqualität akzeptabel, aber fehlende Detailaufnahmen',
-                'Preis weicht leicht vom Durchschnitt ab – Plausibilität unklar',
+                `Score ${score}/100: Mittlerer Prüfbereich (40-60) – manuelle Prüfung erforderlich`,
+                'Keine eindeutigen Richtlinienverstöße, aber unklare Angaben oder grenzwertige Formulierungen',
                 '👉 Manuelle Prüfung und finale Freigabe durch Administrator erforderlich'
             ];
         }

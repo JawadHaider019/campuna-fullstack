@@ -140,9 +140,21 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                     }
 
                     setProvidersList(validSpotlightList);
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('campuna-spotlight-status', { detail: { hasSpotlight: validSpotlightList.length > 0 } }));
+                    }
+                } else {
+                    setProvidersList([]);
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new CustomEvent('campuna-spotlight-status', { detail: { hasSpotlight: false } }));
+                    }
                 }
             } catch (err) {
                 console.error("Error loading providers:", err);
+                setProvidersList([]);
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('campuna-spotlight-status', { detail: { hasSpotlight: false } }));
+                }
             }
         };
         loadProviders();
@@ -179,32 +191,59 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
     useEffect(() => {
         let animationFrameId;
         let lastTime = performance.now();
+        let isVisible = true;
+
+        const handleVisibilityChange = () => {
+            isVisible = document.visibilityState === 'visible';
+            if (isVisible) lastTime = performance.now();
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                isVisible = entry.isIntersecting && document.visibilityState === 'visible';
+                if (isVisible) lastTime = performance.now();
+            },
+            { rootMargin: '100px' }
+        );
+
+        if (rowRef.current) {
+            observer.observe(rowRef.current);
+        }
 
         const loop = (time) => {
-            const delta = Math.min((time - lastTime) / 1000, 0.1);
-            lastTime = time;
+            if (isVisible) {
+                const delta = Math.min((time - lastTime) / 1000, 0.1);
+                lastTime = time;
 
-            if (shouldSlide && constraints > 0 && providersList.length > 0) {
-                if (!isHoveredRef.current && !isDraggingRef.current) {
-                    let currentX = x.get() + dirRef.current * 25 * delta;
-                    if (dirRef.current === -1 && currentX <= -constraints) {
-                        currentX = -constraints;
-                        dirRef.current = 1;
-                    } else if (dirRef.current === 1 && currentX >= 0) {
-                        currentX = 0;
-                        dirRef.current = -1;
+                if (shouldSlide && constraints > 0 && providersList.length > 0) {
+                    if (!isHoveredRef.current && !isDraggingRef.current) {
+                        let currentX = x.get() + dirRef.current * 25 * delta;
+                        if (dirRef.current === -1 && currentX <= -constraints) {
+                            currentX = -constraints;
+                            dirRef.current = 1;
+                        } else if (dirRef.current === 1 && currentX >= 0) {
+                            currentX = 0;
+                            dirRef.current = -1;
+                        }
+                        x.set(currentX);
                     }
-                    x.set(currentX);
+                } else {
+                    x.set(0);
                 }
             } else {
-                x.set(0);
+                lastTime = time;
             }
 
             animationFrameId = requestAnimationFrame(loop);
         };
 
         animationFrameId = requestAnimationFrame(loop);
-        return () => cancelAnimationFrame(animationFrameId);
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            observer.disconnect();
+        };
     }, [providersList.length, constraints, x, shouldSlide]);
 
     if (providersList.length === 0) {
@@ -215,7 +254,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
         <section id="campuna-spotlight" className="py-10 sm:py-16 bg-sand relative overflow-x-hidden scroll-mt-24">
             <div className="max-w-8xl mx-auto px-6 md:px-12">
                 {/* Section header */}
-                <div className="flex flex-col md:flex-row items-center justify-between mb-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
                     <div className="space-y-1">
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
                             CAMPUNA SPOTLIGHT
@@ -223,19 +262,25 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                         <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-black">
                             Camping-Anbieter im Spotlight
                         </h2>
-                        <div className="w-16 h-0.5 bg-gold rounded-full mt-4 mx-auto md:mx-0" />
+                        <p className="font-sans text-xs sm:text-sm text-charcoal/70 max-w-2xl font-light mt-2">
+                            Hier zeigen wir gewerbliche Anbieter, die Campuna mit aufbauen: Händler, Vermieter, Werkstätten und Hersteller. Du bist selbst Anbieter? Dann präsentiere dein Unternehmen mit einem eigenen Profil.
+                        </p>
                     </div>
 
-                    <div className="hidden lg:flex items-center space-x-6">
+                    <div className="flex items-center gap-3 shrink-0">
                         <button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/registrieren?type=commercial')}
-                            className="text-charcoal/60 hover:text-forest text-[11px] font-sans font-semibold transition-colors border-b border-transparent hover:border-forest/30 pb-0.5 cursor-pointer"
+                            onClick={() => router.push(isLoggedIn ? '/abo' : '/registrieren?type=commercial')}
+                            className="text-xs font-bold uppercase tracking-widest text-gold hover:text-forest transition-colors cursor-pointer"
                         >
-                            Auch Anbieter werden
+                            Anbieter werden
                         </button>
-                        <button onClick={() => router.push('/anbieter')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
-                            <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
-                            <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                        <span className="text-charcoal/30">•</span>
+                        <button 
+                            onClick={() => router.push('/anbieter')} 
+                            className="group flex items-center space-x-1.5 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer"
+                        >
+                            <span className="pb-0.5 border-b border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
+                            <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
                         </button>
                     </div>
                 </div>

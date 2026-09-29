@@ -1,155 +1,210 @@
+import api from '@/api/client';
+
 /**
- * Campuna Smart Auto-Description Generator
- * Generates rich, contextual, high-converting German marketplace listing descriptions
- * for camping vehicles, accessories, tents, services, tiny houses, and outdoor gear.
+ * Campuna Category-Aware, Fact-Preserving Marketplace Description Engine
  * 
- * Intelligently extracts, structures, and incorporates user-provided bullet points,
- * equipment specs, condition notes, and personal narrative into a polished listing.
+ * CORE PRINCIPLES:
+ * 1. "The description engine may improve wording and structure, but it may NEVER invent or extrapolate facts."
+ * 2. Category-specific section architecture (Vehicle vs. Tent vs. Campsite vs. Gear).
+ * 3. Never bundle everything into one giant section. Group intelligently into:
+ *    - Fahrzeugdaten / Produktdaten
+ *    - Ausstattung (ab Werk / Serie)
+ *    - Autarkie & Elektrik
+ *    - Zubehör / Weitere Ausstattung
+ *    - Zustand & Wartung
+ *    - Preis
+ *    - Standort
+ * 4. Technical attributes are formatted as clean structured bullets (•), never awkward sentences.
+ * 5. No placeholder/marketing fluff or unprovoked "Besichtigung..." boilerplate unless supplied.
  */
 
 /**
- * Format price string in German format (e.g. 48.500 €)
+ * Format price string in German format (e.g. 39.800 €)
  */
-function formatPrice(val) {
+export function formatPrice(val) {
     if (!val || isNaN(Number(val))) return '';
     const num = Math.round(Number(val));
     return new Intl.NumberFormat('de-DE').format(num) + ' €';
 }
 
 /**
- * Clean and capitalize a single bullet or feature item
+ * Normalizes text for comparison
+ */
+function normalizeKey(str = '') {
+    return str.toLowerCase().replace(/[^a-z0-9äöüß]/gi, '').trim();
+}
+
+/**
+ * Strips leading bullet symbols, numbering, and whitespace
+ */
+function cleanBulletText(text = '') {
+    return text
+        .trim()
+        .replace(/^[\s•\-*+✓✔►–—\d\.\)\:\-]+/, '')
+        .replace(/^[:\-–—\s]+/, '')
+        .trim();
+}
+
+/**
+ * Standardize German capitalization & formatting for clean bullet items
  */
 function formatBulletPoint(text = '') {
-    let clean = text.trim()
-        .replace(/^[\s•\-*+✓✔►–—]+/, '') // strip bullet characters
-        .replace(/^\s*\d+[\.\)\:\-]\s+/, '') // strip numbered list prefixes like "1. ", "2) ", "3- "
-        .trim();
+    const clean = cleanBulletText(text);
     if (!clean) return '';
-    // Capitalize first character
     return clean.charAt(0).toUpperCase() + clean.slice(1);
 }
 
 /**
- * Extract structured information from user-provided notes or raw description text
+ * Regex Dictionary for Intelligent Attribute & Equipment Categorization
  */
-function extractUserNotes(rawText = '') {
-    if (!rawText || typeof rawText !== 'string') {
-        return { hasUserContent: false, bullets: [], equipment: [], conditionNotes: [], narrative: [], extras: [] };
-    }
+const PATTERNS = {
+    // 1. Vehicle / Core Product Specs
+    vehicleSpecs: /\b(modell|basisfahrzeug|chassis|ducato|crafter|sprinter|transit|boxer|jumper|t6|t6\.1|t5|leistung|ps\b|kw\b|multijet|tdi|diesel|benzin|schaltgetriebe|automatik|automatikgetriebe|gang|erstzulassung|ez\b|baujahr|kilometerstand|laufleistung|\bkm\b|gesamtgewicht|leergewicht|zuladung|zgg|3\.500\s*kg|3500\s*kg|farbe|lackierung|schadstoffklasse|euro\s*6|umweltplakette|länge|breite|höhe|schlafplätze|sitzplätze|gurtplätze|isofix)\b/i,
 
-    const trimmed = rawText.trim();
-    if (!trimmed) {
-        return { hasUserContent: false, bullets: [], equipment: [], conditionNotes: [], narrative: [], extras: [] };
+    // 2. Condition & History
+    conditionNotes: /\b(tüv|hu\b|au\b|gasprüfung|scheckheft|scheckheftgepflegt|inspektion|service|unfallfrei|vorbesitzer|halter|halteranzahl|nichtraucher|nichtraucherfahrzeug|tierfrei|garage|garagenfahrzeug|dicht|trocken|dichtigkeitsprüfung|rostfrei|kratzer|delle|beschädigung|nachlackierungsfrei|abnutzung|neuwertig|gebrauchsspuren|mängel)\b/i,
+
+    // 3. Autarky, Solar, Battery & Electronics
+    autarkyElectronics: /\b(lifepo4|lithium|lithiumbatterie|batterie|akku|\bah\b|300\s*ah|200\s*ah|100\s*ah|ladebooster|booster|victron|smartshunt|shunt|wechselrichter|inverter|solaranlage|solarmodul|solarpanel|watt|solar|mppt|landstrom|laderegler|powerstation|ecoflow|jackery|bluetti)\b/i,
+
+    // 4. Factory / Main Equipment & Packages
+    factoryEquipment: /\b(paket|smart-paket|media-paket|styling-paket|fiat-paket|licht-paket|winter-paket|assistenzpaket|tempomat|abstandsregeltempomat|acc|klimaanlage|klimaautomatik|standheizung|truma|dieselheizung|alde|warmwasser|boiler|head-up|head-up-display|navigationssystem|navi|rückfahrkamera|dab\+|radio|bluetooth|apple\s*carplay|android\s*auto|lederlenkrad|multifunktionslenkrad|markise|anhängerkupplung|ahk|elektrische\s*trittstufe|fliegengitter|verdunkelung|plissee)\b/i,
+
+    // 5. Add-on Accessories & Inclusions
+    accessoriesExtras: /\b(bwt|wasserfilter|filter|abwassertank|frischwassertank|zusätzliches\s*fenster|fenster|heckgarage|fahrradträger|radträger|thule|fiamma|vorzelt|sonnensegel|teppich|campingstuhl|campingtisch|auffahrkeile|keile|stromkabel|cee|gasflasche|alugas|duocontrol|monocontrol|stufe|stufe|geschirr|besteck|abdeckung|schutzhülle|matratze|topper)\b/i,
+
+    // 6. Location identifiers
+    location: /\b(standort|abholung in|plz|ort|kreis|besichtigung in|abzuholen in)\b/i,
+
+    // 7. Price identifiers
+    price: /\b(preis|festpreis|verhandlungsbasis|\bvb\b|vhs|euro|€)\b/i
+};
+
+/**
+ * Extracts, cleans, and categorizes facts from raw seller notes or draft text
+ */
+export function extractFactualData(rawText = '', category = '') {
+    if (!rawText || typeof rawText !== 'string') {
+        return {
+            hasFacts: false,
+            introNarrative: [],
+            vehicleSpecs: [],
+            factoryEquipment: [],
+            autarkyElectronics: [],
+            accessoriesExtras: [],
+            conditionNotes: [],
+            otherSpecs: [],
+            locationMention: '',
+            priceMention: ''
+        };
     }
 
     // Ignore boilerplate headers from previous generation runs
     const boilerplateHeaderPatterns = [
-        /^(✨|🌟|🔍|🛠️|📋|📍|📞|📦|🚀)?\s*(ÜBERSICHT|HIGHLIGHTS|ECKDATEN|AUSSTATTUNG|ZUSTAND|BESICHTIGUNG|KONTAKT|LIEFERUMFANG|ANGEBOT|DETAILS)/i,
-        /^(Zum Verkauf steht|Angeboten wird|Bereit für|Attraktives Angebot|Professioneller Camping-Service|Ein praktisches|Das Fahrzeug bietet|Ein unverzichtbares)/i,
-        /^(Kategorie:|Zustand:|Standort:|Preis:|Verfügbarkeit:|Besichtigung)/i,
-        /^(Bei ernsthaftem Interesse|Wir freuen uns über|Alle Funktionen einwandfrei|Aus Nichtraucherhaushalt|Der Artikel ist|Wurde nur sehr selten)/i
+        /^(ÜBERSICHT|HIGHLIGHTS|ECKDATEN|FAHRZEUGDATEN|PRODUKTDATEN|STELLPLATZINFORMATIONEN|AUSSTATTUNG|AUSSTATTUNG AB WERK|AUTARKIE & ELEKTRIK|ZUBEHÖR|ZUBEHÖR \/ WEITERE AUSSTATTUNG|ZUSTAND|ZUSTAND & WARTUNG|PREIS|STANDORT|BESICHTIGUNG|KONTAKT|LIEFERUMFANG|ANGEBOT|DETAILS)/i,
+        /^(Angebot:|Zum Verkauf steht|Hier bieten wir|Verkauft wird|Im Angebot:)/i
     ];
 
-    const rawLines = trimmed.split(/\r?\n+/);
-    const candidateLines = [];
+    const lines = rawText.split(/\r?\n+/);
+    const rawItems = [];
+    const introNarrative = [];
 
-    for (const line of rawLines) {
-        const clean = line.trim();
-        if (!clean) continue;
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
 
-        // Skip exact boilerplate lines
-        const isBoilerplate = boilerplateHeaderPatterns.some(pat => pat.test(clean));
-        if (isBoilerplate) continue;
-
-        candidateLines.push(clean);
-    }
-
-    // If text was just a single comma-separated or semicolon-separated list
-    const parsedItems = [];
-    if (candidateLines.length === 1 && (candidateLines[0].includes(',') || candidateLines[0].includes(';')) && candidateLines[0].split(/[,;]/).length >= 2) {
-        const parts = candidateLines[0].split(/[,;]/);
-        for (const p of parts) {
-            const formatted = formatBulletPoint(p);
-            if (formatted && formatted.length > 1) {
-                parsedItems.push(formatted);
-            }
+        if (boilerplateHeaderPatterns.some(pat => pat.test(trimmed))) {
+            continue;
         }
-    } else {
-        for (const line of candidateLines) {
-            // Check if line contains inline multiple bullets or sentences
-            if (line.includes('•') || line.includes(' - ') || line.includes(' | ')) {
-                const subparts = line.split(/[•|]|\s-\s/);
-                for (const sp of subparts) {
-                    const formatted = formatBulletPoint(sp);
-                    if (formatted && formatted.length > 1) {
-                        parsedItems.push(formatted);
-                    }
-                }
-            } else {
-                const formatted = formatBulletPoint(line);
-                if (formatted && formatted.length > 1) {
-                    parsedItems.push(formatted);
+
+        // Detect full narrative intro lines (e.g. "Wir verkaufen unseren gepflegten und umfangreich ausgestatteten...")
+        if (trimmed.length > 70 && !trimmed.startsWith('•') && !trimmed.startsWith('-') && !trimmed.includes(':')) {
+            introNarrative.push(trimmed);
+            continue;
+        }
+
+        // Split multi-item bullet lines
+        if ((trimmed.includes('•') || trimmed.includes('|') || trimmed.includes(';') || (trimmed.includes(',') && trimmed.split(',').length >= 3)) && !trimmed.startsWith('http')) {
+            const parts = trimmed.split(/[•|;]|\s*,\s*(?=[A-Z0-9])/);
+            for (const p of parts) {
+                const item = formatBulletPoint(p);
+                if (item && item.length > 1) {
+                    rawItems.push(item);
                 }
             }
-        }
-    }
-
-    if (parsedItems.length === 0) {
-        return { hasUserContent: false, bullets: [], equipment: [], conditionNotes: [], narrative: [], extras: [] };
-    }
-
-    // Classify extracted items
-    const equipment = [];
-    const conditionNotes = [];
-    const extras = [];
-    const narrative = [];
-    const bullets = [];
-
-    const condKeywords = /(tüv|hu\b|au\b|gasprüfung|scheckheft|inspektion|service\s*neu|unfallfrei|vorbesitzer|halter|nichtraucher|tierfrei|garage|dicht|trocken|rostfrei|kratzer|delle|bereifung|reifen|bremsen|zahnriemen|ölwechsel|zustand)/i;
-    const extraKeywords = /(inklusive|inkl\.|dazu\s*gibt|mit\s*dabei|zubehör\s*wie|vorzelt|stühle|tisch|kabel|adapter|keile|abdeckung|schutzhülle|geschirr)/i;
-    const narrativeKeywords = /(verkauf(en)?\s*wir|wegen\s*(umstieg|aufgabe|vergrößerung|nachwuchs|zeitmangel)|wir\s*haben|schweren\s*herzens|abzugeben|sucht\s*neuen\s*besitzer)/i;
-
-    for (const item of parsedItems) {
-        bullets.push(item);
-
-        if (narrativeKeywords.test(item)) {
-            narrative.push(item);
-        } else if (condKeywords.test(item)) {
-            conditionNotes.push(item);
-        } else if (extraKeywords.test(item)) {
-            extras.push(item);
         } else {
-            equipment.push(item);
+            const item = formatBulletPoint(trimmed);
+            if (item && item.length > 1) {
+                rawItems.push(item);
+            }
+        }
+    }
+
+    // Deduplicate
+    const seen = new Set();
+    const uniqueItems = [];
+    for (const item of rawItems) {
+        const norm = normalizeKey(item);
+        if (norm.length > 0 && !seen.has(norm)) {
+            seen.add(norm);
+            uniqueItems.push(item);
+        }
+    }
+
+    const vehicleSpecs = [];
+    const factoryEquipment = [];
+    const autarkyElectronics = [];
+    const accessoriesExtras = [];
+    const conditionNotes = [];
+    const otherSpecs = [];
+    let locationMention = '';
+    let priceMention = '';
+
+    for (const item of uniqueItems) {
+        if (PATTERNS.location.test(item)) {
+            locationMention = item;
+        } else if (PATTERNS.price.test(item) && /\d+/.test(item)) {
+            priceMention = item;
+        } else if (PATTERNS.autarkyElectronics.test(item)) {
+            autarkyElectronics.push(item);
+        } else if (PATTERNS.conditionNotes.test(item)) {
+            conditionNotes.push(item);
+        } else if (PATTERNS.vehicleSpecs.test(item)) {
+            vehicleSpecs.push(item);
+        } else if (PATTERNS.factoryEquipment.test(item)) {
+            factoryEquipment.push(item);
+        } else if (PATTERNS.accessoriesExtras.test(item)) {
+            accessoriesExtras.push(item);
+        } else {
+            otherSpecs.push(item);
         }
     }
 
     return {
-        hasUserContent: bullets.length > 0,
-        bullets,
-        equipment,
+        hasFacts: uniqueItems.length > 0 || introNarrative.length > 0,
+        introNarrative,
+        vehicleSpecs,
+        factoryEquipment,
+        autarkyElectronics,
+        accessoriesExtras,
         conditionNotes,
-        narrative,
-        extras
+        otherSpecs,
+        locationMention,
+        priceMention
     };
 }
 
 /**
- * Generates an automated description based on the listing parameters, chosen style,
- * and any user-provided notes/bullet points.
- * 
- * @param {Object} params
- * @param {string} params.title - Title of the listing
- * @param {string} [params.category] - Category name
- * @param {string} [params.subcategory] - Subcategory name
- * @param {string} [params.condition] - Condition ('Neu', 'Neuwertig', 'Gebraucht', 'Defekt / Bastler')
- * @param {string|number} [params.price] - Price in EUR
- * @param {boolean} [params.isNegotiable] - Whether price is negotiable (VB)
- * @param {string} [params.location] - Location or PLZ
- * @param {string} [params.sellerName] - Seller name
- * @param {'detailed'|'compact'|'story'} [params.style] - Description tone/style ('detailed', 'compact', 'story')
- * @param {string} [params.userNotes] - User provided bullet points or draft text
- * @param {string} [params.existingText] - Alias for userNotes
- * @returns {string} Formatted German listing description
+ * Format key-value pairs cleanly with bullet points
+ * e.g. "Modell: Weinsberg CaraBus 600 MQ" or "140 PS"
+ */
+function formatBullet(item = '') {
+    const clean = item.trim();
+    return `• ${clean}`;
+}
+
+/**
+ * Generate category-aware, professional German marketplace description
  */
 export function generateAutoDescription({
     title = '',
@@ -160,222 +215,205 @@ export function generateAutoDescription({
     isNegotiable = false,
     location = '',
     sellerName = '',
-    style = 'detailed',
     userNotes = '',
     existingText = ''
 }) {
-    const cleanTitle = title.trim() || (category ? `${category}${subcategory ? ` (${subcategory})` : ''}` : 'Camping-Angebot');
-    const cat = (category || '').trim();
-    const sub = (subcategory || '').trim();
-    const cond = (condition || 'Gebraucht').trim();
-    const loc = (location || '').trim();
-    const formattedPrice = formatPrice(price);
-    const priceText = formattedPrice
-        ? `${formattedPrice}${isNegotiable ? ' (Verhandlungsbasis / VB)' : ' (Festpreis)'}`
-        : (isNegotiable ? 'Verhandlungsbasis (VB)' : '');
-
-    // Extract user notes and bullet points
     const rawInput = userNotes || existingText || '';
-    const userContent = extractUserNotes(rawInput);
+    const cleanTitle = title.trim();
+    const cleanCategory = category.trim();
+    const cleanSub = subcategory.trim();
+    const cleanCondition = condition.trim();
+    const cleanLoc = location.trim();
+    const formattedPrice = formatPrice(price);
 
-    // ─── 1. COMPACT STYLE (Direct bullet points focused on facts) ───
-    if (style === 'compact') {
-        const lines = [];
-        lines.push(`Angebot: ${cleanTitle}`);
-        lines.push('');
-        lines.push('ÜBERSICHT & ECKDATEN:');
-        lines.push(`• Kategorie: ${cat || 'Camping'}${sub ? ` / ${sub}` : ''}`);
-        lines.push(`• Zustand: ${cond}`);
-        if (priceText) lines.push(`• Preis: ${priceText}`);
-        if (loc) lines.push(`• Standort: ${loc}`);
-        lines.push('• Verfügbarkeit: Sofort abholbereit / einsatzbereit');
-        lines.push('');
+    const facts = extractFactualData(rawInput, cleanCategory);
+    const sections = [];
 
-        if (userContent.hasUserContent) {
-            lines.push('AUSSTATTUNG & HIGHLIGHTS:');
-            // List all user points cleanly
-            for (const b of userContent.bullets) {
-                lines.push(`• ${b}`);
-            }
-            lines.push('');
-        }
+    const isVehicle = cleanCategory.toLowerCase().includes('wohnmobil') || 
+                      cleanCategory.toLowerCase().includes('camper') || 
+                      cleanCategory.toLowerCase().includes('wohnwagen');
+    const isTent = cleanCategory.toLowerCase().includes('zelt');
+    const isCampsite = cleanCategory.toLowerCase().includes('stellplatz') || cleanCategory.toLowerCase().includes('campingplatz');
 
-        lines.push('DETAILS & ZUSTAND:');
-        if (userContent.conditionNotes.length > 0) {
-            for (const cn of userContent.conditionNotes) {
-                lines.push(`• ${cn}`);
-            }
-        }
-        if (cond === 'Neu') {
-            lines.push('• Fabrikneu und unbenutzt, in Originalverpackung bzw. Neuzustand.');
-        } else if (cond === 'Neuwertig') {
-            lines.push('• Kaum genutzt, in absolutem Top-Zustand ohne nennenswerte Gebrauchsspuren.');
-        } else if (cond === 'Defekt / Bastler') {
-            lines.push('• Für Bastler oder zur Ersatzteilgewinnung, wie beschrieben.');
-        } else {
-            lines.push('• Gepflegter Zustand, voll funktionsfähig und sauber aus Nichtraucher-Besitz.');
-        }
-        lines.push('');
-
-        lines.push('KONTAKT & ABHOLUNG:');
-        lines.push(loc ? `• Besichtigung und Abholung gerne flexibel in ${loc} nach Absprache.` : '• Besichtigung und Abholung nach Absprache möglich.');
-        lines.push('• Bei Fragen einfach kurz schreiben – antworte zeitnah!');
-        return lines.join('\n');
+    // ─── 1. OFFER TITLE & INTRO NARRATIVE ───
+    if (cleanTitle) {
+        sections.push(`Angebot: ${cleanTitle}`);
     }
 
-    // ─── 2. STORY / EMOTIONAL STYLE (Inspiring travel, outdoor freedom) ───
-    if (style === 'story') {
-        const lines = [];
-
-        // Intro according to category and narrative
-        if (userContent.narrative.length > 0) {
-            lines.push(`${userContent.narrative[0]}`);
-            lines.push(`Zum Angebot steht hier unser gepflegter ${cleanTitle} – ideal für alle, die das Draußensein, Roadtrips und echte Camping-Freiheit lieben.`);
-        } else if (cat === 'Wohnmobile & Camper') {
-            lines.push(`Bereit für das nächste große Abenteuer? Wir verkaufen unseren geliebten ${cleanTitle}, der uns unvergessliche Reisen und pure Camping-Freiheit beschert hat.`);
-        } else if (cat === 'Zelte & Dachzelte') {
-            lines.push(`Aufwachen mit Blick in die Natur und maximaler Freiheit: Zum Verkauf steht ${cleanTitle} – der perfekte Begleiter für spontane Roadtrips und Nächte unter dem Sternenhimmel.`);
-        } else if (cat === 'Stellplätze & Campingplätze') {
-            lines.push(`Ein wunderbarer Rückzugsort inmitten der Natur: Entdecke ${cleanTitle} – ideal für entspannte Tage, Ruhe und naturnahes Camping.`);
-        } else {
-            lines.push(`Mehr Komfort und Freude beim Camping: Wir bieten hier ${cleanTitle} an – verlässlich, hochwertig und sofort einsatzbereit.`);
-        }
-        lines.push('');
-
-        lines.push('🌟 DAS MACHT DIESES ANGEBOT BESONDERS:');
-        lines.push(`• Zustand: ${cond} – stets pfleglich behandelt und sofort startklar.`);
-        if (cat) lines.push(`• Passend für: ${cat}${sub ? ` (${sub})` : ''}`);
-
-        // Weave user bullets in story highlights
-        if (userContent.hasUserContent) {
-            for (const b of userContent.bullets.slice(0, 6)) {
-                lines.push(`• ${b}`);
-            }
-        } else {
-            lines.push('• Zuverlässige Qualität und durchdachte Funktionalität für unterwegs.');
-            lines.push('• Einfache Handhabung und langlebige Verarbeitung.');
-        }
-        lines.push('');
-
-        if (userContent.hasUserContent && userContent.bullets.length > 6) {
-            lines.push('🛠️ WEITERE AUSSTATTUNGSMERKMALE:');
-            for (const b of userContent.bullets.slice(6)) {
-                lines.push(`• ${b}`);
-            }
-            lines.push('');
-        }
-
-        lines.push('📋 ZUSTAND & WARTUNG:');
-        if (userContent.conditionNotes.length > 0) {
-            for (const cn of userContent.conditionNotes) {
-                lines.push(`• ${cn}`);
-            }
-        }
-        if (cond === 'Neu') {
-            lines.push('Der Artikel ist absolut neu, unbenutzt und befindet sich im makellosen Originalzustand.');
-        } else if (cond === 'Neuwertig') {
-            lines.push('Befindet sich in hervorragendem Zustand mit minimalen bis keinen Gebrauchsspuren.');
-        } else if (cond === 'Defekt / Bastler') {
-            lines.push('Wird ausdrücklich als Bastlerobjekt bzw. defekt angeboten.');
-        } else {
-            lines.push('Gepflegter Gesamtzustand, alle Funktionen einwandfrei, sauber und sorgsam aufbewahrt.');
-        }
-        lines.push('');
-
-        lines.push('📍 BESICHTIGUNG & ABWICKLUNG:');
-        if (priceText) lines.push(`• Preisvorstellung: ${priceText}`);
-        if (loc) {
-            lines.push(`• Standort: ${loc} (Besichtigung nach vorheriger Terminabsprache sehr gerne möglich)`);
-        } else {
-            lines.push('• Besichtigung und Abholung nach flexibler Absprache.');
-        }
-        lines.push('');
-        lines.push('Wir freuen uns über freundliche Anfragen und beantworten eventuelle Fragen gerne und schnell!');
-        return lines.join('\n');
+    if (facts.introNarrative.length > 0) {
+        sections.push(facts.introNarrative.join('\n\n'));
     }
 
-    // ─── 3. DETAILED STYLE (Default, comprehensive, professional) ───
-    const lines = [];
+    // ─── 2. CATEGORY-SPECIFIC PRIMARY DATA SECTION ───
+    if (isVehicle) {
+        // VEHICLE DATA (Fahrzeugdaten)
+        const vData = [];
 
-    // Header Intro
-    if (userContent.narrative.length > 0) {
-        lines.push(userContent.narrative[0]);
-        lines.push(`Angeboten wird: ${cleanTitle}. Ein rundum gepflegtes und zuverlässiges Angebot für Camping- und Outdoor-Begeisterte.`);
-    } else if (cat === 'Wohnmobile & Camper') {
-        lines.push(`Zum Verkauf steht unser gepflegter und zuverlässiger ${cleanTitle}. Das Fahrzeug bietet eine hervorragende Ausstattung für komfortables, autarkes und unabhängiges Reisen.`);
-    } else if (cat === 'Camping Zubehör') {
-        lines.push(`Angeboten wird ein hochwertiges ${cleanTitle}. Ein praktisches und unverzichtbares Zubehörteil für den nächsten Campingurlaub, das für mehr Komfort und Ordnung sorgt.`);
-    } else if (cat === 'Zelte & Dachzelte') {
-        lines.push(`Zum Verkauf steht ${cleanTitle}. Perfekt geeignet für Outdoor-Begeisterte, Camper und spontane Wochenendausflüge mit schnellem Aufbau und verlässlichem Wetterschutz.`);
-    } else if (cat === 'Fahrräder & Träger') {
-        lines.push(`Hier bieten wir ${cleanTitle} an. Eine stabile, sichere und bewährte Transport- oder Mobilitätslösung für Camping- und Freizeitfahrzeuge.`);
-    } else if (cat === 'Stellplätze & Campingplätze') {
-        lines.push(`Attraktives Angebot: ${cleanTitle}. Ein herrlicher Ort für Camper, Wohnmobile und Outdoor-Liebhaber mit guter Anbindung und schöner Umgebung.`);
-    } else if (cat === 'Tiny Houses') {
-        lines.push(`Zum Verkauf steht ${cleanTitle}. Modernes, durchdachtes und nachhaltiges Wohnen mit gemütlichem Wohnklima und solider Bauweise.`);
-    } else if (cat === 'Camping Services') {
-        lines.push(`Professioneller Camping-Service: ${cleanTitle}. Zuverlässige und fachgerechte Dienstleistung rund um dein Camping-Equipment oder Fahrzeug.`);
-    } else if (cat === 'Boote & Wassersport') {
-        lines.push(`Zum Verkauf steht ${cleanTitle}. Ideal für aktive Freizeitgestaltung, Wassersport und entspannte Stunden auf dem Wasser.`);
+        // Subcategory / Chassis if supplied
+        if (cleanSub) {
+            vData.push(formatBullet(`Aufbau / Typ: ${cleanSub}`));
+        }
+
+        // Add extracted vehicle specs
+        for (const spec of facts.vehicleSpecs) {
+            vData.push(formatBullet(spec));
+        }
+
+        // Add condition indicators related to vehicle history if present
+        for (const cond of facts.conditionNotes) {
+            if (/nichtraucher|tierfrei|garage|garagenfahrzeug|scheckheft|unfallfrei/i.test(cond)) {
+                vData.push(formatBullet(cond));
+            }
+        }
+
+        if (vData.length > 0) {
+            sections.push(`FAHRZEUGDATEN\n${vData.join('\n')}`);
+        }
+
+        // FACTORY EQUIPMENT (Ausstattung ab Werk / Serie)
+        const fEquip = [];
+        for (const item of facts.factoryEquipment) {
+            fEquip.push(formatBullet(item));
+        }
+        if (fEquip.length > 0) {
+            sections.push(`AUSSTATTUNG AB WERK\n${fEquip.join('\n')}`);
+        }
+
+        // AUTARKY & ELECTRONICS (Autarkie & Elektrik)
+        if (facts.autarkyElectronics.length > 0) {
+            sections.push(`AUTARKIE & ELEKTRIK\n${facts.autarkyElectronics.map(formatBullet).join('\n')}`);
+        }
+
+        // ACCESSORIES & FURTHER EQUIPMENT (Zubehör / Weitere Ausstattung)
+        const extras = [];
+        for (const item of facts.accessoriesExtras) {
+            extras.push(formatBullet(item));
+        }
+        for (const item of facts.otherSpecs) {
+            extras.push(formatBullet(item));
+        }
+        if (extras.length > 0) {
+            sections.push(`ZUBEHÖR / WEITERE AUSSTATTUNG\n${extras.join('\n')}`);
+        }
+
+        // REMAINING CONDITION NOTES (Zustand & Wartung - TÜV, Gasprüfung etc.)
+        const techCondition = facts.conditionNotes.filter(c => !/nichtraucher|tierfrei|garage|garagenfahrzeug|scheckheft|unfallfrei/i.test(c));
+        if (techCondition.length > 0) {
+            sections.push(`ZUSTAND & WARTUNG\n${techCondition.map(formatBullet).join('\n')}`);
+        }
+
+    } else if (isTent) {
+        // TENT / OUTDOOR SPECIFIC
+        const pData = [];
+        if (cleanSub) pData.push(formatBullet(`Typ: ${cleanSub}`));
+        if (cleanCondition) pData.push(formatBullet(`Zustand: ${cleanCondition}`));
+        for (const spec of facts.vehicleSpecs.concat(facts.otherSpecs)) {
+            pData.push(formatBullet(spec));
+        }
+        if (pData.length > 0) {
+            sections.push(`PRODUKTDATEN\n${pData.join('\n')}`);
+        }
+
+        if (facts.factoryEquipment.length > 0) {
+            sections.push(`AUSSTATTUNG\n${facts.factoryEquipment.map(formatBullet).join('\n')}`);
+        }
+        if (facts.conditionNotes.length > 0) {
+            sections.push(`ZUSTAND\n${facts.conditionNotes.map(formatBullet).join('\n')}`);
+        }
+        if (facts.accessoriesExtras.length > 0) {
+            sections.push(`LIEFERUMFANG / ZUBEHÖR\n${facts.accessoriesExtras.map(formatBullet).join('\n')}`);
+        }
+
+    } else if (isCampsite) {
+        // CAMPSITE SPECIFIC
+        if (cleanLoc) {
+            sections.push(`STANDORT\n${cleanLoc}`);
+        }
+        const siteData = [];
+        if (cleanSub) siteData.push(formatBullet(`Art des Platzes: ${cleanSub}`));
+        for (const spec of facts.vehicleSpecs.concat(facts.otherSpecs)) {
+            siteData.push(formatBullet(spec));
+        }
+        if (siteData.length > 0) {
+            sections.push(`STELLPLATZINFORMATIONEN\n${siteData.join('\n')}`);
+        }
+        if (facts.factoryEquipment.length > 0 || facts.accessoriesExtras.length > 0) {
+            const equip = facts.factoryEquipment.concat(facts.accessoriesExtras);
+            sections.push(`AUSSTATTUNG & SERVICES\n${equip.map(formatBullet).join('\n')}`);
+        }
+
     } else {
-        lines.push(`Zum Verkauf steht: ${cleanTitle}. Ein praktisches und zuverlässiges Angebot für alle Camping- und Freizeitbegeisterten.`);
-    }
-    lines.push('');
-
-    // Highlights section
-    lines.push('✨ HIGHLIGHTS & ECKDATEN:');
-    lines.push(`• Zustand: ${cond}`);
-    if (cat) lines.push(`• Kategorie: ${cat}${sub ? ` – ${sub}` : ''}`);
-    if (priceText) lines.push(`• Preis: ${priceText}`);
-    if (loc) lines.push(`• Standort: ${loc}`);
-    lines.push('• Sofort verfügbar und einsatzbereit');
-    lines.push('');
-
-    // If user provided specific equipment / bullet points
-    if (userContent.hasUserContent) {
-        lines.push('🛠️ AUSSTATTUNG & BESONDERHEITEN:');
-        for (const item of userContent.bullets) {
-            lines.push(`• ${item}`);
+        // GENERAL CAMPING EQUIPMENT / OTHER CATEGORIES
+        const pData = [];
+        if (cleanCategory) pData.push(formatBullet(`Kategorie: ${cleanCategory}${cleanSub ? ` (${cleanSub})` : ''}`));
+        if (cleanCondition) pData.push(formatBullet(`Zustand: ${cleanCondition}`));
+        for (const s of facts.vehicleSpecs.concat(facts.otherSpecs)) {
+            pData.push(formatBullet(s));
         }
-        lines.push('');
-    }
+        if (pData.length > 0) {
+            sections.push(`PRODUKTDATEN & SPEZIFIKATIONEN\n${pData.join('\n')}`);
+        }
 
-    // Detailed description & condition
-    lines.push('🔍 ZUSTAND & WARTUNG:');
-    if (userContent.conditionNotes.length > 0) {
-        for (const cn of userContent.conditionNotes) {
-            lines.push(`• ${cn}`);
+        if (facts.factoryEquipment.length > 0) {
+            sections.push(`AUSSTATTUNGSMERKMALE\n${facts.factoryEquipment.map(formatBullet).join('\n')}`);
+        }
+        if (facts.autarkyElectronics.length > 0) {
+            sections.push(`ELEKTRIK & TECHNIK\n${facts.autarkyElectronics.map(formatBullet).join('\n')}`);
+        }
+        if (facts.conditionNotes.length > 0) {
+            sections.push(`ZUSTAND\n${facts.conditionNotes.map(formatBullet).join('\n')}`);
+        }
+        if (facts.accessoriesExtras.length > 0) {
+            sections.push(`LIEFERUMFANG / ZUBEHÖR\n${facts.accessoriesExtras.map(formatBullet).join('\n')}`);
         }
     }
-    if (cond === 'Neu') {
-        lines.push('Der Artikel ist fabrikneu, unbenutzt und befindet sich im makellosen Originalzustand.');
-    } else if (cond === 'Neuwertig') {
-        lines.push('Wurde nur sehr selten und schonend benutzt. Keine Beschädigungen oder groben Gebrauchsspuren, absolut neuwertiger Gesamteindruck.');
-    } else if (cond === 'Defekt / Bastler') {
-        lines.push('Der Artikel wird als defekt bzw. für Bastler/Ersatzteilgewinnung angeboten. Details entnehmen Sie bitte den Fotos oder auf Nachfrage.');
-    } else {
-        lines.push('Gebraucht, jedoch stets sorgfältig und pfleglich behandelt. Alle Funktionen wurden überprüft und funktionieren einwandfrei.');
-    }
-    lines.push('Aus gepflegtem Nichtraucherhaushalt, sauber und ordentlich aufbewahrt.');
-    lines.push('');
 
-    // Extra inclusions if user mentioned them
-    if (userContent.extras.length > 0) {
-        lines.push('📦 LIEFERUMFANG / INKLUSIVE:');
-        for (const ex of userContent.extras) {
-            lines.push(`• ${ex}`);
+    // ─── 3. PREIS SECTION ───
+    let priceOutput = '';
+    if (formattedPrice) {
+        priceOutput = `${formattedPrice} ${isNegotiable ? 'VB (Verhandlungsbasis)' : 'Festpreis'}`;
+    } else if (isNegotiable) {
+        priceOutput = 'Verhandlungsbasis (VB)';
+    } else if (facts.priceMention) {
+        priceOutput = facts.priceMention;
+    }
+    if (priceOutput) {
+        sections.push(`PREIS\n${priceOutput}`);
+    }
+
+    // ─── 4. STANDORT SECTION (conflict-aware, structured field first) ───
+    if (!isCampsite) {
+        let finalLocation = cleanLoc;
+        if (facts.locationMention && cleanLoc && !facts.locationMention.toLowerCase().includes(cleanLoc.toLowerCase()) && !cleanLoc.toLowerCase().includes(facts.locationMention.toLowerCase())) {
+            finalLocation = `${cleanLoc} (Hinweis im Text: ${facts.locationMention.replace(/^Standort:?\s*/i, '')})`;
+        } else if (!finalLocation && facts.locationMention) {
+            finalLocation = facts.locationMention.replace(/^Standort:?\s*/i, '');
         }
-        lines.push('');
+
+        if (finalLocation) {
+            sections.push(`STANDORT\n${finalLocation}`);
+        }
     }
 
-    // Inspection & Contact section
-    lines.push('📞 BESICHTIGUNG & KONTAKT:');
-    if (loc) {
-        lines.push(`Eine persönliche Besichtigung vor Ort in ${loc} ist nach vorheriger Terminabsprache gerne möglich und erwünscht.`);
-    } else {
-        lines.push('Eine persönliche Besichtigung ist nach vorheriger Terminabsprache gerne möglich.');
-    }
-    lines.push('Bei ernsthaftem Interesse oder offenen Fragen stehe ich jederzeit gerne zur Verfügung. Ich antworte in der Regel sehr zeitnah.');
+    return sections.join('\n\n');
+}
 
-    return lines.join('\n');
+/**
+ * Smart Generator / Enhancer (Deterministic fact-preserving engine)
+ */
+export async function generateOrImproveDescription(params) {
+    const rawExisting = (params.existingText || params.userNotes || params.existingDescription || params.description || '').trim();
+
+    const factualText = generateAutoDescription({
+        ...params,
+        userNotes: rawExisting,
+        existingText: rawExisting
+    });
+
+    return {
+        text: factualText,
+        mode: 'IMPROVED_FACTUAL',
+        source: 'FACT_ENGINE',
+        success: true
+    };
 }

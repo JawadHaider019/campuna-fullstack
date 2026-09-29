@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Users,
     Search,
@@ -29,7 +31,9 @@ import {
     AlertTriangle,
     Eye,
     Copy,
-    Check
+    Check,
+    RefreshCw,
+    X
 } from 'lucide-react';
 import {
     getAdminUsers,
@@ -40,8 +44,10 @@ import {
 } from '@/api/admin';
 import { toast } from 'react-hot-toast';
 import PioneerBadge from '@/app/components/PioneerBadge';
+import { getImageUrl } from '@/utils/imageUrl';
 
 export default function AdminUsersPage() {
+    const router = useRouter();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
@@ -96,9 +102,18 @@ export default function AdminUsersPage() {
     useEffect(() => {
         const timer = setTimeout(() => {
             fetchUsers();
-        }, 250);
+        }, 200);
         return () => clearTimeout(timer);
     }, [fetchUsers]);
+
+    // Close action dropdown on outer click
+    useEffect(() => {
+        const handleDocClick = () => setActionMenuOpenId(null);
+        if (actionMenuOpenId) {
+            document.addEventListener('click', handleDocClick);
+            return () => document.removeEventListener('click', handleDocClick);
+        }
+    }, [actionMenuOpenId]);
 
     // Actions
     const handleToggleSuspend = async (user) => {
@@ -181,10 +196,17 @@ export default function AdminUsersPage() {
     };
 
     return (
-        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
+        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-12 font-sans">
+            
+            {/* ─── Top Page Header ─── */}
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs"
+            >
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold">
+                    <div className="w-11 h-11 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold shadow-inner">
                         <Users className="w-5 h-5" />
                     </div>
                     <div>
@@ -192,19 +214,32 @@ export default function AdminUsersPage() {
                             Benutzerverwaltung
                         </h1>
                         <p className="text-xs text-slate-500 mt-0.5">
-                            Verwalte alle registrierten privaten Nutzer und gewerblichen Händler.
+                            Verwalte alle registrierten privaten Nutzer und gewerblichen Händler sicher und übersichtlich.
                         </p>
                     </div>
                 </div>
-            </div>
+
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={fetchUsers}
+                        disabled={loading}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-[#D5D9E0] text-xs font-bold text-slate-700 hover:bg-sand/30 hover:border-forest/30 transition-all cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-forest' : ''}`} />
+                        <span>Aktualisieren</span>
+                    </button>
+                </div>
+            </motion.div>
 
             {/* ─── Top Stats Bento Cards (5 Cards matching Dashboard styling) ─── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
                 {/* 1. Gesamt Benutzer (Forest-to-Black Gradient Luxury Card) */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setUserTypeFilter('ALL'); setStatusFilter('ALL'); setPage(1); }}
-                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[145px] border border-forest/30 cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[145px] border border-forest/30 cursor-pointer group transition-all"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-sand/80 uppercase tracking-wider">
@@ -223,12 +258,14 @@ export default function AdminUsersPage() {
                             <span>{summary.totalPrivate || 0} Privat</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 2. Gewerbliche Händler */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setUserTypeFilter('COMMERCIAL'); setStatusFilter('ALL'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-emerald-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -246,12 +283,14 @@ export default function AdminUsersPage() {
                             <span>Unternehmensprofile</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 3. Privatnutzer */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setUserTypeFilter('PRIVATE'); setStatusFilter('ALL'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-blue-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -269,12 +308,14 @@ export default function AdminUsersPage() {
                             <span>Private Camper & Verkäufer</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 4. Unverifiziert / Ausstehend */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setStatusFilter('UNVERIFIED'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-amber-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -292,12 +333,14 @@ export default function AdminUsersPage() {
                             <span>E-Mail unbestätigt</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 5. Gesperrt */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setStatusFilter('SUSPENDED'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-rose-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -315,12 +358,12 @@ export default function AdminUsersPage() {
                             <span>Deaktivierte Konten</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
             </div>
 
             {/* ─── Search & Filter Bar ─── */}
-            <div className="bg-white border border-[#E8EAEF] rounded-2xl p-4 shadow-2xs space-y-3">
+            <div className="bg-white border border-[#E8EAEF] rounded-3xl p-4 shadow-2xs space-y-3">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
 
                     {/* Search Input */}
@@ -334,14 +377,14 @@ export default function AdminUsersPage() {
                                 setPage(1);
                             }}
                             placeholder="Suche nach Name, E-Mail, Firma, Referral-Code..."
-                            className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest transition-all"
+                            className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-2xl pl-9 pr-8 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest transition-all"
                         />
                         {search && (
                             <button
                                 onClick={() => setSearch('')}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
                             >
-                                ✕
+                                <X className="w-3.5 h-3.5" />
                             </button>
                         )}
                     </div>
@@ -350,7 +393,7 @@ export default function AdminUsersPage() {
                     <div className="flex flex-wrap items-center gap-2">
 
                         {/* Account Type Tabs */}
-                        <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center text-xs">
+                        <div className="bg-[#F4F5F7] p-1 rounded-2xl flex items-center text-xs">
                             {[
                                 { label: 'Alle', val: 'ALL' },
                                 { label: 'Gewerblich', val: 'COMMERCIAL' },
@@ -362,10 +405,11 @@ export default function AdminUsersPage() {
                                         setUserTypeFilter(tab.val);
                                         setPage(1);
                                     }}
-                                    className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${userTypeFilter === tab.val
-                                        ? 'bg-white text-slate-900 shadow-2xs'
-                                        : 'text-slate-500 hover:text-slate-800'
-                                        }`}
+                                    className={`px-3.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                                        userTypeFilter === tab.val
+                                            ? 'bg-white text-slate-900 shadow-2xs'
+                                            : 'text-slate-500 hover:text-slate-800'
+                                    }`}
                                 >
                                     {tab.label}
                                 </button>
@@ -379,7 +423,7 @@ export default function AdminUsersPage() {
                                 setStatusFilter(e.target.value);
                                 setPage(1);
                             }}
-                            className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer"
+                            className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-2xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer shadow-2xs"
                         >
                             <option value="ALL">Status: Alle</option>
                             <option value="ACTIVE">Nur Aktive</option>
@@ -392,9 +436,135 @@ export default function AdminUsersPage() {
                 </div>
             </div>
 
-            {/* ─── Main Users Data Table ─── */}
+            {/* ─── Main Users Display (Desktop Table + Mobile Cards) ─── */}
             <div className="bg-white border border-[#E8EAEF] rounded-3xl shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
+                
+                {/* Mobile Card List (Visible on < md) */}
+                <div className="block md:hidden divide-y divide-slate-100">
+                    {loading ? (
+                        <div className="p-8 text-center text-slate-400">
+                            <div className="inline-flex items-center gap-2 font-semibold">
+                                <RefreshCw className="w-4 h-4 animate-spin text-forest" />
+                                <span>Benutzer werden geladen...</span>
+                            </div>
+                        </div>
+                    ) : users.length === 0 ? (
+                        <div className="p-8 text-center">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-2">
+                                <Users className="w-6 h-6" />
+                            </div>
+                            <h4 className="text-sm font-bold text-slate-700">Keine Benutzer gefunden</h4>
+                            <p className="text-xs text-slate-400 max-w-sm mt-1">Versuche deine Suchbegriffe oder Filter anzupassen.</p>
+                        </div>
+                    ) : (
+                        users.map((u) => {
+                            const isCommercial = u.user_type === 'COMMERCIAL';
+                            const isAdmin = u.role === 'ADMIN';
+
+                            return (
+                                <div
+                                    key={u.id}
+                                    onClick={() => router.push(`/admin/benutzer/${u.id}`)}
+                                    className="p-4 space-y-3 cursor-pointer transition-colors active:bg-slate-50 hover:bg-slate-50/80"
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-3">
+                                            {u.avatar ? (
+                                                <img
+                                                    src={getImageUrl(u.avatar)}
+                                                    alt={u.name}
+                                                    className="w-10 h-10 rounded-full object-cover ring-1 ring-black/10 shrink-0"
+                                                />
+                                            ) : (
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                                    isAdmin
+                                                        ? 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-xs'
+                                                        : isCommercial
+                                                            ? 'bg-gradient-to-tr from-forest to-[#003807] text-white'
+                                                            : 'bg-slate-100 text-slate-600'
+                                                }`}>
+                                                    {u.name.slice(0, 2).toUpperCase()}
+                                                </div>
+                                            )}
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="font-bold text-slate-900 text-xs truncate">
+                                                        {u.name}
+                                                    </span>
+                                                    {u.has_pioneer_badge && (
+                                                        <PioneerBadge size="xs" text="Pioneer" />
+                                                    )}
+                                                </div>
+                                                <span className="text-[11px] text-slate-500 font-mono block truncate">
+                                                    {u.email}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col items-end gap-1">
+                                            {isCommercial ? (
+                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-forest bg-forest/10 border border-forest/20 px-2 py-0.5 rounded-full">
+                                                    Gewerblich
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                                                    Privat
+                                                </span>
+                                            )}
+                                            {u.is_suspended ? (
+                                                <span className="text-[9px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded-full">
+                                                    Gesperrt
+                                                </span>
+                                            ) : u.email_verified ? (
+                                                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+                                                    Aktiv
+                                                </span>
+                                            ) : (
+                                                <span className="text-[9px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.2 rounded-full">
+                                                    Ausstehend
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                                        <div className="flex items-center gap-1.5">
+                                            <span>Inserate:</span>
+                                            <span className="font-bold text-slate-800">{u.total_listings}</span>
+                                            <span className="text-emerald-600 font-semibold">({u.active_listings} aktiv)</span>
+                                        </div>
+                                        <span className="font-mono text-[10px] text-slate-400">
+                                            {formatDate(u.created_at)}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => router.push(`/admin/benutzer/${u.id}`)}
+                                            className="px-3 py-1.5 rounded-xl bg-forest text-sand text-xs font-bold shadow-2xs hover:opacity-90 cursor-pointer"
+                                        >
+                                            Details
+                                        </button>
+                                        <button
+                                            onClick={() => handleToggleSuspend(u)}
+                                            disabled={actionLoading}
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-bold border shadow-2xs ${
+                                                u.is_suspended 
+                                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                                                    : 'bg-amber-50 border-amber-200 text-amber-700'
+                                            }`}
+                                        >
+                                            {u.is_suspended ? 'Reaktivieren' : 'Sperren'}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* Desktop Table View (Visible on >= md) */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-[#FBFBFC] border-b border-[#E8EAEF] text-[11px] font-bold text-slate-400 uppercase tracking-wider">
@@ -443,24 +613,26 @@ export default function AdminUsersPage() {
                                     return (
                                         <tr
                                             key={u.id}
-                                            className="hover:bg-[#F9FAFB] transition-colors group"
+                                            onClick={() => router.push(`/admin/benutzer/${u.id}`)}
+                                            className="hover:bg-[#F9FAFB] transition-colors group cursor-pointer"
                                         >
                                             {/* 1. Name & Avatar */}
                                             <td className="py-3.5 px-5">
                                                 <div className="flex items-center gap-3">
                                                     {u.avatar ? (
                                                         <img
-                                                            src={u.avatar}
+                                                            src={getImageUrl(u.avatar)}
                                                             alt={u.name}
                                                             className="w-9 h-9 rounded-full object-cover ring-1 ring-black/10 shrink-0"
                                                         />
                                                     ) : (
-                                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${isAdmin
-                                                            ? 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-xs'
-                                                            : isCommercial
-                                                                ? 'bg-gradient-to-tr from-forest to-[#003807] text-white'
-                                                                : 'bg-slate-100 text-slate-600'
-                                                            }`}>
+                                                        <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                                            isAdmin
+                                                                ? 'bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-xs'
+                                                                : isCommercial
+                                                                    ? 'bg-gradient-to-tr from-forest to-[#003807] text-white'
+                                                                    : 'bg-slate-100 text-slate-600'
+                                                        }`}>
                                                             {u.name.slice(0, 2).toUpperCase()}
                                                         </div>
                                                     )}
@@ -540,7 +712,7 @@ export default function AdminUsersPage() {
                                             </td>
 
                                             {/* 5. Referral Code */}
-                                            <td className="py-3.5 px-4">
+                                            <td className="py-3.5 px-4" onClick={(e) => e.stopPropagation()}>
                                                 {u.referral_code ? (
                                                     <button
                                                         onClick={() => copyToClipboard(u.referral_code, u.id)}
@@ -568,97 +740,95 @@ export default function AdminUsersPage() {
                                             </td>
 
                                             {/* 7. Action Menu */}
-                                            <td className="py-3.5 px-5 text-right relative">
-                                                <div className="inline-flex items-center gap-1">
-                                                    {/* Quick View Button */}
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedUser(u);
-                                                            setDetailModalOpen(true);
-                                                        }}
-                                                        title="Details ansehen"
-                                                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
-
+                                            <td className="py-3.5 px-5 text-right relative" onClick={(e) => e.stopPropagation()}>
+                                                <div className="inline-flex items-center justify-end">
                                                     {/* More Actions Dropdown Trigger */}
                                                     <button
-                                                        onClick={() => setActionMenuOpenId(actionMenuOpenId === u.id ? null : u.id)}
-                                                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setActionMenuOpenId(actionMenuOpenId === u.id ? null : u.id);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                                                     >
                                                         <MoreVertical className="w-4 h-4" />
                                                     </button>
                                                 </div>
 
                                                 {/* Action Dropdown Menu */}
-                                                {actionMenuOpenId === u.id && (
-                                                    <div className="absolute right-5 top-12 z-30 w-52 bg-white rounded-2xl shadow-xl border border-[#E8EAEF] py-2 text-left animate-in fade-in zoom-in-95 duration-100">
-
-                                                        {/* Details */}
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedUser(u);
-                                                                setDetailModalOpen(true);
-                                                                setActionMenuOpenId(null);
-                                                            }}
-                                                            className="w-full px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer"
+                                                <AnimatePresence>
+                                                    {actionMenuOpenId === u.id && (
+                                                        <motion.div 
+                                                            initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                            exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                                                            transition={{ duration: 0.12 }}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="absolute right-5 top-12 z-30 w-52 bg-white rounded-2xl shadow-xl border border-[#E8EAEF] py-2 text-left"
                                                         >
-                                                            <Eye className="w-3.5 h-3.5 text-slate-400" />
-                                                            <span>Details ansehen</span>
-                                                        </button>
-
-                                                        {/* Verify Email Manually */}
-                                                        {!u.email_verified && (
+                                                            {/* Details */}
                                                             <button
-                                                                onClick={() => handleVerifyEmail(u)}
-                                                                disabled={actionLoading}
-                                                                className="w-full px-4 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 cursor-pointer"
+                                                                onClick={() => {
+                                                                    setActionMenuOpenId(null);
+                                                                    router.push(`/admin/benutzer/${u.id}`);
+                                                                }}
+                                                                className="w-full px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 cursor-pointer"
                                                             >
-                                                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                                                                <span>E-Mail verifizieren</span>
+                                                                <Users className="w-3.5 h-3.5 text-slate-400" />
+                                                                <span>Details ansehen</span>
                                                             </button>
-                                                        )}
 
-                                                        {/* Toggle Suspend */}
-                                                        <button
-                                                            onClick={() => handleToggleSuspend(u)}
-                                                            disabled={actionLoading}
-                                                            className={`w-full px-4 py-2 text-xs font-semibold flex items-center gap-2.5 cursor-pointer ${u.is_suspended
-                                                                ? 'text-emerald-700 hover:bg-emerald-50'
-                                                                : 'text-amber-700 hover:bg-amber-50'
-                                                                }`}
-                                                        >
-                                                            {u.is_suspended ? (
-                                                                <>
-                                                                    <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
-                                                                    <span>Konto reaktivieren</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <UserX className="w-3.5 h-3.5 text-amber-500" />
-                                                                    <span>Konto sperren</span>
-                                                                </>
+                                                            {/* Verify Email Manually */}
+                                                            {!u.email_verified && (
+                                                                <button
+                                                                    onClick={() => handleVerifyEmail(u)}
+                                                                    disabled={actionLoading}
+                                                                    className="w-full px-4 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2.5 cursor-pointer"
+                                                                >
+                                                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                                                                    <span>E-Mail verifizieren</span>
+                                                                </button>
                                                             )}
-                                                        </button>
 
-                                                        <hr className="my-1 border-slate-100" />
+                                                            {/* Toggle Suspend */}
+                                                            <button
+                                                                onClick={() => handleToggleSuspend(u)}
+                                                                disabled={actionLoading}
+                                                                className={`w-full px-4 py-2 text-xs font-semibold flex items-center gap-2.5 cursor-pointer ${
+                                                                    u.is_suspended
+                                                                        ? 'text-emerald-700 hover:bg-emerald-50'
+                                                                        : 'text-amber-700 hover:bg-amber-50'
+                                                                }`}
+                                                            >
+                                                                {u.is_suspended ? (
+                                                                    <>
+                                                                        <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+                                                                        <span>Konto reaktivieren</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <UserX className="w-3.5 h-3.5 text-amber-500" />
+                                                                        <span>Konto sperren</span>
+                                                                    </>
+                                                                )}
+                                                            </button>
 
-                                                        {/* Delete Account */}
-                                                        <button
-                                                            onClick={() => {
-                                                                setUserToDelete(u);
-                                                                setDeleteModalOpen(true);
-                                                                setActionMenuOpenId(null);
-                                                            }}
-                                                            className="w-full px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 cursor-pointer"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                                                            <span>Benutzer löschen</span>
-                                                        </button>
+                                                            <hr className="my-1 border-slate-100" />
 
-                                                    </div>
-                                                )}
+                                                            {/* Delete Account */}
+                                                            <button
+                                                                onClick={() => {
+                                                                    setUserToDelete(u);
+                                                                    setDeleteModalOpen(true);
+                                                                    setActionMenuOpenId(null);
+                                                                }}
+                                                                className="w-full px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2.5 cursor-pointer"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                                                <span>Benutzer löschen</span>
+                                                            </button>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
                                             </td>
                                         </tr>
                                     );
@@ -679,7 +849,7 @@ export default function AdminUsersPage() {
                             <button
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                                 disabled={page <= 1 || loading}
-                                className="p-2 rounded-xl border border-[#E2E4E8] bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
+                                className="p-2 rounded-xl border border-[#E2E4E8] bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer active:scale-95"
                             >
                                 <ChevronLeft className="w-4 h-4" />
                             </button>
@@ -689,7 +859,7 @@ export default function AdminUsersPage() {
                             <button
                                 onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                                 disabled={page >= pagination.totalPages || loading}
-                                className="p-2 rounded-xl border border-[#E2E4E8] bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer"
+                                className="p-2 rounded-xl border border-[#E2E4E8] bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-2xs cursor-pointer active:scale-95"
                             >
                                 <ChevronRight className="w-4 h-4" />
                             </button>
@@ -699,191 +869,200 @@ export default function AdminUsersPage() {
             </div>
 
             {/* ─── User Detail Drawer Modal ─── */}
-            {detailModalOpen && selectedUser && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
-                >
-                    <div
-                        className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden transition-transform duration-200"
-                    >
-                        {/* Modal Header */}
-                        <div className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] p-6 text-white relative">
-                            <button
-                                onClick={() => setDetailModalOpen(false)}
-                                className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                            >
-                                ✕
-                            </button>
+            <AnimatePresence>
+                {detailModalOpen && selectedUser && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden"
+                        >
+                            {/* Modal Header */}
+                            <div className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] p-6 text-white relative">
+                                <button
+                                    onClick={() => setDetailModalOpen(false)}
+                                    className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
 
-                            <div className="flex items-center gap-4">
-                                {selectedUser.avatar ? (
-                                    <img
-                                        src={selectedUser.avatar}
-                                        alt={selectedUser.name}
-                                        className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/30 shrink-0"
-                                    />
-                                ) : (
-                                    <div className="w-16 h-16 rounded-2xl bg-white/10 text-white font-extrabold text-xl flex items-center justify-center border border-white/20 shrink-0">
-                                        {selectedUser.name.slice(0, 2).toUpperCase()}
-                                    </div>
-                                )}
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-lg font-bold text-white leading-tight">
-                                            {selectedUser.name}
-                                        </h3>
-                                        {selectedUser.role === 'ADMIN' && (
-                                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gold text-forest">
-                                                ADMIN
+                                <div className="flex items-center gap-4">
+                                    {selectedUser.avatar ? (
+                                        <img
+                                            src={selectedUser.avatar}
+                                            alt={selectedUser.name}
+                                            className="w-16 h-16 rounded-2xl object-cover ring-2 ring-white/30 shrink-0"
+                                        />
+                                    ) : (
+                                        <div className="w-16 h-16 rounded-2xl bg-white/10 text-white font-extrabold text-xl flex items-center justify-center border border-white/20 shrink-0">
+                                            {selectedUser.name.slice(0, 2).toUpperCase()}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-lg font-bold text-white leading-tight">
+                                                {selectedUser.name}
+                                            </h3>
+                                            {selectedUser.role === 'ADMIN' && (
+                                                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-gold text-forest">
+                                                    ADMIN
+                                                </span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-sand/80 mt-0.5 font-mono">
+                                            {selectedUser.email}
+                                        </p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/15 text-sand">
+                                                {selectedUser.user_type === 'COMMERCIAL' ? 'Gewerblicher Händler' : 'Privater Verkäufer'}
                                             </span>
-                                        )}
+                                            {selectedUser.has_pioneer_badge && (
+                                                <PioneerBadge size="xs" text="Pioneer" />
+                                            )}
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-sand/80 mt-0.5">
-                                        {selectedUser.email}
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/15 text-sand">
-                                            {selectedUser.user_type === 'COMMERCIAL' ? 'Gewerblicher Händler' : 'Privater Verkäufer'}
+                                </div>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto text-xs text-slate-700">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                                            Inserate Gesamt
                                         </span>
-                                        {selectedUser.has_pioneer_badge && (
-                                            <PioneerBadge size="xs" text="Pioneer" />
-                                        )}
+                                        <span className="text-lg font-extrabold text-slate-900 mt-1 block">
+                                            {selectedUser.total_listings}
+                                        </span>
+                                    </div>
+                                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                                        <span className="text-[10px] text-slate-400 font-bold uppercase block">
+                                            Aktive Freigaben
+                                        </span>
+                                        <span className="text-lg font-extrabold text-emerald-600 mt-1 block">
+                                            {selectedUser.active_listings}
+                                        </span>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        {/* Modal Body */}
-                        <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto text-xs text-slate-700">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                                    <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                                        Inserate Gesamt
-                                    </span>
-                                    <span className="text-lg font-extrabold text-slate-900 mt-1 block">
-                                        {selectedUser.total_listings}
-                                    </span>
-                                </div>
-                                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                                    <span className="text-[10px] text-slate-400 font-bold uppercase block">
-                                        Aktive Freigaben
-                                    </span>
-                                    <span className="text-lg font-extrabold text-emerald-600 mt-1 block">
-                                        {selectedUser.active_listings}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2.5 pt-2 border-t border-slate-100">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-400 font-medium">Standort:</span>
-                                    <span className="font-semibold text-slate-800">{selectedUser.location || 'Nicht angegeben'}</span>
-                                </div>
-                                {selectedUser.phone && (
+                                <div className="space-y-2.5 pt-2 border-t border-slate-100">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-slate-400 font-medium">Telefon:</span>
-                                        <span className="font-semibold text-slate-800">{selectedUser.phone}</span>
+                                        <span className="text-slate-400 font-medium">Standort:</span>
+                                        <span className="font-semibold text-slate-800">{selectedUser.location || 'Nicht angegeben'}</span>
                                     </div>
-                                )}
-                                {selectedUser.website && (
+                                    {selectedUser.phone && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-400 font-medium">Telefon:</span>
+                                            <span className="font-semibold text-slate-800">{selectedUser.phone}</span>
+                                        </div>
+                                    )}
+                                    {selectedUser.website && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-slate-400 font-medium">Webseite:</span>
+                                            <a
+                                                href={selectedUser.website.startsWith('http') ? selectedUser.website : `https://${selectedUser.website}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="font-semibold text-forest hover:underline flex items-center gap-1"
+                                            >
+                                                <span>{selectedUser.website}</span>
+                                                <ExternalLink className="w-3 h-3" />
+                                            </a>
+                                        </div>
+                                    )}
                                     <div className="flex items-center justify-between">
-                                        <span className="text-slate-400 font-medium">Webseite:</span>
-                                        <a
-                                            href={selectedUser.website.startsWith('http') ? selectedUser.website : `https://${selectedUser.website}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="font-semibold text-forest hover:underline flex items-center gap-1"
-                                        >
-                                            <span>{selectedUser.website}</span>
-                                            <ExternalLink className="w-3 h-3" />
-                                        </a>
+                                        <span className="text-slate-400 font-medium">Referral-Code:</span>
+                                        <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
+                                            {selectedUser.referral_code || '-'}
+                                        </span>
                                     </div>
-                                )}
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-400 font-medium">Referral-Code:</span>
-                                    <span className="font-mono font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">
-                                        {selectedUser.referral_code || '-'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-400 font-medium">E-Mail verifiziert:</span>
-                                    <span className={`font-bold ${selectedUser.email_verified ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                        {selectedUser.email_verified ? 'Ja (Aktiv)' : 'Nein (Ausstehend)'}
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-400 font-medium">Mitglied seit:</span>
-                                    <span className="font-semibold text-slate-800">{formatDate(selectedUser.created_at)}</span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-400 font-medium">Benutzer-ID:</span>
-                                    <span className="font-mono text-[10px] text-slate-400 truncate max-w-[200px]">{selectedUser.id}</span>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-400 font-medium">E-Mail verifiziert:</span>
+                                        <span className={`font-bold ${selectedUser.email_verified ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                            {selectedUser.email_verified ? 'Ja (Aktiv)' : 'Nein (Ausstehend)'}
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-400 font-medium">Mitglied seit:</span>
+                                        <span className="font-semibold text-slate-800">{formatDate(selectedUser.created_at)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-400 font-medium">Benutzer-ID:</span>
+                                        <span className="font-mono text-[10px] text-slate-400 truncate max-w-[200px]">{selectedUser.id}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Modal Footer */}
-                        <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                            <button
-                                onClick={() => setDetailModalOpen(false)}
-                                className="px-5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer"
-                            >
-                                Schließen
-                            </button>
-                        </div>
+                            {/* Modal Footer */}
+                            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                                <button
+                                    onClick={() => setDetailModalOpen(false)}
+                                    className="px-5 py-2.5 rounded-2xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-all cursor-pointer shadow-xs active:scale-95"
+                                >
+                                    Schließen
+                                </button>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
 
             {/* ─── Delete Confirmation Modal ─── */}
-            {deleteModalOpen && userToDelete && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
-                >
-                    <div
-                        className="bg-white rounded-3xl shadow-2xl border border-rose-100 max-w-md w-full p-6 text-center space-y-4 transition-transform duration-200"
-                    >
-                        <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-                            <Trash2 className="w-7 h-7" />
-                        </div>
+            <AnimatePresence>
+                {deleteModalOpen && userToDelete && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-white rounded-3xl shadow-2xl border border-rose-100 max-w-md w-full p-6 text-center space-y-4"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                                <Trash2 className="w-7 h-7" />
+                            </div>
 
-                        <div>
-                            <h3 className="text-base font-black text-slate-900 font-display">
-                                Benutzer unwiderruflich löschen?
-                            </h3>
-                            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                                Möchtest du das Konto von <strong className="text-slate-900">{userToDelete.email}</strong> und alle damit verbundenen Inserate, Favoriten und Profildaten endgültig löschen?
-                            </p>
-                        </div>
+                            <div>
+                                <h3 className="text-base font-black text-slate-900 font-display">
+                                    Benutzer unwiderruflich löschen?
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                                    Möchtest du das Konto von <strong className="text-slate-900">{userToDelete.email}</strong> und alle damit verbundenen Inserate, Favoriten und Profildaten endgültig löschen?
+                                </p>
+                            </div>
 
-                        <div className="flex items-center justify-center gap-3 pt-2">
-                            <button
-                                onClick={() => {
-                                    setDeleteModalOpen(false);
-                                    setUserToDelete(null);
-                                }}
-                                disabled={actionLoading}
-                                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
-                            >
-                                Abbrechen
-                            </button>
-                            <button
-                                onClick={handleDeleteUser}
-                                disabled={actionLoading}
-                                className="px-5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
-                            >
-                                {actionLoading ? (
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                    <Trash2 className="w-4 h-4" />
-                                )}
-                                <span>Endgültig löschen</span>
-                            </button>
-                        </div>
+                            <div className="flex items-center justify-center gap-3 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setDeleteModalOpen(false);
+                                        setUserToDelete(null);
+                                    }}
+                                    disabled={actionLoading}
+                                    className="px-5 py-2.5 rounded-2xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer active:scale-95"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    onClick={handleDeleteUser}
+                                    disabled={actionLoading}
+                                    className="px-5 py-2.5 rounded-2xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-colors shadow-xs flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
+                                >
+                                    {actionLoading ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        <Trash2 className="w-4 h-4" />
+                                    )}
+                                    <span>Endgültig löschen</span>
+                                </button>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
 
         </div>
     );
 }
+

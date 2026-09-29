@@ -705,18 +705,18 @@ export default function CheckoutBillingPage() {
                                     Campuna Business
                                 </h3>
                                 <p className="text-xs text-charcoal/50 font-sans mt-0.5">
-                                    Bis zu 25 Inserate, professionelles Firmenprofil & Business-Tools
+                                    Unbegrenzte Inserate, professionelles Firmenprofil & Business-Tools
                                 </p>
                             </div>
 
                             {/* Features list */}
                             <ul className="space-y-2 py-4 pb-5 border-b border-beige/60 text-xs font-sans text-charcoal/75">
                                 {[
-                                    'Bis zu 25 aktive Inserate gleichzeitig',
+                                    'Unbegrenzt viele aktive Inserate gleichzeitig',
+                                    'Echtzeit Performance-Analytics & Cockpit-Telemetrie',
                                     'Professionelles Firmen-Cover & Logo',
                                     'Erweitertes Firmenprofil (1.000 Zeichen)',
                                     'Präsenz im Verzeichnis für Camping-Anbieter',
-                                    'Detaillierte Besucher- & Leadstatistiken',
                                     'Monatlich flexibel kündbar',
                                 ].map((f, i) => (
                                     <li key={i} className="flex items-center gap-2">

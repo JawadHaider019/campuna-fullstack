@@ -19,7 +19,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
         setMounted(true);
     }, []);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = React.useCallback((e) => {
         if (e) e.preventDefault();
 
         const params = new URLSearchParams();
@@ -28,12 +28,12 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
 
         const queryString = params.toString();
         router.push(queryString ? `/inserate?${queryString}` : '/inserate');
-    };
+    }, [searchQuery, selectedCategory, router]);
 
     return (
         <section
             id="hero"
-            className="relative min-h-[85vh] md:min-h-[88vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-37 sm:mt-37 mb-12 mx-4 md:mx-8 lg:mx-12 shadow-2xl border border-forest/10"
+            className="relative min-h-[80vh] md:min-h-[82vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-30 sm:mt-30 mb-0 mx-4 md:mx-8 lg:mx-12 shadow-2xl border border-forest/10"
         >
             {/* Background Cinematic Image with Zoom Animation */}
             <div className="absolute inset-0 z-0">
@@ -47,7 +47,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                         <source media="(max-width: 768px)" srcSet="/hero.webp" />
                         <img
                             src="/hero.webp"
-                            alt="Cinematic luxury camping under starry night"
+                            alt="Campingplatz an einem See in Deutschland mit Wohnmobilen und Zelten"
                             className="w-full h-full object-cover"
                             referrerPolicy="no-referrer"
                             fetchPriority="high"
@@ -69,22 +69,27 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
 
                 {/* Central Content Column */}
                 <div className="text-center max-w-4xl mx-auto my-auto pt-6 pb-4">
-                    {/* Luxury Large Headline */}
-                    <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-5 leading-[1.1]">
-                        Wir bringen Camping{' '}
+                    {/* Luxury Large Headline with Entrance Reveal */}
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 25 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
+                        className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-5 leading-[1.1]"
+                    >
+                        Dein Camping-Marktplatz:{' '}
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white">
-                            an einem Ort zusammen.
+                            Wir bringen Camping an einem Ort zusammen.
                         </span>
-                    </h1>
+                    </motion.h1>
 
                     {/* Editorial Subheadline */}
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 0.8 }}
+                        transition={{ delay: 0.25, duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
                         className="font-sans text-sm sm:text-md md:text-lg text-sand/90 leading-relaxed max-w-2xl mx-auto mb-8 font-light"
                     >
-                        Angebote, Anbieter, Campingplätze, Wissen und praktische Helfer rund ums Camping – auf einer spezialisierten Plattform, die gemeinsam mit der Community wächst.
+                        Angebote, Anbieter, Wissen und praktische Helfer rund ums Camping. Auf Campuna kaufst und verkaufst du Wohnmobile, Wohnwagen, Zelte, Zubehör, Stellplätze und mehr, privat oder gewerblich, in ganz Deutschland.
                     </motion.p>
 
                     {/* Action Buttons */}
@@ -97,32 +102,22 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                         <motion.button
                             onClick={() => {
                                 if (typeof window !== 'undefined') {
-                                    window.dispatchEvent(new CustomEvent('open-campuna-tools-tab', { detail: { tab: 'tools' } }));
-                                }
-                                const element = document.getElementById('tool');
-                                if (element) {
-                                    const navOffset = 90;
-                                    const elementPosition = element.getBoundingClientRect().top + window.scrollY;
-                                    const offsetPosition = elementPosition - navOffset;
-                                    window.scrollTo({
-                                        top: offsetPosition,
-                                        behavior: 'smooth'
-                                    });
+                                    window.dispatchEvent(new CustomEvent('open-campuna-tools-modal'));
                                 }
                             }}
                             whileHover={{ scale: 1.04 }}
                             whileTap={{ scale: 0.96 }}
                             className="w-full sm:w-auto bg-gradient-to-r from-gold to-beige text-forest hover:brightness-110 font-sans font-bold py-3 px-6 rounded-full shadow-lg transform transition-all duration-300 text-[12px] tracking-wider cursor-pointer"
                         >
-                            Camping Helfer
+                            Camping entdecken
                         </motion.button>
                         <motion.button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes' : '/registrieren')}
+                            onClick={() => router.push(isLoggedIn ? '/mein-konto?tab=create_listing' : '/registrieren')}
                             whileHover={{ scale: 1.04 }}
                             whileTap={{ scale: 0.96 }}
                             className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/25 font-sans font-semibold py-3 px-6 rounded-full transition-all duration-300 text-[12px] tracking-wider cursor-pointer"
                         >
-                            {isLoggedIn ? 'Inserat erstellen' : 'Kostenlos inserieren'}
+                            Kostenlos inserieren
                         </motion.button>
                     </motion.div>
 
@@ -143,7 +138,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                                 <Search className="w-4 h-4 text-gold shrink-0" />
                                 <input
                                     type="text"
-                                    placeholder="Was suchst du? (z.B. Morelo, Dachzelt...)"
+                                    placeholder="Was suchst du? z. B. Wohnmobil, Dachzelt, Stellplatz..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="bg-transparent text-white placeholder-sand/70 focus:outline-none w-full font-sans text-xs sm:text-sm font-medium"
@@ -170,10 +165,11 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                             {/* 3. Search Submit Button */}
                             <button
                                 type="submit"
-                                className="bg-gradient-to-r from-gold to-beige text-forest hover:brightness-110 font-sans font-bold py-3 px-7 rounded-2xl md:rounded-full shadow-lg transition-all duration-300 flex items-center justify-center space-x-2 shrink-0 cursor-pointer active:scale-95 text-xs sm:text-sm uppercase tracking-wider"
+                                aria-label="Suche starten"
+                                className="bg-gradient-to-r from-gold to-beige text-forest hover:brightness-110 font-sans font-bold py-3.5 px-5 md:p-3.5 rounded-2xl md:rounded-full shadow-lg transition-all duration-300 flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95 text-xs sm:text-sm uppercase tracking-wider mt-1 md:mt-0"
                             >
-                                <Search className="w-4 h-4" />
-                                <span>Suchen</span>
+                                <Search className="w-4 h-4 shrink-0" />
+                                <span className="md:hidden font-bold">Angebote finden</span>
                             </button>
                         </form>
                     </motion.div>

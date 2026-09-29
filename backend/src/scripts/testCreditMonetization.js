@@ -73,13 +73,13 @@ const runTests = async () => {
         );
         const refereeBal = parseInt(refereeBalRes.rows[0]?.balance || 0, 10);
 
-        console.log(`Referrer Balance: ${referrerBal} CC (Expected: 100)`);
-        console.log(`Referee Balance: ${refereeBal} CC (Expected: 100)`);
+        console.log(`Referrer Balance: ${referrerBal} CC (Expected: 500)`);
+        console.log(`Referee Balance: ${refereeBal} CC (Expected: 500)`);
 
-        if (referrerBal !== 100 || refereeBal !== 100) {
-            throw new Error(`Expected 100 CC each, got referrer: ${referrerBal}, referee: ${refereeBal}`);
+        if (referrerBal !== 500 || refereeBal !== 500) {
+            throw new Error(`Expected 500 CC each, got referrer: ${referrerBal}, referee: ${refereeBal}`);
         }
-        console.log('✅ TEST 1 PASSED: Referral awards exactly 100 CC to both users.\n');
+        console.log('✅ TEST 1 PASSED: Referral awards exactly 500 CC to both users.\n');
 
         // ─── TEST 2: Direct Boost Payment (Card / Direct) ────────────────────
         console.log('--- TEST 2: Direct Boost Payment (Card) ---');
@@ -162,12 +162,11 @@ const runTests = async () => {
         }
         console.log('✅ TEST 4 PASSED: Successfully boosted with 500 CC, remaining balance is 0 CC.\n');
 
-        console.log('🎉 ALL CREDIT MONETIZATION & REFERRAL TESTS PASSED PERFECTLY!\n');
     } catch (err) {
         console.error('❌ Test Suite Failed:', err);
+        process.exit(1);
     } finally {
         await pool.end();
-        process.exit(0);
     }
 };
 

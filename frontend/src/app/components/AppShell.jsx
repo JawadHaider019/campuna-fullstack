@@ -5,6 +5,8 @@ import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import BroadcastBanner from './BroadcastBanner';
+import ToolsFloatingModal from './ToolsFloatingModal';
+import ScrollSectionWrapper from './ScrollSectionWrapper';
 
 export default function AppShell({ children }) {
     const pathname = usePathname();
@@ -21,6 +23,7 @@ export default function AppShell({ children }) {
                 {children}
             </main>
             {!hideHeaderFooter && <Footer />}
+            {!hideHeaderFooter && <ToolsFloatingModal />}
         </>
     );
 }

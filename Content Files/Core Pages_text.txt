@@ -1,0 +1,2192 @@
+﻿
+
+
+
+
+
+
+
+Homepage
+
+I N T E L I T U N E
+
+Campuna Homepage: SEO Template for Development
+
+Final German content, structure, on-page, technical rules, schema code and internal linking. Instructions in English, website copy in German. Implement section by section.
+
+Field
+
+Value
+
+Page / URL
+
+Homepage, https://campuna.de/
+
+Content language
+
+German (de-DE), informal "du" address, NO dashes in body copy (hyphens in compound words like Camping-Marktplatz are correct German and stay)
+
+Primary keyword
+
+camping marktplatz (brand + category entity)
+
+Secondary keywords
+
+camping kaufen, camping verkaufen, wohnmobile, wohnwagen, zelte, zubehör, stellplätze, kostenlos inserieren
+
+Companion file
+
+campuna-homepage-template.html (visual template matching the approved design, with schema; hand to developer 1:1)
+
+Prepared
+
+Intelitune, 26.09.2026
+
+
+1. Meta title and meta description (final)
+
+Element
+
+Final value
+
+Length
+
+Meta title
+
+Campuna | Dein Camping-Marktplatz zum Kaufen und Verkaufen
+
+58 chars
+
+Meta description
+
+Wohnmobile, Wohnwagen, Zelte, Zubehör und Stellplätze an einem Ort. Kaufe und verkaufe Camping-Angebote in ganz Deutschland. Privat kostenlos inserieren.
+
+153 chars
+
+Copy-paste head snippet:
+
+<title>Campuna | Dein Camping-Marktplatz zum Kaufen und Verkaufen</title>
+
+<meta name="description" content="Wohnmobile, Wohnwagen, Zelte, Zubehör und Stellplätze an einem Ort. Kaufe und verkaufe Camping-Angebote in ganz Deutschland. Privat kostenlos inserieren.">
+
+<link rel="canonical" href="https://campuna.de/">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<link rel="alternate" hreflang="de" href="https://campuna.de/">
+
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/">
+
+<meta property="og:type" content="website">
+
+<meta property="og:site_name" content="Campuna">
+
+<meta property="og:locale" content="de_DE">
+
+<meta property="og:title" content="Campuna | Dein Camping-Marktplatz zum Kaufen und Verkaufen">
+
+<meta property="og:description" content="Wohnmobile, Wohnwagen, Zelte, Zubehör und Stellplätze an einem Ort. Kaufe und verkaufe Camping-Angebote in ganz Deutschland.">
+
+<meta property="og:url" content="https://campuna.de/">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-startseite.jpg">
+
+<meta name="twitter:card" content="summary_large_image">
+
+ 
+
+Performance rules: hero image AVIF/WebP with preload + fetchpriority=high, preload the project font, target mobile LCP under 2.5s.
+
+
+2. Heading structure (implement exactly)
+
+Level
+
+Text (final German)
+
+H1
+
+Dein Camping-Marktplatz: Wir bringen Camping an einem Ort zusammen.
+
+H2
+
+Das Fundament steht. Jetzt bringen wir Campuna gemeinsam zum Leben.
+
+H2
+
+Camping hat viele Seiten. Wir bringen sie zusammen.
+
+H2
+
+Camping-Angebote auf Campuna
+
+H2
+
+Camping-Anbieter im Spotlight
+
+H2
+
+Camping-Wissen & nützliche Tools
+
+H2
+
+Warum Campuna?
+
+H2
+
+Camping-Ratgeber & Tipps
+
+H2
+
+Wir bauen die Campingplattform, die wir selbst vermisst haben.
+
+H2
+
+Werde Teil von Campuna.
+
+H2
+
+Alles, was du über Campuna wissen musst
+
+H3
+
+All card titles: listing titles, USP cards, FAQ questions, article titles
+
+Rules: one H1 only, never skip a level, card titles are always H3, no heading may be created via JavaScript only.
+
+
+3. Section-by-section content
+
+
+3.1. Topbar (announcement bar)
+
+Purpose: Conversion nudge, not a ranking element.
+
+Final German copy:
+
+Private Inserate sind kostenlos. Jetzt inserieren oder Angebote entdecken.
+
+Technical / on-page instructions:
+
+•    Both actions are real links: /inserat-erstellen and /inserate
+
+
+3.2. Hero
+
+Purpose: Carries the H1 with the keyword Camping-Marktplatz. Answers in 5 seconds: what this is, for whom, next step.
+
+Final German copy:
+
+H1: Dein Camping-Marktplatz: Wir bringen Camping an einem Ort zusammen. (highlight "an einem Ort" in gold, as in the design)
+
+Paragraph: Angebote, Anbieter, Wissen und praktische Helfer rund ums Camping. Auf Campuna kaufst und verkaufst du Wohnmobile, Wohnwagen, Zelte, Zubehör, Stellplätze und mehr, privat oder gewerblich, in ganz Deutschland.
+
+Buttons: Camping entdecken (/inserate) and Kostenlos inserieren (/inserat-erstellen)
+
+Search: placeholder: Was suchst du? z. B. Wohnmobil, Dachzelt, Stellplatz. Category dropdown with all 9 categories. Button: Suchen
+
+Technical / on-page instructions:
+
+•    Search form: GET request to /suche with parameter q (must work server-side)
+
+•    Hero image: eager load, preload in head, width/height attributes set (CLS)
+
+•    Hero image alt text: Campingplatz an einem See in Deutschland mit Wohnmobilen und Zelten
+
+
+3.3. Foundation card (white card overlapping the hero)
+
+Purpose: Bridge between claim and marketplace, community message.
+
+Final German copy:
+
+H2: Das Fundament steht. Jetzt bringen wir Campuna gemeinsam zum Leben. (first half green, second half gold, as in the design)
+
+Paragraph: Wir bauen die Campingplattform, die wir uns selbst gewünscht haben: gemeinsam mit Campern, privaten Anbietern, Händlern, Campingplätzen und Service-Profis aus ganz Deutschland.
+
+
+3.4. Categories (9 icon cards)
+
+Purpose: The most important internal link block: passes link equity to all 9 category PLPs.
+
+Final German copy:
+
+H2: Camping hat viele Seiten. Wir bringen sie zusammen.
+
+Paragraph: Neun Kategorien, ein Marktplatz: Wähle deinen Bereich und stöbere durch Angebote aus ganz Deutschland.
+
+Cards: Camping-Zubehör (/zubehoer), Wohnmobile & Camper (/wohnmobile), Zelte & Dachzelte (/zelte), Fahrräder & Träger (/fahrraeder-traeger), Stellplätze & Campingplätze (/stellplaetze), Camping-Services (/services), Tiny Houses (/tiny-houses), Mieten & Vermieten (/mieten), Boote & Wassersport (/boote)
+
+Technical / on-page instructions:
+
+•    Each card is ONE <a> tag with the category name as text
+
+•    Icons as inline SVG or CSS, decorative, no alt text needed
+
+
+3.5. Current offers (dynamic listing grid)
+
+Purpose: Freshness + long tail: real listings make the homepage alive. The 8 cards in the HTML are layout placeholders with realistic sample data.
+
+Final German copy:
+
+H2: Camping-Angebote auf Campuna
+
+Paragraph: Stöbere durch gebrauchte und neue Camping-Angebote aus ganz Deutschland, von privat und vom Händler. Täglich kommen neue Inserate dazu.
+
+Link next to the heading: Alle Angebote
+
+Technical / on-page instructions:
+
+•    Render 8 to 12 cards server-side, card title = H3, image alt = listing title, loading=lazy, fixed width/height
+
+•    Card link goes to /inserat/SLUG, show price, category and city as text
+
+•    Badge on image: Privat or Gewerblich
+
+
+3.6. Provider spotlight
+
+Purpose: B2B visibility, entity building, sales argument for commercial packages.
+
+Final German copy:
+
+H2: Camping-Anbieter im Spotlight
+
+Paragraph: Hier zeigen wir gewerbliche Anbieter, die Campuna mit aufbauen: Händler, Vermieter, Werkstätten und Hersteller. Du bist selbst Anbieter? Dann präsentiere dein Unternehmen mit einem eigenen Profil.
+
+Links: Alle Anbieter (/anbieter) and Anbieter werden (/anbieter-werden)
+
+Technical / on-page instructions:
+
+•    Logo alt = company name, card link = /anbieter/NAME, dynamic carousel
+
+
+3.7. Knowledge & tools
+
+Purpose: Differentiator: calculators are link magnets and internal traffic distributors. The calculator in the HTML is a static visual mock for layout.
+
+Final German copy:
+
+H2: Camping-Wissen & nützliche Tools
+
+Paragraph: Praktische Helfer für deine Planung: Mit dem Zuladungsrechner prüfst du das Gewicht deines Wohnmobils oder Wohnwagens, mit dem Reisebudget-Rechner planst du die Kosten deiner nächsten Tour. Dazu findest du im Campuna-Ratgeber ehrliche Tipps rund ums Kaufen, Verkaufen und Campen.
+
+Tabs: Zuladungsrechner, Camping-Reisebudget-Rechner, Camping-Tipps
+
+Button under the tool: Zum vollständigen Rechner
+
+Technical / on-page instructions:
+
+•    CRITICAL: both calculators must ALSO exist on their own indexable URLs: /tools/zuladungsrechner and /tools/reisebudget-rechner. The homepage shows a teaser that links to them.
+
+•    Tab contents must stay in the DOM (no lazy fetching of text)
+
+
+3.8. Why Campuna (3 USP cards)
+
+Purpose: Trust + entity clarity for users and AI systems. Card titles are H3.
+
+Final German copy:
+
+H2: Warum Campuna? Intro line: Eine Plattform, die alle Seiten der Camping-Welt verbindet.
+
+Card 1, H3 Camping an einem Ort: Angebote, Anbieter, Wissen und Werkzeuge: Du musst nicht mehr zwischen fünf Portalen springen. Auf Campuna findest du alles rund ums Camping gebündelt an einem Ort.
+
+Card 2, H3 Von Campern gemacht: Hinter Campuna steht ein Team, das selbst campt. Deshalb bauen wir genau die Funktionen, die uns unterwegs gefehlt haben, von der Umkreissuche bis zum Zuladungsrechner.
+
+Card 3, H3 Campuna wächst mit dir: Mit jedem Inserat, jedem Anbieter und jedem Ratgeber-Artikel wird die Plattform nützlicher. Deine Angebote und dein Feedback machen Campuna jeden Tag ein Stück besser.
+
+
+3.9. Guide / blog teaser
+
+Purpose: Connects the homepage to the topical authority layer (blog).
+
+Final German copy:
+
+H2: Camping-Ratgeber & Tipps
+
+Paragraph: Kaufberatung, Verkaufstipps, Technik und Praxiswissen: Im Ratgeber beantworten wir die Fragen, die sich Camper wirklich stellen.
+
+Featured article: Was ist Campuna? Der Camping-Marktplatz für Deutschland (/ratgeber/was-ist-campuna), teaser line: Wie Campuna funktioniert, was du hier findest und wie du mitmachst. Button: Artikel lesen
+
+Side list (3 latest articles with category + reading time), link: Alle Artikel
+
+Technical / on-page instructions:
+
+•    1 featured + 3 latest posts, dynamic. Titles = H3, thumbnails lazy, alt = article title
+
+
+3.10. Mission (dark green band with video)
+
+Purpose: Brand, story, E-E-A-T: who is behind Campuna and why.
+
+Final German copy:
+
+H2: Wir bauen die Campingplattform, die wir selbst vermisst haben.
+
+Paragraph 1: Camping findet heute an vielen verschiedenen Orten statt. Angebote hier, Tipps dort, Campingplätze woanders. Unsere Idee ist einfach: Wir wollen Camping an einem Ort zusammenbringen. (second sentence in gold)
+
+Paragraph 2: Das Fundament steht. Jetzt wächst Campuna mit jedem Camper, jedem Inserat, jedem Anbieter und jedem Beitrag weiter.
+
+Closing line in gold: Campuna wächst mit euch.
+
+Technical / on-page instructions:
+
+•    Video = click-to-load facade with poster image, NO autoplay embed (performance)
+
+•    Poster alt text: Zwei Camper vor einem Tiny House, Vorschaubild zum Campuna-Video
+
+
+3.11. Join / newsletter CTA
+
+Purpose: Registration is the measurable conversion goal of the homepage.
+
+Final German copy:
+
+H2: Werde Teil von Campuna.
+
+Paragraph: Ob du entdecken, verkaufen oder mit deinem Unternehmen sichtbar werden willst: Melde dich an und gestalte den Camping-Marktplatz von Anfang an mit.
+
+Button: Jetzt kostenlos registrieren (/registrieren)
+
+
+3.12. FAQ (7 questions)
+
+Purpose: AEO core of the homepage: answers for Google snippets and AI search. Texts are duplicated 1:1 in the FAQPage schema (full code in section 4).
+
+Final German copy:
+
+H2: Alles, was du über Campuna wissen musst. Intro: Die häufigsten Fragen zu unserem Camping-Marktplatz, kurz beantwortet.
+
+Questions: Was ist Campuna? / Für wen ist Campuna geeignet? / Wie kann ich auf Campuna verkaufen? / Kostet das Inserieren auf Campuna etwas? / Was kann ich auf Campuna anbieten? / Wie finde ich passende Camping-Angebote? / Wie sicher ist das Kaufen und Verkaufen von privat? Full final answers: see FAQPage schema code in section 4.3 (identical text goes on the page).
+
+Technical / on-page instructions:
+
+•    Accordion may close visually, but answers must stay in the DOM
+
+•    Question = H3 inside the summary element
+
+•    Schema text and visible text must match word for word
+
+
+3.13. Footer
+
+Purpose: Second link block to all 9 category PLPs + crawlable company data (NAP).
+
+Final German copy:
+
+Intro sentence: Campuna, dein Camping-Marktplatz. Campuna ist Deutschlands Plattform rund ums Camping: Wohnmobile und Camper, Wohnwagen, Zelte und Dachzelte, Campingzubehör, Stellplätze und Campingplätze, Tiny Houses, Boote sowie Camping-Services, zum Kaufen, Verkaufen und Entdecken an einem Ort.
+
+Columns: Navigation, Kategorien (all 9), Support (incl. both calculators), Rechtliches. NAP line: Campuna, Erfurt, Thüringen, Deutschland, info@campuna.de
+
+
+4. Schema code (JSON-LD, copy-paste ready)
+
+Paste each block into the <head> inside <script type="application/ld+json"> ... </script>. All three are also already embedded in the HTML file. Validate with Google Rich Results Test after go-live.
+
+
+4.1 Organization
+
+Developer note: replace the PROFILE placeholder URLs with the real social profiles.
+
+<script type="application/ld+json">
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "Organization",
+
+  "@id": "https://campuna.de/#organization",
+
+  "name": "Campuna",
+
+  "url": "https://campuna.de/",
+
+  "logo": "https://campuna.de/assets/logo/campuna-logo.png",
+
+  "description": "Campuna ist der Camping-Marktplatz für Deutschland: Wohnmobile, Wohnwagen, Zelte, Zubehör, Stellplätze, Tiny Houses und Camping-Services kaufen und verkaufen.",
+
+  "email": "info@campuna.de",
+
+  "address": { "@type": "PostalAddress", "addressLocality": "Erfurt", "addressRegion": "Thüringen", "addressCountry": "DE" },
+
+  "sameAs": [
+
+    "https://www.facebook.com/PROFILE",
+
+    "https://www.instagram.com/PROFILE",
+
+    "https://www.tiktok.com/@PROFILE",
+
+    "https://www.youtube.com/@PROFILE"
+
+  ]
+
+}
+
+</script>
+
+ 
+
+
+4.2 WebSite + SearchAction (Sitelinks search box)
+
+Developer note: /suche?q= must work exactly like this.
+
+<script type="application/ld+json">
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "WebSite",
+
+  "@id": "https://campuna.de/#website",
+
+  "url": "https://campuna.de/",
+
+  "name": "Campuna",
+
+  "publisher": { "@id": "https://campuna.de/#organization" },
+
+  "inLanguage": "de-DE",
+
+  "potentialAction": {
+
+    "@type": "SearchAction",
+
+    "target": { "@type": "EntryPoint", "urlTemplate": "https://campuna.de/suche?q={search_term_string}" },
+
+    "query-input": "required name=search_term_string"
+
+  }
+
+}
+
+</script>
+
+ 
+
+
+4.3 FAQPage (7 questions, answers = final on-page German text)
+
+Developer note: these answer texts are the single source of truth. The visible FAQ section must show them word for word.
+
+<script type="application/ld+json">
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/#faq",
+
+  "mainEntity": [
+
+{ "@type": "Question", "name": "Was ist Campuna?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Campuna ist ein Camping-Marktplatz aus Deutschland, der Angebote, Anbieter und Wissen rund ums Camping an einem Ort bündelt. Du findest hier Wohnmobile, Wohnwagen, Zelte, Zubehör, Stellplätze, Tiny Houses und Camping-Services, von privat und vom Händler. Betrieben wird die Plattform von Campern aus Erfurt." } },
+
+{ "@type": "Question", "name": "Für wen ist Campuna geeignet?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Campuna richtet sich an alle, die campen: an Einsteiger und erfahrene Camper, an private Käufer und Verkäufer sowie an gewerbliche Anbieter wie Händler, Vermieter, Werkstätten und Campingplätze. Privatpersonen inserieren kostenlos, gewerbliche Anbieter präsentieren ihr Angebot mit einem eigenen Firmenprofil." } },
+
+{ "@type": "Question", "name": "Wie kann ich auf Campuna verkaufen?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Erstelle ein kostenloses Konto, lege dein Inserat mit Fotos, Beschreibung und Preis an und veröffentliche es. Interessenten melden sich direkt über die Plattform bei dir. Den Verkauf wickelst du persönlich ab, ohne Provision an Campuna. Eine Schritt-für-Schritt-Anleitung findest du unter So funktioniert Campuna." } },
+
+{ "@type": "Question", "name": "Kostet das Inserieren auf Campuna etwas?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Private Inserate sind auf Campuna kostenlos, ohne Provision und ohne versteckte Gebühren. Gewerbliche Anbieter wählen ein Paket, mit dem sie mehrere Angebote und ein eigenes Firmenprofil verwalten können. Alle Details und Preise findest du auf unserer Preisseite." } },
+
+{ "@type": "Question", "name": "Was kann ich auf Campuna anbieten?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Alles rund ums Camping: Wohnmobile, Camper und Wohnwagen, Zelte und Dachzelte, Campingzubehör, Fahrräder und Träger, Stellplätze und Campingplätze, Tiny Houses, Boote und Wassersport sowie Camping-Services wie Gasprüfung, Werkstatt oder Aufbereitung. Auch Miet- und Vermietungsangebote haben eine eigene Kategorie." } },
+
+{ "@type": "Question", "name": "Wie finde ich passende Camping-Angebote?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Nutze die Suche auf der Startseite und filtere nach Kategorie, Ort und Preis. Mit der Umkreissuche findest du Angebote in deiner Nähe und in ganz Deutschland. Zusätzlich helfen dir die neun Kategorien, der Campuna-Ratgeber und unsere Rechner bei der Auswahl." } },
+
+{ "@type": "Question", "name": "Wie sicher ist das Kaufen und Verkaufen von privat?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Campuna setzt auf direkte Kommunikation zwischen Käufer und Verkäufer und klare Regeln für sicheres Handeln. Wir empfehlen bei Fahrzeugen immer Besichtigung, Probefahrt und einen schriftlichen Kaufvertrag. Praktische Tipps dazu findest du im Ratgeber und auf der Seite Sicher handeln." } }
+
+  ]
+
+}
+
+</script>
+
+ 
+
+
+5. Internal linking map (homepage)
+
+From section
+
+Target URLs
+
+Topbar + Hero
+
+/inserat-erstellen, /inserate, /suche
+
+Categories + Footer
+
+all 9 category URLs (linked twice on purpose)
+
+Offers
+
+/inserate + individual /inserat/SLUG
+
+Spotlight
+
+/anbieter, /anbieter-werden, /anbieter/NAME
+
+Knowledge & tools
+
+/tools/zuladungsrechner, /tools/reisebudget-rechner, /ratgeber
+
+Guide teaser
+
+/ratgeber, /ratgeber/was-ist-campuna + 3 articles
+
+FAQ
+
+/so-funktionierts, /preise, /kategorien, /ratgeber, /sicher-handeln
+
+Join
+
+/registrieren
+
+
+6. Images and alt texts
+
+Image
+
+Alt text (German)
+
+Technical
+
+Hero
+
+Campingplatz an einem See in Deutschland mit Wohnmobilen und Zelten
+
+AVIF/WebP, preload, fetchpriority=high, width/height
+
+Listing cards
+
+the listing title
+
+loading=lazy, fixed dimensions
+
+Provider logos
+
+company name
+
+lazy
+
+Video poster
+
+Zwei Camper vor einem Tiny House, Vorschaubild zum Campuna-Video
+
+click-to-load facade instead of embed
+
+Category icons
+
+decorative: empty alt or inline SVG
+
+CSS/SVG
+
+
+7. Developer checklist
+
+•    Everything server-side rendered, full text visible in HTML source
+
+•    Exactly one H1, heading order as in section 2
+
+•    All links are real <a href>, no onclick navigation
+
+•    FAQ answers in the DOM, schema matches word for word
+
+•    Hero: preload + fetchpriority; all other images lazy; width/height everywhere
+
+•    Search form reachable via GET /suche
+
+•    Meta/canonical/hreflang/OG exactly as in section 1
+
+•    All 3 schema blocks from section 4 in the head
+
+•    Calculators on their own indexable URLs, homepage teaser links to them
+
+•    Mobile: no horizontal scroll, touch targets min 44px, test LCP under 2.5s
+
+•    After go-live: Rich Results Test, PageSpeed mobile, submit in Search Console
+
+
+8. Language rules for all future German copy
+
+•    Pure, natural German, informal du address, short sentences, active voice
+
+•    No dashes in body copy. Use comma, colon or full stop instead. Hyphens inside compound words (Camping-Marktplatz) are correct German and stay.
+
+•    No marketing fluff, no exclamation chains, no fake urgency
+
+•    Numbers and facts only when verifiable. Never invent anything.
+
+•    Place the keyword naturally: Camping-Marktplatz in H1, first paragraph and footer. Do not stuff.
+
+ 
+
+Verified: title 58 chars, description 153 chars, visible copy about 950 words, 0 dashes in body copy, all 3 JSON-LD blocks valid. Assumption: development inserts real social profile URLs and final image paths.
+
+
+
+
+
+
+
+
+
+
+
+
+About us
+
+I N T E L I T U N E
+
+Campuna About Us Page (/ueber-uns): SEO Template for Development
+
+Final German content, structure, on-page, technical rules, schema code and internal linking. Instructions in English, website copy in German.
+
+Field
+
+Value
+
+Page / URL
+
+https://campuna.de/ueber-uns
+
+Purpose
+
+Brand and entity page: who Campuna is, why it exists, values, vision. Core E-E-A-T page and AI-answer source for "Was ist Campuna".
+
+Content language
+
+German (de-DE), du address, no dashes in body copy
+
+Target queries
+
+campuna, was ist campuna, über campuna, camping marktplatz deutschland
+
+Conversion goal
+
+Kostenlos inserieren (/inserat-erstellen) + provider sign-up
+
+Companion file
+
+campuna-ueber-uns-template.html (visual template with schema, hand to developer 1:1)
+
+Prepared
+
+Intelitune, 26.09.2026
+
+
+1. Meta title and meta description (final)
+
+Element
+
+Final value
+
+Length
+
+Meta title
+
+Über Campuna | Der Camping-Marktplatz für Deutschland
+
+53 chars
+
+Meta description
+
+Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz wächst. Lerne die Idee hinter Campuna aus Erfurt kennen und mach mit.
+
+142 chars
+
+Copy-paste head snippet:
+
+<title>Über Campuna | Der Camping-Marktplatz für Deutschland</title>
+
+<meta name="description" content="Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz wächst. Lerne die Idee hinter Campuna aus Erfurt kennen und mach mit.">
+
+<link rel="canonical" href="https://campuna.de/ueber-uns">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<link rel="alternate" hreflang="de" href="https://campuna.de/ueber-uns">
+
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/ueber-uns">
+
+<meta property="og:type" content="website">
+
+<meta property="og:site_name" content="Campuna">
+
+<meta property="og:locale" content="de_DE">
+
+<meta property="og:title" content="Über Campuna | Der Camping-Marktplatz für Deutschland">
+
+<meta property="og:description" content="Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz wächst. Lerne die Idee hinter Campuna kennen.">
+
+<meta property="og:url" content="https://campuna.de/ueber-uns">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-ueber-uns.jpg">
+
+<meta name="twitter:card" content="summary_large_image">
+
+
+2. Heading structure (implement exactly)
+
+Level
+
+Text (final German)
+
+H1
+
+Wir wollen Camping an einem Ort zusammenbringen.
+
+H2
+
+Warum es Campuna gibt
+
+H2
+
+Wo Campuna heute steht
+
+H2
+
+Was uns wichtig ist
+
+H2
+
+Das Fundament steht. Was daraus wird, entsteht mit deiner Hilfe.
+
+H2
+
+Werde Teil von Campuna.
+
+H3
+
+Heute auf Campuna / Unsere Vision / the 6 value card titles
+
+Rules: one H1 only, card titles are H3, no level skipping, everything server-side rendered.
+
+
+3. Section-by-section content
+
+
+3.1. Hero
+
+Purpose: Carries the H1: brand claim as identity statement. CTA scrolls to the story.
+
+Final German copy:
+
+H1: Wir wollen Camping an einem Ort zusammenbringen. (highlight "an einem Ort" in gold)
+
+Paragraph: Campuna ist entstanden, weil wir selbst einen Ort vermisst haben, an dem Angebote, Anbieter, Campingplätze, Wissen und praktische Helfer rund ums Camping zusammenkommen.
+
+Button: Mehr über uns erfahren (anchor link to #warum)
+
+Technical / on-page instructions:
+
+•    Hero photo (campervan at sunset) behind dark gradient, eager + preload
+
+•    Hero image alt: Camper sitzen abends vor ihrem Campingbus in den Hügeln
+
+
+3.2. Breadcrumb + positioning badge bar
+
+Purpose: Visible breadcrumb (matches BreadcrumbList schema) + one sentence that defines the entity.
+
+Final German copy:
+
+Breadcrumb: Startseite › Über Campuna
+
+Badge left: Dein Camping-Marktplatz für Deutschland
+
+Badge right: Die spezialisierte Plattform für Wohnmobile, Wohnwagen, Campingzubehör, Stellplätze, Vermietung und Services rund ums Camping.
+
+Technical / on-page instructions:
+
+•    Breadcrumb links are real <a href>, home links to /
+
+
+3.3. The story ("Warum es Campuna gibt")
+
+Purpose: Core E-E-A-T block. This text is what AI systems will quote about Campuna.
+
+Final German copy:
+
+Kicker: Die Geschichte. H2: Warum es Campuna gibt
+
+Paragraph 1: Camping ist ein riesiges Thema. Digital ist es trotzdem über viele Orte verstreut: Fahrzeuge stehen auf allgemeinen Kleinanzeigen-Portalen, Tipps verstecken sich in Gruppen und Foren, Campingplätze haben eigene Verzeichnisse, Zubehör und Services liegen wieder woanders.
+
+Paragraph 2 (highlighted, green bold): Wir wollten einen Ort schaffen, an dem Camping nicht nur eine Kategorie unter vielen ist. Einen Ort, an dem sich alles ums Camping dreht. Genau dafür haben wir Campuna gebaut.
+
+Paragraph 3: Heute findest du auf Campuna private und gewerbliche Angebote, Campingplätze, Vermietungen, Services, Wissen und praktische Camping-Helfer. (link "Angebote" to /inserate)
+
+Paragraph 4: Unsere Idee geht weiter. Wir bauen die Campingplattform, die wir selbst vermisst haben. Das Fundament steht. Jetzt wächst Campuna mit jedem Camper, jedem Inserat, jedem Anbieter und jedem Campingplatz.
+
+Image badge: CAMPUNA WÄCHST MIT DIR.
+
+Technical / on-page instructions:
+
+•    Image right: alt: Camper genießt den Abend an einem See, loading=lazy
+
+•    Section id="warum" (hero CTA anchor target)
+
+
+3.4. Status & vision ("Wo Campuna heute steht")
+
+Purpose: Concrete today-vs-vision framing. Both lists must be crawlable HTML text.
+
+Final German copy:
+
+Kicker: Status & Zukunft. H2: Wo Campuna heute steht. Intro: Wie Campuna aufgebaut ist und wohin die Reise geht.
+
+Card white, H3 Heute auf Campuna: Spezialisierter Marktplatz für den Kauf und Verkauf von Fahrzeugen und Campingausrüstung. / Gewerbliche Anbieter wie Werkstätten, Vermieter und Serviceprofis mit eigenen Profilen und Angeboten. / Campingplätze und Stellplätze mit Informationen und passenden Angeboten. / Camping-Wissen und Tools wie der Zuladungsrechner und der Reisebudget-Rechner für entspannte Touren. (both calculators linked)
+
+Card green, H3 Unsere Vision: Immer mehr Bereiche der Camping-Welt sinnvoll und digital an einem Ort zusammenbringen. / Eine faire und transparente Community, in der gewerbliche Partner, Händler und private Camper partnerschaftlich handeln. / Gemeinsam wachsen: Jede neue Funktion und jeder neue Anbieter richtet sich nach dem Feedback der Community.
+
+
+3.5. Values ("Was uns wichtig ist")
+
+Purpose: Six value cards define the brand entity attributes. Connector graphic is decorative.
+
+Final German copy:
+
+Kicker: Unsere Werte. H2: Was uns wichtig ist
+
+Card 1, H3 Camping im Mittelpunkt: Bei Campuna ist Camping nicht nur eine Kategorie unter vielen. Die ganze Plattform dreht sich darum.
+
+Card 2, H3 Alles an einem Ort: Angebote, Anbieter, Orte, Vermietung, Services, Wissen und praktische Helfer wachsen Schritt für Schritt zusammen.
+
+Card 3, H3 Von Campern gemacht: Wir bauen die Campingplattform, die wir selbst vermisst haben.
+
+Card 4, H3 Offen für alle Seiten: Private Camper, Händler, Campingplätze, Vermieter und Serviceanbieter gehören zur selben Camping-Welt.
+
+Card 5, H3 Einfach und transparent: Campuna soll klar bleiben und ohne unnötige Hürden funktionieren.
+
+Card 6, H3 Campuna wächst mit dir: Jedes Inserat, jeder Anbieter und jeder aktive Camper macht die Plattform ein Stück wertvoller.
+
+Technical / on-page instructions:
+
+•    Mindmap/connector graphic: pure CSS or inline SVG, aria-hidden="true" (decorative)
+
+
+3.6. Foundation statement
+
+Purpose: Emotional closing statement before the CTA.
+
+Final German copy:
+
+H2: Das Fundament steht. Was daraus wird, entsteht mit deiner Hilfe. (second sentence in gold)
+
+Paragraph: Campuna ist noch nicht am Ziel. Genau deshalb ist jetzt der richtige Moment, von Anfang an dabei zu sein.
+
+Quote line (green bold): „Campuna wächst mit dir. Sei von Anfang an dabei.“
+
+
+3.7. Provider CTA
+
+Purpose: Conversion goal of the page.
+
+Final German copy:
+
+Kicker: Für Anbieter. H2: Werde Teil von Campuna.
+
+Paragraph: Du verkaufst, vermietest oder bietest etwas rund ums Camping an? Sei von Anfang an dabei und erreiche Camper auf einer Plattform, die sich ausschließlich ums Camping dreht.
+
+Button: Kostenlos inserieren (/inserat-erstellen)
+
+
+3.8. Footer
+
+Purpose: Identical shared footer component as homepage (all 9 category links + NAP).
+
+Final German copy:
+
+Same final German footer as the homepage template.
+
+
+4. Schema code (JSON-LD, copy-paste ready)
+
+Paste each block into the <head>. Both are already embedded in the HTML file. The Organization block itself lives on the homepage; this page references it by @id.
+
+
+4.1 BreadcrumbList
+
+<script type="application/ld+json">
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+{ "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+
+{ "@type": "ListItem", "position": 2, "name": "Über Campuna", "item": "https://campuna.de/ueber-uns" }
+
+  ]
+
+}
+
+</script>
+
+ 
+
+
+4.2 AboutPage
+
+<script type="application/ld+json">
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "AboutPage",
+
+  "@id": "https://campuna.de/ueber-uns#aboutpage",
+
+  "url": "https://campuna.de/ueber-uns",
+
+  "name": "Über Campuna",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+
+  "about": { "@id": "https://campuna.de/#organization" },
+
+  "description": "Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz für Deutschland wächst."
+
+}
+
+</script>
+
+ 
+
+
+5. Internal linking map
+
+From
+
+Target URLs
+
+Breadcrumb
+
+/
+
+Story paragraph
+
+/inserate (anchor: Angebote)
+
+Today card
+
+/tools/zuladungsrechner, /tools/reisebudget-rechner
+
+Provider CTA
+
+/inserat-erstellen
+
+Footer
+
+all 9 categories + navigation/support/legal pages
+
+
+6. Images and alt texts
+
+Image
+
+Alt text (German)
+
+Technical
+
+Hero
+
+Camper sitzen abends vor ihrem Campingbus in den Hügeln
+
+eager, preload, fetchpriority=high, width/height
+
+Story image
+
+Camper genießt den Abend an einem See
+
+loading=lazy
+
+Connector graphic
+
+decorative, aria-hidden
+
+inline SVG/CSS
+
+
+7. Developer checklist
+
+•    SSR, one H1, headings as section 2, all links real <a href>
+
+•    Visible breadcrumb matches BreadcrumbList schema
+
+•    Both schema blocks in head; validate with Rich Results Test after go-live
+
+•    Hero preload; story image lazy; width/height everywhere
+
+•    Connector graphic aria-hidden, not in the accessibility tree
+
+•    Anchor #warum works from the hero button
+
+•    Footer = shared component with homepage
+
+ 
+
+Verified: title 53 chars, description 142 chars, one H1, 0 dashes in body copy, both JSON-LD blocks valid.
+
+
+
+
+
+
+
+
+
+
+
+
+Category hub
+
+CAMPUNA
+
+Categories Hub Page SEO Template
+
+/kategorien: the hub that links all 9 category pages
+
+For the development team. Instructions in English. All website copy in German (highlighted blocks). German copy is final: copy 1:1, do not translate or rephrase. No em dashes and no en dashes anywhere in visible copy.
+
+File: campuna-kategorien-hub-template.html  ·  Preview: preview_kategorien_hub.png
+
+
+0. Structure analysis of the approved design
+
+The approved design is a homepage section: eyebrow "KATEGORIEN", the headline "Camping hat viele Seiten. Wir bringen sie zusammen." and 9 icon cards. As a standalone hub page that is thin content: 9 icons with 2-word labels give Google almost no text and give the category pages almost no anchor context. The following sections were ADDED. Build all of them.
+
+A. Intro paragraph under the H1
+
+Two sentences of context with the primary entities (Kategorien, Camping, ganz Deutschland, kostenlos inserieren). Keeps the hero visually identical, adds crawlable text.
+
+B. Breadcrumb + BreadcrumbList schema
+
+Startseite › Kategorien. Two levels, visible and in schema.
+
+C. Category detail blocks (the SEO core)
+
+One block per category: small tag, H2 with the category name linked, 45 to 60 words of keyword copy with an in-text deep link, subcategory chips, "Zur Kategorie" button. This turns the hub into 9 rich, descriptive internal links instead of 9 icons, and creates crawl paths to every subcategory PLP.
+
+D. Stats strip
+
+9 Kategorien · ganz Deutschland · private Inserate kostenlos, ohne Provision · direkter Kontakt. Trust + entity reinforcement directly under the cards.
+
+E. Beliebte Suchen
+
+8 chips with the highest-volume cross-site searches, each a deep link (wohnmobil gebraucht kaufen, vorzelt, dachzelt, tiny house kaufen, kastenwagen, stellplatz, gasprüfung, fahrradträger).
+
+F. Sell CTA band
+
+The hub also serves sellers choosing where to list. Dark green band with "Kostenlos inserieren".
+
+G. FAQ + FAQPage schema
+
+4 hub questions (which categories exist, where does my listing belong, is listing free, Marktplatz vs. Kategorien). Visible text matches schema word for word. First item open by default.
+
+Fixed from the design
+
+Card labels "Camping Zubehör" and "Camping Services" are written with hyphen (Camping-Zubehör, Camping-Services): correct German orthography and consistent with the category page H1s and the footer. Emoji icons in the template are placeholders: replace with the final SVG line icon set, aria-hidden="true", labels stay real text.
+
+
+1. Meta title + description (copy-paste)
+
+Paste into <head> of /kategorien. Title 46 chars, description 148 chars. Limits: title max 60, description max 155.
+
+<title>Alle Camping-Kategorien im Überblick | Campuna</title>
+
+<meta name="description" content="Neun Kategorien, ein Marktplatz: Wohnmobile, Zelte, Zubehör, Stellplätze, Tiny Houses, Boote und mehr. Entdecke alle Camping-Kategorien auf Campuna.">
+
+<link rel="canonical" href="https://campuna.de/kategorien">
+
+<meta property="og:type" content="website">
+
+<meta property="og:title" content="Alle Camping-Kategorien im Überblick | Campuna">
+
+<meta property="og:description" content="Neun Kategorien, ein Marktplatz: Wohnmobile, Zelte, Zubehör, Stellplätze, Tiny Houses, Boote und mehr.">
+
+<meta property="og:url" content="https://campuna.de/kategorien">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-kategorien.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+ 
+
+H1 (exactly one, from the design):
+
+Camping hat viele Seiten. Wir bringen sie zusammen.
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero
+
+Eyebrow: KATEGORIEN
+
+H1: Camping hat viele Seiten. Wir bringen sie zusammen.
+
+Intro: Campuna bündelt alles rund ums Camping in neun Kategorien: von Fahrzeugen über Ausrüstung bis zu Stellplätzen und Services. Wähle deine Kategorie und entdecke Angebote aus ganz Deutschland, oder inseriere kostenlos, was du abgeben möchtest.
+
+Breadcrumb: Startseite › Kategorien
+
+2.2 The 9 icon cards (design replica)
+
+Grid of 9, one row on desktop, wrapping to 5/3/2 columns on smaller screens. Every card is a real link to the clean category URL. Order and labels:
+
+Card label
+
+Links to
+
+Camping-Zubehör
+
+https://campuna.de/zubehoer
+
+Wohnmobile & Camper
+
+https://campuna.de/wohnmobile
+
+Zelte & Dachzelte
+
+https://campuna.de/zelte
+
+Fahrräder & Träger
+
+https://campuna.de/fahrraeder-traeger
+
+Stellplätze & Campingplätze
+
+https://campuna.de/stellplaetze
+
+Camping-Services
+
+https://campuna.de/services
+
+Tiny Houses
+
+https://campuna.de/tiny-houses
+
+Mieten & Vermieten
+
+https://campuna.de/mieten
+
+Boote & Wassersport
+
+https://campuna.de/boote
+
+2.3 Stats strip
+
+9 Kategorien für alles rund ums Camping · Angebote aus ganz Deutschland · Private Inserate kostenlos, ohne Provision · Direkter Kontakt ohne Zwischenhändler
+
+2.4 Category detail blocks (Finde deinen Bereich)
+
+Eyebrow: ALLE KATEGORIEN  ·  H2: Finde deinen Bereich
+
+Lead: Jede Kategorie hat eigene Unterkategorien und Filter. Hier siehst du auf einen Blick, was wohin gehört und was dich in jedem Bereich erwartet.
+
+9 blocks, each: icon, category tag, H2 (category name, linked), copy, subcategory chips, "Zur Kategorie →" button. Full German copy per block is in the HTML file, section "details": copy 1:1. A listing-count slot per block may be added from the database; omit it when unavailable, never show a wrong number. Chips link to subcategory PLPs; until a subcategory PLP is live, point its chip to the parent category URL, never to a 404.
+
+2.5 Beliebte Suchen
+
+Eyebrow: BELIEBTE SUCHEN  ·  H2: Wonach andere gerade suchen
+
+Chips: Wohnmobil gebraucht kaufen · Vorzelt für Wohnwagen · Dachzelt · Tiny House kaufen · Kastenwagen gebraucht · Stellplatz Wohnmobil · Gasprüfung Wohnmobil · Fahrradträger Wohnmobil
+
+2.6 Sell CTA band
+
+VERKAUFEN  ·  Egal welche Kategorie: Dein Inserat ist in Minuten online.  ·  Wähle die passende Kategorie, lade Fotos hoch, fertig. Privat kostenlos, ohne Provision.  ·  Button: Kostenlos inserieren
+
+2.7 FAQ
+
+Häufige Fragen zu den Kategorien
+
+4 questions, full text in the HTML and in the FAQPage schema (section 4). Visible accordion text must match the schema verbatim. First question open by default.
+
+
+3. Hub page rules
+
+Every card and every CTA links to the clean category URL (/zubehoer, /wohnmobile, ...). Never to /inserate?kategorie=... and never JS-only navigation.
+
+The page canonicals to itself (https://campuna.de/kategorien). No parameters exist on this page.
+
+One H1 (the design headline). Category names are H2. FAQ questions are H3.
+
+Listing counts, when shown, come from the database at render time and equal reality. Omit when unavailable.
+
+Subcategory chips link to subcategory PLPs; a chip whose PLP is not live yet points to the parent category instead. No link on this page may 404.
+
+Emoji icons are placeholders for the final SVG icon set (aria-hidden="true"). Labels stay real text, never text in images.
+
+Header marks Kategorien as active. This page is linked from the main navigation on every page: it is the strongest internal-link distributor after the homepage. Keep it in the top nav.
+
+All visible copy pure human German, du-form. No em dashes, no en dashes. Hyphens in compounds (Camping-Zubehör, Camping-Services, Camping-Marktplatz) are correct and stay.
+
+
+4. Schema markup (copy-paste JSON-LD)
+
+Three blocks, each in its own <script type="application/ld+json"> before </head>. Extracted 1:1 from the template HTML. Organization and WebSite schema live only on the homepage; this page references them via @id.
+
+4.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Kategorien",
+
+      "item": "https://campuna.de/kategorien"
+
+    }
+
+  ]
+
+}
+
+4.2 CollectionPage + ItemList (the 9 categories, static)
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorien#collection",
+
+  "url": "https://campuna.de/kategorien",
+
+  "name": "Alle Camping-Kategorien im Überblick",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 9,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "Camping-Zubehör",
+
+        "url": "https://campuna.de/zubehoer"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Wohnmobile & Camper",
+
+        "url": "https://campuna.de/wohnmobile"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Zelte & Dachzelte",
+
+        "url": "https://campuna.de/zelte"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Fahrräder & Träger",
+
+        "url": "https://campuna.de/fahrraeder-traeger"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 5,
+
+        "name": "Stellplätze & Campingplätze",
+
+        "url": "https://campuna.de/stellplaetze"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 6,
+
+        "name": "Camping-Services",
+
+        "url": "https://campuna.de/services"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 7,
+
+        "name": "Tiny Houses",
+
+        "url": "https://campuna.de/tiny-houses"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 8,
+
+        "name": "Mieten & Vermieten",
+
+        "url": "https://campuna.de/mieten"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 9,
+
+        "name": "Boote & Wassersport",
+
+        "url": "https://campuna.de/boote"
+
+      }
+
+    ]
+
+  }
+
+}
+
+4.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorien#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welche Kategorien gibt es auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Campuna hat neun Kategorien: Camping-Zubehör, Wohnmobile und Camper, Zelte und Dachzelte, Fahrräder und Träger, Stellplätze und Campingplätze, Camping-Services, Tiny Houses, Mieten und Vermieten sowie Boote und Wassersport. So findest du alles rund ums Camping an einem Ort."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "In welche Kategorie gehört mein Inserat?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Wähle die Kategorie, in der Käufer dein Angebot suchen würden: Fahrzeuge unter Wohnmobile und Camper, Ausrüstung unter Camping-Zubehör, Übernachtungsplätze unter Stellplätze und Campingplätze. Beim Erstellen deines Inserats schlägt dir Campuna die passende Unterkategorie vor. Die Kategorie kannst du später jederzeit ändern."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Kann ich in allen Kategorien kostenlos inserieren?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ja. Private Inserate sind in allen neun Kategorien kostenlos, ohne Provision und ohne versteckte Gebühren. Gewerbliche Anbieter wie Händler, Vermieter oder Werkstätten präsentieren sich mit einem Anbieterprofil. Die Konditionen dafür findest du auf der Seite Preise."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was ist der Unterschied zwischen Marktplatz und Kategorien?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Der Marktplatz zeigt dir alle aktuellen Inserate aus ganz Deutschland in einer Liste mit Filtern. Die Kategorien führen dich direkt zu einem Themenbereich, zum Beispiel nur Wohnmobile oder nur Zelte. Beide Wege führen zu denselben Angeboten, du startest nur unterschiedlich."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+5. Pre-launch verification checklist
+
+Title 60 max, description 155 max, exactly one H1 (this template: 46 / 148 / 1).
+
+Zero em dashes and zero en dashes in visible copy (checked: 0).
+
+All 3 JSON-LD blocks parse (validator.schema.org + Google Rich Results Test); FAQ text matches visible text verbatim.
+
+All 9 category links resolve 200 to the clean URLs; subcategory chips resolve 200 (parent fallback where sub-PLP not live).
+
+Breadcrumb visible and matching schema.
+
+Mobile: cards wrap 5/3/2 columns, detail blocks stack, tap targets 44px min, no horizontal scroll.
+
+Icons replaced with final SVG set, aria-hidden, labels as text.
+
+Page reachable from the top navigation sitewide and from the homepage KATEGORIEN section headline.
+
+
+
+
+
+
+
+
+
+
+
+
+Camping-Zubehör
+
+CAMPUNA
+
+Category Page SEO Master Template
+
+Camping-Zubehör (/zubehoer) + replication spec for all 9 categories
+
+For the development team. All instructions in English. All website copy in German (highlighted blocks). German copy is final: copy it 1:1, do not translate or rephrase. No em dashes and no en dashes anywhere in visible copy.
+
+File: campuna-kategorie-zubehoer-template.html  ·  Preview: preview_kategorie_zubehoer.png
+
+
+0. Structure analysis of the approved design
+
+The approved category design contains: header, category hero with search, subcategory chips, listing grid, load-more button, category link section and footer. That covers browsing but not ranking. The following SEO sections were missing and have been ADDED in this template. Build all of them.
+
+A. Results header with count + sort
+
+Above the grid: "X Inserate in dieser Kategorie" + sort dropdown. The count MUST equal the number of rendered cards (the current mockup shows "0" while cards are visible: bug). Sort changes never change the URL for crawlers (see rules).
+
+B. Beliebte Suchen (popular searches)
+
+Chip links to the highest-volume subcategory and filter searches inside this category. Internal linking + long-tail capture. Links go to real crawlable URLs, not JS filters.
+
+C. Expanded SEO text block (~450 words)
+
+The design has almost no text on category pages. A category PLP cannot rank without content. Added a structured block below the grid: intro, subcategory guide with links, buying advice, selling paragraph. H2/H3 structure, brand entities (Isabella, Dometic, DWT, EcoFlow, Ective, Victron, Mobicool).
+
+D. Ratgeber teaser (3 guide cards)
+
+Links category page to matching guide articles. Topical authority + internal links from money page to content hub and back.
+
+E. FAQ section + FAQPage schema
+
+4 category-specific questions. Visible accordion text matches the JSON-LD word for word (Google requirement). Targets PAA queries.
+
+F. Pagination fallback + trust strip
+
+"Weitere Angebote laden" is JS only: crawlers cannot click. Added a real link to /zubehoer?seite=2 below the button. Trust strip (direct contact, free private listings, safe trading) above the Ratgeber block.
+
+G. Sell CTA band
+
+Category pages target buyers AND sellers ("verkaufen" keywords). A dark green band with "Kostenlos inserieren" CTA before the FAQ. Converts supply-side visitors.
+
+Also fixed from the mockup
+
+Card meta must never run together: condition and subcategory are separate pills, price left and details link right. Test listings must never render on a live category page (the old Bubble site had a "test" listing indexed). Empty categories keep the page live and indexable: show "Aktuell gibt es hier keine Inserate. Sei der Erste und inseriere kostenlos." plus the CTA and the full SEO text block, never a bare empty page and never a redirect.
+
+
+1. Meta title + description (copy-paste)
+
+Paste into <head> of /zubehoer. Title 44 chars, description 152 chars. Verified limits: title max 60, description max 155.
+
+<title>Camping-Zubehör kaufen & verkaufen | Campuna</title>
+
+<meta name="description" content="Gebrauchtes und neues Camping-Zubehör von privat und vom Händler: Vorzelte, Möbel, Küche, Elektrik und Solar. Jetzt entdecken oder kostenlos inserieren.">
+
+<link rel="canonical" href="https://campuna.de/zubehoer">
+
+<meta property="og:type" content="website">
+
+<meta property="og:title" content="Camping-Zubehör kaufen & verkaufen | Campuna">
+
+<meta property="og:description" content="Gebrauchtes und neues Camping-Zubehör von privat und vom Händler: Vorzelte, Möbel, Küche, Elektrik und Solar.">
+
+<meta property="og:url" content="https://campuna.de/zubehoer">
+
+<meta property="og:image" content="https://campuna.de/og/zubehoer.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+ 
+
+H1 (exactly one per page):
+
+Camping-Zubehör kaufen und verkaufen
+
+
+2. Section-by-section build order + final German copy
+
+Order is fixed. Highlighted blocks are the final German copy. Everything else on the page comes from the database (listings) or from this template file.
+
+2.1 Hero (dark green band)
+
+Badge label, H1, intro paragraph, in-category search with hidden category field (form GET to /suche with kategorie=zubehoer) and "Alle Filter öffnen" button.
+
+KATEGORIE
+
+H1: Camping-Zubehör kaufen und verkaufen
+
+Entdecke gebrauchtes und neues Camping-Zubehör von privaten und gewerblichen Anbietern auf Campuna: von Vorzelten und Markisen über Campingmöbel und Küche bis zu Elektrik, Solar und Outdoor-Ausrüstung.
+
+Suchfeld-Placeholder: In Camping-Zubehör suchen  ·  Button: Alle Filter öffnen
+
+2.2 Breadcrumb (visible + schema)
+
+Startseite › Inserate › Camping-Zubehör
+
+Last item is plain text (current page), first two are links. Matches BreadcrumbList schema in section 4.
+
+2.3 Subcategory chips (real links, not filters)
+
+Each chip is a real <a> to a subcategory PLP. Never implement these as ?filter= parameters. Active chip "Alle" shows the live count.
+
+Alle (Anzahl) · Vorzelte & Markisen → /zubehoer/vorzelte · Campingmöbel → /zubehoer/campingmoebel · Küche & Grillen → /zubehoer/kueche-grill · Elektrik & Solar → /zubehoer/elektrik-solar · Sanitär & Wasser → /zubehoer/sanitaer-wasser · Sonstiges Zubehör → /zubehoer/sonstiges
+
+2.4 Results header + grid + pagination
+
+X Inserate in dieser Kategorie  ·  Sortierung: Neueste zuerst / Preis aufsteigend / Preis absteigend
+
+Button: Weitere Angebote laden  ·  Fallback-Link: Oder blättern: Seite 2 ansehen
+
+Cards come from the database. Card anatomy: photo (alt = listing title, loading="lazy"), badge (Hervorgehoben gold / Gewerblich dark), favourite icon, location pill, title as H3, condition pill + subcategory pill, price, details link. Count = rendered results. Test or sold listings never render.
+
+2.5 Beliebte Suchen (popular searches)
+
+Beliebt in Camping-Zubehör: Vorzelt für Wohnwagen · Aufblasbares Vorzelt · Powerstation & Solar · Kühlboxen · Campingstühle & Tische · Wassertanks & Toiletten · Fahrradträger · Dachzelte
+
+Link targets: /zubehoer/vorzelte, /zubehoer/vorzelte?art=aufblasbar canonicalised to /zubehoer/vorzelte, /zubehoer/elektrik-solar, /zubehoer/kueche-grill, /zubehoer/campingmoebel, /zubehoer/sanitaer-wasser, /zubehoer/fahrradtraeger, /zelte/dachzelte. Adjust to live URLs at build time; every chip must resolve to an indexable page.
+
+2.6 SEO text block (below the grid, ~450 words)
+
+Full copy is in the HTML file (section "seo-text"), built as H2 + intro + H3 subsections with internal links. Copy 1:1 from the HTML. Do not shorten. Above the grid stays under 80 words; the long text always sits below the grid.
+
+2.7 Trust strip
+
+✓ Direkter Kontakt zwischen Käufer und Verkäufer   ✓ Private Inserate kostenlos, ohne Provision   ✓ Tipps für sicheres Handeln: Sicher handeln lesen
+
+2.8 Ratgeber teaser (3 cards)
+
+Wissen rund um Camping-Zubehör
+
+1) Kaufberatung: Gebrauchte Campingausrüstung kaufen: Worauf achten? · 2) Vergleich: Vorzelt aufblasbar oder mit Gestänge: Was ist besser? · 3) Checkliste: Camping-Checkliste für Anfänger: Das gehört ins Gepäck
+
+Link to the matching Ratgeber articles from the 60-blog plan (topical map hub Ausrüstung & Zelte). Meta line per card: category + reading time.
+
+2.9 Sell CTA band (dark green)
+
+VERKAUFEN  ·  Du hast Camping-Zubehör abzugeben?  ·  Erstelle dein Inserat in wenigen Minuten. Privat kostenlos, ohne Provision.  ·  Button: Kostenlos inserieren
+
+2.10 Weitere Kategorien entdecken
+
+8 cards linking to all other category PLPs (current category excluded). Same component on every category page: sitewide internal linking between categories.
+
+2.11 FAQ (visible text = schema text)
+
+Häufige Fragen zu Camping-Zubehör
+
+4 questions and answers: full copy in the HTML and in the FAQPage schema (section 4). The visible accordion text must match the schema verbatim. First question open by default so text is in the DOM.
+
+
+3. Category PLP rules (apply to all 9 categories)
+
+Canonical: every filter, sort and page parameter (?sortierung=, ?preis=, ?zustand=, ?seite=) canonicalises to the base category URL. Exception: ?seite=2 and higher are self-canonical with title suffix "| Seite 2". Never noindex pagination.
+
+Category navigation is never a filter parameter: a category click goes to the real category URL (/zubehoer, /wohnmobile ...), never to /inserate?kategorie=zubehoer. If parameter URLs exist for technical reasons they 301 to the clean URL.
+
+Subcategory chips and Beliebte Suchen chips are real <a href> links to indexable PLPs. No onclick-only navigation anywhere in the category system.
+
+Load-more needs the crawlable fallback link to ?seite=2. Every paginated page links to the next page. Listing detail URLs on page 2+ must be reachable as plain links.
+
+Count in the results header equals the number of rendered cards. Test listings, drafts and sold/deleted listings never render and their URLs return 404 or 410 (sold: 301 to category after 30 days is also fine, pick one and keep it).
+
+Empty category: page stays live and indexable with the empty-state message, sell CTA and full SEO text block. Never redirect, never noindex an empty category.
+
+No Product schema on category pages (Google guideline: no Product markup on category/list pages). Allowed stack: BreadcrumbList + CollectionPage with ItemList + FAQPage.
+
+ItemList in CollectionPage schema is generated dynamically from the first page of listings: position, name, url per item. Cap at the visible page size. The 3 items in the template are examples of the exact shape.
+
+One H1 per page. Subcategory PLPs get their own H1/title/description following the same pattern (example: Vorzelte & Markisen gebraucht kaufen | Campuna).
+
+All visible copy pure human German, du-form. No em dashes, no en dashes anywhere. Hyphens in compound words (Camping-Zubehör, Camping-Marktplatz) are correct German and stay.
+
+
+4. Schema markup (copy-paste JSON-LD)
+
+Three blocks, each in its own <script type="application/ld+json"> before </head>. Extracted 1:1 from the template HTML. Organization and WebSite schema live ONLY on the homepage; category pages reference them via @id URLs. Replace the ItemList items with the live first-page listings server-side.
+
+4.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Camping-Zubehör",
+
+      "item": "https://campuna.de/zubehoer"
+
+    }
+
+  ]
+
+}
+
+4.2 CollectionPage + ItemList (dynamic)
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/zubehoer#collection",
+
+  "url": "https://campuna.de/zubehoer",
+
+  "name": "Camping-Zubehör kaufen und verkaufen",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 3,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "EcoFlow DELTA Pro 3600 Wh Powerstation",
+
+        "url": "https://campuna.de/inserat/ecoflow-delta-pro-3600wh"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Dometic CFX3 45 Kompressor-Kühlbox",
+
+        "url": "https://campuna.de/inserat/dometic-cfx3-45-kuehlbox"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Isabella Capri North G18 Vorzelt",
+
+        "url": "https://campuna.de/inserat/isabella-capri-north-g18-vorzelt"
+
+      }
+
+    ]
+
+  }
+
+}
+
+4.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/zubehoer#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Worauf sollte ich beim Kauf von gebrauchtem Camping-Zubehör achten?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Prüfe Zustand, Vollständigkeit und Funktion vor dem Kauf: Bei Vorzelten die Nähte und das Gestänge, bei Elektrik wie Powerstations die Ladezyklen, bei Kühlboxen die Kühlleistung. Frage nach Rechnung und Restgarantie und hole das Zubehör nach Möglichkeit persönlich ab."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welche Arten von Camping-Zubehör finde ich auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Auf Campuna findest du Zubehör in sechs Bereichen: Vorzelte und Markisen, Campingmöbel, Küche und Grillen, Elektrik und Solar, Sanitär und Wasser sowie sonstiges Zubehör. Angeboten wird neue und gebrauchte Ausrüstung von privaten Verkäufern und Händlern aus ganz Deutschland."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wie verkaufe ich mein Camping-Zubehör auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Erstelle ein kostenloses Konto, wähle die Kategorie Camping-Zubehör und die passende Unterkategorie und stelle dein Inserat mit Fotos, Beschreibung und Preis ein. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Versand oder Abholung: Wie läuft die Übergabe ab?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Das vereinbarst du direkt mit dem Anbieter. Kleinteile wie Lampen oder Geschirr werden oft versendet, größere Teile wie Vorzelte oder Möbel meist vor Ort abgeholt. Bei Abholung kannst du den Artikel vorher prüfen. Tipps dazu findest du auf der Seite Sicher handeln."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+5. Replication spec: all 9 category pages
+
+Identical structure (sections 2.1 to 2.11) for every category. Only the content slots change: H1, title, description, hero intro, subcategory chips, Beliebte Suchen, SEO text, FAQ, Ratgeber links and schema names/URLs. The table gives the final head data per category. All titles are 60 characters or less, all descriptions 155 or less. German copy per page (hero intro, SEO text, 4 FAQs) will be delivered page by page in the same format as this document; the /zubehoer copy in this template is the reference for tone and length.
+
+Camping-Zubehör  (/zubehoer)
+
+H1
+
+Camping-Zubehör kaufen und verkaufen
+
+Title (44)
+
+Camping-Zubehör kaufen & verkaufen | Campuna
+
+Description (152)
+
+Gebrauchtes und neues Camping-Zubehör von privat und vom Händler: Vorzelte, Möbel, Küche, Elektrik und Solar. Jetzt entdecken oder kostenlos inserieren.
+
+Subcategory chips
+
+Vorzelte & Markisen, Campingmöbel, Küche & Grillen, Elektrik & Solar, Sanitär & Wasser, Fahrradträger, Sonstiges
+
+Primary keywords (vol/mo)
+
+camping zubehör (12.100), campingausrüstung (3.600), camper zubehör (1.000), vorzelt wohnwagen (6.600), fahrradträger wohnmobil (1.000)
+
+ 
+
+Wohnmobile & Camper  (/wohnmobile)
+
+H1
+
+Wohnmobile und Camper kaufen und verkaufen
+
+Title (46)
+
+Wohnmobile & Camper gebraucht kaufen | Campuna
+
+Description (145)
+
+Gebrauchte und neue Wohnmobile, Campervans und Kastenwagen von privat und vom Händler. Finde dein Wohnmobil oder inseriere kostenlos auf Campuna.
+
+Subcategory chips
+
+Campervans, Kastenwagen, Minicamper, Alkoven, Teilintegriert, Vollintegriert, Wohnwagen
+
+Primary keywords (vol/mo)
+
+wohnmobil kaufen (60.500), wohnmobil gebraucht kaufen (40.500), gebrauchte wohnmobile (18.100), campervan gebraucht (8.100), kastenwagen gebraucht (1.900)
+
+ 
+
+Zelte & Dachzelte  (/zelte)
+
+H1
+
+Zelte und Dachzelte kaufen und verkaufen
+
+Title (46)
+
+Zelte & Dachzelte kaufen & verkaufen | Campuna
+
+Description (144)
+
+Dachzelte, Hauszelte und Tunnelzelte gebraucht und neu von privat und vom Händler. Jetzt dein Zelt finden oder kostenlos inserieren auf Campuna.
+
+Subcategory chips
+
+Dachzelte, Hauszelte, Tunnelzelte, Wurfzelte, Familienzelte
+
+Primary keywords (vol/mo)
+
+dachzelt (33.100 cluster 174k), zelt kaufen (4.400), hauszelt (1.600), dachzelt gebraucht (880), zelt gebraucht (720)
+
+ 
+
+Fahrräder & Träger  (/fahrraeder-traeger)
+
+H1
+
+Fahrräder und Träger kaufen und verkaufen
+
+Title (47)
+
+Fahrräder & Träger kaufen & verkaufen | Campuna
+
+Description (142)
+
+E-Bikes, Campingräder und Fahrradträger für Wohnmobil und Wohnwagen, gebraucht und neu. Jetzt entdecken oder kostenlos inserieren auf Campuna.
+
+Subcategory chips
+
+E-Bikes, Fahrräder, Fahrradträger Wohnmobil, Heckträger, Deichselträger
+
+Primary keywords (vol/mo)
+
+fahrradträger wohnmobil (1.000), fahrradträger wohnwagen deichsel (720), wohnmobil fahrradträger (590), e-bike träger (Cluster 19k)
+
+ 
+
+Stellplätze & Campingplätze  (/stellplaetze)
+
+H1
+
+Stellplätze und Campingplätze finden und anbieten
+
+Title (44)
+
+Stellplätze & Campingplätze finden | Campuna
+
+Description (141)
+
+Stellplätze und Campingplätze in ganz Deutschland: Dauerstellplätze, Saisonplätze und private Plätze. Jetzt finden oder kostenlos inserieren.
+
+Subcategory chips
+
+Dauerstellplätze, Saisonplätze, Privatstellplätze, Campingplätze
+
+Primary keywords (vol/mo)
+
+stellplatz wohnmobil (8.100), wohnmobil stellplatz (4.400), dauercampingplatz (14.800 cluster), dauerstellplatz wohnwagen (1.900)
+
+ 
+
+Camping-Services  (/services)
+
+H1
+
+Camping-Services finden und anbieten
+
+Title (50)
+
+Camping-Services: Werkstatt & Gasprüfung | Campuna
+
+Description (145)
+
+Werkstatt, Gasprüfung, Reparatur und Aufbereitung für Wohnmobil und Wohnwagen: Camping-Services aus ganz Deutschland finden oder selbst anbieten.
+
+Subcategory chips
+
+Werkstatt, Gasprüfung, Reparatur, Aufbereitung, Wartung
+
+Primary keywords (vol/mo)
+
+gasprüfung wohnmobil (3.600), wohnmobil werkstatt (1.600 + in der nähe 1.900), wohnwagen reparatur (880), aufbereitung (260)
+
+ 
+
+Tiny Houses  (/tiny-houses)
+
+H1
+
+Tiny Houses und Mobilheime kaufen und verkaufen
+
+Title (41)
+
+Tiny Houses & Mobilheime kaufen | Campuna
+
+Description (137)
+
+Tiny Houses und Mobilheime gebraucht und neu, winterfest und ganzjährig bewohnbar. Jetzt entdecken oder kostenlos inserieren auf Campuna.
+
+Subcategory chips
+
+Tiny Houses, Mobilheime, Chalets, Zirkuswagen
+
+Primary keywords (vol/mo)
+
+tiny house kaufen (22.200), mobilheim kaufen (6.600), tiny house gebraucht kaufen (1.000), tiny house ganzjährig bewohnbar (1.900)
+
+ 
+
+Mieten & Vermieten  (/mieten)
+
+H1
+
+Mieten und Vermieten auf Campuna
+
+Title (43)
+
+Mieten & Vermieten: Camper & mehr | Campuna
+
+Description (138)
+
+Wohnmobile, Camper und Camping-Ausrüstung mieten oder selbst vermieten: private und gewerbliche Angebote aus ganz Deutschland auf Campuna.
+
+Subcategory chips
+
+Wohnmobile mieten, Wohnwagen mieten, Zubehör mieten
+
+Primary keywords (vol/mo)
+
+No SEO investment (strategy decision §13): category stays live and indexable, minimal copy, no blog support, no Beliebte Suchen block needed
+
+ 
+
+Boote & Wassersport  (/boote)
+
+H1
+
+Boote und Wassersport kaufen und verkaufen
+
+Title (48)
+
+Boote & Wassersport kaufen & verkaufen | Campuna
+
+Description (135)
+
+Boote, Kajaks, Schlauchboote und Bootsanhänger gebraucht und neu von privat und vom Händler. Jetzt entdecken oder kostenlos inserieren.
+
+Subcategory chips
+
+Motorboote, Schlauchboote, Kajaks & Kanus, Bootsanhänger, Bootszubehör
+
+Primary keywords (vol/mo)
+
+boot gebraucht kaufen (5.400), motorboot gebraucht kaufen (2.400), bootsanhänger (1.300), schlauchboot gebraucht (590), kajak gebraucht (590)
+
+ 
+
+Subcategory PLPs (phase 2, same template)
+
+High-volume subclusters get their own PLP with the identical structure: /zubehoer/vorzelte (vorzelt 204k cluster), /zelte/dachzelte (174k), /zubehoer/fahrradtraeger (19k), /wohnmobile/campervan, /wohnmobile/kastenwagen, /wohnmobile/minicamper. Head data for these follows in the next delivery batch.
+
+
+6. Pre-launch verification checklist (run per category page)
+
+Title 60 chars max, description 155 max, exactly one H1 (checked in this template: 44 / 152 / 1).
+
+Zero em dashes and zero en dashes in visible copy (checked: 0).
+
+All 3 JSON-LD blocks parse (validator.schema.org + Google Rich Results Test) and FAQ text matches visible text verbatim.
+
+Canonical points to the clean base URL; ?sortierung= and filter URLs canonicalise; ?seite=2 self-canonical with "| Seite 2" title.
+
+Subcategory chips and Beliebte Suchen resolve 200 to indexable PLPs; no chip links to a parameter URL.
+
+Pagination fallback link visible and crawlable; results count equals rendered cards; no test listings.
+
+Empty-state renders with SEO text when category has 0 listings (test with a filtered empty query).
+
+Mobile: chips scroll horizontally, grid 1 column, tap targets 44px min.
+
+Core Web Vitals: listing images lazy-loaded with width/height, LCP = hero H1 block, no CLS from chip row.
+
+
+
+

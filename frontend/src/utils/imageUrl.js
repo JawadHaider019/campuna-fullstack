@@ -8,7 +8,7 @@
  * - Next.js public assets (/logo.webp, /collection/..., etc.)
  * - Safe fallback placeholder
  */
-export const getImageUrl = (url, fallback = '/collection/camping-zubehoer-hero.png') => {
+export const getImageUrl = (url, fallback = null) => {
     if (!url) return fallback;
     if (typeof url !== 'string') return fallback;
     const trimmed = url.trim();

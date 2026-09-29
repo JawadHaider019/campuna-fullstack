@@ -10,6 +10,8 @@ import {
     boostListing,
     importListingsFromCsv,
     exportListingsToCsv,
+    generateDescriptionController,
+    toggleListingStatus,
 } from '../controllers/listings.js';
 import { createListingReport } from '../controllers/listingReports.js';
 import { authenticate, optionalAuthenticate } from '../middleware/authenticate.js';
@@ -35,11 +37,17 @@ router.get('/:id', optionalAuthenticate, getListingDetail);
 // POST /api/listings/csv-import → Batch import listings via CSV
 router.post('/csv-import', authenticate, importListingsFromCsv);
 
+// POST /api/listings/generate-description → Generate or enhance listing description via AI
+router.post('/generate-description', generateDescriptionController);
+
 // POST /api/listings → Create listing
 router.post('/', authenticate, uploadMultiple, createListing);
 
 // PUT /api/listings/:id → Update listing (requires authentication & re-triggers moderation review)
 router.put('/:id', authenticate, uploadMultiple, updateListing);
+
+// PATCH /api/listings/:id/status → Activate/Deactivate/Pause listing (owner or admin)
+router.patch('/:id/status', authenticate, toggleListingStatus);
 
 // DELETE /api/listings/:id → Delete listing (owner or admin)
 router.delete('/:id', authenticate, deleteListing);

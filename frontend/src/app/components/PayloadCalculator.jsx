@@ -22,36 +22,78 @@ const DEFAULTS = {
     equipment: 80,
 };
 
-const getSavedVal = (key, defaultVal) => {
-    if (typeof window === 'undefined') return defaultVal;
-    const saved = localStorage.getItem(`campuna_payload_${key}`);
-    return saved !== null ? Number(saved) : defaultVal;
+const BOUNDS = {
+    maxWeight: { min: 500, max: 25000 },
+    emptyWeight: { min: 300, max: 20000 },
+    driverWeight: { min: 40, max: 250 },
+    passengers: { min: 0, max: 10 },
+    passengersWeight: { min: 20, max: 200 },
+    waterWater: { min: 0, max: 1000 },
+    gasWeight: { min: 0, max: 200 },
+    baggage: { min: 0, max: 2000 },
+    equipment: { min: 0, max: 2000 },
 };
+
+function sanitizeValue(field, rawValue) {
+    const num = Number(rawValue);
+    if (isNaN(num)) return DEFAULTS[field] ?? 0;
+    const bound = BOUNDS[field];
+    if (!bound) return Math.max(0, num);
+    return Math.min(Math.max(bound.min, num), bound.max);
+}
 
 export default function PayloadCalculator() {
     const [activeTooltip, setActiveTooltip] = useState(null);
-
-    const [form, setForm] = useState(() => ({
-        maxWeight: getSavedVal('maxWeight', DEFAULTS.maxWeight),
-        emptyWeight: getSavedVal('emptyWeight', DEFAULTS.emptyWeight),
-        driverWeight: getSavedVal('driverWeight', DEFAULTS.driverWeight),
-        passengers: getSavedVal('passengers', DEFAULTS.passengers),
-        passengersWeight: getSavedVal('passengersWeight', DEFAULTS.passengersWeight),
-        waterWater: getSavedVal('waterWater', DEFAULTS.waterWater),
-        gasWeight: getSavedVal('gasWeight', DEFAULTS.gasWeight),
-        baggage: getSavedVal('baggage', DEFAULTS.baggage),
-        equipment: getSavedVal('equipment', DEFAULTS.equipment),
-    }));
+    const [form, setForm] = useState(DEFAULTS);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
-        Object.entries(form).forEach(([key, val]) => {
-            localStorage.setItem(`campuna_payload_${key}`, val);
-        });
+        try {
+            const loaded = {};
+            let hasSaved = false;
+            Object.keys(DEFAULTS).forEach((key) => {
+                const saved = localStorage.getItem(`campuna_payload_${key}`);
+                if (saved !== null) {
+                    const parsed = Number(saved);
+                    if (!isNaN(parsed) && isFinite(parsed)) {
+                        loaded[key] = sanitizeValue(key, parsed);
+                        hasSaved = true;
+                    }
+                }
+            });
+            if (hasSaved) {
+                setForm(prev => ({ ...prev, ...loaded }));
+            }
+        } catch (e) {
+            console.warn('LocalStorage error:', e);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        try {
+            Object.entries(form).forEach(([key, val]) => {
+                localStorage.setItem(`campuna_payload_${key}`, String(val));
+            });
+        } catch (e) {
+            console.warn('LocalStorage save error:', e);
+        }
     }, [form]);
 
     const updateField = (field, value) => {
-        setForm(prev => ({ ...prev, [field]: Number(value) || 0 }));
+        const sanitized = sanitizeValue(field, value);
+        setForm(prev => ({ ...prev, [field]: sanitized }));
+    };
+
+    const handleReset = () => {
+        setForm(DEFAULTS);
+        try {
+            Object.keys(DEFAULTS).forEach((key) => {
+                localStorage.removeItem(`campuna_payload_${key}`);
+            });
+        } catch (e) {
+            console.warn('LocalStorage reset error:', e);
+        }
     };
 
     const {
@@ -261,9 +303,8 @@ export default function PayloadCalculator() {
                     <div>
                         <div className="flex items-center justify-between mb-4">
                             <h4 className="text-xs font-bold text-forest uppercase tracking-[0.2em]">Ergebnis</h4>
-                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-                                isOverloaded ? 'bg-rose-600 text-white' : isWarning ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
-                            }`}>
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${isOverloaded ? 'bg-rose-600 text-white' : isWarning ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
+                                }`}>
                                 {isOverloaded ? 'Überladen' : isWarning ? 'Knapp' : 'Sicher'}
                             </span>
                         </div>
@@ -281,9 +322,8 @@ export default function PayloadCalculator() {
 
                             <div className="flex justify-between items-baseline pt-2">
                                 <span className="text-xs text-charcoal/60">Verbleibende Reserve:</span>
-                                <span className={`text-xl font-extrabold ${
-                                    isOverloaded ? 'text-rose-600 animate-pulse' : isWarning ? 'text-amber-600' : 'text-emerald-700'
-                                }`}>
+                                <span className={`text-xl font-extrabold ${isOverloaded ? 'text-rose-600 animate-pulse' : isWarning ? 'text-amber-600' : 'text-emerald-700'
+                                    }`}>
                                     {remainingPayload} kg
                                 </span>
                             </div>
@@ -293,9 +333,8 @@ export default function PayloadCalculator() {
                         <div className="mt-6 space-y-1.5">
                             <div className="h-3 w-full bg-sand rounded-full overflow-hidden border border-forest/5 relative">
                                 <div
-                                    className={`h-full transition-all duration-300 rounded-full ${
-                                        isOverloaded ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'
-                                    }`}
+                                    className={`h-full transition-all duration-300 rounded-full ${isOverloaded ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'
+                                        }`}
                                     style={{ width: `${Math.min(weightUsagePercent, 100)}%` }}
                                 />
                             </div>
@@ -327,9 +366,8 @@ export default function PayloadCalculator() {
                     </div>
 
                     {/* Status Info Box */}
-                    <div className={`mt-6 p-4 rounded-2xl flex items-start gap-3 border text-xs leading-relaxed transition-all ${
-                        isOverloaded ? 'bg-rose-50 border-rose-200 text-rose-900' : isWarning ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                    }`}>
+                    <div className={`mt-6 p-4 rounded-2xl flex items-start gap-3 border text-xs leading-relaxed transition-all ${isOverloaded ? 'bg-rose-50 border-rose-200 text-rose-900' : isWarning ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                        }`}>
                         <div className="p-1.5 hidden sm:block rounded-xl shrink-0 mt-0.5 bg-white/60">
                             {isOverloaded ? (
                                 <ShieldAlert className="w-5 h-5 text-rose-600" />

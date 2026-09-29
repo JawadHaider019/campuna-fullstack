@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     MessageSquare,
     Search,
@@ -24,7 +25,8 @@ import {
     Inbox,
     Layers,
     ChevronLeft,
-    Building2
+    Building2,
+    Crown
 } from 'lucide-react';
 import {
     getConversations,
@@ -32,6 +34,7 @@ import {
     sendChatMessage
 } from '@/api/conversations';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getSocket } from '@/utils/socket';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/imageUrl';
 
@@ -78,10 +81,12 @@ function AdminMessagesContent() {
     const [loadingChat, setLoadingChat] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
 
     const currentUser = useAuthStore((state) => state.user);
     const chatContainerRef = useRef(null);
     const textareaRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
 
     const scrollToBottom = useCallback((smooth = true) => {
         if (chatContainerRef.current) {
@@ -209,11 +214,11 @@ function AdminMessagesContent() {
         fetchConversationsList();
     }, [fetchConversationsList]);
 
-    // Poll conversations list every 6s
+    // Poll conversations list every 5s
     useEffect(() => {
         const interval = setInterval(() => {
             fetchConversationsList(true);
-        }, 6000);
+        }, 5000);
         return () => clearInterval(interval);
     }, [fetchConversationsList]);
 
@@ -241,23 +246,115 @@ function AdminMessagesContent() {
         }
     }, []);
 
+    // ── 4.1 Realtime Socket Room & Listeners ──────────────────────────
+    useEffect(() => {
+        const socket = getSocket();
+        if (!socket) return;
+
+        // Global message received listener
+        const handleGlobalMessage = ({ conversationId, message }) => {
+            setConversations((prev) => {
+                let found = false;
+                const updated = prev.map((c) => {
+                    if (c.id === conversationId) {
+                        found = true;
+                        const isCurrentActive = selectedConvId === conversationId;
+                        return {
+                            ...c,
+                            last_message: message,
+                            updated_at: message.created_at || new Date().toISOString(),
+                            unread_count: isCurrentActive ? 0 : (c.unread_count || 0) + 1
+                        };
+                    }
+                    return c;
+                });
+                if (!found) {
+                    fetchConversationsList(true);
+                }
+                return updated;
+            });
+        };
+
+        socket.on('message_received', handleGlobalMessage);
+        socket.on('admin_new_message', handleGlobalMessage);
+
+        if (selectedConvId) {
+            socket.emit('join_conversation', { conversationId: selectedConvId });
+            socket.emit('mark_read', { conversationId: selectedConvId });
+
+            const handleRoomNewMessage = ({ conversationId, message }) => {
+                if (conversationId === selectedConvId) {
+                    setMessages((prev) => {
+                        if (prev.some((m) => m.id === message.id)) return prev;
+                        const isMine = String(message.sender_id).toLowerCase() === String(currentUser?.id).toLowerCase();
+                        return [
+                            ...prev,
+                            {
+                                ...message,
+                                is_mine: isMine
+                            }
+                        ];
+                    });
+                    setIsOtherUserTyping(false);
+                    socket.emit('mark_read', { conversationId: selectedConvId });
+                }
+            };
+
+            const handleUserTyping = ({ conversationId, userId }) => {
+                if (conversationId === selectedConvId && String(userId).toLowerCase() !== String(currentUser?.id).toLowerCase()) {
+                    setIsOtherUserTyping(true);
+                }
+            };
+
+            const handleUserStoppedTyping = ({ conversationId, userId }) => {
+                if (conversationId === selectedConvId && String(userId).toLowerCase() !== String(currentUser?.id).toLowerCase()) {
+                    setIsOtherUserTyping(false);
+                }
+            };
+
+            const handleMessagesRead = ({ conversationId }) => {
+                if (conversationId === selectedConvId) {
+                    setMessages((prev) => prev.map((m) => ({ ...m, is_read: true })));
+                }
+            };
+
+            socket.on('new_message', handleRoomNewMessage);
+            socket.on('user_typing', handleUserTyping);
+            socket.on('user_stopped_typing', handleUserStoppedTyping);
+            socket.on('messages_read', handleMessagesRead);
+
+            return () => {
+                socket.emit('leave_conversation', { conversationId: selectedConvId });
+                socket.off('new_message', handleRoomNewMessage);
+                socket.off('user_typing', handleUserTyping);
+                socket.off('user_stopped_typing', handleUserStoppedTyping);
+                socket.off('messages_read', handleMessagesRead);
+                socket.off('message_received', handleGlobalMessage);
+                socket.off('admin_new_message', handleGlobalMessage);
+            };
+        }
+
+        return () => {
+            socket.off('message_received', handleGlobalMessage);
+            socket.off('admin_new_message', handleGlobalMessage);
+        };
+    }, [selectedConvId, currentUser?.id, fetchConversationsList]);
+
     useEffect(() => {
         if (selectedConvId) {
             fetchConversationDetail(selectedConvId);
-            const interval = setInterval(() => {
-                fetchConversationDetail(selectedConvId, true);
-            }, 4000);
-            return () => clearInterval(interval);
+            setIsOtherUserTyping(false);
         } else {
             setActiveConversation(null);
             setMessages([]);
+            setIsOtherUserTyping(false);
         }
     }, [selectedConvId, fetchConversationDetail]);
 
     // Scroll to bottom on messages update
     useEffect(() => {
         scrollToBottom(true);
-    }, [messages, scrollToBottom]);
+    }, [messages, isOtherUserTyping, scrollToBottom]);
 
     // Handle selecting a contact (Side 1: Users on left -> shows Listings on right)
     const handleSelectContact = (contactId) => {
@@ -273,7 +370,7 @@ function AdminMessagesContent() {
         router.replace(`/admin/nachrichten?id=${encodeURIComponent(convId)}`, { scroll: false });
     };
 
-    // Handle going back to Contacts list (Returns to Side 1: Users on left, Listings on right)
+    // Handle going back to Contacts list
     const handleBackToContacts = () => {
         setSelectedConvId(null);
         setMobileStep('contacts');
@@ -301,12 +398,23 @@ function AdminMessagesContent() {
         const text = newMessageText.trim();
         if (!text || !selectedConvId || isSending) return;
 
+        const socket = getSocket();
+        if (socket && selectedConvId) {
+            socket.emit('typing_stop', { conversationId: selectedConvId });
+        }
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+
         setIsSending(true);
         try {
             const res = await sendChatMessage(selectedConvId, text);
             const sentMsg = res.message || res.data?.message;
             if (res.success && sentMsg) {
-                setMessages((prev) => [...prev, sentMsg]);
+                setMessages((prev) => {
+                    if (prev.some((m) => m.id === sentMsg.id)) return prev;
+                    return [...prev, sentMsg];
+                });
                 setNewMessageText('');
 
                 setConversations((prev) =>
@@ -332,6 +440,31 @@ function AdminMessagesContent() {
             toast.error(err.response?.data?.error || err.message || 'Fehler beim Senden.');
         } finally {
             setIsSending(false);
+        }
+    };
+
+    const handleTextareaChange = (e) => {
+        const val = e.target.value;
+        setNewMessageText(val);
+
+        e.target.style.height = 'auto';
+        const newH = Math.min(e.target.scrollHeight, 180);
+        e.target.style.height = `${newH}px`;
+        scrollToBottom(false);
+
+        const socket = getSocket();
+        if (socket && selectedConvId) {
+            if (val.trim().length > 0) {
+                socket.emit('typing_start', { conversationId: selectedConvId });
+                if (typingTimeoutRef.current) {
+                    clearTimeout(typingTimeoutRef.current);
+                }
+                typingTimeoutRef.current = setTimeout(() => {
+                    socket.emit('typing_stop', { conversationId: selectedConvId });
+                }, 2000);
+            } else {
+                socket.emit('typing_stop', { conversationId: selectedConvId });
+            }
         }
     };
 
@@ -422,16 +555,21 @@ function AdminMessagesContent() {
                         </p>
                     </div>
                 ) : (
-                    filteredContacts.map((contactGroup) => {
+                    filteredContacts.map((contactGroup, cIdx) => {
                         const isSelected = selectedUserId === contactGroup.userId;
                         const hasUnread = contactGroup.totalUnreadCount > 0;
                         const listingsCount = contactGroup.conversations.length;
 
                         return (
-                            <div
+                            <motion.div
                                 key={contactGroup.userId}
+                                initial={{ opacity: 0, x: -6 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.2, delay: Math.min(cIdx * 0.03, 0.25) }}
+                                whileHover={{ x: 2 }}
+                                whileTap={{ scale: 0.99 }}
                                 onClick={() => handleSelectContact(contactGroup.userId)}
-                                className={`p-3 sm:p-3.5 transition-all cursor-pointer relative flex gap-3 items-start ${
+                                className={`p-3 sm:p-3.5 transition-colors cursor-pointer relative flex gap-3 items-start ${
                                     isSelected
                                         ? 'bg-white border-l-4 border-l-forest shadow-xs'
                                         : hasUnread
@@ -509,7 +647,7 @@ function AdminMessagesContent() {
                                         )}
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         );
                     })
                 )}
@@ -539,17 +677,18 @@ function AdminMessagesContent() {
 
         return (
             <div className="flex flex-col h-full bg-[#fdfcf9]">
-                {/* Header with Back Button */}
-                <div className="p-3.5 sm:p-4 border-b border-beige bg-white space-y-2 shrink-0">
-                    <button
-                        onClick={handleBackToContacts}
-                        className={`${selectedConvId ? 'flex' : 'lg:hidden flex'} items-center gap-1.5 text-xs font-bold text-forest hover:text-gold-dark transition-colors cursor-pointer group`}
-                    >
-                        <ChevronLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span>Zurück zu allen Kontakten</span>
-                    </button>
+                {/* Header with Inline Back Arrow on Mobile */}
+                <div className="p-3.5 sm:p-4 border-b border-beige bg-white shrink-0">
+                    <div className="flex items-center gap-2 sm:gap-2.5">
+                        {/* Back Arrow Button (Shows on mobile or when conversation is selected) */}
+                        <button
+                            onClick={handleBackToContacts}
+                            className={`${selectedConvId ? 'flex' : 'lg:hidden flex'} p-1.5 -ml-1 rounded-full hover:bg-sand/40 text-charcoal/70 hover:text-forest transition-colors cursor-pointer shrink-0`}
+                            title="Zurück zu allen Kontakten"
+                        >
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
 
-                    <div className="flex items-center gap-2.5 pt-1">
                         <div className="w-9 h-9 rounded-full bg-forest text-sand font-bold text-xs flex items-center justify-center shrink-0 overflow-hidden shadow-xs">
                             {activeContactGroup.user?.avatar ? (
                                 <img
@@ -586,16 +725,21 @@ function AdminMessagesContent() {
                         <span>Inserate mit {activeContactGroup.user?.name}</span>
                     </div>
 
-                    {activeContactGroup.conversations.map((conv) => {
+                    {activeContactGroup.conversations.map((conv, lIdx) => {
                         const isSelected = selectedConvId === conv.id;
                         const hasUnread = (conv.unread_count || 0) > 0;
                         const hasListing = Boolean(conv.listing && (conv.listing.title || conv.listing.id));
 
                         return (
-                            <div
+                            <motion.div
                                 key={conv.id}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.2, delay: Math.min(lIdx * 0.04, 0.2) }}
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
                                 onClick={() => handleSelectListingConversation(conv.id)}
-                                className={`pt-2.5 transition-all cursor-pointer rounded-2xl p-3 flex items-start sm:items-center justify-between gap-3 group ${
+                                className={`pt-2.5 transition-colors cursor-pointer rounded-2xl p-3 flex items-start sm:items-center justify-between gap-3 group ${
                                     isSelected
                                         ? 'bg-white border-2 border-forest shadow-xs'
                                         : 'bg-white hover:bg-sand/20 border border-beige'
@@ -604,12 +748,12 @@ function AdminMessagesContent() {
                                 <div className="flex items-center gap-3 min-w-0 flex-1">
                                     {/* Thumbnail */}
                                     <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl overflow-hidden bg-forest/5 border border-beige shrink-0 flex items-center justify-center relative">
-                                        {hasListing ? (
+                                        {hasListing && conv.listing?.main_image ? (
                                             <img
-                                                src={getImageUrl(conv.listing.main_image, '/hero-campuna.webp')}
+                                                src={getImageUrl(conv.listing.main_image)}
                                                 alt={conv.listing.title || 'Listing'}
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                onError={(e) => { e.currentTarget.src = '/hero-campuna.webp'; }}
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                             />
                                         ) : activeContactGroup.user?.avatar ? (
                                             <img
@@ -619,7 +763,7 @@ function AdminMessagesContent() {
                                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                             />
                                         ) : (
-                                            <Building2 className="w-6 h-6 text-forest/70" />
+                                            <Building2 className="w-5 h-5 text-forest/60" />
                                         )}
                                     </div>
 
@@ -675,7 +819,7 @@ function AdminMessagesContent() {
                                         <ChevronRight className="w-4 h-4" />
                                     </span>
                                 </div>
-                            </div>
+                            </motion.div>
                         );
                     })}
                 </div>
@@ -684,7 +828,7 @@ function AdminMessagesContent() {
     };
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 3. ACTIVE CHAT THREAD VIEW
+    // 3. ACTIVE CHAT THREAD VIEW WITH REALTIME MESSENGER ANIMATIONS
     // ─────────────────────────────────────────────────────────────────────────
     const renderChatThread = () => {
         if (!selectedConvId || !activeConversation) {
@@ -704,9 +848,9 @@ function AdminMessagesContent() {
         }
 
         return (
-            <div className="flex flex-col h-full bg-white">
+            <div className="flex flex-col h-full bg-white relative overflow-hidden">
                 {/* Thread Top Bar */}
-                <div className="p-3 sm:p-3.5 bg-white border-b border-beige flex items-center justify-between gap-3 shadow-2xs shrink-0">
+                <div className="p-3 sm:p-3.5 bg-white border-b border-beige flex items-center justify-between gap-3 shadow-2xs shrink-0 z-20">
                     <div className="flex items-center gap-2.5 min-w-0">
                         {/* Mobile Back Button */}
                         <button
@@ -741,10 +885,8 @@ function AdminMessagesContent() {
                                     {activeConversation.other_user?.type || 'Interessent'}
                                 </span>
                             </div>
-                            <p className="text-[10px] text-charcoal/50 truncate">
-                                {activeConversation.listing && (activeConversation.listing.title || activeConversation.listing.id)
-                                    ? 'Interessent für Inserat'
-                                    : 'Direktanfrage'}
+                            <p className="text-[11px] font-medium text-forest truncate max-w-[200px] sm:max-w-sm" title={activeConversation.listing?.title}>
+                                {activeConversation.listing?.title || 'Direktanfrage'}
                             </p>
                         </div>
                     </div>
@@ -757,13 +899,17 @@ function AdminMessagesContent() {
                             className="bg-[#faf8f3] hover:bg-sand border border-beige rounded-xl p-1.5 sm:px-2.5 sm:py-1.5 flex items-center gap-2 transition-colors group shrink-0 max-w-[170px] sm:max-w-xs"
                             title="Inserat anzeigen"
                         >
-                            <div className="w-7 h-7 rounded-lg overflow-hidden bg-forest/5 shrink-0">
-                                <img
-                                    src={getImageUrl(activeConversation.listing.main_image, '/hero-campuna.webp')}
-                                    alt={activeConversation.listing.title}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => { e.currentTarget.src = '/hero-campuna.webp'; }}
-                                />
+                            <div className="w-7 h-7 rounded-lg overflow-hidden bg-forest/5 shrink-0 flex items-center justify-center">
+                                {activeConversation.listing.main_image ? (
+                                    <img
+                                        src={getImageUrl(activeConversation.listing.main_image)}
+                                        alt={activeConversation.listing.title}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+                                ) : (
+                                    <Compass className="w-4 h-4 text-forest/70" />
+                                )}
                             </div>
                             <div className="min-w-0 hidden sm:block text-left">
                                 <span className="block text-[10px] font-bold text-forest truncate">
@@ -778,10 +924,10 @@ function AdminMessagesContent() {
                     )}
                 </div>
 
-                {/* Message Stream */}
+                {/* Message Stream (Flex-1 scrollable, automatically shrinks as input grows upward) */}
                 <div
                     ref={chatContainerRef}
-                    className="flex-1 p-3.5 sm:p-5 overflow-y-auto space-y-3.5 bg-[#fdfcf9]"
+                    className="flex-1 min-h-0 p-3.5 sm:p-5 overflow-y-auto space-y-3.5 bg-[#fdfcf9]"
                 >
                     {loadingChat ? (
                         <div className="h-full flex flex-col items-center justify-center space-y-2 text-charcoal/60">
@@ -789,7 +935,7 @@ function AdminMessagesContent() {
                             <p className="text-xs">Nachrichten werden geladen...</p>
                         </div>
                     ) : messages.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center space-y-2 text-charcoal/60">
+                        <div className="h-full flex flex-col items-center justify-center text-center space-y-2 text-charcoal/60 py-12">
                             <Sparkles className="w-6 h-6 text-forest" />
                             <p className="text-xs font-bold text-charcoal">Noch keine Nachrichten</p>
                             <p className="text-[11px] max-w-xs">
@@ -797,76 +943,109 @@ function AdminMessagesContent() {
                             </p>
                         </div>
                     ) : (
-                        messages.map((msg, idx) => {
-                            const isMine = msg.is_mine || msg.sender_id === currentUser?.id;
+                        <AnimatePresence initial={false}>
+                            {messages.map((msg, idx) => {
+                                const isMine = msg.is_mine || msg.sender_id === currentUser?.id;
 
-                            return (
-                                <div
-                                    key={msg.id || idx}
-                                    className={`flex flex-col ${
-                                        isMine ? 'items-end' : 'items-start'
-                                    }`}
-                                >
-                                    {/* Sender Tag */}
-                                    <div className="flex items-center gap-1.5 mb-1 px-1">
-                                        <span className="text-[10px] font-bold text-charcoal/45 uppercase tracking-wider font-sans">
-                                            {isMine ? 'Campuna Club (Admin)' : (activeConversation.other_user?.name || 'Interessent')}
-                                        </span>
-                                        {isMine && (
-                                            <span className="inline-flex items-center gap-0.5 bg-gold/20 text-forest text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-gold/40">
-                                                <Sparkles className="w-2.5 h-2.5 text-gold-dark" /> Admin
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Message Bubble */}
-                                    <div
-                                        className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-3 text-xs sm:text-sm leading-relaxed shadow-xs ${
-                                            isMine
-                                                ? 'bg-[#004709] text-sand rounded-br-xs'
-                                                : 'bg-white border border-beige text-charcoal rounded-bl-xs'
+                                return (
+                                    <motion.div
+                                        key={msg.id || idx}
+                                        initial={{ opacity: 0, y: 14, scale: 0.94 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
+                                        transition={{
+                                            type: 'spring',
+                                            stiffness: 450,
+                                            damping: 30,
+                                            mass: 0.8
+                                        }}
+                                        className={`flex flex-col ${
+                                            isMine ? 'items-end' : 'items-start'
                                         }`}
                                     >
-                                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                                    </div>
-
-                                    {/* Timestamp & Delivery */}
-                                    <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-charcoal/45 font-mono">
-                                        <span>{formatMessageTime(msg.created_at)}</span>
-                                        {isMine && (
-                                            <span>
-                                                {msg.is_read ? (
-                                                    <CheckCheck
-                                                        className="w-3.5 h-3.5 text-emerald-600 inline"
-                                                        title="Gelesen"
-                                                    />
-                                                ) : (
-                                                    <Check
-                                                        className="w-3.5 h-3.5 text-charcoal/40 inline"
-                                                        title="Zugestellt"
-                                                    />
-                                                )}
+                                        {/* Sender Tag */}
+                                        <div className="flex items-center gap-1.5 mb-1 px-1">
+                                            <span className="text-[10px] font-bold text-charcoal/45 uppercase tracking-wider font-sans">
+                                                {isMine ? 'Campuna Club (Admin)' : (activeConversation.other_user?.name || 'Interessent')}
                                             </span>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })
+                                            {isMine && (
+                                                <span className="inline-flex items-center gap-0.5 bg-gold/20 text-forest text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-gold/40">
+                                                    <Crown className="w-2.5 h-2.5 text-amber-600" /> Admin
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Message Bubble */}
+                                        <motion.div
+                                            layout
+                                            className={`max-w-[88%] sm:max-w-[75%] rounded-2xl p-3 text-xs sm:text-sm leading-relaxed shadow-sm transition-shadow ${
+                                                isMine
+                                                    ? 'bg-[#004709] text-sand rounded-br-xs shadow-emerald-950/10'
+                                                    : 'bg-white border border-beige text-charcoal rounded-bl-xs shadow-slate-900/5'
+                                            }`}
+                                        >
+                                            <p className="whitespace-pre-wrap break-words select-text">{msg.content}</p>
+                                        </motion.div>
+
+                                        {/* Timestamp & Delivery */}
+                                        <div className="flex items-center gap-1 mt-1 px-1 text-[10px] text-charcoal/45 font-mono">
+                                            <span>{formatMessageTime(msg.created_at)}</span>
+                                            {isMine && (
+                                                <span>
+                                                    {msg.is_read ? (
+                                                        <CheckCheck
+                                                            className="w-3.5 h-3.5 text-emerald-600 inline"
+                                                            title="Gelesen"
+                                                        />
+                                                    ) : (
+                                                        <Check
+                                                            className="w-3.5 h-3.5 text-charcoal/40 inline"
+                                                            title="Zugestellt"
+                                                        />
+                                                    )}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
+                    )}
+
+                    {/* Typing Indicator */}
+                    {isOtherUserTyping && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="flex items-center gap-2 text-charcoal/60 text-xs py-1"
+                        >
+                            <div className="bg-white border border-beige rounded-2xl px-3.5 py-2 flex items-center gap-1.5 shadow-sm">
+                                <span className="text-[11px] font-medium text-forest">
+                                    {activeConversation?.other_user?.name || 'Nutzer'} tippt
+                                </span>
+                                <span className="flex gap-1 items-center">
+                                    <span className="w-1.5 h-1.5 bg-forest rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                                    <span className="w-1.5 h-1.5 bg-forest rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                                    <span className="w-1.5 h-1.5 bg-forest rounded-full animate-bounce"></span>
+                                </span>
+                            </div>
+                        </motion.div>
                     )}
                 </div>
 
-                {/* Reply Input Box */}
-                <div className="p-3 sm:p-4 bg-white border-t border-beige space-y-2 sticky bottom-0 z-10 shrink-0">
+                {/* ── WHATSAPP-STYLE BOTTOM INPUT BAR (EXPANDS UPWARD) ── */}
+                <div className="bg-white border-t border-beige p-2.5 sm:p-3.5 space-y-2 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] z-20">
                     {/* Quick Presets */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 text-[11px]">
+                    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 text-[11px]">
                         {QUICK_REPLIES.map((chip) => (
                             <button
                                 key={chip}
                                 type="button"
                                 onClick={() => handleApplyQuickReply(chip)}
-                                className="px-2.5 py-1 rounded-full bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 transition-colors whitespace-nowrap cursor-pointer text-[10px]"
+                                className="px-2.5 py-1 rounded-full bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 transition-colors whitespace-nowrap cursor-pointer text-[10px] shrink-0"
                             >
-                                {chip.slice(0, 38)}...
+                                {chip.slice(0, 36)}...
                             </button>
                         ))}
                     </div>
@@ -876,11 +1055,7 @@ function AdminMessagesContent() {
                             ref={textareaRef}
                             rows={1}
                             value={newMessageText}
-                            onChange={(e) => {
-                                setNewMessageText(e.target.value);
-                                e.target.style.height = 'auto';
-                                e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
-                            }}
+                            onChange={handleTextareaChange}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                     e.preventDefault();
@@ -888,13 +1063,13 @@ function AdminMessagesContent() {
                                 }
                             }}
                             placeholder="Nachricht als Campuna Club eingeben... (Enter zum Senden)"
-                            className="flex-1 bg-[#faf8f3] border border-beige rounded-2xl p-2.5 sm:p-3 text-xs sm:text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-forest focus:ring-1 focus:ring-forest resize-none max-h-28 leading-relaxed"
+                            className="flex-1 bg-[#faf8f3] border border-beige rounded-2xl p-2.5 sm:p-3 text-xs sm:text-sm text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:border-forest focus:ring-2 focus:ring-forest/20 resize-none min-h-[42px] max-h-[180px] leading-relaxed transition-[height] duration-75 overflow-y-auto"
                         />
 
                         <button
                             type="submit"
                             disabled={isSending || !newMessageText.trim()}
-                            className="bg-forest hover:bg-gold text-sand hover:text-forest disabled:opacity-40 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center transition-colors shadow-sm shrink-0 cursor-pointer"
+                            className="bg-forest hover:bg-gold text-sand hover:text-forest disabled:opacity-40 w-10 h-10 sm:w-11 sm:h-11 rounded-2xl flex items-center justify-center transition-all duration-200 shadow-sm shrink-0 cursor-pointer mb-0.5"
                             title="Senden"
                         >
                             {isSending ? (
@@ -910,48 +1085,9 @@ function AdminMessagesContent() {
     };
 
     return (
-        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-6">
-            {/* ── Top Page Header ── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold shrink-0">
-                        <MessageSquare className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-xl sm:text-2xl font-black font-sans text-slate-900 tracking-tight">
-                                Nachrichten & Anfragen
-                            </h1>
-                            {totalUnreadCount > 0 && (
-                                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[11px] font-black tracking-wide animate-pulse">
-                                    {totalUnreadCount} neu
-                                </span>
-                            )}
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                            Prüfe, verwalte und beantworte alle Käuferanfragen zu Campuna Club Inseraten.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Top Quick Actions */}
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => {
-                            setRefreshing(true);
-                            fetchConversationsList();
-                        }}
-                        disabled={refreshing}
-                        className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#E8EAEF] text-slate-700 hover:bg-slate-50 text-xs font-bold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
-                    >
-                        <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-forest' : ''}`} />
-                        <span>Aktualisieren</span>
-                    </button>
-                </div>
-            </div>
-
-            {/* ── Main Chat Shell Container (2 Sides Only) ── */}
-            <div className="bg-white rounded-3xl border border-[#E8EAEF] shadow-2xs overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-235px)] min-h-[580px] max-h-[860px]">
+        <div className="w-full h-full flex flex-col overflow-hidden">
+            {/* ── Main Chat Shell Container (Responsive 2 Sides, 100% Height, Inner Scroll Only) ── */}
+            <div className="bg-white rounded-none lg:rounded-3xl border-0 lg:border border-[#E8EAEF] shadow-none lg:shadow-2xs overflow-hidden flex flex-col lg:flex-row h-full w-full relative">
                 
                 {/* ═════════════════════════════════════════════════════════════
                     SIDE 1 (LEFT PANEL):
@@ -978,7 +1114,7 @@ function AdminMessagesContent() {
                     - If listing selected: Live Chat on Right
                    ═════════════════════════════════════════════════════════════ */}
                 <div
-                    className={`flex-1 flex flex-col bg-white overflow-hidden ${
+                    className={`flex-1 flex flex-col bg-white overflow-hidden relative ${
                         mobileStep === 'contacts'
                             ? 'hidden lg:flex'
                             : mobileStep === 'listings'
@@ -1006,3 +1142,4 @@ export default function AdminMessagesPage() {
         </Suspense>
     );
 }
+

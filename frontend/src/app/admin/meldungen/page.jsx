@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Flag,
     Search,
@@ -13,24 +14,20 @@ import {
     Eye,
     ShieldAlert,
     ShieldCheck,
-    Building2,
-    User,
-    Sparkles,
-    ExternalLink,
     RefreshCw,
     X,
     Filter,
-    ChevronLeft,
-    ChevronRight,
     UserX,
     Ban,
     MessageSquare,
-    Info,
-    Calendar,
+    ExternalLink,
     Check,
     ChevronDown,
     Folder,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Mail,
+    AlertCircle,
+    UserCheck
 } from 'lucide-react';
 import {
     getAdminReports,
@@ -41,43 +38,43 @@ import {
 const REASON_MAP = {
     SCAM: {
         label: 'Betrug / Scam',
-        badgeColor: 'bg-rose-100 text-rose-800 border-rose-200',
+        badgeColor: 'bg-rose-50 text-rose-800 border-rose-200',
         dotColor: 'bg-rose-500',
         icon: Flag
     },
     FALSE_INFORMATION: {
         label: 'Falsche Angaben',
-        badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
+        badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
         dotColor: 'bg-amber-500',
         icon: AlertTriangle
     },
     PROHIBITED_CONTENT: {
         label: 'Unzulässiger Inhalt',
-        badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
+        badgeColor: 'bg-purple-50 text-purple-800 border-purple-200',
         dotColor: 'bg-purple-500',
         icon: Ban
     },
     INAPPROPRIATE_IMAGE: {
         label: 'Unangemessene Bilder',
-        badgeColor: 'bg-pink-100 text-pink-800 border-pink-200',
+        badgeColor: 'bg-pink-50 text-pink-800 border-pink-200',
         dotColor: 'bg-pink-500',
         icon: ImageIcon
     },
     WRONG_CATEGORY: {
         label: 'Falsche Kategorie',
-        badgeColor: 'bg-blue-100 text-blue-800 border-blue-200',
+        badgeColor: 'bg-blue-50 text-blue-800 border-blue-200',
         dotColor: 'bg-blue-500',
         icon: Folder
     },
     NO_LONGER_AVAILABLE: {
         label: 'Nicht mehr verfügbar',
-        badgeColor: 'bg-slate-100 text-slate-800 border-slate-200',
+        badgeColor: 'bg-slate-50 text-slate-800 border-slate-200',
         dotColor: 'bg-slate-500',
         icon: Clock
     },
     OTHER: {
         label: 'Sonstiges',
-        badgeColor: 'bg-gray-100 text-gray-800 border-gray-200',
+        badgeColor: 'bg-gray-50 text-gray-800 border-gray-200',
         dotColor: 'bg-gray-500',
         icon: MessageSquare
     }
@@ -121,12 +118,13 @@ export default function AdminReportsPage() {
     const [isReasonDropdownOpen, setIsReasonDropdownOpen] = useState(false);
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
-    const limit = 15;
+    const limit = 30;
 
     // Detail Modal State
     const [selectedReport, setSelectedReport] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
     const [feedbackMessage, setFeedbackMessage] = useState(null);
+    const [adminNoteInput, setAdminNoteInput] = useState('');
 
     // Fetch reports
     const fetchReports = useCallback(async () => {
@@ -171,9 +169,10 @@ export default function AdminReportsPage() {
         setTimeout(() => setFeedbackMessage(null), 4500);
     };
 
-    // Open Report Detail Drawer / Modal
+    // Open Report Detail Modal
     const handleOpenDetail = async (report) => {
         setSelectedReport(report);
+        setAdminNoteInput(report.admin_note || '');
         setDetailLoading(true);
         try {
             const res = await getAdminReportDetail(report.id);
@@ -199,7 +198,7 @@ export default function AdminReportsPage() {
         try {
             const payload = {
                 status,
-                admin_note: customNote !== undefined ? customNote : null,
+                admin_note: customNote !== undefined ? customNote : (adminNoteInput ? adminNoteInput.trim() : null),
                 listing_action: listingAction || undefined,
                 suspend_seller: suspendSeller || undefined
             };
@@ -223,8 +222,8 @@ export default function AdminReportsPage() {
                             admin_note: payload.admin_note,
                             listing: {
                                 ...r.listing,
-                                status: listingAction === 'REJECT' ? 'REJECTED' : (listingAction === 'APPROVE' ? 'APPROVED' : r.listing.status),
-                                seller_is_suspended: suspendSeller ? true : r.listing.seller_is_suspended
+                                status: listingAction === 'REJECT' ? 'REJECTED' : (listingAction === 'APPROVE' ? 'APPROVED' : r.listing?.status),
+                                seller_is_suspended: suspendSeller ? true : r.listing?.seller_is_suspended
                             }
                         };
                     }
@@ -276,33 +275,45 @@ export default function AdminReportsPage() {
     };
 
     return (
-        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
+        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-12 font-sans">
 
             {/* ─── Feedback Toast ─── */}
-            {feedbackMessage && (
-                <div
-                    className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-xs font-bold transition-all duration-300 ${feedbackMessage.type === 'error'
-                        ? 'bg-rose-50 border-rose-200 text-rose-800'
-                        : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            <AnimatePresence>
+                {feedbackMessage && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className={`fixed top-6 right-6 z-50 px-4 py-3 rounded-2xl shadow-xl border flex items-center gap-3 text-xs font-bold ${
+                            feedbackMessage.type === 'error'
+                                ? 'bg-rose-50 border-rose-200 text-rose-800'
+                                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
                         }`}
-                >
-                    {feedbackMessage.type === 'error' ? (
-                        <AlertTriangle className="w-4 h-4 text-rose-600" />
-                    ) : (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    )}
-                    <span>{feedbackMessage.msg}</span>
-                </div>
-            )}
+                    >
+                        {feedbackMessage.type === 'error' ? (
+                            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                        ) : (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        )}
+                        <span>{feedbackMessage.msg}</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ─── Top Page Header ─── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs"
+            >
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
+                    <div className="w-11 h-11 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold shadow-inner">
                         <Flag className="w-5 h-5" />
                     </div>
                     <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <h1 className="text-xl sm:text-2xl font-black font-sans text-slate-900 tracking-tight">
                                 Meldungen & Konfliktlösung
                             </h1>
@@ -322,21 +333,23 @@ export default function AdminReportsPage() {
                     <button
                         onClick={fetchReports}
                         disabled={loading}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-[#D5D9E0] text-xs font-bold text-slate-700 hover:bg-sand/30 hover:border-forest/30 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-[#D5D9E0] text-xs font-bold text-slate-700 hover:bg-sand/30 hover:border-forest/30 transition-all cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
                     >
                         <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-forest' : ''}`} />
                         <span>Aktualisieren</span>
                     </button>
                 </div>
-            </div>
+            </motion.div>
 
             {/* ─── Top Bento Metric Cards ─── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                 {/* 1. Offene Meldungen (Forest-to-Black Luxury Gradient) */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setStatusFilter('PENDING'); setPage(1); }}
-                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[140px] border border-forest/30 cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[140px] border border-forest/30 cursor-pointer group transition-all"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-sand/80 uppercase tracking-wider">
@@ -358,12 +371,14 @@ export default function AdminReportsPage() {
                             <span>Gesamt: {stats.total || 0}</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 2. Verdacht auf Betrug / Scam */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setReasonFilter('SCAM'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[140px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[140px] cursor-pointer group transition-all hover:border-rose-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -381,12 +396,14 @@ export default function AdminReportsPage() {
                             <span>Hohe Sicherheitsrelevanz</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 3. Gelöst & Bearbeitet */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setStatusFilter('REVIEWED'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[140px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[140px] cursor-pointer group transition-all hover:border-emerald-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -405,12 +422,14 @@ export default function AdminReportsPage() {
                             <span>Bereinigt & erledigt</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 4. Verworfene Hinweise (Fehlalarme) */}
-                <div
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
                     onClick={() => { setStatusFilter('DISMISSED'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[140px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[140px] cursor-pointer group transition-all hover:border-slate-300"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -428,14 +447,14 @@ export default function AdminReportsPage() {
                             <span>Unbegründete Hinweise</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
             </div>
 
             {/* ─── Search & Filter Toolbar ─── */}
             <div className="bg-white p-4 rounded-3xl border border-[#E8EAEF] shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
 
                 {/* Left: Status Filter Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+                <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
                     {[
                         { key: 'ALL', label: 'Alle' },
                         { key: 'PENDING', label: 'Offen', count: stats.pending },
@@ -445,17 +464,19 @@ export default function AdminReportsPage() {
                         <button
                             key={item.key}
                             onClick={() => { setStatusFilter(item.key); setPage(1); }}
-                            className={`px-3.5 py-1.5 rounded-2xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${statusFilter === item.key
-                                ? 'bg-forest text-sand shadow-xs'
-                                : 'bg-[#F4F5F7] text-slate-600 hover:bg-slate-200/70'
-                                }`}
+                            className={`px-3.5 py-1.5 rounded-2xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                                statusFilter === item.key
+                                    ? 'bg-forest text-sand shadow-xs'
+                                    : 'bg-[#F4F5F7] text-slate-600 hover:bg-slate-200/70'
+                            }`}
                         >
                             <span>{item.label}</span>
                             {item.count !== undefined && item.count > 0 && (
-                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${statusFilter === item.key
-                                    ? 'bg-sand text-forest'
-                                    : item.key === 'PENDING' ? 'bg-rose-500 text-white' : 'bg-slate-300 text-slate-800'
-                                    }`}>
+                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                                    statusFilter === item.key
+                                        ? 'bg-sand text-forest'
+                                        : item.key === 'PENDING' ? 'bg-rose-500 text-white' : 'bg-slate-300 text-slate-800'
+                                }`}>
                                     {item.count}
                                 </span>
                             )}
@@ -466,7 +487,7 @@ export default function AdminReportsPage() {
                 {/* Right: Reason Select & Search Bar */}
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
 
-                    {/* Reason Filter Dropdown with React Icons */}
+                    {/* Reason Filter Dropdown */}
                     <div className="relative w-full sm:w-auto">
                         <button
                             type="button"
@@ -495,44 +516,52 @@ export default function AdminReportsPage() {
                             <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isReasonDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
 
-                        {isReasonDropdownOpen && (
-                            <div className="absolute right-0 top-full mt-1.5 w-full sm:w-[220px] bg-white rounded-2xl border border-[#D5D9E0] shadow-xl py-1.5 z-40 space-y-0.5 max-h-[300px] overflow-y-auto">
-                                <button
-                                    type="button"
-                                    onClick={() => { setReasonFilter('ALL'); setPage(1); setIsReasonDropdownOpen(false); }}
-                                    className={`w-full px-3 py-2 text-left text-xs font-bold flex items-center justify-between gap-2.5 hover:bg-sand/30 transition-colors cursor-pointer ${
-                                        reasonFilter === 'ALL' ? 'bg-forest/10 text-forest' : 'text-slate-700'
-                                    }`}
+                        <AnimatePresence>
+                            {isReasonDropdownOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 5 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute right-0 top-full mt-1.5 w-full sm:w-[220px] bg-white rounded-2xl border border-[#D5D9E0] shadow-xl py-1.5 z-40 space-y-0.5 max-h-[300px] overflow-y-auto"
                                 >
-                                    <div className="flex items-center gap-2.5 truncate">
-                                        <Filter className="w-4 h-4 text-slate-500 shrink-0" />
-                                        <span className="truncate">Alle Meldegründe</span>
-                                    </div>
-                                    {reasonFilter === 'ALL' && <Check className="w-3.5 h-3.5 text-forest shrink-0" />}
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setReasonFilter('ALL'); setPage(1); setIsReasonDropdownOpen(false); }}
+                                        className={`w-full px-3 py-2 text-left text-xs font-bold flex items-center justify-between gap-2.5 hover:bg-sand/30 transition-colors cursor-pointer ${
+                                            reasonFilter === 'ALL' ? 'bg-forest/10 text-forest' : 'text-slate-700'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2.5 truncate">
+                                            <Filter className="w-4 h-4 text-slate-500 shrink-0" />
+                                            <span className="truncate">Alle Meldegründe</span>
+                                        </div>
+                                        {reasonFilter === 'ALL' && <Check className="w-3.5 h-3.5 text-forest shrink-0" />}
+                                    </button>
 
-                                {Object.entries(REASON_MAP).map(([key, cfg]) => {
-                                    const IconComp = cfg.icon;
-                                    const isSelected = reasonFilter === key;
-                                    return (
-                                        <button
-                                            key={key}
-                                            type="button"
-                                            onClick={() => { setReasonFilter(key); setPage(1); setIsReasonDropdownOpen(false); }}
-                                            className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between gap-2.5 hover:bg-sand/30 transition-colors cursor-pointer ${
-                                                isSelected ? 'bg-forest/10 text-forest font-bold' : 'text-slate-700'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2.5 truncate">
-                                                <IconComp className="w-4 h-4 shrink-0 text-slate-700" />
-                                                <span className="truncate">{cfg.label}</span>
-                                            </div>
-                                            {isSelected && <Check className="w-3.5 h-3.5 text-forest shrink-0" />}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
+                                    {Object.entries(REASON_MAP).map(([key, cfg]) => {
+                                        const IconComp = cfg.icon;
+                                        const isSelected = reasonFilter === key;
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => { setReasonFilter(key); setPage(1); setIsReasonDropdownOpen(false); }}
+                                                className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center justify-between gap-2.5 hover:bg-sand/30 transition-colors cursor-pointer ${
+                                                    isSelected ? 'bg-forest/10 text-forest font-bold' : 'text-slate-700'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2.5 truncate">
+                                                    <IconComp className="w-4 h-4 shrink-0 text-slate-700" />
+                                                    <span className="truncate">{cfg.label}</span>
+                                                </div>
+                                                {isSelected && <Check className="w-3.5 h-3.5 text-forest shrink-0" />}
+                                            </button>
+                                        );
+                                    })}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     {/* Search Input */}
@@ -543,7 +572,7 @@ export default function AdminReportsPage() {
                             value={search}
                             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                             placeholder="Titel, Melder, Verkäufer..."
-                            className="w-full pl-9 pr-3.5 py-2 rounded-2xl bg-[#F8F9FB] border border-[#D5D9E0] text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-forest"
+                            className="w-full pl-9 pr-8 py-2 rounded-2xl bg-[#F8F9FB] border border-[#D5D9E0] text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-forest"
                         />
                         {search && (
                             <button
@@ -557,9 +586,128 @@ export default function AdminReportsPage() {
                 </div>
             </div>
 
-            {/* ─── Reports Table ─── */}
+            {/* ─── Reports Display (Desktop Table + Mobile Cards) ─── */}
             <div className="bg-white rounded-3xl border border-[#E8EAEF] shadow-2xs overflow-hidden">
-                <div className="overflow-x-auto">
+
+                {/* Mobile Card List (Visible on < md) */}
+                <div className="block md:hidden divide-y divide-slate-100">
+                    {loading ? (
+                        <div className="p-8 text-center text-slate-400">
+                            <div className="inline-flex items-center gap-2 font-semibold">
+                                <RefreshCw className="w-4 h-4 animate-spin text-forest" />
+                                <span>Meldungen werden geladen...</span>
+                            </div>
+                        </div>
+                    ) : reports.length === 0 ? (
+                        <div className="p-8 text-center">
+                            <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-2">
+                                <ShieldCheck className="w-6 h-6" />
+                            </div>
+                            <h4 className="text-sm font-bold text-slate-800">Keine Meldungen vorhanden</h4>
+                            <p className="text-xs text-slate-500 mt-1">Keine Meldungen entsprechen den Filterkriterien.</p>
+                        </div>
+                    ) : (
+                        reports.map((item) => {
+                            const reasonConfig = REASON_MAP[item.reason] || REASON_MAP.OTHER;
+                            const ReasonIcon = reasonConfig.icon;
+                            const statusConfig = STATUS_MAP[item.status] || STATUS_MAP.PENDING;
+
+                            return (
+                                <div
+                                    key={item.id}
+                                    onClick={() => handleOpenDetail(item)}
+                                    className={`p-4 space-y-3 cursor-pointer transition-colors active:bg-slate-50 ${
+                                        item.status === 'PENDING' ? 'bg-rose-50/20' : ''
+                                    }`}
+                                >
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden relative shrink-0 border border-slate-200">
+                                                {item.listing?.main_image ? (
+                                                    <Image
+                                                        src={item.listing.main_image}
+                                                        alt={item.listing?.title || 'Inserat'}
+                                                        fill
+                                                        className="object-cover"
+                                                        unoptimized
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                                        <Flag className="w-4 h-4 opacity-40" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <h4 className="font-bold text-slate-900 text-xs truncate max-w-[190px]">
+                                                    {item.listing?.title || 'Unbekanntes Inserat'}
+                                                </h4>
+                                                <div className="flex items-center gap-1 text-[11px] font-bold text-forest mt-0.5">
+                                                    <span>{formatPrice(item.listing?.price)}</span>
+                                                    <span className="text-slate-400 font-normal">•</span>
+                                                    <span className="text-slate-500 font-normal truncate">{item.listing?.location}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${statusConfig.bg}`}>
+                                            {statusConfig.label}
+                                        </span>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border ${reasonConfig.badgeColor}`}>
+                                            <ReasonIcon className="w-2.5 h-2.5 shrink-0" />
+                                            <span>{reasonConfig.label}</span>
+                                        </span>
+                                        {item.description && (
+                                            <p className="text-[11px] text-slate-600 line-clamp-2 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                                &ldquo;{item.description}&rdquo;
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                                        <div className="truncate">
+                                            Melder: <span className="font-semibold text-slate-700">{item.reporter?.name || 'Benutzer'}</span>
+                                        </div>
+                                        <span className="font-mono text-[10px] text-slate-400 shrink-0">
+                                            {formatDate(item.created_at)}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center justify-end gap-2 pt-1">
+                                        {item.status === 'PENDING' && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleModerationAction({
+                                                        status: 'REVIEWED',
+                                                        customNote: 'Direkt durch Admin als gelöst markiert.',
+                                                        reportId: item.id
+                                                    });
+                                                }}
+                                                className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs shadow-2xs"
+                                            >
+                                                Lösen
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleOpenDetail(item);
+                                            }}
+                                            className="px-3.5 py-1.5 rounded-xl bg-forest text-sand font-bold text-xs shadow-2xs"
+                                        >
+                                            Prüfen
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* Desktop Table View (Visible on >= md) */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left text-xs text-slate-700">
                         <thead className="bg-[#F8F9FB] text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-[#E8EAEF]">
                             <tr>
@@ -610,8 +758,9 @@ export default function AdminReportsPage() {
                                         <tr
                                             key={item.id}
                                             onClick={() => handleOpenDetail(item)}
-                                            className={`hover:bg-slate-100/70 transition-colors cursor-pointer group ${item.status === 'PENDING' ? 'bg-rose-50/20' : ''
-                                                }`}
+                                            className={`hover:bg-slate-100/70 transition-colors cursor-pointer group ${
+                                                item.status === 'PENDING' ? 'bg-rose-50/20' : ''
+                                            }`}
                                         >
                                             {/* Listing Column */}
                                             <td className="px-5 py-3.5 max-w-[260px]">
@@ -620,7 +769,7 @@ export default function AdminReportsPage() {
                                                         {item.listing?.main_image ? (
                                                             <Image
                                                                 src={item.listing.main_image}
-                                                                alt={item.listing.title || 'Inserat'}
+                                                                alt={item.listing?.title || 'Inserat'}
                                                                 fill
                                                                 className="object-cover"
                                                                 unoptimized
@@ -685,10 +834,11 @@ export default function AdminReportsPage() {
                                                     <div className="text-[11px] text-slate-500 font-mono truncate">
                                                         {item.reporter?.email}
                                                     </div>
-                                                    <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold inline-block ${item.reporter?.type === 'COMMERCIAL'
-                                                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                                        : 'bg-slate-100 text-slate-600'
-                                                        }`}>
+                                                    <span className={`text-[10px] px-1.5 py-0.2 rounded-md font-semibold inline-block ${
+                                                        item.reporter?.type === 'COMMERCIAL'
+                                                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                                            : 'bg-slate-100 text-slate-600'
+                                                    }`}>
                                                         {item.reporter?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privatnutzer'}
                                                     </span>
                                                 </div>
@@ -778,199 +928,222 @@ export default function AdminReportsPage() {
                 </div>
             </div>
 
-            {/* ─── Interactive Moderation Review Modal / Drawer ─── */}
-            {selectedReport && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-                    <div className="bg-white rounded-3xl max-w-2xl sm:max-w-3xl w-full shadow-2xl border border-white/20 overflow-hidden flex flex-col max-h-[90vh]">
+            {/* ─── Interactive Moderation Review Modal ─── */}
+            <AnimatePresence>
+                {selectedReport && (
+                    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.96, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.96, y: 15 }}
+                            transition={{ duration: 0.2 }}
+                            className="bg-white rounded-3xl max-w-2xl sm:max-w-3xl w-full shadow-2xl border border-white/20 overflow-hidden flex flex-col max-h-[90vh]"
+                        >
 
-                        {/* Modal Header */}
-                        <div className="px-6 py-4 bg-gradient-to-r from-sand/40 via-white to-sand/20 border-b border-[#E8EAEF] flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
-                                    <Flag className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h3 className="text-base font-black text-slate-900">
-                                        Meldung bearbeiten & Konflikt lösen
-                                    </h3>
-                                    <p className="text-[11px] text-slate-500 font-mono">
-                                        Meldungs-ID: #{selectedReport.id.slice(0, 8)} • Eingegangen am {formatDate(selectedReport.created_at)}
-                                    </p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setSelectedReport(null)}
-                                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div className="p-6 space-y-5 overflow-y-auto">
-
-                            {/* Alert if multiple reports exist */}
-                            {selectedReport.total_reports_for_listing > 1 && (
-                                <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-start gap-3 text-xs">
-                                    <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                            {/* Modal Header */}
+                            <div className="px-6 py-4 bg-gradient-to-r from-sand/40 via-white to-sand/20 border-b border-[#E8EAEF] flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
+                                        <Flag className="w-5 h-5" />
+                                    </div>
                                     <div>
-                                        <p className="font-black">
-                                            Erhöhtes Betrugsrisiko: Dieses Inserat wurde von {selectedReport.total_reports_for_listing} verschiedenen Nutzern gemeldet!
-                                        </p>
-                                        <p className="text-[11px] text-rose-700 mt-0.5">
-                                            Bitte prüfe dieses Angebot besonders sorgfältig auf verdächtige Preise, gefälschte Fotos oder betrügerische Kontaktversuche.
+                                        <h3 className="text-base font-black text-slate-900">
+                                            Meldung bearbeiten & Konflikt lösen
+                                        </h3>
+                                        <p className="text-[11px] text-slate-500 font-mono">
+                                            Meldungs-ID: #{selectedReport.id.slice(0, 8)} • Eingegangen am {formatDate(selectedReport.created_at)}
                                         </p>
                                     </div>
                                 </div>
-                            )}
+                                <button
+                                    onClick={() => setSelectedReport(null)}
+                                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
 
-                            {/* Listing Spotlight Card */}
-                            <div className="p-4 rounded-2xl bg-[#F8F9FB] border border-[#E8EAEF] space-y-3">
-                                <div className="flex items-center justify-between text-xs">
-                                    <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">
-                                        Gemeldetes Inserat
-                                    </span>
-                                    {selectedReport.listing?.slug && (
-                                        <Link
-                                            href={`/inserate/${selectedReport.listing.slug}`}
-                                            target="_blank"
-                                            className="text-forest hover:underline font-bold inline-flex items-center gap-1 text-[11px]"
-                                        >
-                                            <span>Inserat in neuem Tab öffnen</span>
-                                            <ExternalLink className="w-3 h-3" />
-                                        </Link>
-                                    )}
-                                </div>
+                            {/* Modal Body */}
+                            <div className="p-6 space-y-5 overflow-y-auto">
 
-                                <div className="flex items-start gap-3">
-                                    <div className="w-16 h-16 rounded-xl bg-slate-200 overflow-hidden relative shrink-0 border border-slate-300">
-                                        {selectedReport.listing?.main_image ? (
-                                            <Image
-                                                src={selectedReport.listing.main_image}
-                                                alt={selectedReport.listing?.title || 'Inserat'}
-                                                fill
-                                                className="object-cover"
-                                                unoptimized
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                                <Flag className="w-5 h-5 opacity-40" />
-                                            </div>
+                                {/* Alert if multiple reports exist */}
+                                {selectedReport.total_reports_for_listing > 1 && (
+                                    <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-start gap-3 text-xs">
+                                        <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-black">
+                                                Erhöhtes Betrugsrisiko: Dieses Inserat wurde von {selectedReport.total_reports_for_listing} verschiedenen Nutzern gemeldet!
+                                            </p>
+                                            <p className="text-[11px] text-rose-700 mt-0.5">
+                                                Bitte prüfe dieses Angebot besonders sorgfältig auf verdächtige Preise, gefälschte Fotos oder betrügerische Kontaktversuche.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Listing Spotlight Card */}
+                                <div className="p-4 rounded-2xl bg-[#F8F9FB] border border-[#E8EAEF] space-y-3">
+                                    <div className="flex items-center justify-between text-xs">
+                                        <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">
+                                            Gemeldetes Inserat
+                                        </span>
+                                        {selectedReport.listing?.slug && (
+                                            <Link
+                                                href={`/inserate/${selectedReport.listing.slug}`}
+                                                target="_blank"
+                                                className="text-forest hover:underline font-bold inline-flex items-center gap-1 text-[11px]"
+                                            >
+                                                <span>Inserat in neuem Tab öffnen</span>
+                                                <ExternalLink className="w-3 h-3" />
+                                            </Link>
                                         )}
                                     </div>
-                                    <div className="space-y-1 flex-1">
-                                        <h4 className="font-black text-slate-900 text-sm leading-snug">
-                                            {selectedReport.listing?.title || selectedReport.listing_title}
-                                        </h4>
-                                        <div className="flex items-center gap-2 text-xs font-bold text-forest">
-                                            <span>{formatPrice(selectedReport.listing?.price || selectedReport.price)}</span>
-                                            <span className="text-slate-400">•</span>
-                                            <span className="text-slate-600 font-normal">{selectedReport.listing?.location || 'Deutschland'}</span>
+
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-16 h-16 rounded-xl bg-slate-200 overflow-hidden relative shrink-0 border border-slate-300">
+                                            {selectedReport.listing?.main_image ? (
+                                                <Image
+                                                    src={selectedReport.listing.main_image}
+                                                    alt={selectedReport.listing?.title || 'Inserat'}
+                                                    fill
+                                                    className="object-cover"
+                                                    unoptimized
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-slate-400">
+                                                    <Flag className="w-5 h-5 opacity-40" />
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="flex items-center gap-1.5 pt-1">
-                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${selectedReport.listing?.status === 'APPROVED'
-                                                ? 'bg-emerald-100 text-emerald-800'
-                                                : selectedReport.listing?.status === 'REJECTED'
-                                                    ? 'bg-rose-100 text-rose-800'
-                                                    : 'bg-amber-100 text-amber-800'
+                                        <div className="space-y-1 flex-1">
+                                            <h4 className="font-black text-slate-900 text-sm leading-snug">
+                                                {selectedReport.listing?.title || selectedReport.listing_title}
+                                            </h4>
+                                            <div className="flex items-center gap-2 text-xs font-bold text-forest">
+                                                <span>{formatPrice(selectedReport.listing?.price || selectedReport.price)}</span>
+                                                <span className="text-slate-400">•</span>
+                                                <span className="text-slate-600 font-normal">{selectedReport.listing?.location || 'Deutschland'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 pt-1">
+                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${
+                                                    selectedReport.listing?.status === 'APPROVED'
+                                                        ? 'bg-emerald-100 text-emerald-800'
+                                                        : selectedReport.listing?.status === 'REJECTED'
+                                                            ? 'bg-rose-100 text-rose-800'
+                                                            : 'bg-amber-100 text-amber-800'
                                                 }`}>
-                                                Status: {selectedReport.listing?.status || selectedReport.listing_status}
-                                            </span>
+                                                    Status: {selectedReport.listing?.status || selectedReport.listing_status}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Report Details & Reporter Notes */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-800">
+                                            Grund der Meldung
+                                        </span>
+                                        {(() => {
+                                            const rConf = REASON_MAP[selectedReport.reason] || REASON_MAP.OTHER;
+                                            return (
+                                                <span className={`px-2.5 py-0.5 rounded-lg text-xs font-black border ${rConf.badgeColor}`}>
+                                                    {rConf.label}
+                                                </span>
+                                            );
+                                        })()}
+                                    </div>
+
+                                    <div className="p-3.5 rounded-2xl bg-sand/30 border border-sand/60 text-xs space-y-1.5">
+                                        <div className="flex items-center gap-1.5 text-slate-600 font-bold text-[11px]">
+                                            <MessageSquare className="w-3.5 h-3.5 text-forest" />
+                                            <span>Hinweis des Melders ({selectedReport.reporter?.name || 'Benutzer'}):</span>
+                                        </div>
+                                        <p className="text-slate-800 italic whitespace-pre-wrap leading-relaxed">
+                                            {selectedReport.description
+                                                ? `"${selectedReport.description}"`
+                                                : 'Keine zusätzliche Textbeschreibung übermittelt.'}
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                        <div>
+                                            <span className="text-[10px] text-slate-400 uppercase font-bold block">Melder</span>
+                                            <span className="font-bold text-slate-800 block truncate">{selectedReport.reporter?.name}</span>
+                                            <span className="text-[11px] text-slate-500 font-mono block truncate">{selectedReport.reporter?.email}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-[10px] text-slate-400 uppercase font-bold block">Verkäufer</span>
+                                            <span className="font-bold text-slate-800 block truncate">{selectedReport.listing?.seller_name}</span>
+                                            <span className="text-[11px] text-slate-500 font-mono block truncate">{selectedReport.listing?.seller_email}</span>
+                                        </div>
+                                    </div>
+
+                                    {/* Admin Note Input */}
+                                    <div className="space-y-1.5 pt-1">
+                                        <label className="text-xs font-bold text-slate-700">
+                                            Admin-Notiz / Bearbeitungskommentar (Optional)
+                                        </label>
+                                        <textarea
+                                            value={adminNoteInput}
+                                            onChange={(e) => setAdminNoteInput(e.target.value)}
+                                            placeholder="z.B. Geprüft, Verkäufer kontaktiert, Fake-Bilder gelöscht..."
+                                            className="w-full p-3 rounded-xl bg-[#F8F9FB] border border-[#D5D9E0] text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-forest resize-none h-20"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
-                            {/* Report Details & Reporter Notes */}
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-bold text-slate-800">
-                                        Grund der Meldung
-                                    </span>
-                                    {(() => {
-                                        const rConf = REASON_MAP[selectedReport.reason] || REASON_MAP.OTHER;
-                                        return (
-                                            <span className={`px-2.5 py-0.5 rounded-lg text-xs font-black border ${rConf.badgeColor}`}>
-                                                {rConf.label}
-                                            </span>
-                                        );
-                                    })()}
-                                </div>
+                            {/* Modal Actions Footer */}
+                            <div className="px-5 sm:px-6 py-4 bg-[#F8F9FB] border-t border-[#E8EAEF]">
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
+                                    {/* Action 1: Dismiss Report */}
+                                    <button
+                                        onClick={() => handleModerationAction({ status: 'DISMISSED' })}
+                                        disabled={actionLoading}
+                                        className="w-full px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer disabled:opacity-50 text-center border border-slate-300/80 shadow-2xs active:scale-95 inline-flex items-center justify-center gap-1.5"
+                                    >
+                                        <XCircle className="w-4 h-4 text-slate-500 shrink-0" />
+                                        <span className="truncate">Verwerfen</span>
+                                    </button>
 
-                                <div className="p-3.5 rounded-2xl bg-sand/30 border border-sand/60 text-xs space-y-1.5">
-                                    <div className="flex items-center gap-1.5 text-slate-600 font-bold text-[11px]">
-                                        <MessageSquare className="w-3.5 h-3.5 text-forest" />
-                                        <span>Hinweis des Melders ({selectedReport.reporter?.name || 'Benutzer'}):</span>
-                                    </div>
-                                    <p className="text-slate-800 italic whitespace-pre-wrap leading-relaxed">
-                                        {selectedReport.description
-                                            ? `"${selectedReport.description}"`
-                                            : 'Keine zusätzliche Textbeschreibung übermittelt.'}
-                                    </p>
-                                </div>
+                                    {/* Action 2: Resolve / Mark Resolved */}
+                                    <button
+                                        onClick={() => handleModerationAction({ status: 'REVIEWED' })}
+                                        disabled={actionLoading}
+                                        className="w-full px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center justify-center gap-1.5 active:scale-95"
+                                    >
+                                        <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                                        <span className="truncate">Als gelöst markieren</span>
+                                    </button>
 
-                                <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                                    <div>
-                                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Melder</span>
-                                        <span className="font-bold text-slate-800 block truncate">{selectedReport.reporter?.name}</span>
-                                        <span className="text-[11px] text-slate-500 font-mono block truncate">{selectedReport.reporter?.email}</span>
-                                    </div>
-                                    <div>
-                                        <span className="text-[10px] text-slate-400 uppercase font-bold block">Verkäufer</span>
-                                        <span className="font-bold text-slate-800 block truncate">{selectedReport.listing?.seller_name}</span>
-                                        <span className="text-[11px] text-slate-500 font-mono block truncate">{selectedReport.listing?.seller_email}</span>
-                                    </div>
+                                    {/* Action 3: Reject Listing */}
+                                    <button
+                                        onClick={() => handleModerationAction({ status: 'REVIEWED', listingAction: 'REJECT' })}
+                                        disabled={actionLoading}
+                                        className="w-full px-3 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center justify-center gap-1.5 active:scale-95"
+                                    >
+                                        <Ban className="w-4 h-4 text-white shrink-0" />
+                                        <span className="truncate">Inserat sperren</span>
+                                    </button>
+
+                                    {/* Action 4: Suspend Seller */}
+                                    <button
+                                        onClick={() => handleModerationAction({ status: 'REVIEWED', listingAction: 'REJECT', suspendSeller: true })}
+                                        disabled={actionLoading}
+                                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-rose-300 border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center justify-center gap-1.5 active:scale-95"
+                                    >
+                                        <UserX className="w-4 h-4 text-rose-400 shrink-0" />
+                                        <span className="truncate">Verkäufer sperren</span>
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Modal Actions Footer - All 4 buttons in a clean single row */}
-                        <div className="px-5 sm:px-6 py-4 bg-[#F8F9FB] border-t border-[#E8EAEF]">
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full">
-                                {/* Action 1: Dismiss Report */}
-                                <button
-                                    onClick={() => handleModerationAction({ status: 'DISMISSED' })}
-                                    disabled={actionLoading}
-                                    className="w-full px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer disabled:opacity-50 text-center border border-slate-300/80 shadow-2xs active:scale-95 inline-flex items-center justify-center gap-1.5"
-                                >
-                                    <XCircle className="w-4 h-4 text-slate-500 shrink-0" />
-                                    <span className="truncate">Verwerfen</span>
-                                </button>
-
-                                {/* Action 2: Resolve / Mark Resolved */}
-                                <button
-                                    onClick={() => handleModerationAction({ status: 'REVIEWED' })}
-                                    disabled={actionLoading}
-                                    className="w-full px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center justify-center gap-1.5 active:scale-95"
-                                >
-                                    <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
-                                    <span className="truncate">Als gelöst markieren</span>
-                                </button>
-
-                                {/* Action 3: Reject Listing */}
-                                <button
-                                    onClick={() => handleModerationAction({ status: 'REVIEWED', listingAction: 'REJECT' })}
-                                    disabled={actionLoading}
-                                    className="w-full px-3 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center justify-center gap-1.5 active:scale-95"
-                                >
-                                    <Ban className="w-4 h-4 text-white shrink-0" />
-                                    <span className="truncate">Inserat sperren</span>
-                                </button>
-
-                                {/* Action 4: Suspend Seller */}
-                                <button
-                                    onClick={() => handleModerationAction({ status: 'REVIEWED', listingAction: 'REJECT', suspendSeller: true })}
-                                    disabled={actionLoading}
-                                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-rose-300 border border-slate-800 text-xs font-bold transition-all cursor-pointer shadow-xs disabled:opacity-50 inline-flex items-center justify-center gap-1.5 active:scale-95"
-                                >
-                                    <UserX className="w-4 h-4 text-rose-400 shrink-0" />
-                                    <span className="truncate">Verkäufer sperren</span>
-                                </button>
-                            </div>
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     );
 }
+

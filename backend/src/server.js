@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
+import { initSocketServer } from './socket.js';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
 import creditRoutes from './routes/credit.js';
@@ -12,6 +14,7 @@ import adminRoutes from './routes/admin.js';
 import conversationRoutes from './routes/conversations.js';
 import broadcastRoutes from './routes/broadcasts.js';
 import postsRoutes from './routes/posts.js';
+import aiRoutes from './routes/ai.js';
 import './config/initAdminTable.js';
 import './config/initChatTables.js';
 import './config/initReportsTable.js';
@@ -65,6 +68,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api', authRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/credits', creditRoutes);
 app.use('/api/referrals', referralRoutes);
@@ -109,8 +113,13 @@ process.on('unhandledRejection', (reason) => {
   console.error('❌ Unhandled Rejection:', reason);
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+const httpServer = http.createServer(app);
+
+// Initialize WebSocket Socket.IO Realtime Engine
+initSocketServer(httpServer);
+
+const server = httpServer.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT} with Realtime WebSockets active`);
 });
 
 server.on('error', (err) => {

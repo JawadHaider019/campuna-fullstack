@@ -79,7 +79,7 @@ export default function AgbClient() {
             </div>
 
             {/* 2. LEGAL DOCUMENT CONTENT */}
-            <main className="max-w-5xl mx-auto px-6 md:px-12 py-10 sm:py-16">
+            <main className="max-w-7xl mx-auto px-6 md:px-12 py-10 sm:py-16">
                 <div className="bg-sand/30 rounded-[32px] p-6 sm:p-12 border border-forest/10 space-y-10 text-charcoal/85 leading-relaxed font-sans text-sm sm:text-base font-light">
                     
                     {/* § 1 */}

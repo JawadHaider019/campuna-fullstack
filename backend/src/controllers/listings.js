@@ -3,7 +3,7 @@ import { db } from '../prisma/db.js';
 import { getUserFeatures } from './subscription.js';
 import { isValidPhoneNumber } from '../utils/validation.js';
 import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
-import { moderateListingAI } from '../services/aiService.js';
+import { moderateListingAI, generateListingDescriptionAI } from '../services/aiService.js';
 import crypto from 'crypto';
 
 /**
@@ -18,9 +18,24 @@ export const createListing = async (req, res) => {
         const isAdmin = role === 'ADMIN';
         const { title, price, description, category, subcategory, location, isNegotiable } = req.body;
 
-        // 1. Validate required fields
-        if (!title || !price || !category || !location) {
-            return res.status(400).json({ success: false, error: 'Bitte füllen Sie alle Pflichtfelder aus.' });
+        // 1. Validate required fields (no listing without all fields and at least one image)
+        if (!title || !String(title).trim()) {
+            return res.status(400).json({ success: false, error: 'Bitte geben Sie einen Titel für das Inserat ein.' });
+        }
+        if (!category || !String(category).trim()) {
+            return res.status(400).json({ success: false, error: 'Bitte wählen Sie eine Kategorie aus.' });
+        }
+        if (!location || !String(location).trim()) {
+            return res.status(400).json({ success: false, error: 'Bitte geben Sie einen Standort an.' });
+        }
+        if (!description || !String(description).trim()) {
+            return res.status(400).json({ success: false, error: 'Bitte geben Sie eine Beschreibung ein.' });
+        }
+        if (price === undefined || price === null || String(price).trim() === '') {
+            return res.status(400).json({ success: false, error: 'Bitte geben Sie einen Preis an.' });
+        }
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ success: false, error: 'Bitte laden Sie mindestens ein Foto für das Inserat hoch.' });
         }
 
         if (req.body.phone && String(req.body.phone).trim() !== '') {
@@ -52,14 +67,14 @@ export const createListing = async (req, res) => {
                     });
                 }
             } else {
-                // Commercial user: check subscription limits (FREE: 3, BUSINESS: 25)
+                // Commercial user: check subscription limits (FREE: 10, BUSINESS: -1 / unlimited)
                 const features = await getUserFeatures(id);
-                const limit = features.listing_limit; // 3 for FREE, 25 for BUSINESS
+                const limit = features.listing_limit; // 10 for FREE, -1 for BUSINESS (unlimited)
 
                 if (limit !== -1 && activeCount >= limit) {
                     return res.status(403).json({
                         success: false,
-                        error: `Du hast das Limit von ${limit} aktiven Inseraten im aktuellen Tarif erreicht. Upgrade auf den Campuna Business Plan, um bis zu 25 Inserate zu veröffentlichen.`,
+                        error: `Du hast das Limit von ${limit} aktiven Inseraten im kostenlosen Firmentarif erreicht. Upgrade auf den Campuna Business Plan, um unbegrenzt Inserate zu veröffentlichen.`,
                         upgrade_required: true,
                         current_plan: features.plan_name,
                         listing_limit: limit,
@@ -114,11 +129,15 @@ export const createListing = async (req, res) => {
 
         // Run local AI moderation (or fallback if AI server is offline)
         let aiResult = {
+            score: 95,
             safe: true,
-            reason: 'Manuelle Prüfung',
-            fraud_risk_score: 0.1,
-            confidence_score: 0.9,
-            ai_decision: 'APPROVE'
+            listing_status: 'APPROVED',
+            ai_decision: 'AUTO_APPROVED',
+            reason: 'Administrator-Freigabe',
+            text_score: 95,
+            price_score: 95,
+            fraud_risk_score: 5,
+            confidence_score: 0.99
         };
 
         if (!isAdmin) {
@@ -127,6 +146,7 @@ export const createListing = async (req, res) => {
                     title,
                     description: description || '',
                     category,
+                    subcategory: subcategory || '',
                     price: parsedPrice,
                     location
                 });
@@ -135,8 +155,8 @@ export const createListing = async (req, res) => {
             }
         }
 
-        // Determine final listing status: Admin or Safe AI -> APPROVED; Flagged AI -> REVIEW
-        const initialStatus = isAdmin ? 'APPROVED' : (aiResult.safe ? 'APPROVED' : 'REVIEW');
+        // Determine final listing status: Admin or Safe AI (>60) -> APPROVED; 40-60 or <40 -> REVIEW
+        const initialStatus = isAdmin ? 'APPROVED' : aiResult.listing_status;
 
         // 6. Create Listing in single table
         const insertRes = await pool.query(
@@ -190,13 +210,13 @@ export const createListing = async (req, res) => {
                 [
                     crypto.randomUUID(),
                     listing.id,
-                    isAdmin ? 99 : (aiResult.safe ? 90 : 35),
-                    isAdmin ? 'APPROVE' : (aiResult.safe ? 'APPROVE' : 'FLAG'),
+                    isAdmin ? 99 : (aiResult.score || 50),
+                    isAdmin ? 'AUTO_APPROVED' : (aiResult.ai_decision || 'MANUAL_REVIEW'),
                     aiResult.confidence_score || 0.9,
-                    isAdmin ? 99 : (aiResult.safe ? 90 : 40),
+                    isAdmin ? 99 : (aiResult.text_score || 50),
                     90,
-                    isAdmin ? 99 : (aiResult.safe ? 90 : 40),
-                    aiResult.fraud_risk_score || 0.05,
+                    isAdmin ? 99 : (aiResult.price_score || 50),
+                    isAdmin ? 0 : (aiResult.fraud_risk_score || 10),
                     JSON.stringify([aiResult.reason || (initialStatus === 'APPROVED' ? 'Automatisch freigegeben' : 'Markiert zur Überprüfung')]),
                     initialStatus === 'APPROVED' ? 'APPROVED' : 'PENDING'
                 ]
@@ -241,8 +261,17 @@ export const getMyListings = async (req, res) => {
         const query = `
             SELECT 
                 l.*,
-                (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted
+                (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted,
+                (SELECT COUNT(*) FROM favorites fav WHERE fav.listing_id = l.id) as favorites_count,
+                (SELECT COUNT(*) FROM conversations conv WHERE conv.listing_id = l.id) as conversations_count,
+                m.ai_score,
+                m.ai_decision,
+                m.ai_reasons,
+                m.fraud_risk_score,
+                m.status as moderation_status,
+                m.admin_notes
             FROM listings l
+            LEFT JOIN listing_moderation m ON l.id = m.listing_id
             WHERE l.user_id = $1
             ORDER BY l.created_at DESC
         `;
@@ -260,12 +289,35 @@ export const getMyListings = async (req, res) => {
                 }
             }
 
+            let reasonsArray = [];
+            if (Array.isArray(row.ai_reasons)) {
+                reasonsArray = row.ai_reasons;
+            } else if (typeof row.ai_reasons === 'string') {
+                try {
+                    reasonsArray = JSON.parse(row.ai_reasons);
+                } catch {
+                    reasonsArray = [row.ai_reasons];
+                }
+            }
+
+            const favoritesCount = parseInt(row.favorites_count || 0, 10);
+            const conversationsCount = parseInt(row.conversations_count || 0, 10);
+
             return {
                 ...row,
                 price: parseFloat(row.price) || 0,
                 featured: Boolean(row.featured),
                 is_boosted: Boolean(row.is_boosted),
-                images: imagesArray
+                favorites_count: favoritesCount,
+                conversations_count: conversationsCount,
+                likes_count: favoritesCount,
+                chats_count: conversationsCount,
+                images: imagesArray,
+                ai_score: row.ai_score !== null && row.ai_score !== undefined ? parseInt(row.ai_score, 10) : null,
+                ai_decision: row.ai_decision || null,
+                ai_reasons: reasonsArray,
+                moderation_status: row.moderation_status || 'PENDING',
+                admin_notes: row.admin_notes || ''
             };
         });
 
@@ -313,7 +365,9 @@ export const getAllListings = async (req, res) => {
                 cp.company_name,
                 cp.logo_url as company_logo,
                 cp.tier as company_tier,
-                COALESCE(pioneer_stat.has_pioneer, FALSE) as is_pioneer
+                COALESCE(pioneer_stat.has_pioneer, FALSE) as is_pioneer,
+                (SELECT COUNT(*) FROM favorites fav WHERE fav.listing_id = l.id) as favorites_count,
+                (SELECT COUNT(*) FROM conversations conv WHERE conv.listing_id = l.id) as conversations_count
             FROM listings l
             LEFT JOIN users u ON l.user_id = u.id
             LEFT JOIN private_profiles pp ON u.id = pp.user_id
@@ -343,7 +397,7 @@ export const getAllListings = async (req, res) => {
                 : (`${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Privatanbieter');
 
             const sellerAvatar = isAdminListing ? '/logo.webp' : (isCommercial ? row.company_logo : row.private_avatar);
-            const isBoosted = Boolean(row.is_boosted || isAdminListing);
+            const isBoosted = Boolean(row.is_boosted);
 
             let imagesArray = [];
             if (Array.isArray(row.images)) {
@@ -355,6 +409,9 @@ export const getAllListings = async (req, res) => {
                     imagesArray = [row.images];
                 }
             }
+
+            const favoritesCount = parseInt(row.favorites_count || 0, 10);
+            const conversationsCount = parseInt(row.conversations_count || 0, 10);
 
             return {
                 id: row.id,
@@ -373,6 +430,10 @@ export const getAllListings = async (req, res) => {
                 boosted_until: row.boosted_until,
                 is_boosted: isBoosted,
                 is_pioneer: isPioneer,
+                favorites_count: favoritesCount,
+                conversations_count: conversationsCount,
+                likes_count: favoritesCount,
+                chats_count: conversationsCount,
                 images: imagesArray,
                 seller_role: row.seller_role,
                 role: row.seller_role,
@@ -419,12 +480,35 @@ export const getListingDetail = async (req, res) => {
         let query;
         let params;
         if (targetUuid) {
-            query = `SELECT l.*, (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted FROM listings l WHERE l.id = $1 LIMIT 1`;
+            query = `
+                SELECT 
+                    l.*, 
+                    (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted,
+                    m.ai_score,
+                    m.ai_decision,
+                    m.ai_reasons,
+                    m.fraud_risk_score,
+                    m.status as moderation_status,
+                    m.admin_notes
+                FROM listings l
+                LEFT JOIN listing_moderation m ON l.id = m.listing_id
+                WHERE l.id = $1 
+                LIMIT 1
+            `;
             params = [targetUuid];
         } else {
             query = `
-                SELECT l.*, (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted 
+                SELECT 
+                    l.*, 
+                    (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted,
+                    m.ai_score,
+                    m.ai_decision,
+                    m.ai_reasons,
+                    m.fraud_risk_score,
+                    m.status as moderation_status,
+                    m.admin_notes
                 FROM listings l 
+                LEFT JOIN listing_moderation m ON l.id = m.listing_id
                 WHERE l.slug = $1 
                    OR l.id::text = $1 
                    OR lower(l.title) = lower($1)
@@ -504,11 +588,19 @@ export const getListingDetail = async (req, res) => {
 
         const sellerAvatar = isAdminListing ? '/logo.webp' : (profile?.logo_url || profile?.profile_image_url || '');
         const sellerTier = isAdminListing ? 'ADMIN' : (profile?.tier || 'FREE');
-        const isBoosted = Boolean(listing.is_boosted || isAdminListing);
+        const isBoosted = Boolean(listing.is_boosted);
 
         const achRes = await pool.query('SELECT * FROM user_achievements WHERE user_id = $1', [listing.user_id]);
         const achievements = achRes.rows || [];
         const isPioneer = achievements.some(a => a.badge_key === 'CAMPUNA_PIONEER');
+
+        // Fetch live counts for favorites (Merkzettel) and conversations (Unterhaltungen)
+        const [favCountRes, convCountRes] = await Promise.all([
+            pool.query('SELECT COUNT(*) as count FROM favorites WHERE listing_id = $1', [listing.id]).catch(() => ({ rows: [{ count: 0 }] })),
+            pool.query('SELECT COUNT(*) as count FROM conversations WHERE listing_id = $1', [listing.id]).catch(() => ({ rows: [{ count: 0 }] })),
+        ]);
+        const favoritesCount = parseInt(favCountRes.rows[0]?.count || 0, 10);
+        const conversationsCount = parseInt(convCountRes.rows[0]?.count || 0, 10);
 
         let imagesArray = [];
         if (Array.isArray(listing.images)) {
@@ -528,10 +620,26 @@ export const getListingDetail = async (req, res) => {
         const isPhoneProtected = hasPhone && !isAuthenticated && !isCampunaClub;
         const visiblePhone = (isAuthenticated || isCampunaClub) ? rawPhone : null;
 
+        let reasonsArray = [];
+        if (Array.isArray(listing.ai_reasons)) {
+            reasonsArray = listing.ai_reasons;
+        } else if (typeof listing.ai_reasons === 'string') {
+            try {
+                reasonsArray = JSON.parse(listing.ai_reasons);
+            } catch {
+                reasonsArray = [listing.ai_reasons];
+            }
+        }
+
         return res.status(200).json({
             success: true,
             listing: {
                 ...listing,
+                ai_score: listing.ai_score !== null && listing.ai_score !== undefined ? parseInt(listing.ai_score, 10) : null,
+                ai_decision: listing.ai_decision || null,
+                ai_reasons: reasonsArray,
+                moderation_status: listing.moderation_status || null,
+                admin_notes: listing.admin_notes || '',
                 phone: visiblePhone,
                 has_phone: hasPhone,
                 is_phone_protected: isPhoneProtected,
@@ -540,6 +648,10 @@ export const getListingDetail = async (req, res) => {
                 boosted_until: listing.boosted_until,
                 is_boosted: isBoosted,
                 is_pioneer: isPioneer,
+                favorites_count: favoritesCount,
+                conversations_count: conversationsCount,
+                likes_count: favoritesCount,
+                chats_count: conversationsCount,
                 images: imagesArray,
                 seller_role: user.role,
                 role: user.role,
@@ -792,13 +904,27 @@ export const updateListing = async (req, res) => {
         }
 
         const existingListing = existingRes.rows[0];
-        if (existingListing.user_id !== userId && req.user.role !== 'ADMIN') {
-            return res.status(403).json({ success: false, error: 'Keine Berechtigung zum Bearbeiten dieses Inserats.' });
+        
+        // Admin or user can only edit their own listings
+        if (existingListing.user_id !== userId) {
+            return res.status(403).json({ success: false, error: 'Du kannst nur deine eigenen Inserate bearbeiten.' });
         }
 
         // 2. Validate required fields
-        if (!title || !price || !category || !location) {
-            return res.status(400).json({ success: false, error: 'Bitte füllen Sie alle Pflichtfelder aus.' });
+        if (!title || !String(title).trim()) {
+            return res.status(400).json({ success: false, error: 'Bitte geben Sie einen Titel für das Inserat ein.' });
+        }
+        if (!category || !String(category).trim()) {
+            return res.status(400).json({ success: false, error: 'Bitte wählen Sie eine Kategorie aus.' });
+        }
+        if (!location || !String(location).trim()) {
+            return res.status(400).json({ success: false, error: 'Bitte geben Sie einen Standort an.' });
+        }
+        if (!description || !String(description).trim()) {
+            return res.status(400).json({ success: false, error: 'Bitte geben Sie eine Beschreibung ein.' });
+        }
+        if (price === undefined || price === null || String(price).trim() === '') {
+            return res.status(400).json({ success: false, error: 'Bitte geben Sie einen Preis an.' });
         }
 
         if (req.body.phone && String(req.body.phone).trim() !== '') {
@@ -859,6 +985,9 @@ export const updateListing = async (req, res) => {
         }
 
         const finalImages = [...retainedImages, ...newUploadedUrls];
+        if (finalImages.length === 0) {
+            return res.status(400).json({ success: false, error: 'Das Inserat muss mindestens ein Foto enthalten.' });
+        }
 
         // 5. Generate slug if title changed or if slug missing
         let slug = existingListing.slug;
@@ -874,7 +1003,36 @@ export const updateListing = async (req, res) => {
         }
 
         const isAdmin = req.user.role === 'ADMIN';
-        const targetStatus = isAdmin ? (existingListing.status || 'APPROVED') : 'REVIEW';
+
+        // Run AI moderation on edited listing for regular users
+        let aiResult = {
+            score: 95,
+            safe: true,
+            listing_status: 'APPROVED',
+            ai_decision: 'AUTO_APPROVED',
+            reason: 'Administrator-Freigabe',
+            text_score: 95,
+            price_score: 95,
+            fraud_risk_score: 5,
+            confidence_score: 0.99
+        };
+
+        if (!isAdmin) {
+            try {
+                aiResult = await moderateListingAI({
+                    title,
+                    description: description || '',
+                    category,
+                    subcategory: subcategory || '',
+                    price: parsedPrice,
+                    location
+                });
+            } catch (aiErr) {
+                console.warn('AI moderation check notice on edit:', aiErr.message);
+            }
+        }
+
+        const targetStatus = isAdmin ? (existingListing.status || 'APPROVED') : aiResult.listing_status;
         const listingPhone = req.body.phone !== undefined
             ? (String(req.body.phone).trim() !== '' ? String(req.body.phone).trim() : null)
             : existingListing.phone;
@@ -883,7 +1041,8 @@ export const updateListing = async (req, res) => {
             ? (req.body.featured === 'true' || req.body.featured === true)
             : existingListing.featured;
 
-        // 6. Update listing: Set status to 'REVIEW' for regular users or preserve for ADMIN
+        // 6. Update listing
+        const reviewedById = isAdmin ? userId : null;
         const updateRes = await pool.query(
             `UPDATE listings
              SET title = $1,
@@ -899,11 +1058,11 @@ export const updateListing = async (req, res) => {
                  images = $11,
                  status = $12,
                  featured = $13,
-                 reviewed_by_id = CASE WHEN $14 = TRUE THEN $15::uuid ELSE NULL END,
-                 reviewed_by_type = CASE WHEN $14 = TRUE THEN 'ADMIN' ELSE NULL END,
-                 reviewed_at = CASE WHEN $14 = TRUE THEN NOW() ELSE NULL END,
+                 reviewed_by_id = $14::uuid,
+                 reviewed_by_type = CASE WHEN $14::uuid IS NOT NULL THEN 'ADMIN' ELSE NULL END,
+                 reviewed_at = CASE WHEN $14::uuid IS NOT NULL THEN NOW() ELSE NULL END,
                  updated_at = NOW()
-             WHERE id = $16
+             WHERE id = $15
              RETURNING *`,
             [
                 title,
@@ -919,8 +1078,7 @@ export const updateListing = async (req, res) => {
                 finalImages,
                 targetStatus,
                 updateFeatured,
-                isAdmin,
-                isAdmin ? userId : null,
+                reviewedById,
                 id
             ]
         );
@@ -929,38 +1087,36 @@ export const updateListing = async (req, res) => {
 
         // 7. Upsert listing_moderation record
         try {
-            if (isAdmin) {
-                await pool.query(
-                    `INSERT INTO listing_moderation (
-                        listing_id, ai_score, ai_decision, confidence_score, text_score, image_score, price_score, fraud_risk_score, ai_reasons, status, updated_at
-                    ) VALUES (
-                        $1, 99, 'APPROVE', 1.0, 99, 99, 99, 0, '["Inserat wurde von einem Administrator aktualisiert und freigegeben."]'::jsonb, 'APPROVED', NOW()
-                    )
-                    ON CONFLICT (listing_id) DO UPDATE SET
-                        status = 'APPROVED',
-                        ai_decision = 'APPROVE',
-                        ai_reasons = '["Inserat wurde von einem Administrator aktualisiert und freigegeben."]'::jsonb,
-                        reviewed_at = NOW(),
-                        updated_at = NOW()`,
-                    [id]
-                );
-            } else {
-                await pool.query(
-                    `INSERT INTO listing_moderation (
-                        listing_id, ai_score, ai_decision, confidence_score, text_score, image_score, price_score, fraud_risk_score, ai_reasons, status, updated_at
-                    ) VALUES (
-                        $1, 50, 'MANUAL_REVIEW', 0.50, 50, 50, 50, 10, '["Inserat wurde vom Verkäufer überarbeitet und erfordert erneute Prüfung."]'::jsonb, 'PENDING', NOW()
-                    )
-                    ON CONFLICT (listing_id) DO UPDATE SET
-                        status = 'PENDING',
-                        ai_decision = 'MANUAL_REVIEW',
-                        ai_reasons = '["Inserat wurde vom Verkäufer überarbeitet und erfordert erneute Prüfung."]'::jsonb,
-                        admin_notes = NULL,
-                        reviewed_at = NULL,
-                        updated_at = NOW()`,
-                    [id]
-                );
-            }
+            await pool.query(
+                `INSERT INTO listing_moderation (
+                    listing_id, ai_score, ai_decision, confidence_score, text_score, image_score, price_score, fraud_risk_score, ai_reasons, status, updated_at
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, NOW()
+                )
+                ON CONFLICT (listing_id) DO UPDATE SET
+                    ai_score = EXCLUDED.ai_score,
+                    ai_decision = EXCLUDED.ai_decision,
+                    confidence_score = EXCLUDED.confidence_score,
+                    text_score = EXCLUDED.text_score,
+                    image_score = EXCLUDED.image_score,
+                    price_score = EXCLUDED.price_score,
+                    fraud_risk_score = EXCLUDED.fraud_risk_score,
+                    ai_reasons = EXCLUDED.ai_reasons,
+                    status = EXCLUDED.status,
+                    updated_at = NOW()`,
+                [
+                    id,
+                    isAdmin ? 99 : (aiResult.score || 50),
+                    isAdmin ? 'AUTO_APPROVED' : (aiResult.ai_decision || 'MANUAL_REVIEW'),
+                    aiResult.confidence_score || 0.95,
+                    isAdmin ? 99 : (aiResult.text_score || 50),
+                    90,
+                    isAdmin ? 99 : (aiResult.price_score || 50),
+                    isAdmin ? 0 : (aiResult.fraud_risk_score || 10),
+                    JSON.stringify([aiResult.reason || 'Überarbeitung geprüft']),
+                    targetStatus === 'APPROVED' ? 'APPROVED' : 'PENDING'
+                ]
+            );
         } catch (modErr) {
             console.warn('Notice: listing_moderation update on listing edit:', modErr.message);
         }
@@ -978,6 +1134,75 @@ export const updateListing = async (req, res) => {
     } catch (error) {
         console.error('❌ updateListing error:', error.message);
         return res.status(500).json({ success: false, error: 'Fehler beim Aktualisieren der Anzeige.' });
+    }
+};
+
+/**
+ * PATCH /api/listings/:id/status
+ * Allows the owner or admin to toggle / change listing status (e.g., DEACTIVATED / PAUSED vs APPROVED / ACTIVE)
+ */
+export const toggleListingStatus = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { status } = req.body;
+        const isAdmin = req.user.role === 'ADMIN';
+
+        // 1. Fetch listing and check ownership
+        const existingRes = await pool.query('SELECT * FROM listings WHERE id = $1', [id]);
+        if (existingRes.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Inserat nicht gefunden.' });
+        }
+
+        const listing = existingRes.rows[0];
+        if (listing.user_id !== userId && !isAdmin) {
+            return res.status(403).json({ success: false, error: 'Keine Berechtigung zum Ändern des Inserat-Status.' });
+        }
+
+        // 2. Determine new status
+        let newStatus;
+        if (status) {
+            const normalized = String(status).toUpperCase();
+            if (!['APPROVED', 'INACTIVE', 'DEACTIVATED', 'REVIEW', 'SOLD'].includes(normalized)) {
+                return res.status(400).json({ success: false, error: 'Ungültiger Status angegeben.' });
+            }
+            newStatus = normalized;
+        } else {
+            // Auto toggle between APPROVED and INACTIVE
+            newStatus = (listing.status === 'APPROVED' || listing.status === 'AKTIV') ? 'INACTIVE' : 'APPROVED';
+        }
+
+        // If reactivating, check if it was rejected previously
+        if (newStatus === 'APPROVED' && listing.status === 'REJECTED' && !isAdmin) {
+            newStatus = 'REVIEW';
+        }
+
+        const updateRes = await pool.query(
+            `UPDATE listings SET status = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+            [newStatus, id]
+        );
+
+        const updated = updateRes.rows[0];
+
+        const message = newStatus === 'INACTIVE' || newStatus === 'DEACTIVATED'
+            ? 'Inserat wurde pausiert/deaktiviert.'
+            : newStatus === 'APPROVED'
+            ? 'Inserat wurde erfolgreich aktiviert.'
+            : 'Inserat-Status wurde aktualisiert.';
+
+        return res.status(200).json({
+            success: true,
+            message,
+            status: newStatus,
+            listing: {
+                ...updated,
+                price: parseFloat(updated.price) || 0,
+                images: Array.isArray(updated.images) ? updated.images : []
+            }
+        });
+    } catch (error) {
+        console.error('❌ toggleListingStatus error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Ändern des Inserat-Status.' });
     }
 };
 
@@ -1173,6 +1398,64 @@ export const deleteListing = async (req, res) => {
     } catch (error) {
         console.error('❌ deleteListing error:', error.message);
         return res.status(500).json({ success: false, error: 'Fehler beim Löschen des Inserats.' });
+    }
+};
+
+/**
+ * POST /api/listings/generate-description
+ * Generates or improves a listing description using local AI (Qwen3) with template fallback
+ */
+export const generateDescriptionController = async (req, res) => {
+    try {
+        const {
+            title = '',
+            category = '',
+            subcategory = '',
+            price = '',
+            location = '',
+            condition = 'Gebraucht',
+            existingDescription = '',
+            style = 'detailed'
+        } = req.body;
+
+        if (!title && !category && !existingDescription) {
+            return res.status(400).json({
+                success: false,
+                error: 'Bitte mindestens einen Titel, eine Kategorie oder Notizen angeben.'
+            });
+        }
+
+        const aiResult = await generateListingDescriptionAI({
+            title,
+            category,
+            subcategory,
+            price,
+            location,
+            condition,
+            existingDescription,
+            style
+        });
+
+        if (aiResult.success && aiResult.description) {
+            return res.status(200).json({
+                success: true,
+                description: aiResult.description,
+                source: 'AI'
+            });
+        }
+
+        // Fallback to deterministic template generator if AI server is offline or fails
+        return res.status(200).json({
+            success: true,
+            fallback: true,
+            source: 'FALLBACK'
+        });
+    } catch (error) {
+        console.error('❌ generateDescriptionController error:', error.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Fehler bei der Beschreibungserstellung.'
+        });
     }
 };
 

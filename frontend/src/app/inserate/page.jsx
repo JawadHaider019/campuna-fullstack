@@ -15,7 +15,15 @@ import {
     Filter,
     Rocket,
     PlusCircle,
-    Sparkles
+    ChevronDown,
+    ArrowRight,
+    CheckCircle2,
+    Compass,
+    ShieldAlert,
+    Tag,
+    ShoppingBag,
+    BookOpen,
+    Layers
 } from 'lucide-react';
 import { getAllListings } from '@/api/listings';
 import { CATEGORIES, STATIC_LISTINGS } from '@/data';
@@ -28,6 +36,7 @@ import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
 
 // Map API subcategory or tags to pre-defined mapping
 const CATEGORY_SUBCATEGORIES = {
@@ -405,12 +414,9 @@ function mapListing(item) {
                     '$1cdn-cgi/image/f=auto,fit=cover/$2'
                 );
             }
-            return getImageUrl(url, '/hero-campuna.webp');
-        });
-
-    if (images.length === 0) {
-        images.push('/hero-campuna.webp');
-    }
+            return getImageUrl(url, null);
+        })
+        .filter(Boolean);
 
     let rawCat = item.category || item.Category || 'Camping Zubehör';
     let category = resolveCategory(rawCat);
@@ -423,7 +429,7 @@ function mapListing(item) {
     const location = item['location geo']?.address || item.location || 'Deutschland';
     const displayLocation = formatLocation(location);
     const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
-    
+
     let pricePeriod = item.pricePeriod || 'Preis';
     if (!item.pricePeriod) {
         if (category === 'Mieten & Vermieten' || (item.subcategory && item.subcategory.toLowerCase().includes('mieten')) || (item['Sub - Category'] && item['Sub - Category'].toLowerCase().includes('mieten'))) {
@@ -478,7 +484,7 @@ function mapListing(item) {
     );
 
     const isBoosted = Boolean(
-        item.is_boosted || 
+        item.is_boosted ||
         (item.boosted_until && new Date(item.boosted_until) > new Date()) ||
         isAdmin
     );
@@ -534,48 +540,65 @@ function mapListing(item) {
 }
 
 // ─── Individual Listing Card Component ────────────
-function ListingCard({ item }) {
+const ListingCard = React.memo(function ListingCard({ item, index = 0 }) {
     const router = useRouter();
     const isFavorite = useFavoritesStore((state) => state.isFavorite(item.id));
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
     const [imgIdx, setImgIdx] = useState(0);
-    const handleImgError = () => {
-        if (imgIdx < item.images.length - 1) {
+    const [imgFailed, setImgFailed] = useState(false);
+    
+    const handleImgError = React.useCallback(() => {
+        if (item.images && imgIdx < item.images.length - 1) {
             setImgIdx(i => i + 1);
+        } else {
+            setImgFailed(true);
         }
-    };
+    }, [imgIdx, item.images]);
 
-    const handleCardClick = () => {
+    const handleCardClick = React.useCallback(() => {
         const slug = item.slug || buildListingSlug(item.title, item.id);
         router.push(`/inserate/${slug}`);
-    };
+    }, [item.slug, item.title, item.id, router]);
 
     const displayLoc = item.displayLocation || item.location || '';
     const cityOnly = displayLoc.split(',')[0].trim();
     const isBoosted = isListingBoosted(item);
+    const hasImage = item.images && item.images.length > 0 && !imgFailed;
+
+    // Row-by-row staggered delay calculation (3 columns per row on desktop)
+    const staggerDelay = (index % 3) * 0.08;
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ 
+                duration: 0.5, 
+                delay: staggerDelay, 
+                ease: [0.21, 0.47, 0.32, 0.98] 
+            }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
             onClick={handleCardClick}
-            className={`group relative flex flex-col rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer h-full select-none ${
-                isBoosted
+            className={`group relative flex flex-col rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer h-full select-none will-change-transform ${isBoosted
                     ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
                     : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl'
-            }`}
+                }`}
         >
             {/* Image Container */}
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-sand/20">
-                <img
-                    src={item.images[imgIdx]}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
-                    referrerPolicy="no-referrer"
-                    loading="lazy"
-                    onError={handleImgError}
-                />
+                {hasImage ? (
+                    <img
+                        src={item.images[imgIdx]}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        onError={handleImgError}
+                    />
+                ) : (
+                    <ListingImagePlaceholder category={item.category} />
+                )}
 
                 {/* Top Badges */}
                 <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 gap-2">
@@ -657,7 +680,7 @@ function ListingCard({ item }) {
             </div>
         </motion.div>
     );
-}
+});
 
 // ─── Main Content Component (Consuming Search Params) ─────────────────────────────────
 function ListingsContent() {
@@ -693,6 +716,11 @@ function ListingsContent() {
     const [sortBy, setSortBy] = useState('newest');
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [visibleCount, setVisibleCount] = useState(12);
+    const [openFaq, setOpenFaq] = useState('faq_0');
+
+    const toggleFaq = (id) => {
+        setOpenFaq(prev => prev === id ? null : id);
+    };
 
     // Sync state with URL search parameters
     const syncUrlParams = (newFilters, newSort = sortBy) => {
@@ -1010,25 +1038,55 @@ function ListingsContent() {
     return (
         <div className="bg-white min-h-screen relative font-sans text-charcoal">
 
-            {/* ── Hero Banner ── */}
+            {/* ── 1. HERO SECTION (Compact cinematic style) ── */}
             <section
-                className="relative mt-20 pt-12 pb-16 px-4 mx-4 md:mx-6 lg:mx-8 overflow-hidden rounded-3xl md:rounded-4xl"
-                style={{
-                    backgroundImage: `linear-gradient(to bottom, rgba(0,61,3,0.7) 0%, rgba(0,0,0,0.45) 50%, rgba(0, 0, 0, 0.9) 100%), url('/hero-campuna.webp')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                }}
+                className="relative min-h-[32vh] sm:min-h-[36vh] md:min-h-[40vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-20 sm:mt-20 mx-4 md:mx-8 lg:mx-12 shadow-xl border border-forest/10"
             >
-                <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-                    <span className="font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-gold block mb-2">
-                        Camping Marktplatz Deutschland
+                {/* Background Cinematic Image with Zoom Animation */}
+                <div className="absolute inset-0 z-0">
+                    <motion.div
+                        initial={{ scale: 1.1, opacity: 0 }}
+                        animate={{ scale: 1.0, opacity: 1 }}
+                        transition={{ duration: 1.8, ease: 'easeOut' }}
+                        className="w-full h-full"
+                    >
+                        <img
+                            src="/hero-campuna.webp"
+                            alt="Camping-Inserate und Marktplatz Deutschland"
+                            className="w-full h-full object-cover"
+                            loading="eager"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                        />
+                    </motion.div>
+                    {/* Deep luxurious multi-layered gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 to-black/75" />
+                </div>
+
+                {/* Floating Sparkles Background Effect */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(200,169,107,0.08),transparent_50%)] pointer-events-none" />
+
+                {/* Hero Content */}
+                <div className="relative z-10 max-w-4xl mx-auto px-6 py-8 sm:py-10 flex flex-col justify-center items-center w-full text-center">
+                    <span className="font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.35em] text-gold block mb-2">
+                        Camping-Marktplatz Deutschland
                     </span>
-                    <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-4 drop-shadow-xl leading-tight">
-                        Camping-Anzeigen aus ganz Deutschland
-                    </h1>
-                    <p className="text-white/90 text-sm md:text-base max-w-3xl leading-relaxed mt-2 font-sans font-light drop-shadow-md">
-                        Entdecke aktuelle Camping-Anzeigen aus den Bereichen Wohnmobile, Wohnwagen, Campingzubehör, Stellplätze, Dienstleistungen, Tiny Houses und mehr. Finde Angebote von privaten und gewerblichen Anbietern auf Campuna.
-                    </p>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
+                        className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 drop-shadow-xl leading-tight"
+                    >
+                        Camping-Inserate <span className="text-gold">aus ganz Deutschland</span>
+                    </motion.h1>
+                    <motion.p
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        className="font-sans text-xs sm:text-sm md:text-base text-sand/90 leading-relaxed max-w-2xl mx-auto font-light drop-shadow-md"
+                    >
+                        Entdecke aktuelle Camping-Angebote für Wohnmobile, Wohnwagen, Campingzubehör, Stellplätze, Services, Tiny Houses und mehr. Von privaten und gewerblichen Anbietern auf Campuna, täglich neu.
+                    </motion.p>
                 </div>
             </section>
 
@@ -1044,16 +1102,22 @@ function ListingsContent() {
             <main className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
-                    {/* ── Filters: Desktop Sidebar ── */}
-                    <aside className="hidden lg:block lg:col-span-1 self-start sticky top-24 bg-sand/30 border border-forest/10 rounded-2xl p-6 shadow-sm">
-                        <div className="flex items-center justify-between pb-4 border-b border-forest/10 mb-6">
-                            <span className="font-display text-base font-bold text-forest flex items-center gap-2">
+                    {/* ── Filters: Desktop Sidebar with Scroll/Mount Animation ── */}
+                    <motion.aside 
+                        initial={{ opacity: 0, x: -25 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
+                        className="hidden lg:block lg:col-span-1 self-start sticky top-24 bg-sand/30 border border-forest/10 rounded-2xl p-5 xl:p-6 shadow-sm"
+                    >
+                        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-1.5 xl:gap-2 pb-4 border-b border-forest/10 mb-6">
+                            <span className="font-display text-base font-bold text-forest flex items-center gap-2 whitespace-nowrap">
                                 <Filter className="w-4 h-4 text-gold shrink-0" />
-                                Filter anpassen
+                                <span className="whitespace-nowrap">Filter anpassen</span>
                             </span>
                             <button
+                                type="button"
                                 onClick={handleResetFilters}
-                                className="text-[11px] font-semibold text-charcoal/50 hover:text-gold uppercase tracking-wider transition-colors cursor-pointer"
+                                className="text-[11px] font-semibold text-charcoal/50 hover:text-gold uppercase tracking-wider transition-colors cursor-pointer text-left xl:text-right whitespace-nowrap"
                             >
                                 Zurücksetzen
                             </button>
@@ -1208,7 +1272,7 @@ function ListingsContent() {
                             </button>
 
                         </form>
-                    </aside>
+                    </motion.aside>
 
                     {/* ── Results Area ── */}
                     <section className="lg:col-span-3">
@@ -1404,13 +1468,13 @@ function ListingsContent() {
                             // Empty State
                             <div className="text-center py-20 px-4 bg-sand/20 rounded-[32px] border border-dashed border-forest/10 flex flex-col items-center justify-center">
                                 {appliedFilters.keyword ||
-                                appliedFilters.kategorie ||
-                                appliedFilters.unterkategorie ||
-                                appliedFilters.standort ||
-                                (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
-                                appliedFilters.minPrice ||
-                                appliedFilters.maxPrice ||
-                                appliedFilters.isVerhandelbar ? (
+                                    appliedFilters.kategorie ||
+                                    appliedFilters.unterkategorie ||
+                                    appliedFilters.standort ||
+                                    (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
+                                    appliedFilters.minPrice ||
+                                    appliedFilters.maxPrice ||
+                                    appliedFilters.isVerhandelbar ? (
                                     <Search className="w-12 h-12 text-forest/45 mb-4" />
                                 ) : (
                                     <Sparkles className="w-12 h-12 text-forest/45 mb-4" />
@@ -1418,26 +1482,26 @@ function ListingsContent() {
 
                                 <p className="font-display text-lg font-bold text-forest mb-2">
                                     {appliedFilters.keyword ||
-                                    appliedFilters.kategorie ||
-                                    appliedFilters.unterkategorie ||
-                                    appliedFilters.standort ||
-                                    (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
-                                    appliedFilters.minPrice ||
-                                    appliedFilters.maxPrice ||
-                                    appliedFilters.isVerhandelbar
+                                        appliedFilters.kategorie ||
+                                        appliedFilters.unterkategorie ||
+                                        appliedFilters.standort ||
+                                        (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
+                                        appliedFilters.minPrice ||
+                                        appliedFilters.maxPrice ||
+                                        appliedFilters.isVerhandelbar
                                         ? 'Keine Inserate gefunden'
                                         : 'Noch keine Inserate vorhanden'}
                                 </p>
 
                                 <p className="font-sans text-xs text-charcoal/60 max-w-sm mb-6 font-light">
                                     {appliedFilters.keyword ||
-                                    appliedFilters.kategorie ||
-                                    appliedFilters.unterkategorie ||
-                                    appliedFilters.standort ||
-                                    (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
-                                    appliedFilters.minPrice ||
-                                    appliedFilters.maxPrice ||
-                                    appliedFilters.isVerhandelbar
+                                        appliedFilters.kategorie ||
+                                        appliedFilters.unterkategorie ||
+                                        appliedFilters.standort ||
+                                        (appliedFilters.anbieter && appliedFilters.anbieter !== 'all') ||
+                                        appliedFilters.minPrice ||
+                                        appliedFilters.maxPrice ||
+                                        appliedFilters.isVerhandelbar
                                         ? 'Es gibt keine Camping-Anzeigen, die deinen aktuellen Filtern entsprechen. Du kannst die Filter zurücksetzen oder selbst ein Inserat aufgeben.'
                                         : 'Aktuell sind noch keine Angebote in diesem Bereich veröffentlicht. Sei der Erste und erstelle jetzt kostenlos dein Inserat!'}
                                 </p>
@@ -1451,13 +1515,13 @@ function ListingsContent() {
                                         appliedFilters.minPrice ||
                                         appliedFilters.maxPrice ||
                                         appliedFilters.isVerhandelbar) && (
-                                        <button
-                                            onClick={handleResetFilters}
-                                            className="w-full sm:w-auto bg-white hover:bg-forest/5 text-forest border border-forest/20 hover:border-forest/40 transition-all text-xs font-bold uppercase tracking-wider py-3.5 px-6 rounded-full shadow-xs cursor-pointer"
-                                        >
-                                            Alle Filter zurücksetzen
-                                        </button>
-                                    )}
+                                            <button
+                                                onClick={handleResetFilters}
+                                                className="w-full sm:w-auto bg-white hover:bg-forest/5 text-forest border border-forest/20 hover:border-forest/40 transition-all text-xs font-bold uppercase tracking-wider py-3.5 px-6 rounded-full shadow-xs cursor-pointer"
+                                            >
+                                                Alle Filter zurücksetzen
+                                            </button>
+                                        )}
 
                                     <button
                                         onClick={() => router.push(isLoggedIn ? '/mein-konto?n=yes&tab=create_listing' : '/registrieren?redirect=/mein-konto?n=yes%26tab=create_listing')}
@@ -1472,17 +1536,18 @@ function ListingsContent() {
                             // Listings Grid
                             <>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-6">
-                                    {sortedListings.slice(0, visibleCount).map((item) => (
+                                    {sortedListings.slice(0, visibleCount).map((item, idx) => (
                                         <div key={item.id} className="h-full">
-                                            <ListingCard item={item} />
+                                            <ListingCard item={item} index={idx} />
                                         </div>
                                     ))}
                                 </div>
 
                                 {/* Load More Button */}
                                 {sortedListings.length > visibleCount && (
-                                    <div className="flex justify-center mt-12">
+                                    <div className="flex items-center justify-center mt-12">
                                         <button
+                                            type="button"
                                             onClick={() => setVisibleCount(prev => prev + 12)}
                                             className="bg-forest text-white text-xs font-semibold uppercase tracking-wider py-4 px-10 rounded-full border border-forest/10 shadow-md hover:bg-gold hover:text-forest hover:border-gold hover:shadow-lg active:scale-95 transition-all duration-300 flex items-center gap-2 cursor-pointer font-sans"
                                         >
@@ -1497,38 +1562,348 @@ function ListingsContent() {
                 </div>
             </main>
 
-            {/* ── Category Description / SEO Section ── */}
-            <section className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 mb-4">
-                <div className="bg-gradient-to-br from-sand/50 to-beige/35 rounded-3xl border border-forest/10 p-8 md:p-12 shadow-sm font-sans">
-                    <h2 className="font-display text-xl md:text-2xl font-bold text-forest mb-4">
-                        Camping-Anzeigen auf Campuna entdecken
+            {/* ── Popular Searches (Beliebte Suchen with Scroll & Staggered Animation) ── */}
+            <motion.section 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1 }}
+                transition={{ duration: 0.7, ease: [0.21, 0.47, 0.32, 0.98] }}
+                className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8"
+            >
+                <div className="relative overflow-hidden bg-white border border-forest/10 rounded-[32px] p-6 sm:p-8 md:p-10 shadow-lg shadow-forest/5">
+                    {/* Ambient Glow */}
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-gold/10 rounded-full blur-3xl pointer-events-none" />
+
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 pb-4 border-b border-forest/5">
+                        <div>
+                            <span className="font-sans text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.4em] text-gold block mb-1.5">
+                                Schnellnavigation
+                            </span>
+                            <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-forest">
+                                Beliebte Suchen & Kategorien
+                            </h2>
+                        </div>
+                        <p className="font-sans text-xs sm:text-sm text-charcoal/60 max-w-md font-light">
+                            Direkter Schnellzugriff auf die am häufigsten gesuchten Camping-Bereiche in ganz Deutschland.
+                        </p>
+                    </div>
+
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true }}
+                        variants={{
+                            hidden: { opacity: 0 },
+                            visible: {
+                                opacity: 1,
+                                transition: { staggerChildren: 0.04, delayChildren: 0.1 }
+                            }
+                        }}
+                        className="relative z-10 flex flex-wrap gap-2.5"
+                    >
+                        {[
+                            { label: 'Wohnmobil gebraucht kaufen', href: '/kategorie/wohnmobile-camper', icon: Compass },
+                            { label: 'Campervan kaufen', href: '/kategorie/wohnmobile-camper', icon: Compass },
+                            { label: 'Wohnwagen kaufen', href: '/kategorie/wohnmobile-camper', icon: Compass },
+                            { label: 'Wohnmobile bis 20.000 €', href: '/inserate?maxPrice=20000&kategorie=Wohnmobile+%26+Camper', icon: Tag },
+                            { label: 'Dachzelte', href: '/kategorie/zelte-dachzelte', icon: Layers },
+                            { label: 'Vorzelte', href: '/kategorie/camping-zubehoer', icon: Layers },
+                            { label: 'Stellplätze', href: '/kategorie/stellplaetze-campingplaetze', icon: Compass },
+                            { label: 'Tiny Houses', href: '/kategorie/tiny-houses', icon: Compass },
+                            { label: 'Gasprüfung & Werkstatt', href: '/kategorie/camping-services', icon: ShoppingBag },
+                            { label: 'Wohnmobil verkaufen', href: '/anzeige-erstellen', icon: ArrowRight },
+                        ].map((chip, idx) => {
+                            const Icon = chip.icon;
+                            return (
+                                <motion.a
+                                    key={idx}
+                                    href={chip.href}
+                                    variants={{
+                                        hidden: { opacity: 0, scale: 0.9, y: 10 },
+                                        visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.3 } }
+                                    }}
+                                    whileHover={{ y: -2, scale: 1.02, transition: { duration: 0.15 } }}
+                                    className="group inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-sand/30 hover:bg-forest text-forest hover:text-white border border-forest/10 hover:border-forest text-xs font-semibold tracking-tight transition-all duration-200 shadow-2xs hover:shadow-md active:scale-95"
+                                >
+                                    <Icon className="w-3.5 h-3.5 text-gold group-hover:text-gold transition-colors" />
+                                    <span>{chip.label}</span>
+                                </motion.a>
+                            );
+                        })}
+                    </motion.div>
+                </div>
+            </motion.section>
+
+            {/* ── Trust Strip with Scroll Animation ── */}
+            <motion.section 
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1 }}
+                transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
+                className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-4"
+            >
+                <div className="relative overflow-hidden bg-forest text-white rounded-[28px] py-6 px-6 sm:px-8 md:px-10 shadow-xl border border-white/10">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-gold/10 rounded-full blur-3xl pointer-events-none" />
+                    <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 items-center">
+                        <div className="flex items-start gap-3.5">
+                            <div className="p-2.5 rounded-2xl bg-white/10 text-gold shrink-0">
+                                <CheckCircle2 className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="font-display text-sm font-bold text-white mb-0.5">
+                                    Direkter Kontakt
+                                </h4>
+                                <p className="font-sans text-xs text-white/70 font-light leading-snug">
+                                    Schnelle, persönliche Kommunikation direkt zwischen Käufer und Verkäufer.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3.5">
+                            <div className="p-2.5 rounded-2xl bg-white/10 text-gold shrink-0">
+                                <CheckCircle2 className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="font-display text-sm font-bold text-white mb-0.5">
+                                    Kostenlos für Privat
+                                </h4>
+                                <p className="font-sans text-xs text-white/70 font-light leading-snug">
+                                    Private Inserate sind 100% kostenfrei, ohne Provision oder versteckte Gebühren.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3.5">
+                            <div className="p-2.5 rounded-2xl bg-white/10 text-gold shrink-0">
+                                <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h4 className="font-display text-sm font-bold text-white mb-0.5">
+                                    Sicher handeln
+                                </h4>
+                                <p className="font-sans text-xs text-white/70 font-light leading-snug">
+                                    Praxistipps für Kaufvertrag & Probefahrt:{' '}
+                                    <a href="/sicher-handeln" className="text-gold underline hover:text-white transition-colors font-medium">
+                                        Ratgeber lesen
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </motion.section>
+
+            {/* ── Expanded SEO Text Block (~420 words) with Smooth Scroll Animation ── */}
+            <motion.section 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.1 }}
+                transition={{ duration: 0.7, ease: [0.21, 0.47, 0.32, 0.98] }}
+                className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8 mb-4"
+            >
+                <div className="relative overflow-hidden bg-gradient-to-br from-sand/40 via-white to-sand/20 rounded-[28px] sm:rounded-[32px] md:rounded-[40px] border border-forest/10 p-6 sm:p-8 md:p-10 lg:p-12 shadow-sm font-sans space-y-8">
+                    {/* Header with Title & Intro */}
+                    <div className="max-w-3xl space-y-3">
+                        <span className="font-sans text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.4em] text-gold block">
+                            Marktplatz Ratgeber & Orientierung
+                        </span>
+                        <h2 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-forest tracking-tight leading-tight">
+                            Camping-Inserate auf Campuna entdecken
+                        </h2>
+                        <p className="font-medium text-forest/90 text-xs sm:text-sm md:text-base leading-relaxed">
+                            Campuna ist dein Camping-Marktplatz für Fahrzeuge, Zubehör, Services, Stellplätze, Vermietung und vieles mehr.
+                        </p>
+                        <p className="text-xs sm:text-sm text-charcoal/75 leading-relaxed font-light pt-1">
+                            Hier findest du aktuelle Inserate von privaten Verkäufern und gewerblichen Anbietern aus ganz Deutschland. Du suchst einen gebrauchten Campervan oder brauchst die richtige Ausrüstung für deine nächste Tour? Du möchtest deinen Campingplatz bewerben oder suchst spezialisierte Camping-Profis wie eine Werkstatt oder einen Gasprüfer? All das findest du auf dieser Seite an einem Ort.
+                        </p>
+                    </div>
+
+                    {/* 3 Interactive Highlight Cards (Responsive Grid: 1 col on mobile, 2 on tablet, 3 on desktop) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: 0.1 }}
+                            className="group bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-7 border border-forest/10 shadow-xs hover:shadow-xl hover:border-gold/40 transition-all duration-300 flex flex-col justify-between"
+                        >
+                            <div>
+                                <div className="p-3 rounded-2xl bg-forest/5 text-forest group-hover:bg-forest group-hover:text-gold transition-colors duration-300 w-fit mb-4">
+                                    <Search className="w-5 h-5" />
+                                </div>
+                                <h3 className="font-display text-base sm:text-lg font-bold text-forest mb-2.5">
+                                    So findest du das richtige Angebot
+                                </h3>
+                                <p className="text-xs sm:text-sm text-charcoal/70 leading-relaxed font-light">
+                                    Nutze die gezielten Filter nach Marke, Modell, Preis, Zustand und Standort. Beliebte Marken wie Hymer, Knaus oder VW California lassen sich direkt über das Stichwortfeld finden. Entdecke Angebote direkt in <a href="/kategorie/wohnmobile-camper" className="text-forest underline hover:text-gold font-medium">Wohnmobile & Camper</a>, <a href="/kategorie/camping-zubehoer" className="text-forest underline hover:text-gold font-medium">Camping-Zubehör</a> oder <a href="/kategorie/zelte-dachzelte" className="text-forest underline hover:text-gold font-medium">Zelte & Dachzelte</a>.
+                                </p>
+                            </div>
+                            <div className="pt-4 mt-4 border-t border-forest/5">
+                                <a href="/kategorien" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest group-hover:text-gold transition-colors">
+                                    <span>Kategorien durchstöbern</span>
+                                    <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+                                </a>
+                            </div>
+                        </motion.div>
+
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: 0.2 }}
+                            className="group bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-7 border border-forest/10 shadow-xs hover:shadow-xl hover:border-gold/40 transition-all duration-300 flex flex-col justify-between"
+                        >
+                            <div>
+                                <div className="p-3 rounded-2xl bg-forest/5 text-forest group-hover:bg-forest group-hover:text-gold transition-colors duration-300 w-fit mb-4">
+                                    <ShieldCheck className="w-5 h-5" />
+                                </div>
+                                <h3 className="font-display text-base sm:text-lg font-bold text-forest mb-2.5">
+                                    Von privat oder vom Händler kaufen
+                                </h3>
+                                <p className="text-xs sm:text-sm text-charcoal/70 leading-relaxed font-light">
+                                    Bei Campuna siehst du auf den ersten Blick, ob ein Angebot von einer Privatperson oder einem gewerblichen Händler stammt. Nutze den Anbieter-Filter für deine persönliche Präferenz. Wertvolle Hinweise für die Besichtigung und den Kaufvertrag findest du auf unserer Seite <a href="/sicher-handeln" className="text-forest underline hover:text-gold font-medium">Sicher handeln</a>.
+                                </p>
+                            </div>
+                            <div className="pt-4 mt-4 border-t border-forest/5">
+                                <a href="/sicher-handeln" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest group-hover:text-gold transition-colors">
+                                    <span>Tipps für sicheres Handeln</span>
+                                    <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+                                </a>
+                            </div>
+                        </motion.div>
+
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: 0.3 }}
+                            className="group bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-7 border border-forest/10 shadow-xs hover:shadow-xl hover:border-gold/40 transition-all duration-300 flex flex-col justify-between sm:col-span-2 lg:col-span-1"
+                        >
+                            <div>
+                                <div className="p-3 rounded-2xl bg-forest/5 text-forest group-hover:bg-forest group-hover:text-gold transition-colors duration-300 w-fit mb-4">
+                                    <PlusCircle className="w-5 h-5" />
+                                </div>
+                                <h3 className="font-display text-base sm:text-lg font-bold text-forest mb-2.5">
+                                    Selbst verkaufen: kostenlos inserieren
+                                </h3>
+                                <p className="text-xs sm:text-sm text-charcoal/70 leading-relaxed font-light">
+                                    Private Inserate sind auf Campuna komplett kostenfrei und ohne Provision. Erstelle in wenigen Minuten dein Inserat mit Fotos, detaillierter Beschreibung und Preisvorstellung über <a href="/anzeige-erstellen" className="text-forest underline hover:text-gold font-medium">Inserat erstellen</a> und erfahre mehr unter <a href="/so-funktioniert-campuna" className="text-forest underline hover:text-gold font-medium">So funktioniert Campuna</a>.
+                                </p>
+                            </div>
+                            <div className="pt-4 mt-4 border-t border-forest/5">
+                                <a href="/anzeige-erstellen" className="inline-flex items-center gap-1.5 text-xs font-bold text-forest group-hover:text-gold transition-colors">
+                                    <span>Jetzt Inserat aufgeben</span>
+                                    <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+                                </a>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </motion.section>
+            {/* ── Categories Section Carousel (Clean non-docked layout without negative margin overlap) ── */}
+            <section className="py-12 sm:py-16 px-4 bg-sand/20 border-t border-forest/5">
+                <div className="max-w-7xl mx-auto mb-8 text-center">
+                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.35em] text-gold block mb-2">
+                        STÖBERN
+                    </span>
+                    <h2 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-forest">
+                        Nach Kategorie filtern
                     </h2>
-                    <div className="space-y-4 text-xs md:text-sm text-charcoal/80 leading-relaxed font-light">
-                        <p className="font-medium text-forest/90">
-                            Campuna ist dein Camping-Marktplatz für Fahrzeuge, Zubehör, Dienstleistungen, Stellplätze, Vermietung und vieles mehr.
+                    <p className="font-sans text-xs sm:text-sm text-charcoal/65 mt-2 max-w-xl mx-auto font-light">
+                        Wähle deinen Bereich und entdecke passende Angebote in ganz Deutschland.
+                    </p>
+                </div>
+                <CategoriesSection isDocked={false} showHeader={false} />
+            </section>
+
+
+            {/* ── FAQ Accordion Section (Matching FaqSection.jsx UI) ── */}
+            <section id="faq" className="py-10 sm:py-16 bg-white relative overflow-hidden scroll-mt-24">
+                <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-sand/30 rounded-full blur-3xl pointer-events-none opacity-50" />
+
+                <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 relative z-10">
+                    <div className="text-center max-w-3xl mx-auto mb-8 space-y-3">
+                        <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
+                            Häufig gestellte Fragen
+                        </span>
+                        <h2 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-forest">
+                            Häufige Fragen zu den Inseraten
+                        </h2>
+                        <p className="font-sans text-xs sm:text-sm text-charcoal/60 max-w-2xl mx-auto leading-relaxed">
+                            Die wichtigsten Antworten rund um die Suche, Preise und Kontaktaufnahme auf Campuna.
                         </p>
-                        <p>
-                            Hier findest du aktuelle Anzeigen von privaten Verkäufern und gewerblichen Anbietern aus ganz Deutschland. Suchst du einen Camper oder brauchst du die passende Ausrüstung für deine nächste Reise? Möchtest du deinen Stellplatz inserieren oder suchst du spezielle Camping-Handwerker?
-                        </p>
-                        <p>
-                            Dank der differenzierten Filtermöglichkeiten nach Preis, Bundesland, Anbieter, Kategorie und Unterkategorie findest du schnell genau das Angebot, das perfekt zu deinem Urlaub passt. Registriere dich und inseriere noch heute.
-                        </p>
+                    </div>
+
+                    <div className="max-w-5xl mx-auto space-y-4">
+                        {[
+                            {
+                                id: 'faq_0',
+                                q: 'Wie finde ich das passende Camping-Inserat?',
+                                a: 'Nutze die Filter auf dieser Seite: Suche nach Marke, Modell oder Stichwort, grenze den Preis ein und wähle Kategorie, Anbieter und Ort. Mit der Sortierung siehst du die neuesten oder günstigsten Angebote zuerst. Über die Kategorien unten kommst du direkt zu Wohnmobilen, Zelten, Zubehör und mehr.',
+                            },
+                            {
+                                id: 'faq_1',
+                                q: 'Was bedeutet Privat oder Gewerblich bei einem Inserat?',
+                                a: 'Privat bedeutet, dass eine Privatperson verkauft, meist ohne Gewährleistung. Gewerblich bedeutet, dass ein Händler oder Dienstleister mit Firmenprofil anbietet. Auf Campuna findest du beide Arten von Anbietern und kannst gezielt danach filtern.',
+                            },
+                            {
+                                id: 'faq_2',
+                                q: 'Was bedeutet VB beim Preis?',
+                                a: 'VB steht für Verhandlungsbasis. Der angegebene Preis ist ein Vorschlag des Anbieters, über den du fair verhandeln kannst. Nutze dafür die direkte Nachricht an den Verkäufer und vereinbare am besten eine Besichtigung vor dem Kauf.',
+                            },
+                            {
+                                id: 'faq_3',
+                                q: 'Wie erstelle ich selbst ein Inserat auf Campuna?',
+                                a: 'Lege ein kostenloses Konto an, wähle die passende Kategorie und stelle dein Angebot mit Fotos, Beschreibung und Preis ein. Private Inserate sind kostenlos, ohne Provision. Eine Anleitung findest du unter So funktioniert Campuna.',
+                            },
+                        ].map((faq, idx) => {
+                            const isOpen = openFaq === faq.id;
+                            return (
+                                <motion.div
+                                    key={faq.id}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.05, duration: 0.4 }}
+                                    className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isOpen
+                                        ? 'border-gold bg-sand/20 shadow-md'
+                                        : 'border-forest/10 bg-white hover:border-forest/30'
+                                        }`}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => toggleFaq(faq.id)}
+                                        className="w-full text-left p-5 sm:p-6 flex items-center justify-between gap-4 focus:outline-none cursor-pointer"
+                                    >
+                                        <span className="font-display text-base sm:text-lg font-bold text-forest leading-snug">
+                                            {faq.q}
+                                        </span>
+                                        <div className={`p-2 rounded-full transition-transform duration-300 shrink-0 ${isOpen ? 'rotate-180 bg-gold/10 text-gold' : 'bg-sand text-forest'}`}>
+                                            <ChevronDown className="w-4 h-4" />
+                                        </div>
+                                    </button>
+
+                                    <AnimatePresence initial={false}>
+                                        {isOpen && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: 'auto', opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.35, ease: [0.04, 0.62, 0.23, 0.98] }}
+                                            >
+                                                <div className="px-6 sm:px-8 pb-5 font-sans text-xs sm:text-sm text-charcoal/75 leading-relaxed font-light whitespace-pre-line border-t border-forest/10 pt-3">
+                                                    {faq.a}
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </motion.div>
+                            );
+                        })}
                     </div>
                 </div>
             </section>
 
-            {/* ── Categories Section Carousel ── */}
-            <section className="py-16 px-4 bg-white border-t border-forest/5">
-                <div className="max-w-7xl mx-auto mb-10 text-center">
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.35em] text-gold block mb-2">
-                        STÖBERN
-                    </span>
-                    <h2 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-black">
-                        Nach Kategorie filtern
-                    </h2>
-                </div>
-                <CategoriesSection showHeader={false} />
-            </section>
 
             {/* ── Mobile Filter slide-in drawer ── */}
             <AnimatePresence>
@@ -1551,14 +1926,15 @@ function ListingsContent() {
                             className="fixed inset-y-0 right-0 w-full max-w-sm bg-white shadow-2xl z-55 flex flex-col lg:hidden border-l border-forest/10"
                         >
                             {/* Header */}
-                            <div className="p-5 border-b border-forest/10 flex items-center justify-between bg-sand/30">
-                                <span className="font-display text-base font-bold text-forest flex items-center gap-2">
-                                    <Filter className="w-4 h-4 text-gold" />
-                                    Filter anpassen
+                            <div className="p-5 border-b border-forest/10 flex items-center justify-between bg-sand/30 flex-nowrap gap-2">
+                                <span className="font-display text-base font-bold text-forest flex items-center gap-2 whitespace-nowrap shrink-0">
+                                    <Filter className="w-4 h-4 text-gold shrink-0" />
+                                    <span>Filter anpassen</span>
                                 </span>
                                 <button
+                                    type="button"
                                     onClick={() => setIsMobileFilterOpen(false)}
-                                    className="p-1 px-2 rounded-full border border-forest/10 hover:bg-forest hover:text-white transition-colors cursor-pointer"
+                                    className="p-1 px-2 rounded-full border border-forest/10 hover:bg-forest hover:text-white transition-colors cursor-pointer shrink-0"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>

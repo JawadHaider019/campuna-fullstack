@@ -25,15 +25,15 @@ function normalizeListing(item) {
     let images = [];
     if (Array.isArray(item.images) && item.images.length > 0) {
         images = item.images;
-    } else if (typeof item.images === 'string') {
+    } else if (typeof item.images === 'string' && item.images.trim()) {
         images = [item.images];
     } else if (item["Main Image"]) {
         images = [item["Main Image"]];
     }
-    if (images.length === 0) {
-        images = [DEFAULT_IMAGE];
-    }
-    images = images.map(img => getImageUrl(img, DEFAULT_IMAGE));
+    
+    images = images
+        .map(img => getImageUrl(img, null))
+        .filter(Boolean);
 
     const sellerRole = item.seller_role || item.role || item.seller?.role || '';
     const isAdmin = Boolean(
@@ -98,11 +98,14 @@ function normalizeListing(item) {
     };
 }
 
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+
 const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
     const item = useMemo(() => normalizeListing(rawItem), [rawItem]);
     const isFavorite = useFavoritesStore((state) => state.isFavorite(item?.id));
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
-    const [imgSrc, setImgSrc] = useState(item?.images[0] || DEFAULT_IMAGE);
+    const [imgIdx, setImgIdx] = useState(0);
+    const [imgFailed, setImgFailed] = useState(false);
     const tagsRef = useRef(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
@@ -135,6 +138,8 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
         }
     };
 
+    const hasImage = item.images && item.images.length > 0 && !imgFailed;
+
     return (
         <div
             onClick={() => onCardClick(item)}
@@ -145,13 +150,23 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
             }`}
         >
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
-                <img
-                    src={imgSrc}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
-                    loading="lazy"
-                    onError={() => setImgSrc(DEFAULT_IMAGE)}
-                />
+                {hasImage ? (
+                    <img
+                        src={item.images[imgIdx]}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
+                        loading="lazy"
+                        onError={() => {
+                            if (imgIdx < item.images.length - 1) {
+                                setImgIdx(i => i + 1);
+                            } else {
+                                setImgFailed(true);
+                            }
+                        }}
+                    />
+                ) : (
+                    <ListingImagePlaceholder category={item.category} />
+                )}
                 {/* Top Badges */}
                 <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 gap-2">
                     <ListingBadgesRow item={item} />
@@ -249,9 +264,9 @@ export default function Listing({
     selectedCategoryFilter,
     searchQuery,
     searchLocation,
-    badge = "ZUM STÖBERN",
+    badge = "ANGEBOTE",
     title = "Camping-Angebote auf Campuna",
-    subtitle = "Entdecke wechselnde Inserate von Campern, Anbietern und Unternehmen."
+    subtitle = "Stöbere durch gebrauchte und neue Camping-Angebote aus ganz Deutschland, von privat und vom Händler. Täglich kommen neue Inserate dazu."
 }) {
     const router = useRouter();
     const rowRef1 = useRef(null);
@@ -379,42 +394,73 @@ export default function Listing({
     useEffect(() => {
         let animationFrameId;
         let lastTime = performance.now();
+        let isVisible = true;
+
+        // Pause animation when tab is not visible or element is not in viewport
+        const handleVisibilityChange = () => {
+            isVisible = document.visibilityState === 'visible';
+            if (isVisible) lastTime = performance.now();
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                isVisible = entry.isIntersecting && document.visibilityState === 'visible';
+                if (isVisible) lastTime = performance.now();
+            },
+            { rootMargin: '100px' }
+        );
+
+        if (rowRef1.current) {
+            observer.observe(rowRef1.current);
+        }
+
         const loop = (time) => {
-            const delta = Math.min((time - lastTime) / 1000, 0.1);
-            lastTime = time;
+            if (isVisible) {
+                const delta = Math.min((time - lastTime) / 1000, 0.1);
+                lastTime = time;
 
-            if (row1Listings.length > 0 && !isHoveredRef1.current && !isDraggingRef1.current && rowConstraints1 > 0) {
-                let currentX1 = x1.get() + dirRef1.current * 20 * delta;
-                if (dirRef1.current === -1 && currentX1 <= -rowConstraints1) {
-                    currentX1 = -rowConstraints1;
-                    dirRef1.current = 1;
-                } else if (dirRef1.current === 1 && currentX1 >= 0) {
-                    currentX1 = 0;
-                    dirRef1.current = -1;
+                if (row1Listings.length > 0 && !isHoveredRef1.current && !isDraggingRef1.current && rowConstraints1 > 0) {
+                    let currentX1 = x1.get() + dirRef1.current * 20 * delta;
+                    if (dirRef1.current === -1 && currentX1 <= -rowConstraints1) {
+                        currentX1 = -rowConstraints1;
+                        dirRef1.current = 1;
+                    } else if (dirRef1.current === 1 && currentX1 >= 0) {
+                        currentX1 = 0;
+                        dirRef1.current = -1;
+                    }
+                    x1.set(currentX1);
+                } else if (rowConstraints1 <= 0) {
+                    x1.set(0);
                 }
-                x1.set(currentX1);
-            } else if (rowConstraints1 <= 0) {
-                x1.set(0);
-            }
 
-            if (row2Listings.length > 0 && !isHoveredRef2.current && !isDraggingRef2.current && rowConstraints2 > 0) {
-                let currentX2 = x2.get() + dirRef2.current * 20 * delta;
-                if (dirRef2.current === -1 && currentX2 <= -rowConstraints2) {
-                    currentX2 = -rowConstraints2;
-                    dirRef2.current = 1;
-                } else if (dirRef2.current === 1 && currentX2 >= 0) {
-                    currentX2 = 0;
-                    dirRef2.current = -1;
+                if (row2Listings.length > 0 && !isHoveredRef2.current && !isDraggingRef2.current && rowConstraints2 > 0) {
+                    let currentX2 = x2.get() + dirRef2.current * 20 * delta;
+                    if (dirRef2.current === -1 && currentX2 <= -rowConstraints2) {
+                        currentX2 = -rowConstraints2;
+                        dirRef2.current = 1;
+                    } else if (dirRef2.current === 1 && currentX2 >= 0) {
+                        currentX2 = 0;
+                        dirRef2.current = -1;
+                    }
+                    x2.set(currentX2);
+                } else if (rowConstraints2 <= 0) {
+                    x2.set(0);
                 }
-                x2.set(currentX2);
-            } else if (rowConstraints2 <= 0) {
-                x2.set(0);
+            } else {
+                lastTime = time;
             }
 
             animationFrameId = requestAnimationFrame(loop);
         };
+
         animationFrameId = requestAnimationFrame(loop);
-        return () => cancelAnimationFrame(animationFrameId);
+
+        return () => {
+            cancelAnimationFrame(animationFrameId);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            observer.disconnect();
+        };
     }, [row1Listings, row2Listings, rowConstraints1, rowConstraints2, x1, x2]);
 
     return (
@@ -425,7 +471,7 @@ export default function Listing({
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
                             {badge}
                         </span>
-                        <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-black">
+                        <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-black">
                             {title}
                         </h2>
                         <p className="font-sans text-sm text-charcoal/60 leading-relaxed font-light">

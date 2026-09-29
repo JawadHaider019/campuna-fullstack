@@ -2,6 +2,7 @@ import express from 'express';
 import { authenticate, requireAdmin } from '../middleware/authenticate.js';
 import {
     getAdminUsers,
+    getAdminUserById,
     toggleUserSuspension,
     manuallyVerifyUserEmail,
     deleteAdminUser
@@ -74,6 +75,7 @@ router.patch('/reports/:id', updateAdminReportStatus);
 
 // User management endpoints
 router.get('/users', getAdminUsers);
+router.get('/users/:id', getAdminUserById);
 router.patch('/users/:id/suspend', toggleUserSuspension);
 router.patch('/users/:id/verify-email', manuallyVerifyUserEmail);
 router.delete('/users/:id', deleteAdminUser);

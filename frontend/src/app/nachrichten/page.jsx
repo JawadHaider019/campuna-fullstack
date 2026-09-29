@@ -1,37 +1,35 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useSyncExternalStore, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
+
+const emptySubscribe = () => () => {};
 
 function NachrichtenRedirect() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const id = searchParams.get('id');
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
     const returnTarget = id
         ? `/mein-konto?tab=nachrichten&id=${encodeURIComponent(id)}`
         : '/mein-konto?tab=nachrichten';
 
     useEffect(() => {
-        if (mounted && isLoggedIn) {
+        if (isMounted && isLoggedIn) {
             if (id) {
                 router.replace(`/mein-konto?tab=nachrichten&id=${encodeURIComponent(id)}`);
             } else {
                 router.replace('/mein-konto?tab=nachrichten');
             }
         }
-    }, [mounted, isLoggedIn, id, router]);
+    }, [isMounted, isLoggedIn, id, router]);
 
-    if (!mounted) {
+    if (!isMounted) {
         return <CircleLoader size="lg" color="forest" fullPage />;
     }
 

@@ -36,7 +36,7 @@ export default function CTA({ onSellClick }) {
                         {/* Left Column: Headline and text */}
                         <div className="lg:col-span-8 space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
                             <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
-                                Anbieter werden
+                                COMMUNITY
                             </span>
 
                             <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
@@ -44,14 +44,14 @@ export default function CTA({ onSellClick }) {
                             </h2>
 
                             <p className="font-sans text-sm sm:text-base text-sand/85 font-light leading-relaxed max-w-xl pb-2">
-                                Du verkaufst, vermietest oder bietest etwas rund ums Camping an? Sei von Anfang an dabei und erreiche Camper auf einer Plattform, die sich ausschließlich um Camping dreht.
+                                Ob du entdecken, verkaufen oder mit deinem Unternehmen sichtbar werden willst: Melde dich an und gestalte den Camping-Marktplatz von Anfang an mit.
                             </p>
 
                             <button
-                                onClick={handleClick}
+                                onClick={() => router.push('/registrieren')}
                                 className="relative w-full max-w-[320px] sm:w-[320px] bg-gradient-to-r from-gold to-beige hover:brightness-110 text-forest font-sans font-bold py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center text-[10px] sm:text-[12px] uppercase tracking-wider shadow-lg hover:scale-[1.02] mx-auto lg:mx-0 cursor-pointer"
                             >
-                                <span>INSERAT ERSTELLEN – KOSTENLOS</span>
+                                <span>Jetzt kostenlos registrieren</span>
                                 <ArrowRight className="w-4 h-4 absolute right-5 shrink-0" />
                             </button>
                         </div>

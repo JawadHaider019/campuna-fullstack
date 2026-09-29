@@ -33,11 +33,14 @@ export default function BroadcastBanner() {
 
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const user = useAuthStore((state) => state.user);
+    const isAdmin = user?.role === 'ADMIN';
 
-    // Don't show in admin portal pages
+    // Don't show in admin portal pages or for admin users
     const isAdminRoute = pathname?.startsWith('/admin');
+    const shouldHide = isAdminRoute || isAdmin;
 
     const fetchBroadcasts = useCallback(async () => {
+        if (shouldHide) return;
         try {
             const [bRes, cRes] = await Promise.all([
                 getUserBroadcasts().catch(() => ({ data: { broadcasts: [] } })),
@@ -53,16 +56,16 @@ export default function BroadcastBanner() {
         } catch {
             // Non-critical background polling
         }
-    }, []);
+    }, [shouldHide]);
 
     useEffect(() => {
-        if (!isAdminRoute) {
+        if (!shouldHide) {
             fetchBroadcasts();
         }
-    }, [isLoggedIn, pathname, isAdminRoute, fetchBroadcasts]);
+    }, [isLoggedIn, pathname, shouldHide, fetchBroadcasts]);
 
     const handleMarkAsRead = async (broadcastId) => {
-        if (!isLoggedIn) return;
+        if (!isLoggedIn || isAdmin) return;
         try {
             await markBroadcastAsRead(broadcastId);
             setBroadcasts(prev => prev.map(b => b.id === broadcastId ? { ...b, is_read: true } : b));
@@ -73,7 +76,7 @@ export default function BroadcastBanner() {
     };
 
     const handleMarkAllRead = async () => {
-        if (!isLoggedIn) return;
+        if (!isLoggedIn || isAdmin) return;
         setLoading(true);
         try {
             await markAllBroadcastsAsRead();
@@ -91,7 +94,7 @@ export default function BroadcastBanner() {
         b => !b.is_read && (b.priority === 'URGENT' || b.priority === 'IMPORTANT') && !dismissedBannerIds.includes(b.id)
     );
 
-    if (isAdminRoute) return null;
+    if (shouldHide) return null;
 
     return (
         <>

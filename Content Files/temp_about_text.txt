@@ -1,0 +1,351 @@
+﻿
+
+I N T E L I T U N E
+
+Campuna About Us Page (/ueber-uns): SEO Template for Development
+
+Final German content, structure, on-page, technical rules, schema code and internal linking. Instructions in English, website copy in German.
+Field
+Value
+Page / URL
+https://campuna.de/ueber-uns
+Purpose
+Brand and entity page: who Campuna is, why it exists, values, vision. Core E-E-A-T page and AI-answer source for &quot;Was ist Campuna&quot;.
+Content language
+German (de-DE), du address, no dashes in body copy
+Target queries
+campuna, was ist campuna, über campuna, camping marktplatz deutschland
+Conversion goal
+Kostenlos inserieren (/inserat-erstellen) + provider sign-up
+Companion file
+campuna-ueber-uns-template.html (visual template with schema, hand to developer 1:1)
+Prepared
+Intelitune, 26.09.2026
+
+
+1. Meta title and meta description (final)
+Element
+Final value
+Length
+Meta title
+Über Campuna | Der Camping-Marktplatz für Deutschland
+53 chars
+Meta description
+Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz wächst. Lerne die Idee hinter Campuna aus Erfurt kennen und mach mit.
+142 chars
+
+Copy-paste head snippet:
+
+<title>Über Campuna | Der Camping-Marktplatz für Deutschland</title>
+
+<meta name=&quot;description&quot; content=&quot;Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz wächst. Lerne die Idee hinter Campuna aus Erfurt kennen und mach mit.&quot;>
+
+<link rel=&quot;canonical&quot; href=&quot;https://campuna.de/ueber-uns&quot;>
+
+<meta name=&quot;robots&quot; content=&quot;index, follow, max-image-preview:large&quot;>
+
+<link rel=&quot;alternate&quot; hreflang=&quot;de&quot; href=&quot;https://campuna.de/ueber-uns&quot;>
+
+<link rel=&quot;alternate&quot; hreflang=&quot;x-default&quot; href=&quot;https://campuna.de/ueber-uns&quot;>
+
+<meta property=&quot;og:type&quot; content=&quot;website&quot;>
+
+<meta property=&quot;og:site_name&quot; content=&quot;Campuna&quot;>
+
+<meta property=&quot;og:locale&quot; content=&quot;de_DE&quot;>
+
+<meta property=&quot;og:title&quot; content=&quot;Über Campuna | Der Camping-Marktplatz für Deutschland&quot;>
+
+<meta property=&quot;og:description&quot; content=&quot;Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz wächst. Lerne die Idee hinter Campuna kennen.&quot;>
+
+<meta property=&quot;og:url&quot; content=&quot;https://campuna.de/ueber-uns&quot;>
+
+<meta property=&quot;og:image&quot; content=&quot;https://campuna.de/assets/og/campuna-og-ueber-uns.jpg&quot;>
+
+<meta name=&quot;twitter:card&quot; content=&quot;summary_large_image&quot;>
+
+
+2. Heading structure (implement exactly)
+Level
+Text (final German)
+H1
+Wir wollen Camping an einem Ort zusammenbringen.
+H2
+Warum es Campuna gibt
+H2
+Wo Campuna heute steht
+H2
+Was uns wichtig ist
+H2
+Das Fundament steht. Was daraus wird, entsteht mit deiner Hilfe.
+H2
+Werde Teil von Campuna.
+H3
+Heute auf Campuna / Unsere Vision / the 6 value card titles
+
+Rules: one H1 only, card titles are H3, no level skipping, everything server-side rendered.
+
+
+3. Section-by-section content
+
+
+3.1. Hero
+
+Purpose: Carries the H1: brand claim as identity statement. CTA scrolls to the story.
+
+Final German copy:
+
+H1: Wir wollen Camping an einem Ort zusammenbringen. (highlight &quot;an einem Ort&quot; in gold)
+
+Paragraph: Campuna ist entstanden, weil wir selbst einen Ort vermisst haben, an dem Angebote, Anbieter, Campingplätze, Wissen und praktische Helfer rund ums Camping zusammenkommen.
+
+Button: Mehr über uns erfahren (anchor link to #warum)
+
+Technical / on-page instructions:
+
+
+Hero photo (campervan at sunset) behind dark gradient, eager + preload
+
+
+Hero image alt: Camper sitzen abends vor ihrem Campingbus in den Hügeln
+
+
+3.2. Breadcrumb + positioning badge bar
+
+Purpose: Visible breadcrumb (matches BreadcrumbList schema) + one sentence that defines the entity.
+
+Final German copy:
+
+Breadcrumb: Startseite › Über Campuna
+
+Badge left: Dein Camping-Marktplatz für Deutschland
+
+Badge right: Die spezialisierte Plattform für Wohnmobile, Wohnwagen, Campingzubehör, Stellplätze, Vermietung und Services rund ums Camping.
+
+Technical / on-page instructions:
+
+
+Breadcrumb links are real <a href>, home links to /
+
+
+3.3. The story (&quot;Warum es Campuna gibt&quot;)
+
+Purpose: Core E-E-A-T block. This text is what AI systems will quote about Campuna.
+
+Final German copy:
+
+Kicker: Die Geschichte. H2: Warum es Campuna gibt
+
+Paragraph 1: Camping ist ein riesiges Thema. Digital ist es trotzdem über viele Orte verstreut: Fahrzeuge stehen auf allgemeinen Kleinanzeigen-Portalen, Tipps verstecken sich in Gruppen und Foren, Campingplätze haben eigene Verzeichnisse, Zubehör und Services liegen wieder woanders.
+
+Paragraph 2 (highlighted, green bold): Wir wollten einen Ort schaffen, an dem Camping nicht nur eine Kategorie unter vielen ist. Einen Ort, an dem sich alles ums Camping dreht. Genau dafür haben wir Campuna gebaut.
+
+Paragraph 3: Heute findest du auf Campuna private und gewerbliche Angebote, Campingplätze, Vermietungen, Services, Wissen und praktische Camping-Helfer. (link &quot;Angebote&quot; to /inserate)
+
+Paragraph 4: Unsere Idee geht weiter. Wir bauen die Campingplattform, die wir selbst vermisst haben. Das Fundament steht. Jetzt wächst Campuna mit jedem Camper, jedem Inserat, jedem Anbieter und jedem Campingplatz.
+
+Image badge: CAMPUNA WÄCHST MIT DIR.
+
+Technical / on-page instructions:
+
+
+Image right: alt: Camper genießt den Abend an einem See, loading=lazy
+
+
+Section id=&quot;warum&quot; (hero CTA anchor target)
+
+
+3.4. Status & vision (&quot;Wo Campuna heute steht&quot;)
+
+Purpose: Concrete today-vs-vision framing. Both lists must be crawlable HTML text.
+
+Final German copy:
+
+Kicker: Status & Zukunft. H2: Wo Campuna heute steht. Intro: Wie Campuna aufgebaut ist und wohin die Reise geht.
+
+Card white, H3 Heute auf Campuna: Spezialisierter Marktplatz für den Kauf und Verkauf von Fahrzeugen und Campingausrüstung. / Gewerbliche Anbieter wie Werkstätten, Vermieter und Serviceprofis mit eigenen Profilen und Angeboten. / Campingplätze und Stellplätze mit Informationen und passenden Angeboten. / Camping-Wissen und Tools wie der Zuladungsrechner und der Reisebudget-Rechner für entspannte Touren. (both calculators linked)
+
+Card green, H3 Unsere Vision: Immer mehr Bereiche der Camping-Welt sinnvoll und digital an einem Ort zusammenbringen. / Eine faire und transparente Community, in der gewerbliche Partner, Händler und private Camper partnerschaftlich handeln. / Gemeinsam wachsen: Jede neue Funktion und jeder neue Anbieter richtet sich nach dem Feedback der Community.
+
+
+3.5. Values (&quot;Was uns wichtig ist&quot;)
+
+Purpose: Six value cards define the brand entity attributes. Connector graphic is decorative.
+
+Final German copy:
+
+Kicker: Unsere Werte. H2: Was uns wichtig ist
+
+Card 1, H3 Camping im Mittelpunkt: Bei Campuna ist Camping nicht nur eine Kategorie unter vielen. Die ganze Plattform dreht sich darum.
+
+Card 2, H3 Alles an einem Ort: Angebote, Anbieter, Orte, Vermietung, Services, Wissen und praktische Helfer wachsen Schritt für Schritt zusammen.
+
+Card 3, H3 Von Campern gemacht: Wir bauen die Campingplattform, die wir selbst vermisst haben.
+
+Card 4, H3 Offen für alle Seiten: Private Camper, Händler, Campingplätze, Vermieter und Serviceanbieter gehören zur selben Camping-Welt.
+
+Card 5, H3 Einfach und transparent: Campuna soll klar bleiben und ohne unnötige Hürden funktionieren.
+
+Card 6, H3 Campuna wächst mit dir: Jedes Inserat, jeder Anbieter und jeder aktive Camper macht die Plattform ein Stück wertvoller.
+
+Technical / on-page instructions:
+
+
+Mindmap/connector graphic: pure CSS or inline SVG, aria-hidden=&quot;true&quot; (decorative)
+
+
+3.6. Foundation statement
+
+Purpose: Emotional closing statement before the CTA.
+
+Final German copy:
+
+H2: Das Fundament steht. Was daraus wird, entsteht mit deiner Hilfe. (second sentence in gold)
+
+Paragraph: Campuna ist noch nicht am Ziel. Genau deshalb ist jetzt der richtige Moment, von Anfang an dabei zu sein.
+
+Quote line (green bold): „Campuna wächst mit dir. Sei von Anfang an dabei.“
+
+
+3.7. Provider CTA
+
+Purpose: Conversion goal of the page.
+
+Final German copy:
+
+Kicker: Für Anbieter. H2: Werde Teil von Campuna.
+
+Paragraph: Du verkaufst, vermietest oder bietest etwas rund ums Camping an? Sei von Anfang an dabei und erreiche Camper auf einer Plattform, die sich ausschließlich ums Camping dreht.
+
+Button: Kostenlos inserieren (/inserat-erstellen)
+
+
+3.8. Footer
+
+Purpose: Identical shared footer component as homepage (all 9 category links + NAP).
+
+Final German copy:
+
+Same final German footer as the homepage template.
+
+
+4. Schema code (JSON-LD, copy-paste ready)
+
+Paste each block into the <head>. Both are already embedded in the HTML file. The Organization block itself lives on the homepage; this page references it by @id.
+
+
+4.1 BreadcrumbList
+
+<script type=&quot;application/ld+json&quot;>
+
+{
+
+  &quot;@context&quot;: &quot;https://schema.org&quot;,
+
+  &quot;@type&quot;: &quot;BreadcrumbList&quot;,
+
+  &quot;itemListElement&quot;: [
+
+    { &quot;@type&quot;: &quot;ListItem&quot;, &quot;position&quot;: 1, &quot;name&quot;: &quot;Startseite&quot;, &quot;item&quot;: &quot;https://campuna.de/&quot; },
+
+    { &quot;@type&quot;: &quot;ListItem&quot;, &quot;position&quot;: 2, &quot;name&quot;: &quot;Über Campuna&quot;, &quot;item&quot;: &quot;https://campuna.de/ueber-uns&quot; }
+
+  ]
+
+}
+
+</script>
+
+ 
+
+
+4.2 AboutPage
+
+<script type=&quot;application/ld+json&quot;>
+
+{
+
+  &quot;@context&quot;: &quot;https://schema.org&quot;,
+
+  &quot;@type&quot;: &quot;AboutPage&quot;,
+
+  &quot;@id&quot;: &quot;https://campuna.de/ueber-uns#aboutpage&quot;,
+
+  &quot;url&quot;: &quot;https://campuna.de/ueber-uns&quot;,
+
+  &quot;name&quot;: &quot;Über Campuna&quot;,
+
+  &quot;inLanguage&quot;: &quot;de-DE&quot;,
+
+  &quot;isPartOf&quot;: { &quot;@id&quot;: &quot;https://campuna.de/#website&quot; },
+
+  &quot;about&quot;: { &quot;@id&quot;: &quot;https://campuna.de/#organization&quot; },
+
+  &quot;description&quot;: &quot;Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz für Deutschland wächst.&quot;
+
+}
+
+</script>
+
+ 
+
+
+5. Internal linking map
+From
+Target URLs
+Breadcrumb
+/
+Story paragraph
+/inserate (anchor: Angebote)
+Today card
+/tools/zuladungsrechner, /tools/reisebudget-rechner
+Provider CTA
+/inserat-erstellen
+Footer
+all 9 categories + navigation/support/legal pages
+
+
+6. Images and alt texts
+Image
+Alt text (German)
+Technical
+Hero
+Camper sitzen abends vor ihrem Campingbus in den Hügeln
+eager, preload, fetchpriority=high, width/height
+Story image
+Camper genießt den Abend an einem See
+loading=lazy
+Connector graphic
+decorative, aria-hidden
+inline SVG/CSS
+
+
+7. Developer checklist
+
+
+SSR, one H1, headings as section 2, all links real <a href>
+
+
+Visible breadcrumb matches BreadcrumbList schema
+
+
+Both schema blocks in head; validate with Rich Results Test after go-live
+
+
+Hero preload; story image lazy; width/height everywhere
+
+
+Connector graphic aria-hidden, not in the accessibility tree
+
+
+Anchor #warum works from the hero button
+
+
+Footer = shared component with homepage
+
+ 
+
+Verified: title 53 chars, description 142 chars, one H1, 0 dashes in body copy, both JSON-LD blocks valid.
+
+
+

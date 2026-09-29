@@ -44,12 +44,6 @@ export const getAdminListings = async (req, res) => {
             paramIndex++;
         }
 
-        if (status && status !== 'ALL') {
-            params.push(status);
-            conditions.push(`l.status = $${paramIndex}`);
-            paramIndex++;
-        }
-
         if (category && category !== 'ALL') {
             params.push(category);
             conditions.push(`l.category = $${paramIndex}`);
@@ -58,10 +52,17 @@ export const getAdminListings = async (req, res) => {
 
         if (owner === 'club' || owner === 'me' || user_type === 'CAMPUNA_CLUB') {
             conditions.push(`(u.role = 'ADMIN' OR cp.company_name = 'Campuna Club')`);
-        } else if (user_type && user_type !== 'ALL') {
-            params.push(user_type);
-            conditions.push(`u.user_type = $${paramIndex}`);
-            paramIndex++;
+        } else {
+            if (status && status !== 'ALL') {
+                params.push(status);
+                conditions.push(`l.status = $${paramIndex}`);
+                paramIndex++;
+            }
+            if (user_type && user_type !== 'ALL') {
+                params.push(user_type);
+                conditions.push(`u.user_type = $${paramIndex}`);
+                paramIndex++;
+            }
         }
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

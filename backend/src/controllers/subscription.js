@@ -40,14 +40,14 @@ export const getUserFeatures = async (userId) => {
 
     const planName = plan?.name || 'FREE';
     const isBusiness = planName === 'BUSINESS';
-    const listingLimit = isBusiness ? 25 : (plan?.listing_limit ?? 3);
+    const listingLimit = isBusiness ? -1 : (plan?.listing_limit ?? 10);
     const descLimit = isBusiness ? 1000 : (plan?.description_limit ?? 500);
 
     if (!plan) {
         // Hard fallback — plan table not seeded yet
         return {
             plan_name: 'FREE',
-            listing_limit: 3,
+            listing_limit: 10,
             has_cover_image: false,
             has_spotlight: false,
             has_statistics: false,

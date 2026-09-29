@@ -153,13 +153,6 @@ export default function FavoritesPage() {
                             <span className="text-xs font-mono text-charcoal/60 uppercase tracking-widest">
                                 {favoriteListings.length} {favoriteListings.length === 1 ? 'Gespeichertes Inserat' : 'Gespeicherte Inserate'}
                             </span>
-                            <button
-                                onClick={clearFavorites}
-                                className="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1 cursor-pointer transition-colors"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Alle löschen
-                            </button>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">

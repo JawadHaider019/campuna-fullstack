@@ -43,11 +43,12 @@ const CATEGORY_SLUGS = {
 export default function CategoriesSection({
     onSelectCategory,
     excludeCategory,
-    badge = "Kategorien",
-    title = "Camping hat viele Seiten. Wir bringen sie zusammen.",
-    showHeader = true,
+    badge = "",
+    title = "",
+    showHeader = false,
     titleClassName = "font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-forest leading-[1.1]",
-    align = "left"
+    align = "left",
+    isDocked = true
 }) {
     // Filter out current/excluded category if prop is provided
     const filteredCategories = excludeCategory
@@ -63,14 +64,17 @@ export default function CategoriesSection({
 
     const colCount = filteredCategories.length;
     const gridClass = colCount === 7
-        ? "flex overflow-x-auto lg:overflow-visible lg:grid lg:grid-cols-7 gap-3 md:gap-4 pb-4 lg:pb-1 no-scrollbar snap-x"
+        ? "flex overflow-x-auto lg:overflow-visible lg:grid lg:grid-cols-7 gap-2.5 sm:gap-3 pb-2 lg:pb-0 no-scrollbar snap-x"
         : colCount === 8
-            ? "flex overflow-x-auto lg:overflow-visible lg:grid lg:grid-cols-8 gap-3 md:gap-4 pb-4 lg:pb-1 no-scrollbar snap-x"
-            : "flex overflow-x-auto lg:overflow-visible lg:grid lg:grid-cols-9 gap-3 md:gap-4 pb-4 lg:pb-1 no-scrollbar snap-x";
+            ? "flex overflow-x-auto lg:overflow-visible lg:grid lg:grid-cols-8 gap-2.5 sm:gap-3 pb-2 lg:pb-0 no-scrollbar snap-x"
+            : "flex overflow-x-auto lg:overflow-visible lg:grid lg:grid-cols-9 gap-2.5 sm:gap-3 pb-2 lg:pb-0 no-scrollbar snap-x";
 
     return (
-        <section id="categories" className="relative z-20 my-8 py-4 scroll-mt-24">
-            <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <section 
+            id="categories" 
+            className={`relative z-20 scroll-mt-24 ${isDocked ? '-mt-10 sm:-mt-14 mb-10 px-4 md:px-8 lg:px-12' : 'my-8 py-4'}`}
+        >
+            <div className="max-w-7xl mx-auto px-2 sm:px-4">
                 {/* Section Headline */}
                 {showHeader && (
                     <motion.div
@@ -78,23 +82,32 @@ export default function CategoriesSection({
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.6 }}
-                        className={`mb-8 space-y-2 ${align === 'center' ? 'text-center' : 'text-left'}`}
+                        className={`mb-8 sm:mb-10 space-y-2 ${align === 'center' ? 'text-center' : 'text-left'}`}
                     >
-                        {badge && (
-                            <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
-                                {badge}
-                            </span>
-                        )}
-                        {title && (
-                            <h2 className={titleClassName}>
-                                {title}
-                            </h2>
-                        )}
+                        <span className="font-sans text-[10px] sm:text-[12px] font-bold uppercase tracking-[0.4em] text-gold block">
+                            {badge || "KATEGORIEN"}
+                        </span>
+                        <h2 className={titleClassName}>
+                            {title || "Camping hat viele Seiten. Wir bringen sie zusammen."}
+                        </h2>
+                        <p className="font-sans text-xs sm:text-sm md:text-base text-charcoal/70 max-w-2xl font-light leading-relaxed mx-auto">
+                            Neun Kategorien, ein Marktplatz: Wähle deinen Bereich und stöbere durch Angebote aus ganz Deutschland.
+                        </p>
                     </motion.div>
                 )}
 
-                {/* Horizontal Scroll on Mobile, Grid on Desktop */}
-                <div className={gridClass}>
+                {/* Responsive Categories: Horizontally scrollable on mobile/tablet (docked & home), responsive grid on desktop */}
+                <div className={
+                    isDocked
+                        ? "flex overflow-x-auto lg:overflow-visible lg:grid lg:grid-cols-9 gap-2.5 sm:gap-3 pb-3 lg:pb-0 no-scrollbar snap-x items-stretch"
+                        : `flex overflow-x-auto lg:overflow-visible lg:grid ${
+                            colCount === 8
+                                ? 'lg:grid-cols-8'
+                                : colCount === 7
+                                ? 'lg:grid-cols-7'
+                                : 'lg:grid-cols-9'
+                        } gap-2.5 sm:gap-3 pb-3 lg:pb-0 no-scrollbar snap-x items-stretch`
+                }>
                     {filteredCategories.map((cat, index) => {
                         const Icon = ICON_MAP[cat.name] || Tent;
                         const slug = CATEGORY_SLUGS[cat.name] || cat.slug || '';
@@ -102,23 +115,23 @@ export default function CategoriesSection({
                         return (
                             <motion.div
                                 key={cat.id}
-                                initial={{ opacity: 0, y: 30 }}
+                                initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: '-50px' }}
-                                transition={{ delay: index * 0.05, duration: 0.6 }}
-                                whileHover={{ y: -6, transition: { duration: 0.2 } }}
-                                className="bg-white border border-white/40 p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 group flex flex-col items-center text-center min-w-[120px] sm:min-w-[140px] lg:min-w-0 flex-shrink-0 snap-center"
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.03, duration: 0.4 }}
+                                whileHover={{ y: -5, transition: { duration: 0.2 } }}
+                                className="bg-white border border-forest/10 hover:border-gold/40 p-2.5 sm:p-3 xl:p-2.5 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col items-center justify-center text-center cursor-pointer min-w-[100px] sm:min-w-[120px] lg:min-w-0 lg:w-full min-h-[105px] sm:min-h-[115px] xl:min-h-[110px] shrink-0 lg:shrink snap-start"
                             >
                                 <Link
                                     href={`/kategorie/${slug}`}
-                                    className="flex flex-col items-center text-center w-full"
+                                    className="flex flex-col items-center justify-center text-center w-full h-full"
                                     onClick={(e) => handleCategoryClick(e, cat.name)}
                                 >
-                                    <div className="p-2.5 rounded-xl bg-forest/5 text-black group-hover:bg-forest group-hover:text-gold transition-all duration-300 mb-3 shrink-0">
+                                    <div className="p-2 sm:p-2.5 rounded-xl bg-forest/5 text-forest group-hover:bg-forest group-hover:text-gold transition-all duration-300 mb-2 shrink-0 shadow-inner">
                                         <Icon className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
                                     </div>
 
-                                    <h3 className="font-display text-[10px] md:text-xs font-bold text-black leading-tight tracking-tight group-hover:text-gold transition-colors duration-300 line-clamp-2">
+                                    <h3 className="font-display text-[10.5px] sm:text-xs font-semibold text-charcoal group-hover:text-forest leading-tight tracking-tight transition-colors duration-300 line-clamp-2 h-[2.2em] flex items-center justify-center text-center">
                                         {cat.name}
                                     </h3>
                                 </Link>

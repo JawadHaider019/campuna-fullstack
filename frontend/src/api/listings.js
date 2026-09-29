@@ -68,3 +68,14 @@ export const reportListing = async (id, data) => {
     return api.post(`/listings/${id}/reports`, data);
 };
 
+/**
+ * PATCH /api/listings/:id/status
+ * Activates, deactivates, or pauses a listing.
+ * @param {string} id - Listing ID
+ * @param {string} [status] - Optional target status ('APPROVED' | 'INACTIVE' | 'SOLD')
+ */
+export const toggleListingStatus = async (id, status) => {
+    return api.patch(`/listings/${id}/status`, { status });
+};
+
+

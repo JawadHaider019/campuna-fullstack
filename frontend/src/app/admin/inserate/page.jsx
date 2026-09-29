@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus,
     Search,
@@ -31,10 +32,10 @@ import {
     ArrowUpRight,
     Star,
     Rocket,
-    Phone,
     Pencil,
     Crown,
-    Briefcase
+    Briefcase,
+    BarChart3
 } from 'lucide-react';
 import {
     getAdminListings,
@@ -57,10 +58,9 @@ export default function AdminListingsPage() {
 
     // Filters & View State
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('ALL');
+    const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'REVIEW' | 'APPROVED' | 'REJECTED' | 'CAMPUNA_CLUB'
     const [categoryFilter, setCategoryFilter] = useState('ALL');
     const [userTypeFilter, setUserTypeFilter] = useState('ALL');
-    const [ownerFilter, setOwnerFilter] = useState('ALL'); // 'ALL' | 'CLUB'
     const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 12, totalPages: 1 });
@@ -88,14 +88,15 @@ export default function AdminListingsPage() {
     const fetchListings = useCallback(async () => {
         setLoading(true);
         try {
+            const isClubTab = activeTab === 'CAMPUNA_CLUB';
             const res = await getAdminListings({
                 page,
                 limit: 12,
                 search: search.trim() || undefined,
-                status: statusFilter,
+                status: isClubTab ? 'ALL' : activeTab,
                 category: categoryFilter,
                 user_type: userTypeFilter,
-                owner: ownerFilter === 'CLUB' ? 'club' : undefined
+                owner: isClubTab ? 'club' : undefined
             });
 
             if (res.data?.success) {
@@ -112,7 +113,7 @@ export default function AdminListingsPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, search, statusFilter, categoryFilter, userTypeFilter, ownerFilter]);
+    }, [page, search, activeTab, categoryFilter, userTypeFilter]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -236,11 +237,21 @@ export default function AdminListingsPage() {
     };
 
     return (
-        <div className="w-full max-w-[1440px] mx-auto space-y-6 pb-10">
+        <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="w-full max-w-[1440px] mx-auto space-y-6 pb-12 px-2 sm:px-4 md:px-6"
+        >
             {/* ─── Top Page Header ─── */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs">
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-sand/50 via-white to-sand/30 p-4 sm:p-5 rounded-3xl border border-[#E8EAEF] shadow-2xs"
+            >
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold">
+                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest flex items-center justify-center font-bold shrink-0">
                         <Layers className="w-5 h-5" />
                     </div>
                     <div>
@@ -254,11 +265,11 @@ export default function AdminListingsPage() {
                 </div>
 
                 {/* Top Quick Actions & View Switcher */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap sm:flex-nowrap justify-between sm:justify-end">
                     {/* Create Listing Button */}
                     <button
                         onClick={() => router.push('/admin/inserat-erstellen')}
-                        className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-[#002B06] hover:text-gold transition-all duration-200 cursor-pointer shadow-sm border border-gold/30 shrink-0"
+                        className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-[#002B06] hover:text-gold transition-all duration-200 cursor-pointer shadow-sm border border-gold/30 shrink-0"
                     >
                         <Plus className="w-4 h-4 text-gold" />
                         <span>Neues Inserat</span>
@@ -284,15 +295,18 @@ export default function AdminListingsPage() {
                         </button>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* ─── Top Stats Bento Cards (5 Cards matching Dashboard styling) ─── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
 
                 {/* 1. Gesamt Inserate (Forest-to-Black Gradient Luxury Card) */}
-                <div
-                    onClick={() => { setStatusFilter('ALL'); setPage(1); }}
-                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[145px] border border-forest/30 cursor-pointer group transition-transform hover:-translate-y-0.5"
+                <motion.div
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    onClick={() => { setActiveTab('ALL'); setPage(1); }}
+                    className="col-span-2 sm:col-span-1 bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-4 sm:p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[140px] sm:min-h-[145px] border border-forest/30 cursor-pointer group"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-sand/80 uppercase tracking-wider">
@@ -303,7 +317,7 @@ export default function AdminListingsPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="text-3xl font-extrabold tracking-tight text-white font-sans">
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-sans">
                             {summary.totalListings || 0}
                         </div>
                         <div className="flex items-center justify-between mt-1 pt-2 border-t border-white/10 text-[10px] text-sand/80">
@@ -311,19 +325,27 @@ export default function AdminListingsPage() {
                             <span>{new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(summary.totalActiveValue || 0)}</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 2. Zur Prüfung (Pending Review Queue) */}
-                <div
-                    onClick={() => { setStatusFilter('REVIEW'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                <motion.div
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    onClick={() => { setActiveTab('REVIEW'); setPage(1); }}
+                    className={`bg-white border rounded-3xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between min-h-[140px] sm:min-h-[145px] cursor-pointer group transition-colors ${
+                        activeTab === 'REVIEW' ? 'border-amber-400 ring-2 ring-amber-400/20' : 'border-[#E8EAEF]'
+                    }`}
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Zur Prüfung
                         </span>
                         {(summary.reviewCount || 0) > 0 ? (
-                            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                            <span className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500" />
+                            </span>
                         ) : (
                             <div className="w-6 h-6 rounded-full bg-[#EBF7EE] text-[#1E7E50] flex items-center justify-center font-bold text-xs">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -331,7 +353,7 @@ export default function AdminListingsPage() {
                         )}
                     </div>
                     <div>
-                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
                             {summary.reviewCount || 0}
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] font-bold mt-1">
@@ -346,12 +368,17 @@ export default function AdminListingsPage() {
                             )}
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 3. Freigegeben (Active) */}
-                <div
-                    onClick={() => { setStatusFilter('APPROVED'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                <motion.div
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    onClick={() => { setActiveTab('APPROVED'); setPage(1); }}
+                    className={`bg-white border rounded-3xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between min-h-[140px] sm:min-h-[145px] cursor-pointer group transition-colors ${
+                        activeTab === 'APPROVED' ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-[#E8EAEF]'
+                    }`}
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -362,19 +389,24 @@ export default function AdminListingsPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
                             {summary.approvedCount || 0}
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 font-semibold mt-1">
-                            <span>Live auf dem Marktplatz</span>
+                            <span>Live auf Marktplatz</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 4. Abgelehnt */}
-                <div
-                    onClick={() => { setStatusFilter('REJECTED'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-transform hover:-translate-y-0.5"
+                <motion.div
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    onClick={() => { setActiveTab('REJECTED'); setPage(1); }}
+                    className={`bg-white border rounded-3xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between min-h-[140px] sm:min-h-[145px] cursor-pointer group transition-colors ${
+                        activeTab === 'REJECTED' ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-[#E8EAEF]'
+                    }`}
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -385,17 +417,21 @@ export default function AdminListingsPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
+                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 font-sans">
                             {summary.rejectedCount || 0}
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-rose-600 font-semibold mt-1">
                             <span>Nicht veröffentlicht</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* 5. Marktwert Aktiv */}
-                <div className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px]">
+                <motion.div
+                    whileHover={{ y: -3, scale: 1.01 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    className="col-span-1 bg-white border border-[#E8EAEF] rounded-3xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between min-h-[140px] sm:min-h-[145px]"
+                >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                             Marktwert (Aktiv)
@@ -405,23 +441,28 @@ export default function AdminListingsPage() {
                         </div>
                     </div>
                     <div>
-                        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 font-sans truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 font-sans truncate">
                             {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(summary.totalActiveValue || 0)}
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-medium mt-1">
                             <span>Gesamtwert aller</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
             </div>
 
             {/* ─── Search & Filter Bar ─── */}
-            <div className="bg-white border border-[#E8EAEF] rounded-2xl p-4 shadow-2xs space-y-3">
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: 0.1 }}
+                className="bg-white border border-[#E8EAEF] rounded-2xl p-3 sm:p-4 shadow-2xs space-y-3"
+            >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
 
                     {/* Search Input */}
-                    <div className="relative flex-1 max-w-md">
+                    <div className="relative flex-1 w-full lg:max-w-md">
                         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                         <input
                             type="text"
@@ -444,55 +485,57 @@ export default function AdminListingsPage() {
                     </div>
 
                     {/* Filter Controls */}
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
 
-                        {/* Campuna Club Filter Toggle Chip */}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setOwnerFilter(prev => prev === 'CLUB' ? 'ALL' : 'CLUB');
-                                setPage(1);
-                            }}
-                            className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${ownerFilter === 'CLUB'
-                                ? 'bg-forest text-gold border-gold/50 shadow-sm ring-1 ring-gold/40'
-                                : 'bg-[#F8F9FA] hover:bg-white text-slate-700 border-[#E2E4E8] hover:border-gold/40'
-                                }`}
-                        >
-                            <Crown className={`w-3.5 h-3.5 ${ownerFilter === 'CLUB' ? 'text-gold' : 'text-amber-500'}`} />
-                            <span>Campuna Club</span>
-                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${ownerFilter === 'CLUB' ? 'bg-gold text-forest' : 'bg-slate-200 text-slate-700'
-                                }`}>
-                                {summary.campunaClubCount || 0}
-                            </span>
-                        </button>
-
-                        {/* Status Tabs */}
-                        <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center text-xs">
+                        {/* Standard Main Tabs: Alle | In Prüfung | Freigegeben | Abgelehnt | Campuna Club */}
+                        <div className="bg-[#F4F5F7] p-1 rounded-xl flex items-center text-xs flex-wrap gap-1 w-full sm:w-auto justify-start">
                             {[
-                                { label: 'Alle', val: 'ALL' },
+                                { label: 'Alle', val: 'ALL', count: null },
                                 { label: 'In Prüfung', val: 'REVIEW', count: summary.reviewCount },
-                                { label: 'Freigegeben', val: 'APPROVED' },
-                                { label: 'Abgelehnt', val: 'REJECTED' },
-                            ].map((tab) => (
-                                <button
-                                    key={tab.val}
-                                    onClick={() => {
-                                        setStatusFilter(tab.val);
-                                        setPage(1);
-                                    }}
-                                    className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${statusFilter === tab.val
-                                        ? 'bg-white text-slate-900 shadow-2xs'
-                                        : 'text-slate-500 hover:text-slate-800'
+                                { label: 'Freigegeben', val: 'APPROVED', count: summary.approvedCount },
+                                { label: 'Abgelehnt', val: 'REJECTED', count: summary.rejectedCount },
+                                { label: 'Campuna Club', val: 'CAMPUNA_CLUB', count: summary.campunaClubCount, icon: Crown }
+                            ].map((tab) => {
+                                const isActive = activeTab === tab.val;
+                                const isClub = tab.val === 'CAMPUNA_CLUB';
+                                const Icon = tab.icon;
+
+                                return (
+                                    <button
+                                        key={tab.val}
+                                        type="button"
+                                        onClick={() => {
+                                            setActiveTab(tab.val);
+                                            setPage(1);
+                                        }}
+                                        className={`px-2.5 sm:px-3.5 py-1.5 rounded-lg font-bold text-[11px] sm:text-xs transition-all cursor-pointer flex items-center gap-1.5 ${
+                                            isActive
+                                                ? isClub
+                                                    ? 'bg-forest text-gold shadow-2xs ring-1 ring-gold/40'
+                                                    : 'bg-white text-slate-900 shadow-2xs'
+                                                : isClub
+                                                    ? 'text-amber-800 hover:text-amber-950 hover:bg-amber-50/60'
+                                                    : 'text-slate-500 hover:text-slate-800'
                                         }`}
-                                >
-                                    <span>{tab.label}</span>
-                                    {Boolean(tab.count) && tab.count > 0 && (
-                                        <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-500 text-white">
-                                            {tab.count}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
+                                    >
+                                        {Icon && <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-gold' : 'text-amber-600'}`} />}
+                                        <span>{tab.label}</span>
+                                        {tab.count !== null && tab.count !== undefined && (
+                                            <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
+                                                isClub
+                                                    ? isActive
+                                                        ? 'bg-gold text-forest'
+                                                        : 'bg-amber-100 text-amber-900'
+                                                    : tab.val === 'REVIEW' && tab.count > 0
+                                                        ? 'bg-amber-500 text-white'
+                                                        : 'bg-slate-200 text-slate-700'
+                                            }`}>
+                                                {tab.count}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {/* Category Dropdown */}
@@ -502,7 +545,7 @@ export default function AdminListingsPage() {
                                 setCategoryFilter(e.target.value);
                                 setPage(1);
                             }}
-                            className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer"
+                            className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer flex-1 sm:flex-initial"
                         >
                             <option value="ALL">Kategorie: Alle</option>
                             {categories.map((cat) => (
@@ -519,7 +562,7 @@ export default function AdminListingsPage() {
                                 setUserTypeFilter(e.target.value);
                                 setPage(1);
                             }}
-                            className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer"
+                            className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer flex-1 sm:flex-initial"
                         >
                             <option value="ALL">Anbieter: Alle</option>
                             <option value="COMMERCIAL">Nur Gewerblich</option>
@@ -529,7 +572,7 @@ export default function AdminListingsPage() {
                     </div>
 
                 </div>
-            </div>
+            </motion.div>
 
             {/* ─── Main Content Views (Table / Grid) ─── */}
             {viewMode === 'table' ? (
@@ -604,7 +647,7 @@ export default function AdminListingsPage() {
                                                         </div>
                                                         <div className="min-w-0 max-w-xs">
                                                             <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                                                                {(Boolean(item.is_boosted) || isCampunaClub) && (
+                                                                {Boolean(item.is_boosted) && (
                                                                     <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md">
                                                                         <Rocket className="w-2.5 h-2.5 text-amber-800" />
                                                                         <span>Hervorgehoben</span>
@@ -696,14 +739,16 @@ export default function AdminListingsPage() {
                                                 <td className="py-3.5 px-5 text-right whitespace-nowrap">
                                                     <div className="inline-flex items-center gap-1">
 
-                                                        {/* Edit Action Button */}
-                                                        <button
-                                                            onClick={() => router.push(`/admin/inserat-erstellen?edit=${item.id}`)}
-                                                            title="Inserat bearbeiten"
-                                                            className="p-1.5 text-slate-500 hover:text-forest hover:bg-forest/10 rounded-lg transition-colors cursor-pointer"
-                                                        >
-                                                            <Pencil className="w-4 h-4" />
-                                                        </button>
+                                                        {/* Edit Action Button (Only if own listing / Campuna Club) */}
+                                                        {(Boolean(item.is_own_listing) || isCampunaClub) && (
+                                                            <button
+                                                                onClick={() => router.push(`/admin/inserat-erstellen?edit=${item.id}`)}
+                                                                title="Inserat bearbeiten"
+                                                                className="p-1.5 text-slate-500 hover:text-forest hover:bg-forest/10 rounded-lg transition-colors cursor-pointer"
+                                                            >
+                                                                <Pencil className="w-4 h-4" />
+                                                            </button>
+                                                        )}
 
                                                         {/* Live Link Button */}
                                                         <a
@@ -717,46 +762,55 @@ export default function AdminListingsPage() {
                                                         </a>
 
                                                         {/* Feature / Empfehlen Toggle */}
-                                                        <button
-                                                            onClick={() => handleToggleFeatured(item)}
-                                                            disabled={actionLoading}
-                                                            title={item.featured ? "Empfehlung entfernen" : "Als Empfohlen (Featured) markieren"}
-                                                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${item.featured
-                                                                ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200'
-                                                                : 'text-slate-300 hover:text-emerald-700 hover:bg-emerald-50'
-                                                                }`}
-                                                        >
-                                                            <Star className={`w-4 h-4 ${item.featured ? 'fill-emerald-600' : ''}`} />
-                                                        </button>
+                                                         <button
+                                                             onClick={() => handleToggleFeatured(item)}
+                                                             disabled={actionLoading}
+                                                             title={item.featured ? "Empfehlung entfernen" : "Als Empfohlen (Featured) markieren"}
+                                                             className={`p-1.5 rounded-lg transition-colors cursor-pointer ${item.featured
+                                                                 ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200'
+                                                                 : 'text-slate-300 hover:text-emerald-700 hover:bg-emerald-50'
+                                                                 }`}
+                                                         >
+                                                             <Star className={`w-4 h-4 ${item.featured ? 'fill-emerald-600' : ''}`} />
+                                                         </button>
 
-                                                        {/* Quick Approve Button */}
-                                                        {item.status !== 'APPROVED' && (
-                                                            <button
-                                                                onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
-                                                                disabled={actionLoading}
-                                                                title="Inserat freigeben"
-                                                                className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-                                                            >
-                                                                <CheckCircle2 className="w-4 h-4" />
-                                                            </button>
-                                                        )}
+                                                         {/* If not Campuna Club, show moderation approve/reject */}
+                                                         {!isCampunaClub ? (
+                                                             <>
+                                                                 {/* Quick Approve Button */}
+                                                                 {item.status !== 'APPROVED' && (
+                                                                     <button
+                                                                         onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
+                                                                         disabled={actionLoading}
+                                                                         title="Inserat freigeben"
+                                                                         className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
+                                                                     >
+                                                                         <CheckCircle2 className="w-4 h-4" />
+                                                                     </button>
+                                                                 )}
 
-                                                        {/* Quick Reject Button */}
-                                                        {item.status !== 'REJECTED' && (
-                                                            <button
-                                                                onClick={() => {
-                                                                    setListingToReject(item);
-                                                                    setRejectModalOpen(true);
-                                                                }}
-                                                                disabled={actionLoading}
-                                                                title="Inserat ablehnen"
-                                                                className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                                            >
-                                                                <XCircle className="w-4 h-4" />
-                                                            </button>
-                                                        )}
+                                                                 {/* Quick Reject Button */}
+                                                                 {item.status !== 'REJECTED' && (
+                                                                     <button
+                                                                         onClick={() => {
+                                                                             setListingToReject(item);
+                                                                             setRejectModalOpen(true);
+                                                                         }}
+                                                                         disabled={actionLoading}
+                                                                         title="Inserat ablehnen"
+                                                                         className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                                                     >
+                                                                         <XCircle className="w-4 h-4" />
+                                                                     </button>
+                                                                 )}
+                                                             </>
+                                                         ) : (
+                                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-forest/10 text-forest text-[10px] font-black uppercase">
+                                                                 <Crown className="w-3 h-3 text-amber-500" /> Admin
+                                                             </span>
+                                                         )}
 
-                                                        {/* View Details */}
+                                                         {/* View Details */}
                                                         <button
                                                             onClick={() => {
                                                                 setSelectedListing(item);
@@ -794,29 +848,31 @@ export default function AdminListingsPage() {
                     {/* Pagination Bar */}
                     {pagination.totalPages > 1 && pagination.total > 10 && (
                         <div className="p-4 border-t border-[#E8EAEF] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
-                            <div>
+                            <div className="text-center sm:text-left">
                                 Zeige <span className="font-bold text-slate-800">{listings.length}</span> von{' '}
                                 <span className="font-bold text-slate-800">{pagination.total}</span> Inseraten
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                                 <button
                                     onClick={() => setPage(Math.max(1, page - 1))}
                                     disabled={page <= 1 || loading}
-                                    className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                    title="Vorherige Seite"
+                                    className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
                                 >
-                                    <ChevronLeft className="w-3.5 h-3.5" />
-                                    <span>Zurück</span>
+                                    <ChevronLeft className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                                    <span className="hidden sm:inline">Zurück</span>
                                 </button>
-                                <span className="px-3 py-1.5 text-slate-700 font-bold font-mono">
+                                <span className="px-3 py-1.5 text-slate-700 font-bold font-mono text-xs bg-[#F8F9FA] sm:bg-transparent rounded-lg border sm:border-0 border-[#E2E4E8]">
                                     Seite {page} von {pagination.totalPages || 1}
                                 </span>
                                 <button
                                     onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
                                     disabled={page >= pagination.totalPages || loading}
-                                    className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                    title="Nächste Seite"
+                                    className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
                                 >
-                                    <span>Weiter</span>
-                                    <ChevronRight className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Weiter</span>
+                                    <ChevronRight className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                                 </button>
                             </div>
                         </div>
@@ -836,7 +892,7 @@ export default function AdminListingsPage() {
                                 <h4 className="text-sm font-bold text-slate-700">Keine Inserate gefunden</h4>
                             </div>
                         ) : (
-                            listings.map((item) => {
+                            listings.map((item, idx) => {
                                 const mainImage = item.images?.[0] ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
                                 const isBoosted = Boolean(item.is_boosted);
                                 const isCampunaClub = Boolean(item.is_campuna_club);
@@ -850,12 +906,18 @@ export default function AdminListingsPage() {
                                 ].filter(Boolean);
 
                                 return (
-                                    <div
+                                    <motion.div
                                         key={item.id}
+                                        initial={{ opacity: 0, y: 12 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.25, delay: Math.min(idx * 0.04, 0.3) }}
+                                        whileHover={{ y: -4 }}
                                         className={`listing-card group relative flex flex-col h-full rounded-[24px] overflow-hidden transition-all duration-300 select-none justify-between ${
-                                            isBoosted || isCampunaClub
-                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_16px_-2px_rgba(202,152,43,0.16)] hover:shadow-[0_6px_20px_-2px_rgba(202,152,43,0.24)]'
-                                                : 'bg-white border border-forest/10 hover:border-forest/20 shadow-sm hover:shadow-md'
+                                            isBoosted
+                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_16px_-2px_rgba(202,152,43,0.16)] hover:shadow-[0_8px_24px_-2px_rgba(202,152,43,0.28)]'
+                                                : isCampunaClub
+                                                ? 'bg-white border border-gold/30 hover:border-gold/60 shadow-xs hover:shadow-md'
+                                                : 'bg-white border border-forest/10 hover:border-forest/20 shadow-xs hover:shadow-md'
                                         }`}
                                     >
                                         <div>
@@ -977,77 +1039,92 @@ export default function AdminListingsPage() {
                                         </div>
 
                                         {/* Action Buttons Footer */}
-                                        <div className="p-4 sm:p-5 pt-0 mt-2 border-t border-beige/60 pt-3 grid grid-cols-4 gap-1.5">
-                                            {/* 1. Edit Button */}
-                                            <button
-                                                type="button"
-                                                onClick={() => router.push(`/admin/inserat-erstellen?edit=${item.id}`)}
-                                                title="Inserat bearbeiten"
-                                                className="flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-[#faf8f3] hover:bg-forest hover:text-sand text-slate-700 border border-slate-200"
-                                            >
-                                                <Pencil className="w-3.5 h-3.5" />
-                                                <span className="hidden sm:inline text-[11px]">Edit</span>
-                                            </button>
+                                         <div className="p-4 sm:p-5 pt-0 mt-2 border-t border-beige/60 pt-3 grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                                             {/* 1. Edit Button (Only for own / Campuna Club listings) */}
+                                             {(Boolean(item.is_own_listing) || isCampunaClub) && (
+                                                 <button
+                                                     type="button"
+                                                     onClick={() => router.push(`/admin/inserat-erstellen?edit=${item.id}`)}
+                                                     title="Inserat bearbeiten"
+                                                     className="flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs bg-[#faf8f3] hover:bg-forest hover:text-sand text-slate-700 border border-slate-200"
+                                                 >
+                                                     <Pencil className="w-3.5 h-3.5" />
+                                                     <span className="hidden sm:inline text-[11px]">Edit</span>
+                                                 </button>
+                                             )}
 
-                                            {/* 2. Feature / Empfehlen Toggle Button */}
-                                            <button
-                                                type="button"
-                                                onClick={() => handleToggleFeatured(item)}
-                                                disabled={actionLoading}
-                                                title={item.featured ? "Empfehlung entfernen" : "Als Feature markieren"}
-                                                className={`flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border ${item.featured
-                                                    ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-800'
-                                                    : 'bg-[#faf8f3] hover:bg-sand text-charcoal border-beige'
-                                                    }`}
-                                            >
-                                                <Star className={`w-3.5 h-3.5 ${item.featured ? 'fill-gold text-gold' : 'text-charcoal/60'}`} />
-                                                <span className="hidden sm:inline text-[11px] truncate">{item.featured ? 'Aktiv' : 'Stern'}</span>
-                                            </button>
+                                             {/* 2. Feature / Empfehlen Toggle Button */}
+                                             <button
+                                                 type="button"
+                                                 onClick={() => handleToggleFeatured(item)}
+                                                 disabled={actionLoading}
+                                                 title={item.featured ? "Empfehlung entfernen" : "Als Feature markieren"}
+                                                 className={`flex items-center justify-center gap-1 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border ${item.featured
+                                                     ? 'bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-800'
+                                                     : 'bg-[#faf8f3] hover:bg-sand text-charcoal border-beige'
+                                                     }`}
+                                             >
+                                                 <Star className={`w-3.5 h-3.5 ${item.featured ? 'fill-gold text-gold' : 'text-charcoal/60'}`} />
+                                                 <span className="hidden sm:inline text-[11px] truncate">{item.featured ? 'Aktiv' : 'Stern'}</span>
+                                             </button>
 
-                                            {/* 3. Block / Sperren Button */}
-                                            {item.status === 'REJECTED' ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
-                                                    disabled={actionLoading}
-                                                    title="Inserat entsperren / freigeben"
-                                                    className="flex items-center justify-center gap-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 border border-emerald-200 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
-                                                >
-                                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                                    <span className="hidden sm:inline text-[11px] truncate">Frei</span>
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setListingToReject(item);
-                                                        setRejectModalOpen(true);
-                                                    }}
-                                                    disabled={actionLoading}
-                                                    title="Inserat sperren / ablehnen"
-                                                    className="flex items-center justify-center gap-1 bg-amber-50/90 hover:bg-amber-600 hover:text-white text-amber-800 border border-amber-200/90 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
-                                                >
-                                                    <XCircle className="w-3.5 h-3.5" />
-                                                    <span className="hidden sm:inline text-[11px] truncate">Sperren</span>
-                                                </button>
-                                            )}
+                                             {/* 3. Moderation Button (Only for regular listings) or Live Link for Club */}
+                                             {!isCampunaClub ? (
+                                                 item.status === 'REJECTED' ? (
+                                                     <button
+                                                         type="button"
+                                                         onClick={() => handleStatusUpdate(item.id, 'APPROVED')}
+                                                         disabled={actionLoading}
+                                                         title="Inserat entsperren / freigeben"
+                                                         className="flex items-center justify-center gap-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 border border-emerald-200 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                                     >
+                                                         <CheckCircle2 className="w-3.5 h-3.5" />
+                                                         <span className="hidden sm:inline text-[11px] truncate">Frei</span>
+                                                     </button>
+                                                 ) : (
+                                                     <button
+                                                         type="button"
+                                                         onClick={() => {
+                                                             setListingToReject(item);
+                                                             setRejectModalOpen(true);
+                                                         }}
+                                                         disabled={actionLoading}
+                                                         title="Inserat sperren / ablehnen"
+                                                         className="flex items-center justify-center gap-1 bg-amber-50/90 hover:bg-amber-600 hover:text-white text-amber-800 border border-amber-200/90 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                                     >
+                                                         <XCircle className="w-3.5 h-3.5" />
+                                                         <span className="hidden sm:inline text-[11px] truncate">Sperren</span>
+                                                     </button>
+                                                 )
+                                             ) : (
+                                                 <a
+                                                     href={`/inserate/${item.slug || item.id}`}
+                                                     target="_blank"
+                                                     rel="noreferrer"
+                                                     title="Live ansehen"
+                                                     className="flex items-center justify-center gap-1 bg-[#faf8f3] hover:bg-slate-100 text-slate-700 border border-slate-200 py-2 px-1.5 rounded-xl text-xs font-bold transition-all shadow-xs"
+                                                 >
+                                                     <ExternalLink className="w-3.5 h-3.5" />
+                                                     <span className="hidden sm:inline text-[11px] truncate">Live</span>
+                                                 </a>
+                                             )}
 
-                                            {/* 4. Delete / Löschen Button */}
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setListingToDelete(item);
-                                                    setDeleteModalOpen(true);
-                                                }}
-                                                disabled={actionLoading}
-                                                title="Inserat endgültig löschen"
-                                                className="flex items-center justify-center gap-1 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
-                                            >
-                                                <Trash2 className="w-3.5 h-3.5" />
-                                                <span className="hidden sm:inline text-[11px] truncate">Löschen</span>
-                                            </button>
-                                        </div>
-                                    </div>
+                                             {/* 4. Delete / Löschen Button */}
+                                             <button
+                                                 type="button"
+                                                 onClick={() => {
+                                                     setListingToDelete(item);
+                                                     setDeleteModalOpen(true);
+                                                 }}
+                                                 disabled={actionLoading}
+                                                 title="Inserat endgültig löschen"
+                                                 className="flex items-center justify-center gap-1 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-700 border border-rose-200 py-2 px-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                             >
+                                                 <Trash2 className="w-3.5 h-3.5" />
+                                                 <span className="hidden sm:inline text-[11px] truncate">Löschen</span>
+                                             </button>
+                                         </div>
+                                    </motion.div>
                                 );
                             })
                         )}
@@ -1056,29 +1133,31 @@ export default function AdminListingsPage() {
                     {/* Pagination Bar */}
                     {pagination.totalPages > 1 && pagination.total > 10 && (
                         <div className="bg-white border border-[#E8EAEF] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
-                            <div>
+                            <div className="text-center sm:text-left">
                                 Zeige <span className="font-bold text-slate-800">{listings.length}</span> von{' '}
                                 <span className="font-bold text-slate-800">{pagination.total}</span> Inseraten
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                                 <button
                                     onClick={() => setPage(Math.max(1, page - 1))}
                                     disabled={page <= 1 || loading}
-                                    className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                    title="Vorherige Seite"
+                                    className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
                                 >
-                                    <ChevronLeft className="w-3.5 h-3.5" />
-                                    <span>Zurück</span>
+                                    <ChevronLeft className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                                    <span className="hidden sm:inline">Zurück</span>
                                 </button>
-                                <span className="px-3 py-1.5 text-slate-700 font-bold font-mono">
+                                <span className="px-3 py-1.5 text-slate-700 font-bold font-mono text-xs bg-[#F8F9FA] sm:bg-transparent rounded-lg border sm:border-0 border-[#E2E4E8]">
                                     Seite {page} von {pagination.totalPages || 1}
                                 </span>
                                 <button
                                     onClick={() => setPage(Math.min(pagination.totalPages, page + 1))}
                                     disabled={page >= pagination.totalPages || loading}
-                                    className="px-3 py-1.5 rounded-lg border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1"
+                                    title="Nächste Seite"
+                                    className="p-2 sm:px-3 sm:py-1.5 rounded-xl border border-[#E2E4E8] bg-white text-slate-700 font-semibold hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-1 shadow-2xs"
                                 >
-                                    <span>Weiter</span>
-                                    <ChevronRight className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Weiter</span>
+                                    <ChevronRight className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                                 </button>
                             </div>
                         </div>
@@ -1087,385 +1166,424 @@ export default function AdminListingsPage() {
             )}
 
             {/* ─── MODAL: COMPLETE LISTING DETAIL DRAWER ─── */}
-            {detailModalOpen && selectedListing && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
-                >
-                    <div
-                        className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#E8EAEF] flex flex-col transition-transform duration-200"
+            <AnimatePresence>
+                {detailModalOpen && selectedListing && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
                     >
-                        {/* Modal Header */}
-                        <div className="p-5 sm:p-6 border-b border-[#E8EAEF] flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
-                            <div className="space-y-1">
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
+                            className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#E8EAEF] flex flex-col"
+                        >
+                            {/* Modal Header */}
+                            <div className="p-4 sm:p-6 border-b border-[#E8EAEF] flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur-md z-10">
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        {selectedListing.is_campuna_club && (
+                                            <span className="inline-flex items-center gap-1 bg-[#062c19] text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">
+                                                <Briefcase className="w-3 h-3 text-amber-400" /> Business
+                                            </span>
+                                        )}
+                                        {renderStatusBadge(selectedListing.status)}
+                                        <span className="text-xs text-slate-400 font-mono">
+                                            ID: {selectedListing.id}
+                                        </span>
+                                    </div>
+                                    <h2 className="text-base sm:text-lg font-black text-slate-900 line-clamp-1">
+                                        {selectedListing.title}
+                                    </h2>
+                                </div>
                                 <div className="flex items-center gap-2">
-                                    {selectedListing.is_campuna_club && (
-                                        <span className="inline-flex items-center gap-1 bg-[#062c19] text-amber-300 border border-amber-400/40 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">
-                                            <Briefcase className="w-3 h-3 text-amber-400" /> Business
+                                    {(Boolean(selectedListing.is_own_listing) || selectedListing.is_campuna_club) && (
+                                        <button
+                                            onClick={() => {
+                                                setDetailModalOpen(false);
+                                                router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
+                                            }}
+                                            className="px-3 py-1.5 rounded-xl border border-forest/20 bg-sand/50 text-forest text-xs font-bold hover:bg-forest hover:text-sand transition-all flex items-center gap-1.5 cursor-pointer"
+                                            title="Inserat bearbeiten"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                            <span>Bearbeiten</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setDetailModalOpen(false)}
+                                        className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="p-4 sm:p-6 space-y-6 flex-1">
+
+                                {/* Official Business Banner */}
+                                {selectedListing.is_campuna_club && (
+                                    <div className="p-4 rounded-2xl bg-gradient-to-r from-forest via-[#003807] to-[#002204] text-white border border-gold/40 flex items-center justify-between gap-3 shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-white/10 text-gold flex items-center justify-center font-bold">
+                                                <Briefcase className="w-5 h-5 text-gold" />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-xs font-black text-white flex items-center gap-1.5">
+                                                    <span>Offizielles Business Inserat</span>
+                                                    <span className="text-[9px] px-2 py-0.2 rounded-full bg-gold/20 text-gold font-mono font-bold">BUSINESS</span>
+                                                </h4>
+                                                <p className="text-[11px] text-sand/80 mt-0.5">
+                                                    Veröffentlicht unter dem offiziellen Business-Profil.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setDetailModalOpen(false);
+                                                router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
+                                            }}
+                                            className="px-3.5 py-1.5 rounded-xl bg-gold text-forest text-xs font-bold hover:bg-white transition-all flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                            <span>Bearbeiten</span>
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* 1. Image Gallery */}
+                                {selectedListing.images?.length > 0 ? (
+                                    <div className="space-y-3">
+                                        <div className="relative aspect-video sm:aspect-2/1 bg-slate-900 rounded-2xl overflow-hidden shadow-inner">
+                                            <Image
+                                                src={selectedListing.images[activeImageIdx] ? getImageUrl(selectedListing.images[activeImageIdx], '/logo.webp') : '/logo.webp'}
+                                                alt={selectedListing.title}
+                                                fill
+                                                className="object-contain"
+                                                unoptimized
+                                            />
+                                        </div>
+                                        {selectedListing.images.length > 1 && (
+                                            <div className="flex gap-2 overflow-x-auto pb-1">
+                                                {selectedListing.images.map((img, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => setActiveImageIdx(idx)}
+                                                        className={`w-16 h-16 rounded-xl overflow-hidden relative border-2 shrink-0 transition-all cursor-pointer ${activeImageIdx === idx ? 'border-forest ring-2 ring-forest/20' : 'border-transparent opacity-60 hover:opacity-100'
+                                                            }`}
+                                                    >
+                                                        <Image
+                                                            src={getImageUrl(img)}
+                                                            alt={`Bild ${idx + 1}`}
+                                                            fill
+                                                            className="object-cover"
+                                                            unoptimized
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="aspect-video bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 text-xs font-medium">
+                                        Keine Bilder hinterlegt
+                                    </div>
+                                )}
+
+                                {/* 2. Key Metadata Grid */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Preis</span>
+                                        <span className="text-base font-black text-forest">
+                                            {formatPrice(selectedListing.price, selectedListing.negotiable)}
+                                        </span>
+                                    </div>
+                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Kategorie</span>
+                                        <span className="text-xs font-bold text-slate-800 truncate block">
+                                            {selectedListing.category}
+                                        </span>
+                                    </div>
+                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Standort</span>
+                                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1 truncate">
+                                            <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                                            <span className="truncate">{selectedListing.location}</span>
+                                        </span>
+                                    </div>
+                                    <div className="bg-[#F8F9FA] p-3 rounded-xl">
+                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Zustand</span>
+                                        <span className="text-xs font-bold text-slate-800 truncate block">
+                                            {selectedListing.condition || 'Gebraucht'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* 3. Description */}
+                                <div className="space-y-1.5">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                        Beschreibung
+                                    </h4>
+                                    <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                        {selectedListing.description || 'Keine Beschreibung angegeben.'}
+                                    </div>
+                                </div>
+
+                                {/* 4. Seller Information Box */}
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                        Verkäufer-Details
+                                    </h4>
+                                    <div className="p-4 bg-slate-50 border border-[#E8EAEF] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-forest text-gold font-bold flex items-center justify-center text-sm border border-gold/30 shrink-0">
+                                                {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? <Briefcase className="w-5 h-5 text-gold" /> : (selectedListing.seller?.name?.charAt(0) || 'U')}
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                                                    <span>{selectedListing.seller?.name}</span>
+                                                    <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS')
+                                                        ? 'bg-[#062c19] text-amber-300 border border-amber-400/40'
+                                                        : selectedListing.seller?.type === 'COMMERCIAL'
+                                                        ? 'bg-emerald-900 text-white border border-emerald-400/30'
+                                                        : 'bg-emerald-700 text-white'
+                                                        }`}>
+                                                        {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? 'Business' : (selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat')}
+                                                    </span>
+                                                </div>
+                                                <div className="text-xs text-slate-500">
+                                                    {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? 'Offizielles Business-Konto' : selectedListing.seller?.email}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {selectedListing.seller?.phone && (
+                                            <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8] flex items-center gap-2 self-start sm:self-auto">
+                                                <Phone className="w-3.5 h-3.5 text-slate-500" />
+                                                <span>{selectedListing.seller.phone}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Modal Actions Footer */}
+                            <div className="p-4 sm:p-5 bg-slate-50 border-t border-[#E8EAEF] flex flex-wrap items-center justify-between gap-3 sticky bottom-0 rounded-b-3xl">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {(Boolean(selectedListing.is_own_listing) || selectedListing.is_campuna_club) && (
+                                        <button
+                                            onClick={() => {
+                                                setDetailModalOpen(false);
+                                                router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
+                                            }}
+                                            className="px-3.5 py-2 rounded-xl bg-sand/60 border border-gold/40 text-xs font-bold text-forest hover:bg-gold transition-all flex items-center gap-1.5 cursor-pointer"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                            <span>Bearbeiten</span>
+                                        </button>
+                                    )}
+
+                                    <a
+                                        href={`/inserate/${selectedListing.slug || selectedListing.id}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-3.5 py-2 rounded-xl bg-white border border-[#E2E4E8] text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-all"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                        Live ansehen
+                                    </a>
+
+                                    {/* Featured Toggle in Modal */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleToggleFeatured(selectedListing)}
+                                        disabled={actionLoading}
+                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${selectedListing.featured
+                                            ? 'bg-emerald-700 text-sand hover:bg-emerald-800'
+                                            : 'bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50'
+                                            }`}
+                                    >
+                                        <Star className={`w-3.5 h-3.5 ${selectedListing.featured ? 'fill-sand' : ''}`} />
+                                        <span>{selectedListing.featured ? 'Empfohlen (Aktiv)' : 'Als Empfohlen markieren'}</span>
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    {!selectedListing.is_campuna_club ? (
+                                        <>
+                                            {selectedListing.status !== 'APPROVED' && (
+                                                <button
+                                                    onClick={() => {
+                                                        handleStatusUpdate(selectedListing.id, 'APPROVED');
+                                                        setDetailModalOpen(false);
+                                                    }}
+                                                    disabled={actionLoading}
+                                                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                                >
+                                                    <CheckCircle2 className="w-4 h-4" />
+                                                    Freigeben
+                                                </button>
+                                            )}
+                                            {selectedListing.status !== 'REJECTED' && (
+                                                <button
+                                                    onClick={() => {
+                                                        setListingToReject(selectedListing);
+                                                        setRejectModalOpen(true);
+                                                        setDetailModalOpen(false);
+                                                    }}
+                                                    className="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition-all flex items-center gap-1.5 cursor-pointer"
+                                                >
+                                                    <XCircle className="w-4 h-4" />
+                                                    Ablehnen
+                                                </button>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-forest/10 text-forest text-xs font-black uppercase border border-forest/20">
+                                            <Crown className="w-4 h-4 text-amber-500" /> Campuna Club
                                         </span>
                                     )}
-                                    {renderStatusBadge(selectedListing.status)}
-                                    <span className="text-xs text-slate-400 font-mono">
-                                        ID: {selectedListing.id}
-                                    </span>
-                                </div>
-                                <h2 className="text-base sm:text-lg font-black text-slate-900 line-clamp-1">
-                                    {selectedListing.title}
-                                </h2>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => {
-                                        setDetailModalOpen(false);
-                                        router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
-                                    }}
-                                    className="px-3 py-1.5 rounded-xl border border-forest/20 bg-sand/50 text-forest text-xs font-bold hover:bg-forest hover:text-sand transition-all flex items-center gap-1.5 cursor-pointer"
-                                    title="Inserat bearbeiten"
-                                >
-                                    <Pencil className="w-3.5 h-3.5" />
-                                    <span>Bearbeiten</span>
-                                </button>
-                                <button
-                                    onClick={() => setDetailModalOpen(false)}
-                                    className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Modal Body */}
-                        <div className="p-5 sm:p-6 space-y-6 flex-1">
-
-                            {/* Official Business Banner */}
-                            {selectedListing.is_campuna_club && (
-                                <div className="p-4 rounded-2xl bg-gradient-to-r from-forest via-[#003807] to-[#002204] text-white border border-gold/40 flex items-center justify-between gap-3 shadow-sm">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-white/10 text-gold flex items-center justify-center font-bold">
-                                            <Briefcase className="w-5 h-5 text-gold" />
-                                        </div>
-                                        <div>
-                                            <h4 className="text-xs font-black text-white flex items-center gap-1.5">
-                                                <span>Offizielles Business Inserat</span>
-                                                <span className="text-[9px] px-2 py-0.2 rounded-full bg-gold/20 text-gold font-mono font-bold">BUSINESS</span>
-                                            </h4>
-                                            <p className="text-[11px] text-sand/80 mt-0.5">
-                                                Veröffentlicht unter dem offiziellen Business-Profil.
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => {
-                                            setDetailModalOpen(false);
-                                            router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
-                                        }}
-                                        className="px-3.5 py-1.5 rounded-xl bg-gold text-forest text-xs font-bold hover:bg-white transition-all flex items-center gap-1.5 shrink-0 shadow-sm cursor-pointer"
-                                    >
-                                        <Pencil className="w-3.5 h-3.5" />
-                                        <span>Bearbeiten</span>
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* 1. Image Gallery */}
-                            {selectedListing.images?.length > 0 ? (
-                                <div className="space-y-3">
-                                    <div className="relative aspect-video sm:aspect-2/1 bg-slate-900 rounded-2xl overflow-hidden shadow-inner">
-                                        <Image
-                                            src={selectedListing.images[activeImageIdx] ? getImageUrl(selectedListing.images[activeImageIdx], '/logo.webp') : '/logo.webp'}
-                                            alt={selectedListing.title}
-                                            fill
-                                            className="object-contain"
-                                            unoptimized
-                                        />
-                                    </div>
-                                    {selectedListing.images.length > 1 && (
-                                        <div className="flex gap-2 overflow-x-auto pb-1">
-                                            {selectedListing.images.map((img, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() => setActiveImageIdx(idx)}
-                                                    className={`w-16 h-16 rounded-xl overflow-hidden relative border-2 shrink-0 transition-all cursor-pointer ${activeImageIdx === idx ? 'border-forest ring-2 ring-forest/20' : 'border-transparent opacity-60 hover:opacity-100'
-                                                        }`}
-                                                >
-                                                    <Image
-                                                        src={getImageUrl(img)}
-                                                        alt={`Bild ${idx + 1}`}
-                                                        fill
-                                                        className="object-cover"
-                                                        unoptimized
-                                                    />
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="aspect-video bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 text-xs font-medium">
-                                    Keine Bilder hinterlegt
-                                </div>
-                            )}
-
-                            {/* 2. Key Metadata Grid */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <div className="bg-[#F8F9FA] p-3 rounded-xl">
-                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Preis</span>
-                                    <span className="text-base font-black text-forest">
-                                        {formatPrice(selectedListing.price, selectedListing.negotiable)}
-                                    </span>
-                                </div>
-                                <div className="bg-[#F8F9FA] p-3 rounded-xl">
-                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Kategorie</span>
-                                    <span className="text-xs font-bold text-slate-800">
-                                        {selectedListing.category}
-                                    </span>
-                                </div>
-                                <div className="bg-[#F8F9FA] p-3 rounded-xl">
-                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Standort</span>
-                                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                                        <MapPin className="w-3 h-3 text-slate-400" />
-                                        {selectedListing.location}
-                                    </span>
-                                </div>
-                                <div className="bg-[#F8F9FA] p-3 rounded-xl">
-                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Zustand</span>
-                                    <span className="text-xs font-bold text-slate-800">
-                                        {selectedListing.condition || 'Gebraucht'}
-                                    </span>
                                 </div>
                             </div>
-
-                            {/* 3. Description */}
-                            <div className="space-y-1.5">
-                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                    Beschreibung
-                                </h4>
-                                <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                    {selectedListing.description || 'Keine Beschreibung angegeben.'}
-                                </div>
-                            </div>
-
-                            {/* 4. Seller Information Box */}
-                            <div className="space-y-2">
-                                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                                    Verkäufer-Details
-                                </h4>
-                                <div className="p-4 bg-slate-50 border border-[#E8EAEF] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-forest text-gold font-bold flex items-center justify-center text-sm border border-gold/30">
-                                            {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? <Briefcase className="w-5 h-5 text-gold" /> : (selectedListing.seller?.name?.charAt(0) || 'U')}
-                                        </div>
-                                        <div>
-                                            <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                                                <span>{selectedListing.seller?.name}</span>
-                                                <span className={`text-[10px] px-2 py-0.2 rounded-full font-bold ${(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS')
-                                                    ? 'bg-[#062c19] text-amber-300 border border-amber-400/40'
-                                                    : selectedListing.seller?.type === 'COMMERCIAL'
-                                                    ? 'bg-emerald-900 text-white border border-emerald-400/30'
-                                                    : 'bg-emerald-700 text-white'
-                                                    }`}>
-                                                    {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? 'Business' : (selectedListing.seller?.type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat')}
-                                                </span>
-                                            </div>
-                                            <div className="text-xs text-slate-500">
-                                                {(selectedListing.is_campuna_club || selectedListing.seller?.tier === 'BUSINESS') ? 'Offizielles Business-Konto' : selectedListing.seller?.email}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {selectedListing.seller?.phone && (
-                                        <div className="text-xs font-mono text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-[#E2E4E8] flex items-center gap-2">
-                                            <Phone className="w-3.5 h-3.5 text-slate-500" />
-                                            <span>{selectedListing.seller.phone}</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Modal Actions Footer */}
-                        <div className="p-4 sm:p-5 bg-slate-50 border-t border-[#E8EAEF] flex flex-wrap items-center justify-between gap-3 sticky bottom-0 rounded-b-3xl">
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => {
-                                        setDetailModalOpen(false);
-                                        router.push(`/admin/inserat-erstellen?edit=${selectedListing.id}`);
-                                    }}
-                                    className="px-3.5 py-2 rounded-xl bg-sand/60 border border-gold/40 text-xs font-bold text-forest hover:bg-gold transition-all flex items-center gap-1.5 cursor-pointer"
-                                >
-                                    <Pencil className="w-3.5 h-3.5" />
-                                    <span>Bearbeiten</span>
-                                </button>
-
-                                <a
-                                    href={`/inserate/${selectedListing.slug || selectedListing.id}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="px-3.5 py-2 rounded-xl bg-white border border-[#E2E4E8] text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 transition-all"
-                                >
-                                    <ExternalLink className="w-3.5 h-3.5" />
-                                    Live ansehen
-                                </a>
-
-                                {/* Featured Toggle in Modal */}
-                                <button
-                                    type="button"
-                                    onClick={() => handleToggleFeatured(selectedListing)}
-                                    disabled={actionLoading}
-                                    className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs ${selectedListing.featured
-                                        ? 'bg-emerald-700 text-sand hover:bg-emerald-800'
-                                        : 'bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50'
-                                        }`}
-                                >
-                                    <Star className={`w-3.5 h-3.5 ${selectedListing.featured ? 'fill-sand' : ''}`} />
-                                    <span>{selectedListing.featured ? 'Empfohlen (Aktiv)' : 'Als Empfohlen markieren'}</span>
-                                </button>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                {selectedListing.status !== 'APPROVED' && (
-                                    <button
-                                        onClick={() => {
-                                            handleStatusUpdate(selectedListing.id, 'APPROVED');
-                                            setDetailModalOpen(false);
-                                        }}
-                                        disabled={actionLoading}
-                                        className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-                                    >
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        Freigeben
-                                    </button>
-                                )}
-                                {selectedListing.status !== 'REJECTED' && (
-                                    <button
-                                        onClick={() => {
-                                            setListingToReject(selectedListing);
-                                            setRejectModalOpen(true);
-                                            setDetailModalOpen(false);
-                                        }}
-                                        className="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition-all flex items-center gap-1.5 cursor-pointer"
-                                    >
-                                        <XCircle className="w-4 h-4" />
-                                        Ablehnen
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ─── MODAL: REJECT LISTING WITH REASON ─── */}
-            {rejectModalOpen && listingToReject && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
-                >
-                    <div
-                        className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF] transition-transform duration-200"
+            <AnimatePresence>
+                {rejectModalOpen && listingToReject && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
-                        <div className="flex items-center gap-3 text-rose-600">
-                            <div className="p-3 bg-rose-50 rounded-2xl">
-                                <XCircle className="w-6 h-6" />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
+                            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF]"
+                        >
+                            <div className="flex items-center gap-3 text-rose-600">
+                                <div className="p-3 bg-rose-50 rounded-2xl">
+                                    <XCircle className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">
+                                        Inserat ablehnen
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        Status wird auf "Abgelehnt" gesetzt.
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-base font-black text-slate-900">
-                                    Inserat ablehnen
-                                </h3>
-                                <p className="text-xs text-slate-400">
-                                    Status wird auf "Abgelehnt" gesetzt.
-                                </p>
+
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                                Möchtest du das Inserat <strong className="text-slate-900">"{listingToReject.title}"</strong> ablehnen?
+                            </p>
+
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-bold text-slate-500 uppercase">
+                                    Grund / Feedback (optional):
+                                </label>
+                                <textarea
+                                    value={rejectionReason}
+                                    onChange={(e) => setRejectionReason(e.target.value)}
+                                    placeholder="z. B. Unvollständige Angaben, unpassende Fotos, Preisangabe..."
+                                    rows={3}
+                                    className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-xl p-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                                />
                             </div>
-                        </div>
 
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                            Möchtest du das Inserat <strong className="text-slate-900">"{listingToReject.title}"</strong> ablehnen?
-                        </p>
-
-                        <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-slate-500 uppercase">
-                                Grund / Feedback (optional):
-                            </label>
-                            <textarea
-                                value={rejectionReason}
-                                onChange={(e) => setRejectionReason(e.target.value)}
-                                placeholder="z. B. Unvollständige Angaben, unpassende Fotos, Preisangabe..."
-                                rows={3}
-                                className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-xl p-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-end gap-2 pt-2">
-                            <button
-                                onClick={() => {
-                                    setRejectModalOpen(false);
-                                    setListingToReject(null);
-                                    setRejectionReason('');
-                                }}
-                                disabled={actionLoading}
-                                className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-                            >
-                                Abbrechen
-                            </button>
-                            <button
-                                onClick={() => handleStatusUpdate(listingToReject.id, 'REJECTED', rejectionReason)}
-                                disabled={actionLoading}
-                                className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-                            >
-                                {actionLoading ? 'Wird gespeichert...' : 'Inserat ablehnen'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setRejectModalOpen(false);
+                                        setListingToReject(null);
+                                        setRejectionReason('');
+                                    }}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    onClick={() => handleStatusUpdate(listingToReject.id, 'REJECTED', rejectionReason)}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                >
+                                    {actionLoading ? 'Wird gespeichert...' : 'Inserat ablehnen'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* ─── MODAL: DELETE CONFIRMATION ─── */}
-            {deleteModalOpen && listingToDelete && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
-                >
-                    <div
-                        className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF] transition-transform duration-200"
+            <AnimatePresence>
+                {deleteModalOpen && listingToDelete && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
-                        <div className="flex items-center gap-3 text-rose-600">
-                            <div className="p-3 bg-rose-50 rounded-2xl">
-                                <Trash2 className="w-6 h-6" />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
+                            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF]"
+                        >
+                            <div className="flex items-center gap-3 text-rose-600">
+                                <div className="p-3 bg-rose-50 rounded-2xl">
+                                    <Trash2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">
+                                        Inserat endgültig löschen
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        Diese Aktion kann nicht rückgängig gemacht werden.
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-base font-black text-slate-900">
-                                    Inserat endgültig löschen
-                                </h3>
-                                <p className="text-xs text-slate-400">
-                                    Diese Aktion kann nicht rückgängig gemacht werden.
-                                </p>
+
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                                Möchtest du das Inserat <strong className="text-slate-900">"{listingToDelete.title}"</strong> wirklich löschen?
+                            </p>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    onClick={() => {
+                                        setDeleteModalOpen(false);
+                                        setListingToDelete(null);
+                                    }}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    onClick={handleDeleteListing}
+                                    disabled={actionLoading}
+                                    className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                >
+                                    {actionLoading ? 'Wird gelöscht...' : 'Löschen'}
+                                </button>
                             </div>
-                        </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                        <p className="text-xs text-slate-600 leading-relaxed">
-                            Möchtest du das Inserat <strong className="text-slate-900">"{listingToDelete.title}"</strong> wirklich löschen?
-                        </p>
-
-                        <div className="flex items-center justify-end gap-2 pt-2">
-                            <button
-                                onClick={() => {
-                                    setDeleteModalOpen(false);
-                                    setListingToDelete(null);
-                                }}
-                                disabled={actionLoading}
-                                className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-                            >
-                                Abbrechen
-                            </button>
-                            <button
-                                onClick={handleDeleteListing}
-                                disabled={actionLoading}
-                                className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
-                            >
-                                {actionLoading ? 'Wird gelöscht...' : 'Löschen'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-        </div>
+        </motion.div>
     );
 }

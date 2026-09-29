@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     MapPin,
-    ShieldCheck,
     Mail,
     Globe,
     MessageSquare,
@@ -15,18 +14,12 @@ import {
     ExternalLink,
     Megaphone,
     Phone,
-    ArrowLeft,
     Building2,
     Package,
     Heart,
     ChevronLeft,
     ChevronRight,
-    Rocket,
-    X,
-    Send,
-    Sparkles,
-    Lock,
-    ArrowRight
+    X
 } from 'lucide-react';
 import { getPublicProfile } from '@/api/profile';
 import { getListingsByUser } from '@/api/listings';
@@ -43,6 +36,15 @@ import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
 import CategoriesSection from '@/app/components/CategoriesSection';
+import ScrollSectionWrapper from '@/app/components/ScrollSectionWrapper';
+
+// Helper to escape characters for safe JSON-LD embedding (XSS protection)
+function safeJsonLd(obj) {
+    return JSON.stringify(obj)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026');
+}
 
 // ─── SVG Social Icons ─────────────────────────────────────────────────────────
 
@@ -126,15 +128,15 @@ function normalizeListing(item) {
     let images = [];
     if (Array.isArray(item.images) && item.images.length > 0) {
         images = item.images;
-    } else if (typeof item.images === 'string') {
+    } else if (typeof item.images === 'string' && item.images.trim()) {
         images = [item.images];
     } else if (item["Main Image"]) {
         images = [item["Main Image"]];
     }
-    if (images.length === 0) {
-        images = [DEFAULT_IMAGE];
-    }
-    images = images.map(img => getImageUrl(img, DEFAULT_IMAGE));
+    
+    images = images
+        .map(img => getImageUrl(img, null))
+        .filter(Boolean);
 
     const sellerType = item.seller?.type || item.listing_user_type || 'Gewerblich';
     const sellerTier = item.seller?.tier || item.company_tier || item.seller_tier || item.tier || 'FREE';
@@ -183,12 +185,15 @@ function normalizeListing(item) {
     };
 }
 
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+
 const ListingCard = React.memo(({ item: rawItem }) => {
     const router = useRouter();
     const item = useMemo(() => normalizeListing(rawItem), [rawItem]);
     const isFavorite = useFavoritesStore((state) => state.isFavorite(item?.id));
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
-    const [imgSrc, setImgSrc] = useState(item?.images[0] || DEFAULT_IMAGE);
+    const [imgIdx, setImgIdx] = useState(0);
+    const [imgFailed, setImgFailed] = useState(false);
     const tagsRef = useRef(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
@@ -226,6 +231,7 @@ const ListingCard = React.memo(({ item: rawItem }) => {
     };
 
     const isBoosted = isListingBoosted(item);
+    const hasImage = item.images && item.images.length > 0 && !imgFailed;
 
     return (
         <div
@@ -237,13 +243,23 @@ const ListingCard = React.memo(({ item: rawItem }) => {
             }`}
         >
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
-                <img
-                    src={imgSrc}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
-                    loading="lazy"
-                    onError={() => setImgSrc(DEFAULT_IMAGE)}
-                />
+                {hasImage ? (
+                    <img
+                        src={item.images[imgIdx]}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
+                        loading="lazy"
+                        onError={() => {
+                            if (imgIdx < item.images.length - 1) {
+                                setImgIdx(i => i + 1);
+                            } else {
+                                setImgFailed(true);
+                            }
+                        }}
+                    />
+                ) : (
+                    <ListingImagePlaceholder category={item.category} />
+                )}
                 {/* Top Badges */}
                 <div className="absolute top-3 inset-x-3 flex items-center justify-between z-20 gap-2">
                     <ListingBadgesRow item={item} />
@@ -601,6 +617,47 @@ export default function ProviderDetails() {
         return () => { cancelled = true; };
     }, [userId, rawSlug]);
 
+    // ── Structured Data (ProfilePage & LocalBusiness/Organization) ───────────
+    const providerStructuredData = useMemo(() => {
+        if (!provider) return null;
+        const isCommercial = provider.type !== 'Privat';
+        return {
+            '@context': 'https://schema.org',
+            '@graph': [
+                {
+                    '@type': isCommercial ? 'LocalBusiness' : 'Person',
+                    '@id': `https://campuna.de/anbieter/${encodeURIComponent(rawSlug)}#seller`,
+                    name: provider.name,
+                    description: provider.bio || `${provider.name} auf Campuna.`,
+                    image: logoSrc || DEFAULT_LOGO,
+                    address: provider.location ? {
+                        '@type': 'PostalAddress',
+                        addressLocality: provider.location,
+                        addressCountry: 'DE'
+                    } : undefined,
+                    telephone: provider.phone || undefined,
+                    email: provider.email || undefined,
+                    url: provider.website || `https://campuna.de/anbieter/${encodeURIComponent(rawSlug)}`,
+                    sameAs: [
+                        provider.website,
+                        provider.instagram,
+                        provider.facebook,
+                        provider.linkedin
+                    ].filter(Boolean)
+                },
+                {
+                    '@type': 'ProfilePage',
+                    '@id': `https://campuna.de/anbieter/${encodeURIComponent(rawSlug)}`,
+                    url: `https://campuna.de/anbieter/${encodeURIComponent(rawSlug)}`,
+                    name: `${provider.name} – Profil & Inserate | Campuna`,
+                    mainEntity: {
+                        '@id': `https://campuna.de/anbieter/${encodeURIComponent(rawSlug)}#seller`
+                    }
+                }
+            ]
+        };
+    }, [provider, rawSlug, logoSrc]);
+
     // ── Loading ──────────────────────────────────────────────────────────────
 
     if (loading) {
@@ -635,20 +692,19 @@ export default function ProviderDetails() {
                     <p className="font-display text-xl font-bold text-charcoal mb-1">Anbieter nicht gefunden</p>
                     <p className="text-sm text-charcoal/50">Dieser Anbieter existiert nicht oder ist nicht mehr aktiv.</p>
                 </div>
-
             </div>
         );
     }
 
-    // ── Render ───────────────────────────────────────────────────────────────
-
-    const hasSocials = provider.website || provider.instagram || provider.facebook || provider.linkedin;
-    const contactEmail = provider.email || `kontakt@campuna.de`;
-
     return (
         <div className="bg-white min-h-screen relative font-sans text-charcoal">
-            <title>{provider.name} – Anbieter auf Campuna</title>
-            <meta name="description" content={provider.bio || `${provider.name} – Camping-Anbieter auf Campuna.`} />
+            {/* Schema.org Structured Data with XSS protection */}
+            {providerStructuredData && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: safeJsonLd(providerStructuredData) }}
+                />
+            )}
 
             <main className="max-w-7xl mx-auto pt-24 sm:pt-28 pb-20 px-4 md:px-6">
                 {/* ── Breadcrumbs ── */}
@@ -663,95 +719,230 @@ export default function ProviderDetails() {
                 </div>
 
                 {/* ── Profile Card ── */}
-                <section className="bg-white rounded-3xl overflow-hidden border border-forest/10 shadow-lg mb-10">
+                <ScrollSectionWrapper delay={0.05}>
+                    <section className="bg-white rounded-3xl overflow-hidden border border-forest/10 shadow-lg mb-10 will-change-transform">
 
-                    {/* Cover - Only for Commercial Users */}
-                    {provider.type !== 'Privat' && (
-                        <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-sand/20">
-                            <img
-                                src={coverSrc}
-                                alt={`${provider.name} Banner`}
-                                className="w-full h-full object-cover"
-                                onError={() => setCoverSrc(DEFAULT_COVER)}
-                                referrerPolicy="no-referrer"
-                            />
-                            {/* Subtle bottom gradient for readability */}
-                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
-                        </div>
-                    )}
+                        {/* Cover - Only for Commercial Users */}
+                        {provider.type !== 'Privat' && (
+                            <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-sand/20">
+                                <img
+                                    src={coverSrc}
+                                    alt={`${provider.name} Banner`}
+                                    className="w-full h-full object-cover"
+                                    onError={() => setCoverSrc(DEFAULT_COVER)}
+                                    referrerPolicy="no-referrer"
+                                />
+                                {/* Subtle bottom gradient for readability */}
+                                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                            </div>
+                        )}
 
-                    {/* Private Profile Layout: Logo, Name & Bio in a single row */}
-                    {provider.type === 'Privat' ? (
-                        <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
-                            <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
-                                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
-                                    <img
-                                        src={logoSrc}
-                                        alt={`${provider.name} Logo`}
-                                        className="w-full h-full object-cover"
-                                        onError={() => setLogoSrc(DEFAULT_LOGO)}
-                                        referrerPolicy="no-referrer"
-                                    />
-                                </div>
-                                <div className="space-y-3 flex-1 min-w-0">
-                                    {/* Name */}
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
-                                            {provider.name}
-                                        </h1>
-                                        {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
-                                            <PioneerBadge size="sm" text="Pioneer" />
+                        {/* Private Profile Layout: Logo, Name & Bio in a single row */}
+                        {provider.type === 'Privat' ? (
+                            <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
+                                <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
+                                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
+                                        <img
+                                            src={logoSrc}
+                                            alt={`${provider.name} Logo`}
+                                            className="w-full h-full object-cover"
+                                            onError={() => setLogoSrc(DEFAULT_LOGO)}
+                                            referrerPolicy="no-referrer"
+                                        />
+                                    </div>
+                                    <div className="space-y-3 flex-1 min-w-0">
+                                        {/* Name */}
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
+                                                {provider.name}
+                                            </h1>
+                                            {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
+                                                <PioneerBadge size="sm" text="Pioneer" />
+                                            )}
+                                        </div>
+
+                                        {/* Location */}
+                                        {provider.location && (
+                                            <div className="flex flex-wrap items-center gap-4 text-xs text-charcoal/55 font-medium">
+                                                <span className="flex items-center gap-1">
+                                                    <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                    {provider.location}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Contact row */}
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70 pt-0.5">
+                                            {provider.email && (
+                                                <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                                    <Mail className="w-4 h-4 text-gold shrink-0" />
+                                                    {provider.email}
+                                                </a>
+                                            )}
+                                            {provider.phone && (
+                                                <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                                    <Phone className="w-4 h-4 text-gold shrink-0" />
+                                                    {provider.phone}
+                                                </a>
+                                            )}
+                                        </div>
+
+                                        {/* Bio */}
+                                        {provider.bio && (
+                                            <div className="pt-2">
+                                                <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line">
+                                                    {provider.bio}
+                                                </p>
+                                            </div>
                                         )}
                                     </div>
+                                </div>
 
-                                    {/* Location */}
-                                    {provider.location && (
-                                        <div className="flex flex-wrap items-center gap-4 text-xs text-charcoal/55 font-medium">
-                                            <span className="flex items-center gap-1">
-                                                <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                {provider.location}
+                                {/* Right Column: Top Right Badges & Bottom Right CTA */}
+                                <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col justify-between items-start lg:items-end gap-6 shrink-0 self-stretch">
+                                    {/* Right Top: Badges */}
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sand text-forest border border-beige shadow-sm">
+                                            Privatverkäufer
+                                        </span>
+                                    </div>
+
+                                    {/* Right Bottom: CTA & Listing count */}
+                                    <div className="w-full flex flex-col items-stretch lg:items-end gap-3 mt-auto pt-2">
+                                        <div className="w-full">
+                                            <button
+                                                type="button"
+                                                onClick={handleOpenContactModal}
+                                                className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                                            >
+                                                <MessageSquare className="w-4 h-4 shrink-0" />
+                                                Anbieter kontaktieren
+                                            </button>
+                                            <span className="block mt-1.5 text-center text-[10px] text-charcoal/40 font-medium">
+                                                Direkt im Campuna Chat schreiben
                                             </span>
                                         </div>
-                                    )}
 
-                                    {/* Contact row */}
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70 pt-0.5">
-                                        {provider.email && (
-                                            <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
-                                                <Mail className="w-4 h-4 text-gold shrink-0" />
-                                                {provider.email}
-                                            </a>
-                                        )}
-                                        {provider.phone && (
-                                            <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
-                                                <Phone className="w-4 h-4 text-gold shrink-0" />
-                                                {provider.phone}
-                                            </a>
-                                        )}
-                                    </div>
-
-                                    {/* Bio */}
-                                    {provider.bio && (
-                                        <div className="pt-2">
-                                            <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line">
-                                                {provider.bio}
-                                            </p>
+                                        {/* Listing count badge */}
+                                        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-forest/15 bg-forest/5 text-forest rounded-full text-xs font-bold">
+                                            <Star className="w-3.5 h-3.5 text-gold fill-gold shrink-0" />
+                                            {listings.length === 1 ? '1 Inserat' : `${listings.length} Inserate`}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
+                        ) : (
+                            <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
+                                <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
+                                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
+                                        <img
+                                            src={logoSrc}
+                                            alt={`${provider.name} Logo`}
+                                            className="w-full h-full object-cover"
+                                            onError={() => setLogoSrc(DEFAULT_LOGO)}
+                                            referrerPolicy="no-referrer"
+                                        />
+                                    </div>
 
-                            {/* Right Column: Top Right Badges & Bottom Right CTA */}
-                            <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col justify-between items-start lg:items-end gap-6 shrink-0 self-stretch">
-                                {/* Right Top: Badges */}
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sand text-forest border border-beige shadow-sm">
-                                        Privatverkäufer
-                                    </span>
+                                    {/* Left — Info */}
+                                    <div className="flex-1 space-y-5 min-w-0">
+                                        {/* Name + Verified badge */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
+                                                    {provider.name}
+                                                </h1>
+                                                {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
+                                                    <PioneerBadge size="sm" text="Pioneer" />
+                                                )}
+                                                {provider.tier === 'BUSINESS' && (
+                                                    <span className="px-2.5 py-0.5 bg-gold/10 text-gold border border-gold/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                                        Business
+                                                    </span>
+                                                )}
+                                                {provider.isStrategic && (
+                                                    <span className="px-2.5 py-0.5 bg-forest/10 text-forest border border-forest/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                                        Strategischer Partner
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Bio (Directly below name, top of address & email, no separate box) */}
+                                            {provider.bio && (
+                                                <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line pt-0.5 max-w-2xl">
+                                                    {provider.bio}
+                                                </p>
+                                            )}
+
+                                            {/* Type + Location / Address */}
+                                            <div className="flex items-center gap-4 text-xs text-charcoal/55 font-medium flex-wrap pt-1">
+                                                <span className="flex items-center gap-1">
+                                                    <Building2 className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                    {provider.type}
+                                                </span>
+                                                {provider.location && (
+                                                    <span className="flex items-center gap-1">
+                                                        <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                        {provider.location}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Contact row */}
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70">
+                                            {provider.email && (
+                                                <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                                    <Mail className="w-4 h-4 text-gold shrink-0" />
+                                                    {provider.email}
+                                                </a>
+                                            )}
+                                            {provider.phone && (
+                                                <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
+                                                    <Phone className="w-4 h-4 text-gold shrink-0" />
+                                                    {provider.phone}
+                                                </a>
+                                            )}
+                                        </div>
+
+                                        {/* Social / Website links */}
+                                        {(Boolean(provider.website || provider.instagram || provider.facebook || provider.linkedin)) && (
+                                            <div className="flex gap-2 pt-1">
+                                                {provider.website && (
+                                                    <a href={provider.website} target="_blank" rel="noopener noreferrer"
+                                                        title="Webseite besuchen"
+                                                        className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                                        <Globe className="w-4.5 h-4.5" />
+                                                    </a>
+                                                )}
+                                                {provider.instagram && (
+                                                    <a href={provider.instagram} target="_blank" rel="noopener noreferrer"
+                                                        title="Instagram"
+                                                        className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                                        <InstagramIcon />
+                                                    </a>
+                                                )}
+                                                {provider.facebook && (
+                                                    <a href={provider.facebook} target="_blank" rel="noopener noreferrer"
+                                                        title="Facebook"
+                                                        className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                                        <FacebookIcon />
+                                                    </a>
+                                                )}
+                                                {provider.linkedin && (
+                                                    <a href={provider.linkedin} target="_blank" rel="noopener noreferrer"
+                                                        title="LinkedIn"
+                                                        className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
+                                                        <LinkedInIcon />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {/* Right Bottom: CTA & Listing count */}
-                                <div className="w-full flex flex-col items-stretch lg:items-end gap-3 mt-auto pt-2">
+                                {/* Right — CTA */}
+                                <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col justify-between items-start lg:items-end gap-6 shrink-0 self-stretch">
                                     <div className="w-full">
                                         <button
                                             type="button"
@@ -773,227 +964,109 @@ export default function ProviderDetails() {
                                     </div>
                                 </div>
                             </div>
+                        )}
+                    </section>
+                </ScrollSectionWrapper>
+
+                {/* ── Listings Section ── */}
+                <ScrollSectionWrapper delay={0.08}>
+                    <section className="mb-14">
+                        <div className="flex items-center gap-2.5 border-b border-forest/5 pb-4 mb-8">
+                            <Megaphone className="w-5 h-5 text-gold shrink-0" />
+                            <h2 className="font-display text-xl sm:text-2xl font-black text-forest uppercase tracking-tight">
+                                Anzeigen von {provider.name}
+                            </h2>
+                            <span className="ml-1 bg-forest/5 text-forest px-3 py-1 rounded-full text-xs font-bold font-mono">
+                                {listings.length}
+                            </span>
                         </div>
-                    ) : (
-                        <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
-                            <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
-                                <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
-                                    <img
-                                        src={logoSrc}
-                                        alt={`${provider.name} Logo`}
-                                        className="w-full h-full object-cover"
-                                        onError={() => setLogoSrc(DEFAULT_LOGO)}
-                                        referrerPolicy="no-referrer"
-                                    />
-                                </div>
 
-                                {/* Left — Info */}
-                                <div className="flex-1 space-y-5 min-w-0">
-                                    {/* Name + Verified badge */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
-                                                {provider.name}
-                                            </h1>
-                                            {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
-                                                <PioneerBadge size="sm" text="Pioneer" />
-                                            )}
-                                            {provider.tier === 'BUSINESS' && (
-                                                <span className="px-2.5 py-0.5 bg-gold/10 text-gold border border-gold/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                                                    Business
-                                                </span>
-                                            )}
-                                            {provider.isStrategic && (
-                                                <span className="px-2.5 py-0.5 bg-forest/10 text-forest border border-forest/20 rounded-full text-[10px] font-bold uppercase tracking-widest">
-                                                    Strategischer Partner
-                                                </span>
-                                            )}
+                        {listings.length === 0 ? (
+                            <EmptyListings providerName={provider.name} />
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {listings.map((item, idx) => (
+                                    <motion.div 
+                                        key={item.id} 
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: (idx % 4) * 0.06, duration: 0.4 }}
+                                        className="h-full flex justify-center"
+                                    >
+                                        <ListingCard item={item} />
+                                    </motion.div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </ScrollSectionWrapper>
+
+                {/* ── Legal / Impressum Section ── */}
+                {(provider.address || provider.email || provider.phone || provider.impressum) && (
+                    <ScrollSectionWrapper delay={0.05}>
+                        <section className="mb-12">
+                            <div className="bg-sand/5 border border-forest/10 p-6 md:p-8 rounded-2xl shadow-sm">
+                                <h3 className="font-display text-base md:text-lg font-bold text-forest flex items-center gap-2 pb-3.5 border-b border-forest/10 mb-5 uppercase tracking-wide">
+                                    <Info className="w-4.5 h-4.5 text-gold shrink-0" />
+                                    Rechtliche Angaben
+                                </h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-xs md:text-sm leading-relaxed">
+
+                                    <div className="space-y-1">
+                                        <span className="block font-bold text-charcoal/90">Firmenname:</span>
+                                        <span className="font-light text-charcoal/80">{provider.name}</span>
+                                    </div>
+
+                                    {provider.address && (
+                                        <div className="space-y-1">
+                                            <span className="block font-bold text-charcoal/90">Adresse:</span>
+                                            <span className="font-light text-charcoal/80">{provider.address}</span>
                                         </div>
+                                    )}
 
-                                        {/* Bio (Directly below name, top of address & email, no separate box) */}
-                                        {provider.bio && (
-                                            <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line pt-0.5 max-w-2xl">
-                                                {provider.bio}
-                                            </p>
-                                        )}
-
-                                        {/* Type + Location / Address */}
-                                        <div className="flex items-center gap-4 text-xs text-charcoal/55 font-medium flex-wrap pt-1">
-                                            <span className="flex items-center gap-1">
-                                                <Building2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                {provider.type}
+                                    {(provider.email || provider.phone) && (
+                                        <div className="space-y-1">
+                                            <span className="block font-bold text-charcoal/90">Kontaktinformationen:</span>
+                                            <span className="font-light text-charcoal/80">
+                                                {[provider.email && `E-Mail: ${provider.email}`, provider.phone && `Tel: ${provider.phone}`].filter(Boolean).join(' | ')}
                                             </span>
-                                            {provider.location && (
-                                                <span className="flex items-center gap-1">
-                                                    <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                    {provider.location}
-                                                </span>
-                                            )}
                                         </div>
-                                    </div>
+                                    )}
 
-                                    {/* Contact row */}
-                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70">
-                                        {provider.email && (
-                                            <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
-                                                <Mail className="w-4 h-4 text-gold shrink-0" />
-                                                {provider.email}
+                                    {provider.impressum && (
+                                        <div className="space-y-1">
+                                            <span className="block font-bold text-charcoal/90">Impressum / Datenschutz:</span>
+                                            <a
+                                                href={provider.impressum}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1 font-semibold text-forest hover:text-gold transition-colors"
+                                            >
+                                                Zum Impressum
+                                                <ExternalLink className="w-3.5 h-3.5" />
                                             </a>
-                                        )}
-                                        {provider.phone && (
-                                            <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
-                                                <Phone className="w-4 h-4 text-gold shrink-0" />
-                                                {provider.phone}
-                                            </a>
-                                        )}
-                                    </div>
-
-                                    {/* Social / Website links */}
-                                    {hasSocials && (
-                                        <div className="flex gap-2 pt-1">
-                                            {provider.website && (
-                                                <a href={provider.website} target="_blank" rel="noopener noreferrer"
-                                                    title="Webseite besuchen"
-                                                    className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
-                                                    <Globe className="w-4.5 h-4.5" />
-                                                </a>
-                                            )}
-                                            {provider.instagram && (
-                                                <a href={provider.instagram} target="_blank" rel="noopener noreferrer"
-                                                    title="Instagram"
-                                                    className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
-                                                    <InstagramIcon />
-                                                </a>
-                                            )}
-                                            {provider.facebook && (
-                                                <a href={provider.facebook} target="_blank" rel="noopener noreferrer"
-                                                    title="Facebook"
-                                                    className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
-                                                    <FacebookIcon />
-                                                </a>
-                                            )}
-                                            {provider.linkedin && (
-                                                <a href={provider.linkedin} target="_blank" rel="noopener noreferrer"
-                                                    title="LinkedIn"
-                                                    className="w-9 h-9 rounded-full border border-forest/15 flex items-center justify-center text-charcoal/50 hover:text-forest hover:border-forest/40 hover:bg-forest/5 transition-all shadow-sm">
-                                                    <LinkedInIcon />
-                                                </a>
-                                            )}
                                         </div>
                                     )}
                                 </div>
                             </div>
-
-                            {/* Right — CTA */}
-                            <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col justify-between items-start lg:items-end gap-6 shrink-0 self-stretch">
-                                <div className="w-full">
-                                    <button
-                                        type="button"
-                                        onClick={handleOpenContactModal}
-                                        className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
-                                    >
-                                        <MessageSquare className="w-4 h-4 shrink-0" />
-                                        Anbieter kontaktieren
-                                    </button>
-                                    <span className="block mt-1.5 text-center text-[10px] text-charcoal/40 font-medium">
-                                        Direkt im Campuna Chat schreiben
-                                    </span>
-                                </div>
-
-                                {/* Listing count badge */}
-                                <div className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-forest/15 bg-forest/5 text-forest rounded-full text-xs font-bold">
-                                    <Star className="w-3.5 h-3.5 text-gold fill-gold shrink-0" />
-                                    {listings.length === 1 ? '1 Inserat' : `${listings.length} Inserate`}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </section>
-
-                {/* ── Listings Section ── */}
-                <section className="mb-14">
-                    <div className="flex items-center gap-2.5 border-b border-forest/5 pb-4 mb-8">
-                        <Megaphone className="w-5 h-5 text-gold shrink-0" />
-                        <h2 className="font-display text-xl sm:text-2xl font-black text-forest uppercase tracking-tight">
-                            Anzeigen von {provider.name}
-                        </h2>
-                        <span className="ml-1 bg-forest/5 text-forest px-3 py-1 rounded-full text-xs font-bold font-mono">
-                            {listings.length}
-                        </span>
-                    </div>
-
-                    {listings.length === 0 ? (
-                        <EmptyListings providerName={provider.name} />
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {listings.map((item) => (
-                                <div key={item.id} className="h-full flex justify-center">
-                                    <ListingCard item={item} />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </section>
-
-                {/* ── Legal / Impressum Section ── */}
-                {(provider.address || provider.email || provider.phone || provider.impressum) && (
-                    <section>
-                        <div className="bg-sand/5 border border-forest/10 p-6 md:p-8 rounded-2xl shadow-sm">
-                            <h3 className="font-display text-base md:text-lg font-bold text-forest flex items-center gap-2 pb-3.5 border-b border-forest/10 mb-5 uppercase tracking-wide">
-                                <Info className="w-4.5 h-4.5 text-gold shrink-0" />
-                                Rechtliche Angaben
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 text-xs md:text-sm leading-relaxed">
-
-                                <div className="space-y-1">
-                                    <span className="block font-bold text-charcoal/90">Firmenname:</span>
-                                    <span className="font-light text-charcoal/80">{provider.name}</span>
-                                </div>
-
-                                {provider.address && (
-                                    <div className="space-y-1">
-                                        <span className="block font-bold text-charcoal/90">Adresse:</span>
-                                        <span className="font-light text-charcoal/80">{provider.address}</span>
-                                    </div>
-                                )}
-
-                                {(provider.email || provider.phone) && (
-                                    <div className="space-y-1">
-                                        <span className="block font-bold text-charcoal/90">Kontaktinformationen:</span>
-                                        <span className="font-light text-charcoal/80">
-                                            {[provider.email && `E-Mail: ${provider.email}`, provider.phone && `Tel: ${provider.phone}`].filter(Boolean).join(' | ')}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {provider.impressum && (
-                                    <div className="space-y-1">
-                                        <span className="block font-bold text-charcoal/90">Impressum / Datenschutz:</span>
-                                        <a
-                                            href={provider.impressum}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1 font-semibold text-forest hover:text-gold transition-colors"
-                                        >
-                                            Zum Impressum
-                                            <ExternalLink className="w-3.5 h-3.5" />
-                                        </a>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </section>
+                        </section>
+                    </ScrollSectionWrapper>
                 )}
 
-                {/* ── All Categories Slider ── */}
-                <div className="mt-14 md:mt-20 pt-8 border-t border-forest/10">
-                    <CategoriesSection
-                        title="Entdecke alle Camping-Kategorien"
-                        badge="Kategorien"
-                        align="center"
-                    />
-                </div>
+                {/* ── All Categories Section ── */}
+                <ScrollSectionWrapper delay={0.05}>
+                    <div className="mt-8">
+                        <CategoriesSection
+                            title="Camping hat viele Seiten. Wir bringen sie zusammen."
+                            badge="KATEGORIEN"
+                            showHeader={true}
+                            align="center"
+                            isDocked={false}
+                        />
+                    </div>
+                </ScrollSectionWrapper>
 
             </main>
 

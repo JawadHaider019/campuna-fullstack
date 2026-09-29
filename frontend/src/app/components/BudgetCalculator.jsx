@@ -12,21 +12,24 @@ const DEFAULTS = {
     otherBudget: 100,
 };
 
-const getSavedVal = (key, defaultVal) => {
-    if (typeof window === 'undefined') return defaultVal;
-    const saved = localStorage.getItem(`campuna_budget_${key}`);
-    return saved !== null ? Number(saved) : defaultVal;
-};
-
 export default function BudgetCalculator() {
-    const [form, setForm] = useState(() => ({
-        distance: getSavedVal('distance', DEFAULTS.distance),
-        consumption: getSavedVal('consumption', DEFAULTS.consumption),
-        fuelPrice: getSavedVal('fuelPrice', DEFAULTS.fuelPrice),
-        campsiteCost: getSavedVal('campsiteCost', DEFAULTS.campsiteCost),
-        nights: getSavedVal('nights', DEFAULTS.nights),
-        otherBudget: getSavedVal('otherBudget', DEFAULTS.otherBudget),
-    }));
+    const [form, setForm] = useState(DEFAULTS);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const loaded = {};
+        let hasSaved = false;
+        Object.keys(DEFAULTS).forEach((key) => {
+            const saved = localStorage.getItem(`campuna_budget_${key}`);
+            if (saved !== null) {
+                loaded[key] = Number(saved);
+                hasSaved = true;
+            }
+        });
+        if (hasSaved) {
+            setForm(prev => ({ ...prev, ...loaded }));
+        }
+    }, []);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;

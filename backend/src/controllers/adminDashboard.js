@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import { db } from '../prisma/db.js';
 import { checkAndAwardPioneerBadge } from './badge.js';
+import { moderateListingAI } from '../services/aiService.js';
 
 /**
  * GET /api/admin/dashboard-stats
@@ -36,12 +37,14 @@ export const getAdminDashboardStats = async (req, res) => {
             WHERE role != 'ADMIN';
         `;
 
-        // 3. Strategic Partners & Business Subscriptions
+        // 3. Strategic Partners, Business Subscriptions & Active Boosts
         const businessStatsQuery = `
             SELECT 
                 (SELECT COUNT(*) FROM company_profiles WHERE is_strategic_partner = TRUE) as strategic_partners_count,
                 (SELECT COUNT(*) FROM company_profiles WHERE tier = 'BUSINESS') as business_tier_count,
-                (SELECT COUNT(*) FROM subscriptions WHERE status = 'ACTIVE') as active_subscriptions_count
+                (SELECT COUNT(*) FROM subscriptions WHERE status = 'ACTIVE') as active_subscriptions_count,
+                (SELECT COUNT(*) FROM listings WHERE boosted_until IS NOT NULL AND boosted_until > NOW()) as active_boosts_count,
+                (SELECT COUNT(*) FROM company_profiles WHERE spotlight_until IS NOT NULL AND spotlight_until > NOW()) as active_spotlights_count
         `;
 
         // 4. Pioneer Awards Count
@@ -184,7 +187,7 @@ export const getAdminDashboardStats = async (req, res) => {
             FROM credit_transactions;
         `;
 
-        // Execute all queries in parallel
+        // Execute all queries in parallel with robust fallbacks
         const [
             listingsRes,
             usersRes,
@@ -198,17 +201,17 @@ export const getAdminDashboardStats = async (req, res) => {
             recentUsersRes,
             creditRes
         ] = await Promise.all([
-            pool.query(listingsStatsQuery),
-            pool.query(usersStatsQuery),
-            pool.query(businessStatsQuery),
-            pool.query(pioneerStatsQuery),
-            pool.query(aiStatsQuery),
+            pool.query(listingsStatsQuery).catch((e) => { console.error('listingsStatsQuery error:', e); return { rows: [{}] }; }),
+            pool.query(usersStatsQuery).catch((e) => { console.error('usersStatsQuery error:', e); return { rows: [{}] }; }),
+            pool.query(businessStatsQuery).catch((e) => { console.error('businessStatsQuery error:', e); return { rows: [{}] }; }),
+            pool.query(pioneerStatsQuery).catch((e) => { console.error('pioneerStatsQuery error:', e); return { rows: [{}] }; }),
+            pool.query(aiStatsQuery).catch((e) => { console.error('aiStatsQuery error:', e); return { rows: [{}] }; }),
             pool.query(reportsStatsQuery).catch(() => ({ rows: [{ total_reports: 0, pending_reports: 0, reviewed_reports: 0, dismissed_reports: 0 }] })),
-            pool.query(categoryStatsQuery),
-            pool.query(dailyActivityQuery),
-            pool.query(pendingQueueQuery),
-            pool.query(recentUsersQuery),
-            pool.query(creditStatsQuery)
+            pool.query(categoryStatsQuery).catch((e) => { console.error('categoryStatsQuery error:', e); return { rows: [] }; }),
+            pool.query(dailyActivityQuery).catch((e) => { console.error('dailyActivityQuery error:', e); return { rows: [] }; }),
+            pool.query(pendingQueueQuery).catch((e) => { console.error('pendingQueueQuery error:', e); return { rows: [] }; }),
+            pool.query(recentUsersQuery).catch((e) => { console.error('recentUsersQuery error:', e); return { rows: [] }; }),
+            pool.query(creditStatsQuery).catch((e) => { console.error('creditStatsQuery error:', e); return { rows: [{}] }; })
         ]);
 
         const dbLatencyMs = Date.now() - startTime;
@@ -333,6 +336,8 @@ export const getAdminDashboardStats = async (req, res) => {
                     businessTierUsers: businessTierCount,
                     activeSubscriptions: activeSubCount,
                     estimatedMRR,
+                    activeBoosts: parseInt(businessStats.active_boosts_count || 0, 10),
+                    activeSpotlights: parseInt(businessStats.active_spotlights_count || 0, 10),
                     creditsEarned: parseInt(creditStats.total_credits_earned || 0, 10),
                     creditsSpent: parseInt(creditStats.total_credits_spent || 0, 10),
                     creditTransactionsCount: parseInt(creditStats.total_credit_transactions || 0, 10)
@@ -413,21 +418,32 @@ export const exportAdminDataCsv = async (req, res) => {
         const headers = ['ID', 'Titel', 'Kategorie', 'Unterkategorie', 'Preis (EUR)', 'Standort', 'Zustand', 'Status', 'Featured', 'Erstellt am', 'Verkäufer E-Mail', 'Verkäufer Typ', 'Firmenname'];
         const csvRows = [headers.join(';')];
 
+        // Helper to sanitize against CSV Injection (Formula Injection)
+        const sanitizeCsvField = (val) => {
+            if (val === null || val === undefined) return '""';
+            let str = String(val).trim();
+            // Prepend single quote if string starts with formula triggers (=, +, -, @, tab)
+            if (/^[=+\-@\t\r]/.test(str)) {
+                str = `'` + str;
+            }
+            return `"${str.replace(/"/g, '""')}"`;
+        };
+
         for (const row of result.rows) {
             const formattedRow = [
-                `"${row.id}"`,
-                `"${(row.title || '').replace(/"/g, '""')}"`,
-                `"${(row.category || '').replace(/"/g, '""')}"`,
-                `"${(row.subcategory || '').replace(/"/g, '""')}"`,
-                row.price || '0',
-                `"${(row.location || '').replace(/"/g, '""')}"`,
-                `"${(row.condition || '').replace(/"/g, '""')}"`,
-                `"${row.status}"`,
+                sanitizeCsvField(row.id),
+                sanitizeCsvField(row.title),
+                sanitizeCsvField(row.category),
+                sanitizeCsvField(row.subcategory),
+                parseFloat(row.price) || 0,
+                sanitizeCsvField(row.location),
+                sanitizeCsvField(row.condition),
+                sanitizeCsvField(row.status),
                 row.featured ? 'JA' : 'NEIN',
-                `"${row.created_at}"`,
-                `"${row.seller_email || ''}"`,
-                `"${row.seller_type || ''}"`,
-                `"${(row.company_name || '').replace(/"/g, '""')}"`
+                sanitizeCsvField(row.created_at),
+                sanitizeCsvField(row.seller_email),
+                sanitizeCsvField(row.seller_type),
+                sanitizeCsvField(row.company_name)
             ];
             csvRows.push(formattedRow.join(';'));
         }
@@ -466,10 +482,30 @@ export const batchAiModerationScan = async (req, res) => {
         let autoApprovedCount = 0;
 
         for (const item of pendingListings.rows) {
-            const textQuality = (item.title && item.title.length > 5) && (item.description && item.description.length > 20);
-            const score = textQuality ? 88 : 50;
-            const decision = score >= 75 ? 'AUTO_APPROVED' : 'MANUAL_REVIEW';
-            const newStatus = decision === 'AUTO_APPROVED' ? 'APPROVED' : 'REVIEW';
+            let aiResult;
+            try {
+                aiResult = await moderateListingAI({
+                    title: item.title,
+                    description: item.description || '',
+                    category: item.category || '',
+                    price: item.price || 0
+                });
+            } catch {
+                aiResult = {
+                    score: 50,
+                    safe: false,
+                    listing_status: 'REVIEW',
+                    ai_decision: 'MANUAL_REVIEW',
+                    reason: 'Manuelle Prüfung erforderlich',
+                    text_score: 50,
+                    price_score: 50,
+                    fraud_risk_score: 20
+                };
+            }
+
+            const score = aiResult.score || 50;
+            const decision = aiResult.ai_decision;
+            const newStatus = aiResult.listing_status;
 
             // Insert or update moderation record
             await pool.query(`

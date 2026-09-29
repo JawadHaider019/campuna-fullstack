@@ -26,11 +26,11 @@ const FaqSection = React.memo(function FaqSection() {
                     <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
                         Häufig gestellte Fragen
                     </span>
-                    <h2 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-forest">
+                    <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-forest">
                         Alles, was du über Campuna wissen musst
                     </h2>
                     <p className="font-sans text-sm text-charcoal/60 max-w-2xl mx-auto leading-relaxed">
-                        Du hast Fragen zur Buchung, Vermietung oder Sicherheit? Hier findest du die Antworten auf die wichtigsten Fragen.
+                        Die häufigsten Fragen zu unserem Camping-Marktplatz, kurz beantwortet.
                     </p>
                 </div>
 

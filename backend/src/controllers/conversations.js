@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import crypto from 'crypto';
+import { emitNewMessage } from '../socket.js';
 
 /**
  * Helper to safely extract image list
@@ -241,6 +242,26 @@ export const createOrGetConversation = async (req, res) => {
                 `UPDATE conversations SET updated_at = NOW() WHERE id = $1`,
                 [conversationId]
             );
+
+            // Broadcast initial message to realtime socket rooms
+            try {
+                emitNewMessage({
+                    conversationId,
+                    message: {
+                        id: createdMessage.id,
+                        conversation_id: createdMessage.conversation_id,
+                        sender_id: createdMessage.sender_id,
+                        content: createdMessage.content,
+                        is_read: createdMessage.is_read,
+                        created_at: createdMessage.created_at
+                    },
+                    recipientId: resolvedSellerId,
+                    buyerId,
+                    sellerId: resolvedSellerId
+                });
+            } catch (err) {
+                console.error('Socket broadcast error (initial message):', err.message);
+            }
         }
 
         return res.status(isNew ? 201 : 200).json({
@@ -640,6 +661,11 @@ export const sendMessage = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Die Nachricht darf nicht leer sein.' });
         }
 
+        const trimmedContent = content.trim();
+        if (trimmedContent.length > 5000) {
+            return res.status(400).json({ success: false, error: 'Die Nachricht darf maximal 5.000 Zeichen lang sein.' });
+        }
+
         // 1. Verify user is participant in conversation
         const convRes = await pool.query(
             `SELECT id, buyer_id, seller_id FROM conversations WHERE id = $1`,
@@ -686,16 +712,33 @@ export const sendMessage = async (req, res) => {
             [conversationId]
         );
 
+        const formattedMessage = {
+            id: newMsg.id,
+            conversation_id: newMsg.conversation_id,
+            sender_id: newMsg.sender_id,
+            content: newMsg.content,
+            is_read: newMsg.is_read,
+            created_at: newMsg.created_at
+        };
+
+        // 4. Realtime WebSockets Emission
+        try {
+            emitNewMessage({
+                conversationId,
+                message: formattedMessage,
+                recipientId,
+                buyerId: conv.buyer_id,
+                sellerId: conv.seller_id
+            });
+        } catch (err) {
+            console.error('Socket broadcast error (send message):', err.message);
+        }
+
         return res.status(201).json({
             success: true,
             message: {
-                id: newMsg.id,
-                conversation_id: newMsg.conversation_id,
-                sender_id: newMsg.sender_id,
-                content: newMsg.content,
-                is_read: newMsg.is_read,
-                is_mine: true,
-                created_at: newMsg.created_at
+                ...formattedMessage,
+                is_mine: true
             }
         });
 

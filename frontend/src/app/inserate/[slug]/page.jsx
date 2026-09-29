@@ -41,9 +41,12 @@ import {
     UserPlus,
     Shield,
     Briefcase,
-    Building2
+    Building2,
+    Trash2,
+    Pause,
+    Play
 } from 'lucide-react';
-import { getListingDetail, getAllListings, reportListing } from '@/api/listings';
+import { getListingDetail, getAllListings, reportListing, deleteListing, toggleListingStatus } from '@/api/listings';
 import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -57,6 +60,7 @@ import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 import { SellerAccountBadge, PromotedBadge, ListingBadgesRow } from '@/app/components/ListingBadge';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import { isListingBoosted } from '@/utils/sellerBadge';
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
 
 function slugifyTitle(title = '') {
     return title
@@ -260,6 +264,30 @@ export default function ListingDetailPage() {
         setIsContactModalOpen(true);
     };
 
+    // Delete Confirmation Modal State
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleConfirmDelete = async () => {
+        if (!listing?.id) return;
+        setIsDeleting(true);
+        try {
+            const res = await deleteListing(listing.id);
+            if (res.success || res.status === 200) {
+                toast.success('Inserat erfolgreich gelöscht.');
+                setIsDeleteModalOpen(false);
+                router.push('/mein-konto');
+            } else {
+                toast.error(res.error || res.message || 'Fehler beim Löschen des Inserats.');
+            }
+        } catch (err) {
+            console.error('Error deleting listing:', err);
+            toast.error(err.response?.data?.error || err.message || 'Fehler beim Löschen des Inserats.');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const handleRevealPhone = () => {
         if (!currentUser && !isLoggedIn) {
             setPrivacyModalContext('phone');
@@ -315,10 +343,12 @@ export default function ListingDetailPage() {
                         const res = await getListingDetail(listingId);
                         if (res.success && res.data?.listing) {
                             const apiMatch = res.data.listing;
-                            const rawImages = apiMatch.images && apiMatch.images.length > 0
+                            const rawImages = Array.isArray(apiMatch.images)
                                 ? apiMatch.images
-                                : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
-                            const images = rawImages.map(img => getImageUrl(img, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'));
+                                : (typeof apiMatch.images === 'string' && apiMatch.images.trim() ? [apiMatch.images] : []);
+                            const images = rawImages
+                                .map(img => getImageUrl(img, null))
+                                .filter(Boolean);
                             const isPioneer = Boolean(apiMatch.is_pioneer || apiMatch.seller?.is_pioneer || apiMatch.seller?.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
                             foundListing = {
                                 id: apiMatch.id,
@@ -347,11 +377,15 @@ export default function ListingDetailPage() {
                                 publishedDate: apiMatch.createdAt ? new Date(apiMatch.createdAt).toLocaleDateString('de-DE') : 'Neu eingestellt',
                                 anzeigeNr: `CP-${apiMatch.id ? apiMatch.id.slice(-4).toUpperCase() : '1000'}`,
                                 viewsCount: apiMatch.viewsCount || 1,
-                                likesCount: 0,
-                                chatsCount: 0,
+                                    likesCount: parseInt(apiMatch.likes_count ?? apiMatch.favorites_count ?? 0, 10),
+                                    chatsCount: parseInt(apiMatch.chats_count ?? apiMatch.conversations_count ?? 0, 10),
                                 condition: apiMatch.condition || 'Sehr gut',
                                 status: apiMatch.status || 'Aktiv',
-                                user_id: apiMatch.user_id || apiMatch.owner_user_id || apiMatch.seller?.id || null
+                                user_id: apiMatch.user_id || apiMatch.owner_user_id || apiMatch.seller?.id || null,
+                                ai_score: apiMatch.ai_score,
+                                ai_decision: apiMatch.ai_decision,
+                                ai_reasons: apiMatch.ai_reasons,
+                                admin_notes: apiMatch.admin_notes
                             };
                         }
                     } catch (apiErr) {
@@ -376,10 +410,12 @@ export default function ListingDetailPage() {
                             });
 
                             if (match) {
-                                const rawImages = match.images && match.images.length > 0
+                                const rawImages = Array.isArray(match.images)
                                     ? match.images
-                                    : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'];
-                                const images = rawImages.map(img => getImageUrl(img, 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80'));
+                                    : (typeof match.images === 'string' && match.images.trim() ? [match.images] : []);
+                                const images = rawImages
+                                    .map(img => getImageUrl(img, null))
+                                    .filter(Boolean);
                                 const isPioneer = Boolean(match.is_pioneer || match.seller?.is_pioneer || match.seller?.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
 
                                 foundListing = {
@@ -409,8 +445,8 @@ export default function ListingDetailPage() {
                                     publishedDate: match.createdAt ? new Date(match.createdAt).toLocaleDateString('de-DE') : 'Neu eingestellt',
                                     anzeigeNr: `CP-${match.id ? match.id.slice(-4).toUpperCase() : '1000'}`,
                                     viewsCount: match.viewsCount || 1,
-                                    likesCount: 0,
-                                    chatsCount: 0,
+                                    likesCount: parseInt(match.likes_count ?? match.favorites_count ?? 0, 10),
+                                    chatsCount: parseInt(match.chats_count ?? match.conversations_count ?? 0, 10),
                                     condition: match.condition || 'Sehr gut',
                                     status: match.status || 'Aktiv',
                                     user_id: match.user_id || match.owner_user_id || match.seller?.id || null
@@ -486,19 +522,19 @@ export default function ListingDetailPage() {
         return () => { active = false; };
     }, [slug, listingId]);
 
-    const handleNextImage = (e) => {
-        e.stopPropagation();
-        if (listing && listing.images) {
+    const handleNextImage = React.useCallback((e) => {
+        if (e) e.stopPropagation();
+        if (listing && listing.images && listing.images.length > 0) {
             setActiveImageIdx((prev) => (prev + 1) % listing.images.length);
         }
-    };
+    }, [listing]);
 
-    const handlePrevImage = (e) => {
-        e.stopPropagation();
-        if (listing && listing.images) {
+    const handlePrevImage = React.useCallback((e) => {
+        if (e) e.stopPropagation();
+        if (listing && listing.images && listing.images.length > 0) {
             setActiveImageIdx((prev) => (prev - 1 + listing.images.length) % listing.images.length);
         }
-    };
+    }, [listing]);
 
     const handleCopyLink = () => {
         handleCopyCleanUrl();
@@ -696,97 +732,110 @@ export default function ListingDetailPage() {
                 </div>
             </div>
 
-            {/* 0. Owner Quick Action */}
-            {isOwner && (
-                <div className="bg-forest/5 border border-forest/20 rounded-xl p-3.5 text-left mb-2 space-y-2">
-                    <p className="text-[11px] font-bold text-forest flex items-center gap-1.5">
-                        <Pencil className="w-3.5 h-3.5" />
-                        Sie sind der Eigentümer
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {/* 0. Owner Quick Actions */}
+            {isOwner ? (
+                <div className="bg-forest/5 border border-forest/20 rounded-2xl p-4 text-left space-y-3">
+                    <div className="flex items-center justify-between">
+                        <p className="text-xs font-bold text-forest flex items-center gap-1.5">
+                            <Pencil className="w-3.5 h-3.5" />
+                            Sie sind der Eigentümer dieses Inserats
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => setIsDeleteModalOpen(true)}
+                            disabled={isDeleting}
+                            className="text-[11px] text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Löschen</span>
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                         <Link
                             href={currentUser?.role === 'ADMIN' ? `/admin/inserat-erstellen?edit=${listing.id}` : `/anzeige-erstellen?edit=${listing.id}`}
-                            className="bg-white hover:bg-forest hover:text-white text-forest border border-forest/20 transition-all font-sans font-bold py-2.5 px-3 rounded-lg shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center"
+                            className="bg-white hover:bg-forest hover:text-white text-forest border border-forest/20 transition-all font-sans font-bold py-2.5 px-3 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center"
                         >
                             <Pencil className="w-3.5 h-3.5 shrink-0" />
                             Bearbeiten
                         </Link>
                         <Link
                             href={`/inserate/${listing.slug || listing.id}/boosten`}
-                            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-sans font-bold py-2.5 px-3 rounded-lg shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center transition-all hover:shadow-md"
+                            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-sans font-bold py-2.5 px-3 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center transition-all hover:shadow-md"
                         >
                             <Rocket className="w-3.5 h-3.5 shrink-0 text-amber-100" />
                             Hervorheben
                         </Link>
                     </div>
                 </div>
-            )}
+            ) : (
+                <>
+                    {/* 1. Primary CTA: Contact Seller & Phone Number Gate */}
+                    <div className="space-y-2">
+                        {isSold ? (
+                            <div className="bg-red-50 border border-red-200/50 p-4 rounded-xl flex items-start text-left gap-2.5">
+                                <Lock className="w-5 h-5 text-red-650 shrink-0 mt-0.5" />
+                                <p className="text-xs text-red-800 leading-relaxed font-light">
+                                    <strong>Inserat Verkauft:</strong> Dieses Fahrzeug wurde erfolgreich verkauft. Die Kontaktaufnahme ist geschlossen.
+                                </p>
+                            </div>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handleOpenContactModal}
+                                    className="w-full bg-[#2a7f55] hover:bg-[#206040] text-white transition-colors duration-300 font-sans font-bold py-3.5 px-6 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                                >
+                                    <MessageSquare className="w-4 h-4 shrink-0" />
+                                    Verkäufer kontaktieren
+                                </button>
 
-            {/* 1. Primary CTA: Contact Seller & Phone Number Gate */}
-            <div className="space-y-2">
-                {isSold ? (
-                    <div className="bg-red-50 border border-red-200/50 p-4 rounded-xl flex items-start text-left gap-2.5">
-                        <Lock className="w-5 h-5 text-red-650 shrink-0 mt-0.5" />
-                        <p className="text-xs text-red-800 leading-relaxed font-light">
-                            <strong>Inserat Verkauft:</strong> Dieses Fahrzeug wurde erfolgreich verkauft. Die Kontaktaufnahme ist geschlossen.
-                        </p>
+                                {/* Phone Number: Show directly if logged in/commercial or Show GDPR Privacy Gate */}
+                                {(seller?.phone || listing?.phone) ? (
+                                    <a
+                                        href={`tel:${seller?.phone || listing?.phone}`}
+                                        className="w-full bg-white hover:bg-forest/5 border border-forest/20 text-forest font-sans font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        <PhoneCall className="w-3.5 h-3.5 text-forest shrink-0" />
+                                        <span>Anrufen: {seller?.phone || listing?.phone}</span>
+                                    </a>
+                                ) : (seller?.has_phone || listing?.has_phone || listing?.is_phone_protected || seller?.is_phone_protected) ? (
+                                    <button
+                                        onClick={handleRevealPhone}
+                                        className="w-full bg-sand/30 hover:bg-sand/60 border border-forest/15 text-charcoal font-sans font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer group"
+                                    >
+                                        <Lock className="w-3.5 h-3.5 text-forest group-hover:scale-110 transition-transform" />
+                                        <span>Telefonnummer anzeigen</span>
+                                        <span className="text-[9px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full">
+                                            🔒 Login
+                                        </span>
+                                    </button>
+                                ) : null}
+                            </>
+                        )}
                     </div>
-                ) : (
-                    <>
+
+                    {/* 2. Side-by-side Row: Melden & Speichern */}
+                    <div className="grid grid-cols-2 gap-3 pt-1">
                         <button
-                            onClick={handleOpenContactModal}
-                            className="w-full bg-[#2a7f55] hover:bg-[#206040] text-white transition-colors duration-300 font-sans font-bold py-3.5 px-6 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                            onClick={handleReportListing}
+                            className="bg-[#d32f2f] hover:bg-[#b71c1c] text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
                         >
-                            <MessageSquare className="w-4 h-4 shrink-0" />
-                            Verkäufer kontaktieren
+                            <Flag className="w-3.5 h-3.5 shrink-0" />
+                            Melden
                         </button>
 
-                        {/* Phone Number: Show directly if logged in/commercial or Show GDPR Privacy Gate */}
-                        {(seller?.phone || listing?.phone) ? (
-                            <a
-                                href={`tel:${seller?.phone || listing?.phone}`}
-                                className="w-full bg-white hover:bg-forest/5 border border-forest/20 text-forest font-sans font-bold py-2.5 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                            >
-                                <PhoneCall className="w-3.5 h-3.5 text-forest shrink-0" />
-                                <span>Anrufen: {seller?.phone || listing?.phone}</span>
-                            </a>
-                        ) : (seller?.has_phone || listing?.has_phone || listing?.is_phone_protected || seller?.is_phone_protected) ? (
-                            <button
-                                onClick={handleRevealPhone}
-                                className="w-full bg-sand/30 hover:bg-sand/60 border border-forest/15 text-charcoal font-sans font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer group"
-                            >
-                                <Lock className="w-3.5 h-3.5 text-forest group-hover:scale-110 transition-transform" />
-                                <span>Telefonnummer anzeigen</span>
-                                <span className="text-[9px] font-semibold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded-full">
-                                    🔒 Login
-                                </span>
-                            </button>
-                        ) : null}
-                    </>
-                )}
-            </div>
-
-            {/* 2. Side-by-side Row: Melden & Speichern */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
-                <button
-                    onClick={handleReportListing}
-                    className="bg-[#d32f2f] hover:bg-[#b71c1c] text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
-                >
-                    <Flag className="w-3.5 h-3.5 shrink-0" />
-                    Melden
-                </button>
-
-                <button
-                    onClick={() => toggleFavorite(listing)}
-                    className="bg-white hover:bg-sand/15 border border-forest/15 text-charcoal font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
-                >
-                    <Heart className={`w-4 h-4 shrink-0 ${isFavorite ? 'text-rose-500 fill-rose-500' : 'text-charcoal/60'}`} />
-                    {isFavorite ? 'Gespeichert' : 'Speichern'}
-                </button>
-            </div>
+                        <button
+                            onClick={() => toggleFavorite(listing)}
+                            className="bg-white hover:bg-sand/15 border border-forest/15 text-charcoal font-bold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer text-xs uppercase tracking-wider"
+                        >
+                            <Heart className={`w-4 h-4 shrink-0 ${isFavorite ? 'text-rose-500 fill-rose-500' : 'text-charcoal/60'}`} />
+                            {isFavorite ? 'Gespeichert' : 'Speichern'}
+                        </button>
+                    </div>
+                </>
+            )}
 
             {/* 3. Share link button */}
-            <div className="pt-2">
+            <div className="pt-1">
                 <button
                     onClick={handleShareLink}
                     className="w-full bg-gradient-to-r from-forest via-[#1e613c] to-forest hover:from-[#1b4d32] hover:to-[#1b4d32] text-sand hover:text-white transition-all duration-300 font-sans font-bold py-3.5 px-6 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2.5 cursor-pointer active:scale-98 group border border-gold/30"
@@ -798,28 +847,55 @@ export default function ListingDetailPage() {
         </div>
     );
 
+    // Construct Google & Bing Schema.org JSON-LD structured data
+    const structuredData = {
+        '@context': 'https://schema.org',
+        '@type': category?.toLowerCase().includes('wohnmobil') || category?.toLowerCase().includes('camper') ? 'Vehicle' : 'Product',
+        name: title,
+        description: description ? description.slice(0, 300) : title,
+        image: images && images.length > 0 ? images : undefined,
+        offers: {
+            '@type': 'Offer',
+            price: price,
+            priceCurrency: 'EUR',
+            availability: isSold ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock',
+            itemCondition: condition?.toLowerCase().includes('neu') ? 'https://schema.org/NewCondition' : 'https://schema.org/UsedCondition',
+            seller: {
+                '@type': (seller?.tier === 'BUSINESS' || seller?.type === 'Gewerblich') ? 'Organization' : 'Person',
+                name: seller?.name || 'Campuna Verkäufer'
+            }
+        }
+    };
+
     return (
         <div className="bg-white min-h-screen relative font-sans text-charcoal pt-24 sm:pt-28 pb-16">
+            {/* Schema.org Structured Data for Google / Bing */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+            />
             <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
 
                 {/* ── Breadcrumbs and Badges ── */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 pb-3 border-b border-forest/5">
-                    <Breadcrumbs
-                        items={[
-                            { label: 'Inserate', href: '/inserate' },
-                            ...(category ? [{ label: category, href: `/inserate?cat=${encodeURIComponent(category)}` }] : []),
-                            { label: title || 'Inserat' }
-                        ]}
-                        variant="light"
-                    />
-                    <div className="flex flex-wrap items-center gap-2.5">
+                <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6 pb-3 border-b border-forest/5"
+                >
+                    <div className="flex-1 min-w-0">
+                        <Breadcrumbs
+                            items={[
+                                { label: 'Inserate', href: '/inserate' },
+                                ...(category ? [{ label: category, href: `/inserate?cat=${encodeURIComponent(category)}` }] : []),
+                                { label: title || 'Inserat' }
+                            ]}
+                            variant="light"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
                         {/* Account Status Badge: Privat | Gewerblich | Business (automatically hidden for Admin) */}
                         <SellerAccountBadge item={{ ...listing, seller }} size="md" />
-
-                        {/* Pioneer Badge */}
-                        {isSellerPioneer && (
-                            <PioneerBadge size="md" text="Campuna Pioneer" />
-                        )}
 
                         {/* Promoted Badge: Hervorgehoben */}
                         {(listing.is_boosted || (listing.boosted_until && new Date(listing.boosted_until) > new Date()) || listing.seller_role === 'ADMIN' || listing.role === 'ADMIN' || listing.is_admin || listing.is_campuna_club || seller?.is_admin || seller?.is_campuna_club) && (
@@ -827,46 +903,155 @@ export default function ListingDetailPage() {
                         )}
 
                         {isSold && (
-                            <span className="bg-red-600 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md flex items-center gap-1">
+                            <span className="bg-red-600 text-white text-[10px] sm:text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md flex items-center gap-1 shrink-0 whitespace-nowrap">
                                 <Lock className="w-3.5 h-3.5" />
                                 Verkauft
                             </span>
                         )}
-                        <span className="bg-sand text-forest border border-forest/15 text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full">
+                        <span className="bg-sand text-forest border border-forest/15 text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full shrink-0 whitespace-nowrap">
                             Zustand: {condition}
                         </span>
-                        <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border ${
+                        <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border shrink-0 whitespace-nowrap ${
                             status === 'APPROVED' || status.toLowerCase() === 'aktiv'
                                 ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
+                                : status === 'INACTIVE' || status === 'DEACTIVATED'
+                                ? 'bg-slate-500/10 text-slate-700 border-slate-500/20'
                                 : status === 'REVIEW'
                                 ? 'bg-amber-500/10 text-amber-800 border-amber-500/30'
                                 : 'bg-rose-500/10 text-rose-700 border-rose-500/20'
                             }`}>
-                            Status: {isSold ? 'Verkauft' : status === 'REVIEW' ? 'In Prüfung' : status === 'APPROVED' ? 'Aktiv' : status}
+                            Status: {isSold ? 'Verkauft' : (status === 'INACTIVE' || status === 'DEACTIVATED') ? 'Deaktiviert' : status === 'REVIEW' ? 'In Prüfung' : status === 'APPROVED' ? 'Aktiv' : status}
                         </span>
                     </div>
-                </div>
+                </motion.div>
 
-                {/* ── Unapproved / Moderation Review Notice Banner ── */}
-                {listing.status && listing.status !== 'APPROVED' && (
-                    <div className="mb-6 p-4 sm:p-5 bg-amber-50 border border-amber-300 rounded-2xl flex items-start sm:items-center gap-3.5 shadow-sm text-amber-900">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-                            <AlertCircle className="w-5 h-5" />
+                {/* ── Deactivated / Paused Listing Notice Banner for Owner ── */}
+                {(listing.status === 'INACTIVE' || listing.status === 'DEACTIVATED') && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm border bg-slate-50 border-slate-300 text-slate-900"
+                    >
+                        <div className="flex items-start gap-3.5 flex-1">
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm text-white bg-slate-700">
+                                <Pause className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="font-display font-bold text-sm sm:text-base text-slate-900">
+                                    Dieses Inserat ist derzeit deaktiviert (pausiert)
+                                </h3>
+                                <p className="text-xs text-slate-600">
+                                    Das Inserat ist für andere Nutzer auf dem Marktplatz unsichtbar. Du kannst es jederzeit wieder aktivieren.
+                                </p>
+                            </div>
                         </div>
-                        <div className="flex-1">
-                            <h3 className="font-display font-bold text-sm sm:text-base text-amber-900">
-                                Inserat in Prüfung ({listing.status === 'REVIEW' ? 'Wartet auf Freigabe' : listing.status})
-                            </h3>
-                            <p className="text-xs text-amber-800/90 mt-0.5">
-                                Dieses Inserat ist derzeit <strong>nur für Sie</strong> (und Administratoren) sichtbar. Es wird erst nach redaktioneller Freigabe öffentlich für alle Nutzer angezeigt.
-                            </p>
-                        </div>
-                    </div>
+                        {isOwner && (
+                            <div className="w-full sm:w-auto flex flex-wrap items-center gap-2 shrink-0">
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        const toastId = toast.loading('Inserat wird aktiviert...');
+                                        try {
+                                            const res = await toggleListingStatus(listing.id, 'APPROVED');
+                                            if (res.data?.success || res.status === 200) {
+                                                toast.success('Inserat erfolgreich wieder aktiviert!', { id: toastId });
+                                                setListing(prev => ({ ...prev, status: 'APPROVED' }));
+                                            } else {
+                                                toast.error(res.data?.error || 'Fehler beim Aktivieren.', { id: toastId });
+                                            }
+                                        } catch (err) {
+                                            toast.error(err.response?.data?.error || err.message || 'Fehler beim Aktivieren.', { id: toastId });
+                                        }
+                                    }}
+                                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm transition-all cursor-pointer"
+                                >
+                                    <Play className="w-3.5 h-3.5" />
+                                    Jetzt aktivieren
+                                </button>
+                                <Link
+                                    href={`/anzeige-erstellen?edit=${listing.id}`}
+                                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 shadow-2xs transition-all cursor-pointer"
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    Bearbeiten
+                                </Link>
+                            </div>
+                        )}
+                    </motion.div>
                 )}
 
-                {/* ── Owner Info Banner (if owner) ── */}
-                {isOwner && (
-                    <div className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-forest/10 via-emerald-50 to-sand/30 border border-forest/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                {/* ── Unapproved / Moderation Review Notice Banner ── */}
+                {listing.status && listing.status !== 'APPROVED' && listing.status !== 'INACTIVE' && listing.status !== 'DEACTIVATED' && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`mb-6 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm border ${
+                        listing.status === 'REJECTED'
+                            ? 'bg-rose-50 border-rose-300 text-rose-950'
+                            : 'bg-amber-50 border-amber-300 text-amber-950'
+                    }`}>
+                        <div className="flex items-start gap-3.5 flex-1">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm text-white ${
+                                listing.status === 'REJECTED' ? 'bg-rose-600' : 'bg-amber-500'
+                            }`}>
+                                <AlertCircle className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="font-display font-bold text-sm sm:text-base">
+                                    {listing.status === 'REJECTED' ? 'Inserat abgelehnt' : 'Inserat in Prüfung (Wartet auf Freigabe)'}
+                                </h3>
+                                {listing.status === 'REJECTED' ? (
+                                    <div className="text-xs text-rose-900/90 space-y-1">
+                                        <p>
+                                            Dieses Inserat entspricht nicht unseren Richtlinien und ist für andere Nutzer nicht sichtbar.
+                                        </p>
+                                        {(listing.ai_reasons && listing.ai_reasons.length > 0) || listing.admin_notes ? (
+                                            <div className="mt-2 p-2.5 bg-white/80 border border-rose-200 rounded-xl font-medium text-rose-950">
+                                                <strong>Grund der Ablehnung:</strong>{' '}
+                                                {listing.admin_notes || (Array.isArray(listing.ai_reasons) ? listing.ai_reasons.join(' ') : String(listing.ai_reasons))}
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-amber-900/90">
+                                        Dieses Inserat ist derzeit <strong>nur für Sie</strong> (und Administratoren) sichtbar. Es wird nach redaktioneller Freigabe automatisch veröffentlicht.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        {isOwner && (
+                            <div className="w-full sm:w-auto flex flex-wrap items-center gap-2 shrink-0">
+                                <Link
+                                    href={`/anzeige-erstellen?edit=${listing.id}`}
+                                    className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-white shadow-sm hover:brightness-110 transition-all ${
+                                        listing.status === 'REJECTED' ? 'bg-rose-700' : 'bg-amber-700'
+                                    }`}
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    Inserat korrigieren
+                                </Link>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDeleteModalOpen(true)}
+                                    disabled={isDeleting}
+                                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-white hover:bg-rose-100/60 text-rose-700 border border-rose-300 shadow-2xs transition-all cursor-pointer"
+                                    title="Inserat endgültig löschen"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                    Löschen
+                                </button>
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* ── Owner Info Banner (Only shown if listing is APPROVED to avoid redundancy) ── */}
+                {isOwner && listing.status === 'APPROVED' && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-6 p-4 sm:p-5 bg-gradient-to-r from-forest/10 via-emerald-50 to-sand/30 border border-forest/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+                    >
                         <div className="flex items-center gap-3.5">
                             <div className="w-10 h-10 rounded-xl bg-forest text-white flex items-center justify-center shrink-0 shadow-sm">
                                 <Pencil className="w-5 h-5" />
@@ -876,22 +1061,39 @@ export default function ListingDetailPage() {
                                     Dies ist Ihr Inserat
                                 </h3>
                                 <p className="text-xs text-charcoal/70">
-                                    Sie können alle Angaben, Bilder und Preise jederzeit bearbeiten.
+                                    Sie können alle Angaben, Bilder und Preise jederzeit bearbeiten oder das Inserat löschen.
                                 </p>
                             </div>
                         </div>
-                        <Link
-                            href={`/anzeige-erstellen?edit=${listing.id}`}
-                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-forest hover:bg-gold text-white hover:text-forest font-bold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 shadow hover:shadow-md shrink-0 cursor-pointer"
-                        >
-                            <Pencil className="w-4 h-4" />
-                            Inserat bearbeiten
-                        </Link>
-                    </div>
+                        <div className="w-full sm:w-auto flex flex-wrap items-center gap-2 shrink-0">
+                            <Link
+                                href={`/anzeige-erstellen?edit=${listing.id}`}
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-forest hover:bg-gold text-white hover:text-forest font-bold px-5 py-2.5 rounded-xl text-xs uppercase tracking-wider transition-all duration-200 shadow hover:shadow-md cursor-pointer"
+                            >
+                                <Pencil className="w-4 h-4" />
+                                Inserat bearbeiten
+                            </Link>
+                            <button
+                                type="button"
+                                onClick={() => setIsDeleteModalOpen(true)}
+                                disabled={isDeleting}
+                                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 shadow-2xs transition-all cursor-pointer"
+                                title="Inserat löschen"
+                            >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                Löschen
+                            </button>
+                        </div>
+                    </motion.div>
                 )}
 
                 {/* ── Main Listing Header Area ── */}
-                <div className="mb-8">
+                <motion.div 
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.05 }}
+                    className="mb-8"
+                >
                     <h1 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-charcoal tracking-tight leading-tight mb-4">
                         {displayTitle}
                     </h1>
@@ -910,13 +1112,18 @@ export default function ListingDetailPage() {
                             <Tag className="w-4 h-4 text-gold shrink-0" />
                             <span>Anzeige Nr: {anzeigeNr}</span>
                         </div>
-                        <div className="flex items-center gap-4.5 sm:ml-auto">
-                            <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {viewsCount} Aufrufe</span>
-                            <span className="flex items-center gap-1"><Heart className="w-3.5 h-3.5" /> {likesCount} Merkzettel</span>
-                            <span className="flex items-center gap-1"><MessageSquare className="w-3.5 h-3.5" /> {chatsCount} Unterhaltungen</span>
+                        <div className="flex items-center gap-4 sm:ml-auto">
+                            <span className="flex items-center gap-1.5 font-medium text-charcoal/75">
+                                <Heart className="w-3.5 h-3.5 text-rose-500" />
+                                <span>{likesCount} {likesCount === 1 ? 'Merkzettel' : 'Merkzettel'}</span>
+                            </span>
+                            <span className="flex items-center gap-1.5 font-medium text-charcoal/75">
+                                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>{chatsCount} {chatsCount === 1 ? 'Unterhaltung' : 'Unterhaltungen'}</span>
+                            </span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* ── Dynamic Layout Grid ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -925,75 +1132,101 @@ export default function ListingDetailPage() {
                     <div className="lg:col-span-8 space-y-8">
 
                         {/* ── Professional Image Gallery ── */}
-                        <div className="space-y-3">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.1 }}
+                            className="space-y-3"
+                        >
                             <div className="relative aspect-[16/10] w-full rounded-2xl md:rounded-3xl overflow-hidden bg-sand/15 border border-forest/5 group">
-                                <img
-                                    src={images[activeImageIdx]}
-                                    alt={`${title} view`}
-                                    className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-[1.02] cursor-zoom-in"
-                                    onClick={() => setIsGalleryModalOpen(true)}
-                                />
+                                {images && images.length > 0 ? (
+                                    <img
+                                        src={images[activeImageIdx]}
+                                        alt={`${title} view`}
+                                        className="w-full h-full object-cover transition-transform duration-[0.8s] group-hover:scale-[1.02] cursor-zoom-in"
+                                        onClick={() => setIsGalleryModalOpen(true)}
+                                    />
+                                ) : (
+                                    <ListingImagePlaceholder category={category} size="lg" />
+                                )}
 
-                                {/* Overlay Controls */}
-                                <button
-                                    onClick={handlePrevImage}
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-forest shadow-md flex items-center justify-center transition-colors feedback-active select-none"
-                                >
-                                    <ChevronLeft className="w-6 h-6" />
-                                </button>
-                                <button
-                                    onClick={handleNextImage}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-forest shadow-md flex items-center justify-center transition-colors feedback-active select-none"
-                                >
-                                    <ChevronRight className="w-6 h-6" />
-                                </button>
+                                {/* Overlay Controls (Only if > 1 image) */}
+                                {images && images.length > 1 && (
+                                    <>
+                                        <button
+                                            onClick={handlePrevImage}
+                                            className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/85 hover:bg-white text-forest shadow-md flex items-center justify-center transition-all feedback-active select-none cursor-pointer hover:scale-105 active:scale-95 z-10"
+                                            aria-label="Vorheriges Foto"
+                                        >
+                                            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        </button>
+                                        <button
+                                            onClick={handleNextImage}
+                                            className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/85 hover:bg-white text-forest shadow-md flex items-center justify-center transition-all feedback-active select-none cursor-pointer hover:scale-105 active:scale-95 z-10"
+                                            aria-label="Nächstes Foto"
+                                        >
+                                            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        </button>
 
-                                {/* Gallery Count Badge */}
-                                <span className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md text-white text-[11px] font-semibold tracking-wider px-3 py-1 rounded-full select-none">
-                                    {activeImageIdx + 1} / {images.length}
-                                </span>
+                                        {/* Gallery Count Badge */}
+                                        <span className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-semibold tracking-wider px-3 py-1 rounded-full select-none shadow-sm">
+                                            {activeImageIdx + 1} / {images.length}
+                                        </span>
+                                    </>
+                                )}
 
                                 {/* Fullscreen Overlay Button */}
                                 <button
                                     onClick={() => setIsGalleryModalOpen(true)}
-                                    className="absolute bottom-4 right-4 bg-white hover:bg-sand/90 text-forest text-[10px] md:text-[11px] font-semibold uppercase tracking-wider px-4 py-2.5 rounded-full shadow-lg transition-colors duration-200 cursor-pointer"
+                                    className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 bg-white/95 hover:bg-white text-forest text-[10px] md:text-[11px] font-semibold uppercase tracking-wider px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full shadow-lg transition-all duration-200 cursor-pointer hover:scale-102 active:scale-98"
                                 >
-                                    Alle Fotos anzeigen
+                                    {images.length > 1 ? 'Alle Fotos anzeigen' : 'Vollbild'}
                                 </button>
                             </div>
 
-                            {/* Thumbnails Row */}
-                            <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar select-none">
-                                {images.map((img, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => setActiveImageIdx(idx)}
-                                        className={`relative aspect-[16/10] w-20 sm:w-24 rounded-lg overflow-hidden shrink-0 transition-all border-2 ${activeImageIdx === idx
-                                            ? 'border-forest ring-2 ring-forest/10 scale-95 shadow-md'
-                                            : 'border-transparent opacity-60 hover:opacity-100'
-                                            }`}
-                                    >
-                                        <img src={img} alt={`thumbnail ${idx}`} className="w-full h-full object-cover" />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                            {/* Thumbnails Row (Only if > 1 image) */}
+                            {images.length > 1 && (
+                                <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar select-none">
+                                    {images.map((img, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setActiveImageIdx(idx)}
+                                            className={`relative aspect-[16/10] w-18 sm:w-22 md:w-24 rounded-xl overflow-hidden shrink-0 transition-all border-2 cursor-pointer ${activeImageIdx === idx
+                                                ? 'border-forest ring-2 ring-forest/15 scale-95 shadow-md'
+                                                : 'border-transparent opacity-60 hover:opacity-100 hover:scale-102'
+                                                }`}
+                                        >
+                                            <img src={img} alt={`thumbnail ${idx}`} className="w-full h-full object-cover" />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </motion.div>
 
                         {/* Mobile/Tablet Price Card & Seller Box (hidden on desktop) */}
-                        <div className="block lg:hidden mt-2 mb-6">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.15 }}
+                            className="block lg:hidden mt-2 mb-6"
+                        >
                             {renderSidebarContent()}
-                        </div>
-
-
+                        </motion.div>
 
                         {/* ── Description Section ── */}
-                        <section className="space-y-4">
+                        <motion.section 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5 }}
+                            className="space-y-4"
+                        >
                             <h2 className="font-display text-lg font-bold text-forest uppercase tracking-wider">
                                 Beschreibung
                             </h2>
                             <div className="relative">
                                 <div
-                                    className={`text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-light overflow-hidden transition-all duration-505 ${isDescriptionExpanded ? 'max-h-[5000px]' : 'max-h-[220px]'
+                                    className={`text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-light overflow-hidden transition-all duration-500 ${isDescriptionExpanded ? 'max-h-[5000px]' : 'max-h-[220px]'
                                         }`}
                                 >
                                     {description}
@@ -1007,15 +1240,21 @@ export default function ListingDetailPage() {
 
                             <button
                                 onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                                className="text-xs font-bold uppercase tracking-widest text-forest hover:text-gold transition-colors flex items-center gap-1.5 focus:outline-none cursor-pointer py-1"
+                                className="text-xs font-bold uppercase tracking-widest text-forest hover:text-gold transition-colors flex items-center gap-1.5 focus:outline-none cursor-pointer py-1 group"
                             >
                                 <span>{isDescriptionExpanded ? 'Weniger anzeigen' : 'Mehr anzeigen'}</span>
-                                <span className={`transform transition-transform inline-block ${isDescriptionExpanded ? 'rotate-180' : ''}`}>↓</span>
+                                <span className={`transform transition-transform inline-block group-hover:translate-y-0.5 ${isDescriptionExpanded ? 'rotate-180' : ''}`}>↓</span>
                             </button>
-                        </section>
+                        </motion.section>
 
                         {/* ── Privacy Friendly Location Map ── */}
-                        <section className="space-y-4 pt-6 border-t border-forest/10">
+                        <motion.section 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5 }}
+                            className="space-y-4 pt-6 border-t border-forest/10"
+                        >
                             <div className="flex items-center justify-between">
                                 <h2 className="font-display text-lg font-bold text-forest uppercase tracking-wider">
                                     Standort (ungefähr)
@@ -1044,20 +1283,31 @@ export default function ListingDetailPage() {
                                     title="Campuna Standort Map"
                                 ></iframe>
                             </div>
-                        </section>
+                        </motion.section>
 
                     </div>
 
-                    {/* RIGHT COLUMN: Price Card & Seller Box (4/12 cols) */}
-                    <div className="lg:col-span-4 lg:sticky lg:top-28 space-y-6 hidden lg:block">
+                    {/* RIGHT COLUMN: Price Card & Seller Box (4/12 cols) with Sticky mount animation */}
+                    <motion.div 
+                        initial={{ opacity: 0, x: 25 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, delay: 0.15 }}
+                        className="lg:col-span-4 lg:sticky lg:top-28 space-y-6 hidden lg:block"
+                    >
                         {renderSidebarContent()}
-                    </div>
+                    </motion.div>
 
                 </div>
 
                 {/* ── RELATED PRODUCTS SECTION (Spans full page width below columns) ── */}
                 {relatedListings.length > 0 && (
-                    <section className="mt-16 pt-12 border-t border-forest/10 space-y-6 text-left">
+                    <motion.section 
+                        initial={{ opacity: 0, y: 25 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: '-50px' }}
+                        transition={{ duration: 0.6 }}
+                        className="mt-16 pt-8 space-y-6 text-left"
+                    >
                         <div className="flex flex-row items-center justify-between gap-4">
                             <div className="space-y-1">
                                 <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
@@ -1094,17 +1344,22 @@ export default function ListingDetailPage() {
                             className="flex gap-5 overflow-x-auto pb-4 pt-1 snap-x scroll-smooth no-scrollbar"
                             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                         >
-                            {relatedListings.map((item) => {
+                            {relatedListings.map((item, index) => {
                                 const slug = buildListingSlug(item.title, item.id);
                                 const isBoosted = isListingBoosted(item);
+                                const itemKey = item.id ? `related-${item.id}` : `related-${slug || index}`;
                                 return (
-                                    <div
-                                        key={item.id}
+                                    <motion.div
+                                        key={itemKey}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 0.4, delay: (index % 4) * 0.08 }}
                                         onClick={() => router.push(`/inserate/${slug}`)}
                                         className={`group relative flex flex-col rounded-[24px] overflow-hidden transition-all duration-300 cursor-pointer h-full shrink-0 w-[270px] sm:w-[calc(50%-0.625rem)] lg:w-[calc(25%-0.9375rem)] snap-start text-left select-none ${
                                             isBoosted
-                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
-                                                : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl'
+                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)] hover:-translate-y-1'
+                                                : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl hover:-translate-y-1'
                                         }`}
                                     >
                                         {/* Image Area */}
@@ -1177,7 +1432,7 @@ export default function ListingDetailPage() {
                                                 </span>
                                             </div>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 );
                             })}
                         </div>
@@ -1201,15 +1456,17 @@ export default function ListingDetailPage() {
                                 </button>
                             </div>
                         )}
-                    </section>
+                    </motion.section>
                 )}
 
-                {/* ── All Categories Slider at bottom of listing detail page ── */}
-                <div className="mt-14 md:mt-20 pt-8 border-t border-forest/10">
+                {/* ── All Categories Section at bottom of listing detail page ── */}
+                <div className="mt-8">
                     <CategoriesSection
-                        title="Entdecke alle Camping-Kategorien"
-                        badge="Kategorien"
+                        title="Camping hat viele Seiten. Wir bringen sie zusammen."
+                        badge="KATEGORIEN"
+                        showHeader={true}
                         align="center"
+                        isDocked={false}
                     />
                 </div>
 
@@ -1238,12 +1495,15 @@ export default function ListingDetailPage() {
                         </button>
 
                         <div className="relative max-w-5xl w-full h-[70vh] flex items-center justify-center">
-                            <button
-                                onClick={handlePrevImage}
-                                className="absolute left-0 sm:left-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-colors select-none"
-                            >
-                                <ChevronLeft className="w-8 h-8" />
-                            </button>
+                            {images.length > 1 && (
+                                <button
+                                    onClick={handlePrevImage}
+                                    className="absolute left-0 sm:left-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-colors select-none z-10"
+                                    aria-label="Vorheriges Foto"
+                                >
+                                    <ChevronLeft className="w-8 h-8" />
+                                </button>
+                            )}
 
                             <img
                                 src={images[activeImageIdx]}
@@ -1251,27 +1511,32 @@ export default function ListingDetailPage() {
                                 className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                             />
 
-                            <button
-                                onClick={handleNextImage}
-                                className="absolute right-0 sm:right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-colors select-none"
-                            >
-                                <ChevronRight className="w-8 h-8" />
-                            </button>
+                            {images.length > 1 && (
+                                <button
+                                    onClick={handleNextImage}
+                                    className="absolute right-0 sm:right-4 w-12 h-12 rounded-full bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition-colors select-none z-10"
+                                    aria-label="Nächstes Foto"
+                                >
+                                    <ChevronRight className="w-8 h-8" />
+                                </button>
+                            )}
                         </div>
 
-                        {/* Thumbnails row at bottom of modal */}
-                        <div className="flex gap-2 max-w-full overflow-x-auto mt-6 no-scrollbar pb-1 select-none">
-                            {images.map((img, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => setActiveImageIdx(idx)}
-                                    className={`relative aspect-[16/10] w-16 sm:w-20 rounded-md overflow-hidden shrink-0 border-2 ${activeImageIdx === idx ? 'border-gold' : 'border-transparent opacity-40'
-                                        }`}
-                                >
-                                    <img src={img} alt={`thumbnail ${idx}`} className="w-full h-full object-cover" />
-                                </button>
-                            ))}
-                        </div>
+                        {/* Thumbnails row at bottom of modal (Only if > 1 image) */}
+                        {images.length > 1 && (
+                            <div className="flex gap-2 max-w-full overflow-x-auto mt-6 no-scrollbar pb-1 select-none">
+                                {images.map((img, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setActiveImageIdx(idx)}
+                                        className={`relative aspect-[16/10] w-16 sm:w-20 rounded-md overflow-hidden shrink-0 border-2 ${activeImageIdx === idx ? 'border-gold' : 'border-transparent opacity-40'
+                                            }`}
+                                    >
+                                        <img src={img} alt={`thumbnail ${idx}`} className="w-full h-full object-cover" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -1314,9 +1579,6 @@ export default function ListingDetailPage() {
                                         <span className="text-[10px] font-bold text-forest uppercase tracking-wider truncate">
                                             {displaySellerName} ({seller.type})
                                         </span>
-                                        {isSellerPioneer && (
-                                            <PioneerBadge size="xs" text="Pioneer" />
-                                        )}
                                     </div>
                                     <h4 className="font-display font-bold text-sm text-charcoal truncate">
                                         {listing.title}
@@ -1688,6 +1950,63 @@ export default function ListingDetailPage() {
                                         <strong className="font-bold">100% DSGVO-Datenschutzgarantie:</strong> Beim Teilen werden keinerlei persönliche Kontaktdaten übertragen. Der Empfänger kann das Inserat frei ansehen und private Kontaktdaten erst nach eigener Registrierung freischalten.
                                     </div>
                                 </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* ─── Delete Confirmation Modal ─── */}
+                {isDeleteModalOpen && (
+                    <motion.div
+                        key="delete-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 z-[99999] flex items-center justify-center p-4 backdrop-blur-xs"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                            className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-md w-full p-6 sm:p-7 text-center relative"
+                        >
+                            <button
+                                onClick={() => setIsDeleteModalOpen(false)}
+                                className="absolute top-4 right-4 text-charcoal/40 hover:text-charcoal bg-sand/40 hover:bg-sand p-2 rounded-full transition-all cursor-pointer"
+                                aria-label="Schließen"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+
+                            <div className="w-14 h-14 rounded-2xl bg-rose-100 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                                <Trash2 className="w-7 h-7" />
+                            </div>
+
+                            <h3 className="font-display font-bold text-xl text-charcoal mb-2">
+                                Inserat löschen?
+                            </h3>
+                            <p className="text-sm text-charcoal/65 leading-relaxed mb-6 font-normal">
+                                Möchtest du <strong className="text-charcoal font-semibold">"{listing?.title}"</strong> wirklich unwiderruflich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+                            </p>
+
+                            <div className="flex items-center gap-3 justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDeleteModalOpen(false)}
+                                    disabled={isDeleting}
+                                    className="flex-1 py-3 px-4 rounded-xl border border-forest/15 bg-white text-charcoal/80 hover:bg-sand/30 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmDelete}
+                                    disabled={isDeleting}
+                                    className="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>{isDeleting ? 'Löschen...' : 'Ja, löschen'}</span>
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>

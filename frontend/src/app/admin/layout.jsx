@@ -17,10 +17,12 @@ import {
     Flag,
     Megaphone,
     BookOpen,
-    ArrowUpRight,
-    Loader2,
     Crown,
-    MessageSquare
+    MessageSquare,
+    PanelLeftClose,
+    PanelLeftOpen,
+    ArrowUpRight,
+    Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminDashboardStats } from '@/api/admin';
@@ -35,6 +37,7 @@ export default function AdminLayout({ children }) {
     const pathname = usePathname();
     const [mounted, setMounted] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
     const [pendingReportsCount, setPendingReportsCount] = useState(0);
     const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
@@ -47,7 +50,27 @@ export default function AdminLayout({ children }) {
 
     useEffect(() => {
         setMounted(true);
+        try {
+            const saved = localStorage.getItem('campuna_admin_sidebar_collapsed');
+            if (saved !== null) {
+                setSidebarCollapsed(saved === 'true');
+            }
+        } catch (e) {
+            console.warn('Sidebar state read error:', e);
+        }
     }, []);
+
+    const toggleSidebar = () => {
+        setSidebarCollapsed(prev => {
+            const next = !prev;
+            try {
+                localStorage.setItem('campuna_admin_sidebar_collapsed', String(next));
+            } catch (e) {
+                console.warn('Sidebar state save error:', e);
+            }
+            return next;
+        });
+    };
 
     // Role Guard: Ensure user is logged in as ADMIN
     useEffect(() => {
@@ -100,11 +123,11 @@ export default function AdminLayout({ children }) {
     }, [mounted, isLoggedIn, user, pathname]);
 
     const menuItems = [
-        { label: 'Dashboard', path: '/admin', icon: Hexagon },
+        { label: 'Dashboard', path: '/admin', icon: BarChart3 },
         {
             label: 'Inserate',
             path: '/admin/inserate',
-            icon: BarChart3,
+            icon: Layers,
             badge: pendingCount > 0 ? String(pendingCount) : null,
             badgeColor: 'bg-amber-500 text-slate-900 font-black',
             hasDot: pendingCount > 0
@@ -162,50 +185,90 @@ export default function AdminLayout({ children }) {
     return (
         <div className="h-screen w-full bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] text-slate-800 font-sans flex flex-col lg:flex-row py-2 pr-2 sm:pr-3 sm:py-3 lg:py-4 lg:pr-4 gap-2 sm:gap-3 lg:gap-4 overflow-hidden">
 
-            {/* ─── FIXED FOREST-TO-BLACK SIDEBAR ─── */}
-            <aside className="hidden lg:flex flex-col w-[230px] xl:w-[250px] p-4 justify-between shrink-0 text-white relative bg-transparent h-full overflow-y-auto">
+            {/* ─── FIXED FOREST-TO-BLACK SIDEBAR (Expand / Collapse Support) ─── */}
+            <motion.aside
+                initial={false}
+                animate={{ width: sidebarCollapsed ? 76 : 250 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className={`hidden lg:flex flex-col p-3.5 justify-between shrink-0 text-white relative z-30 bg-transparent h-full overflow-y-visible ${
+                    sidebarCollapsed ? 'items-center' : ''
+                }`}
+            >
+                <div className="space-y-4 w-full">
+                    {/* Header: Logo (Expanded Only) + Toggle Button */}
+                    <div className={`flex items-center gap-2 ${sidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
+                        {!sidebarCollapsed && (
+                            <Link
+                                href="/"
+                                title="Zur Startseite"
+                                className="relative flex-1 rounded-2xl px-3 py-2 bg-gradient-to-b from-[#D5D9E0] via-[#ECEEF2] to-[#FFFFFF] shadow-[inset_0_4px_8px_rgba(0,0,0,0.35),0_1px_1px_rgba(255,255,255,0.15)] border border-black/30 ring-1 ring-white/10 flex items-center justify-center overflow-hidden group cursor-pointer hover:opacity-95 transition-opacity"
+                            >
+                                <Image
+                                    src="/logo.webp"
+                                    alt="Campuna"
+                                    width={130}
+                                    height={38}
+                                    className="w-[115px] h-auto object-contain relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.12)] group-hover:scale-102 transition-transform duration-200"
+                                    priority
+                                />
+                            </Link>
+                        )}
 
-                <div className="space-y-5">
-                    {/* Deep Sunken / Recessed Logo Cavity Container (Clickable -> Home) */}
-                    <Link
-                        href="/"
-                        title="Zur Startseite"
-                        className="relative rounded-3xl px-4 py-3 bg-gradient-to-b from-[#D5D9E0] via-[#ECEEF2] to-[#FFFFFF] shadow-[inset_0_5px_10px_rgba(0,0,0,0.38),inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_1px_rgba(255,255,255,0.15)] border border-black/30 ring-1 ring-white/10 flex items-center justify-center overflow-hidden group cursor-pointer hover:opacity-95 transition-opacity"
-                    >
-                        {/* Recessed vignette overlay */}
-                        <div className="absolute inset-0 rounded-3xl pointer-events-none shadow-[inset_0_8px_16px_rgba(0,0,0,0.25)]" />
-                        <Image
-                            src="/logo.webp"
-                            alt="Campuna"
-                            width={140}
-                            height={42}
-                            className="w-[125px] h-auto object-contain relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.12)] group-hover:scale-102 transition-transform duration-200"
-                            priority
-                        />
-                    </Link>
+                        {/* Expand / Collapse Toggle Button */}
+                        <button
+                            type="button"
+                            onClick={toggleSidebar}
+                            title={sidebarCollapsed ? 'Sidebar ausklappen' : 'Sidebar einklappen'}
+                            className={`p-2 rounded-xl bg-white/10 hover:bg-white/20 text-sand hover:text-white transition-all cursor-pointer border border-white/10 flex items-center justify-center relative group ${
+                                sidebarCollapsed ? 'w-10 h-10 mx-auto' : 'shrink-0'
+                            }`}
+                        >
+                            {sidebarCollapsed ? (
+                                <>
+                                    <PanelLeftOpen className="w-4 h-4 text-gold" />
+                                    <div className="absolute left-full ml-3.5 px-3 py-1.5 bg-[#0b1710] text-sand text-[11px] font-bold rounded-xl shadow-2xl border border-white/15 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[100] drop-shadow-lg">
+                                        <span>Menü ausklappen</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <PanelLeftClose className="w-4 h-4 text-sand/70 hover:text-white" />
+                            )}
+                        </button>
+                    </div>
 
                     {/* Navigation Section */}
-                    <div className="space-y-2.5">
-                        <div className="flex items-center justify-between px-2">
-                            <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold block">
-                                NAVIGATION
-                            </span>
-                        </div>
+                    <div className="space-y-2 w-full">
+                        {!sidebarCollapsed && (
+                            <div className="flex items-center justify-between px-2">
+                                <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold block">
+                                    NAVIGATION
+                                </span>
+                            </div>
+                        )}
 
                         {/* Quick Action: Back to main website / Home */}
                         <Link
                             href="/"
-                            title="Zur Campuna Startseite"
-                            className="w-full flex items-center justify-between px-3.5 py-2 rounded-2xl text-xs font-semibold text-sand/85 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-200 cursor-pointer group"
+                            title={sidebarCollapsed ? undefined : "Zur Campuna Startseite"}
+                            className={`flex items-center rounded-2xl text-xs font-semibold text-sand/85 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-200 cursor-pointer group relative ${
+                                sidebarCollapsed ? 'w-10 h-10 p-0 justify-center mx-auto' : 'w-full justify-between px-3.5 py-2'
+                            }`}
                         >
                             <div className="flex items-center gap-2.5">
-                                <Home className="w-3.5 h-3.5 text-gold group-hover:scale-110 transition-transform" />
-                                <span>Startseite</span>
+                                <Home className="w-4 h-4 text-gold group-hover:scale-110 transition-transform shrink-0" />
+                                {!sidebarCollapsed && <span>Startseite</span>}
                             </div>
-                            <ArrowUpRight className="w-3 h-3 text-sand/40 group-hover:text-gold transition-colors" />
+                            {!sidebarCollapsed && (
+                                <ArrowUpRight className="w-3 h-3 text-sand/40 group-hover:text-gold transition-colors" />
+                            )}
+                            {sidebarCollapsed && (
+                                <div className="absolute left-full ml-3.5 px-3 py-1.5 bg-[#0b1710] text-sand text-[11px] font-bold rounded-xl shadow-2xl border border-white/15 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[100] drop-shadow-lg">
+                                    <span>Zur Startseite</span>
+                                </div>
+                            )}
                         </Link>
 
-                        <nav className="space-y-1.5 pt-1">
+                        <nav className="space-y-1.5 pt-1 w-full">
                             {menuItems.map((item) => {
                                 const Icon = item.icon;
                                 const isActive = pathname === item.path;
@@ -213,15 +276,21 @@ export default function AdminLayout({ children }) {
                                 return (
                                     <button
                                         key={item.path}
+                                        type="button"
                                         onClick={() => router.push(item.path)}
-                                        className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-3xl text-xs font-semibold transition-all duration-200 cursor-pointer ${isActive
-                                            ? 'bg-gold text-forest font-bold shadow-md'
-                                            : 'text-sand/70 hover:text-white hover:bg-white/6 font-medium'
-                                            }`}
+                                        className={`flex items-center rounded-2xl text-xs font-semibold transition-all duration-200 cursor-pointer relative group ${
+                                            sidebarCollapsed
+                                                ? 'w-10 h-10 p-0 justify-center mx-auto'
+                                                : 'w-full justify-between px-3.5 py-2.5'
+                                        } ${
+                                            isActive
+                                                ? 'bg-gold text-forest font-bold shadow-md'
+                                                : 'text-sand/70 hover:text-white hover:bg-white/10 font-medium'
+                                        }`}
                                     >
                                         <div className="flex items-center gap-3">
                                             <div className="relative flex items-center justify-center shrink-0">
-                                                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-forest' : 'text-sand/50'}`} />
+                                                <Icon className={`w-4 h-4 ${isActive ? 'text-forest' : 'text-sand/70 group-hover:text-white'}`} />
                                                 {item.hasDot && (
                                                     <span className="absolute -top-1 -right-1 flex h-2 w-2">
                                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -229,16 +298,29 @@ export default function AdminLayout({ children }) {
                                                     </span>
                                                 )}
                                             </div>
-                                            <span>{item.label}</span>
+                                            {!sidebarCollapsed && <span className="truncate">{item.label}</span>}
                                         </div>
-                                        {item.badge && (
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+
+                                        {!sidebarCollapsed && item.badge && (
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                                                 item.hasDot
                                                     ? 'bg-rose-500 text-white font-black shadow-xs'
                                                     : (item.badgeColor || 'bg-white/10 text-sand')
                                             }`}>
                                                 {item.badge}
                                             </span>
+                                        )}
+
+                                        {/* Tooltip for collapsed state */}
+                                        {sidebarCollapsed && (
+                                            <div className="absolute left-full ml-3.5 px-3 py-1.5 bg-[#0b1710] text-sand text-[11px] font-bold rounded-xl shadow-2xl border border-white/15 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[100] drop-shadow-lg flex items-center gap-1.5">
+                                                <span>{item.label}</span>
+                                                {item.badge && (
+                                                    <span className="px-1.5 py-0.2 rounded-full text-[9px] bg-gold text-forest font-black">
+                                                        {item.badge}
+                                                    </span>
+                                                )}
+                                            </div>
                                         )}
                                     </button>
                                 );
@@ -247,42 +329,62 @@ export default function AdminLayout({ children }) {
                     </div>
                 </div>
 
-                {/* Bottom User Account Pill: Campuna Club Business Profile */}
-                <div className="space-y-3 pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between px-1">
-                        <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold block">
-                            OFFIZIELLER ACCOUNT
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-mono">
-                            <Crown className="w-2.5 h-2.5 text-gold" /> BUSINESS
-                        </span>
-                    </div>
-
-                    <div className="flex items-center justify-between min-w-0 bg-white/5 p-2 rounded-2xl border border-white/10">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-extrabold text-xs flex items-center justify-center border-2 border-gold/60 shadow-sm shrink-0">
-                                CC
-                            </div>
-                            <div className="min-w-0 truncate text-left">
-                                <h5 className="text-xs font-bold text-white truncate leading-tight flex items-center gap-1">
-                                    <span>Campuna Club</span>
-                                </h5>
-                                <p className="text-[10px] font-mono text-sand/60 truncate">
-                                    Business-Profil (Admin)
-                                </p>
-                            </div>
+                {/* Bottom User Account Pill / Logout */}
+                <div className="space-y-2 pt-3 border-t border-white/10 w-full">
+                    {!sidebarCollapsed && (
+                        <div className="flex items-center justify-between px-1">
+                            <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold block truncate">
+                                OFFIZIELL
+                            </span>
+                            <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-mono shrink-0">
+                                <Crown className="w-2.5 h-2.5 text-gold" /> BUSINESS
+                            </span>
                         </div>
+                    )}
 
-                        <button
-                            onClick={handleLogout}
-                            title="Abmelden"
-                            className="p-1.5 text-sand/50 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer shrink-0"
-                        >
-                            <LogOut className="w-3.5 h-3.5" />
-                        </button>
+                    <div className={`flex items-center min-w-0 bg-white/5 rounded-2xl border border-white/10 ${
+                        sidebarCollapsed ? 'p-0 justify-center w-10 h-10 mx-auto group relative' : 'p-2 justify-between'
+                    }`}>
+                        {sidebarCollapsed ? (
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                className="w-10 h-10 rounded-2xl flex items-center justify-center hover:bg-rose-500/20 text-sand/70 hover:text-rose-400 transition-colors cursor-pointer"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                <div className="absolute left-full ml-3.5 px-3 py-1.5 bg-[#0b1710] text-rose-300 text-[11px] font-bold rounded-xl shadow-2xl border border-rose-500/20 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 z-[100] drop-shadow-lg">
+                                    <span>Abmelden</span>
+                                </div>
+                            </button>
+                        ) : (
+                            <>
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-extrabold text-[11px] flex items-center justify-center border border-gold/60 shadow-xs shrink-0">
+                                        CC
+                                    </div>
+                                    <div className="min-w-0 truncate text-left">
+                                        <h5 className="text-xs font-bold text-white truncate leading-tight">
+                                            Campuna Club
+                                        </h5>
+                                        <p className="text-[10px] font-mono text-sand/60 truncate">
+                                            Admin
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={handleLogout}
+                                    title="Abmelden"
+                                    className="p-1 text-sand/50 hover:text-rose-400 hover:bg-white/5 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+                                >
+                                    <LogOut className="w-3.5 h-3.5" />
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
-            </aside>
+            </motion.aside>
 
             {/* ─── MOBILE TOPBAR (On Small Screens) ─── */}
             <div className="lg:hidden flex flex-col w-full">
@@ -382,7 +484,7 @@ export default function AdminLayout({ children }) {
 
                 </header>
 
-                <main className="p-4 sm:p-6 flex-1 overflow-y-auto w-full">
+                <main className={`flex-1 w-full ${pathname === '/admin/nachrichten' ? 'p-0 overflow-hidden h-full' : 'p-4 sm:p-6 overflow-y-auto'}`}>
                     {children}
                 </main>
             </div>

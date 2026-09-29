@@ -38,25 +38,6 @@ const initAdminsTable = async () => {
             CREATE INDEX IF NOT EXISTS idx_reset_email ON password_reset_tokens(email);
         `);
         console.log('✅ Dedicated admins & password_reset_tokens tables verified in PostgreSQL');
-
-        // Auto-purge any admin rows previously in the users table
-        const rawEnvEmail = process.env.ADMIN_EMAIL || '';
-        const envAdminEmail = rawEnvEmail.replace(/^["']|["']$/g, '').trim().toLowerCase();
-        if (envAdminEmail) {
-            await pool.query(`
-                DELETE FROM company_profiles WHERE company_name = 'Campuna Administration'
-                  OR user_id IN (SELECT id FROM users WHERE role = 'ADMIN' OR email = $1)
-            `, [envAdminEmail]).catch(() => {});
-
-            await pool.query(`
-                DELETE FROM private_profiles 
-                WHERE user_id IN (SELECT id FROM users WHERE role = 'ADMIN' OR email = $1)
-            `, [envAdminEmail]).catch(() => {});
-
-            await pool.query(`
-                DELETE FROM users WHERE role = 'ADMIN' OR email = $1
-            `, [envAdminEmail]).catch(() => {});
-        }
     } catch (err) {
         console.error('⚠️ Admins table initialization notice:', err.message);
     }

@@ -1,30 +1,34 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
     Search,
     MapPin,
-    Star,
     ArrowRight,
-    ArrowLeft,
     Building2,
     Package,
-    Sparkles,
-    CheckCircle2,
-    Filter,
     X
 } from 'lucide-react';
 import { getAllProfiles } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
-import { toast } from 'react-hot-toast';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
+
+import ScrollSectionWrapper from '@/app/components/ScrollSectionWrapper';
+
+// Helper to escape characters for safe JSON-LD embedding (XSS protection)
+function safeJsonLd(obj) {
+    return JSON.stringify(obj)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026');
+}
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1000&q=80';
 const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
@@ -46,7 +50,7 @@ function buildProviderSlug(name = '', id = '') {
 }
 
 // ─── Provider Card Component ──────────────────────────────────────────────────────────
-function ProviderCard({ partner, onAuthRequired }) {
+const ProviderCard = React.memo(function ProviderCard({ partner, onAuthRequired, index = 0 }) {
     const router = useRouter();
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const [coverSrc, setCoverSrc] = useState(getImageUrl(partner.coverImage, DEFAULT_COVER));
@@ -54,7 +58,7 @@ function ProviderCard({ partner, onAuthRequired }) {
 
     const isPioneer = Boolean(partner.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
 
-    const handleCardClick = () => {
+    const handleCardClick = useCallback(() => {
         const slug = buildProviderSlug(partner.name, partner.id);
         const targetUrl = `/anbieter/${slug}`;
         if (!isLoggedIn) {
@@ -66,30 +70,32 @@ function ProviderCard({ partner, onAuthRequired }) {
             return;
         }
         router.push(targetUrl);
-    };
+    }, [partner.name, partner.id, isLoggedIn, onAuthRequired, router]);
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-30px" }}
+            transition={{ duration: 0.4, delay: (index % 3) * 0.08, ease: [0.21, 0.47, 0.32, 0.98] }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
             onClick={handleCardClick}
-            className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-forest/10 hover:border-forest/25 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full select-none"
+            className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-forest/10 hover:border-forest/25 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full select-none will-change-transform"
         >
             {/* Cover Banner */}
             <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-sand/30">
                 <img
                     src={coverSrc}
                     alt={`${partner.name} Cover`}
-                    className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105 pointer-events-none"
                     onError={() => setCoverSrc(DEFAULT_COVER)}
                     loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
 
                 {/* Top Badge: Pioneer (only if earned) */}
                 {isPioneer && (
-                    <div className="absolute top-3.5 right-3.5 z-10">
+                    <div className="absolute top-3.5 right-3.5 z-10 pointer-events-none">
                         <PioneerBadge variant="forest" size="xs" text="Pioneer" className="shadow-lg backdrop-blur-xs" />
                     </div>
                 )}
@@ -98,21 +104,15 @@ function ProviderCard({ partner, onAuthRequired }) {
             {/* Logo Avatar overlapping cover & Content */}
             <div className="relative px-5 pt-0 pb-5 flex flex-col flex-1 justify-between">
                 <div className="flex items-end justify-between -mt-10 mb-3">
-                    <div className="w-20 h-20 rounded-full bg-white p-1 shadow-lg border-2 border-white ring-2 ring-forest/10 overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300">
+                    <div className="w-20 h-20 rounded-full bg-white p-1 shadow-lg border-2 border-white ring-2 ring-forest/10 overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300 select-none">
                         <img
                             src={logoSrc}
                             alt={`${partner.name} Logo`}
                             className="w-full h-full object-cover rounded-full bg-sand/20"
                             onError={() => setLogoSrc(DEFAULT_LOGO)}
+                            loading="lazy"
                         />
                     </div>
-
-                    {partner.rating && (
-                        <div className="flex items-center gap-1 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full text-amber-900 font-bold text-xs shadow-xs">
-                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                            <span>{partner.rating.toFixed(1)}</span>
-                        </div>
-                    )}
                 </div>
 
                 {/* Provider Info */}
@@ -162,7 +162,9 @@ function ProviderCard({ partner, onAuthRequired }) {
             </div>
         </motion.div>
     );
-}
+});
+
+ProviderCard.displayName = 'ProviderCard';
 
 // ─── Main Content Component ────────────────────────────────────────────────────────────
 function ProvidersContent() {
@@ -172,7 +174,7 @@ function ProvidersContent() {
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedLocation, setSelectedLocation] = useState('all');
-    const [sortBy, setSortBy] = useState('listings'); // 'listings', 'rating', 'name'
+    const [sortBy, setSortBy] = useState('listings'); // 'listings', 'name_asc', 'name_desc'
     const [authModalState, setAuthModalState] = useState({ isOpen: false, returnUrl: '' });
 
     const [providers, setProviders] = useState([]);
@@ -193,7 +195,6 @@ function ProvidersContent() {
             try {
                 const res = await getAllProfiles();
                 if (res.success && Array.isArray(res.data?.profiles)) {
-                    // Deduplicate and map backend profiles
                     const seenIds = new Set();
                     const backendProfiles = [];
 
@@ -207,7 +208,6 @@ function ProvidersContent() {
                                 coverImage: p.coverImage || DEFAULT_COVER,
                                 description: p.description || '',
                                 listingsCount: p.listingsCount || 0,
-                                rating: 4.9,
                                 location: p.location || 'Deutschland',
                                 type: p.type || 'Gewerblich',
                                 isSpotlightEligible: p.isSpotlightEligible || false,
@@ -255,10 +255,10 @@ function ProvidersContent() {
         if (sortBy === 'listings') {
             return list.sort((a, b) => (b.listingsCount || 0) - (a.listingsCount || 0));
         }
-        if (sortBy === 'rating') {
-            return list.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        if (sortBy === 'name_desc') {
+            return list.sort((a, b) => b.name.localeCompare(a.name, 'de'));
         }
-        if (sortBy === 'name') {
+        if (sortBy === 'name_asc' || sortBy === 'name') {
             return list.sort((a, b) => a.name.localeCompare(b.name, 'de'));
         }
         return list;
@@ -273,37 +273,92 @@ function ProvidersContent() {
         return Array.from(locs);
     }, [providers]);
 
-    const handleReset = () => {
+    const handleReset = useCallback(() => {
         setSearchTerm('');
         setSelectedLocation('all');
         setSortBy('listings');
-    };
+    }, []);
+
+    // Structured Data (ItemList for SEO)
+    const directoryStructuredData = useMemo(() => {
+        return {
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            name: 'Camping-Anbieter & Spezialisten auf Campuna',
+            description: 'Übersicht zertifizierter Camping-Händler, Ausbauer und Vermieter in Deutschland.',
+            itemListElement: sortedProviders.slice(0, 20).map((p, idx) => ({
+                '@type': 'ListItem',
+                position: idx + 1,
+                name: p.name,
+                url: `https://campuna.de/anbieter/${buildProviderSlug(p.name, p.id)}`
+            }))
+        };
+    }, [sortedProviders]);
 
     return (
         <div className="bg-white min-h-screen relative font-sans text-charcoal">
+            {/* Schema.org Structured Data */}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: safeJsonLd(directoryStructuredData) }}
+            />
 
-            {/* ── Hero Banner ── */}
+            {/* ── Hero Banner (Matching Inserate / Kategorie Hero Style) ── */}
             <section
-                className="relative mt-20 pt-12 pb-16 px-4 mx-4 md:mx-6 lg:mx-8 overflow-hidden rounded-3xl md:rounded-4xl"
-                style={{
-                    backgroundImage: `linear-gradient(to bottom, rgba(0,61,3,0.75) 0%, rgba(0,0,0,0.55) 50%, rgba(0, 0, 0, 0.92) 100%), url('/hero.webp')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                }}
+                className="relative min-h-[32vh] sm:min-h-[36vh] md:min-h-[40vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-20 mx-4 md:mx-8 lg:mx-12 shadow-xl border border-forest/10"
             >
-                <div className="max-w-7xl mx-auto flex flex-col items-center text-center">
-                    <span className="font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.3em] text-gold block mb-2">
+                {/* Background Cinematic Image with Subtle Zoom Animation */}
+                <div className="absolute inset-0 z-0">
+                    <motion.div
+                        initial={{ scale: 1.08, opacity: 0 }}
+                        animate={{ scale: 1.0, opacity: 1 }}
+                        transition={{ duration: 1.6, ease: 'easeOut' }}
+                        className="w-full h-full"
+                    >
+                        <img
+                            src="/hero.webp"
+                            alt="Camping-Anbieter und Fachhändler Deutschland"
+                            className="w-full h-full object-cover"
+                            loading="eager"
+                            decoding="async"
+                        />
+                    </motion.div>
+                    {/* Deep luxurious multi-layered gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/80" />
+                </div>
+
+                {/* Floating Radial Glow */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(200,169,107,0.12),transparent_50%)] pointer-events-none" />
+
+                {/* Hero Content */}
+                <div className="relative z-10 max-w-4xl mx-auto px-6 py-10 sm:py-12 flex flex-col justify-center items-center w-full text-center">
+                    <span className="font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.35em] text-gold block mb-2">
                         CAMPUNA PARTNER & NETZWERK
                     </span>
-                    <h1 className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-4 drop-shadow-xl leading-tight">
-                        Camping-Anbieter & Spezialisten
-                    </h1>
-                    <p className="text-white/90 text-sm md:text-base max-w-3xl leading-relaxed mt-2 font-sans font-light drop-shadow-md">
-                        Entdecke zertifizierte Fachhändler, Ausbauer, Werkstätten, Vermieter und Campingplatzbetreiber in ganz Deutschland. Finde den richtigen Partner für dein nächstes Camping-Abenteuer.
-                    </p>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
+                        className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 drop-shadow-xl leading-tight"
+                    >
+                        Camping-Anbieter <span className="text-gold">& Spezialisten</span>
+                    </motion.h1>
+                    <motion.p
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        className="font-sans text-xs sm:text-sm md:text-base text-sand/90 leading-relaxed max-w-2xl mx-auto font-light drop-shadow-md mb-6"
+                    >
+                        Entdecke zertifizierte Fachhändler, Ausbauer, Werkstätten, Vermieter und Campingplatzbetreiber in ganz Deutschland. Finde den passenden Partner für dein nächstes Camping-Abenteuer.
+                    </motion.p>
 
                     {/* Action buttons */}
-                    <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                    <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        className="flex flex-wrap items-center justify-center gap-3"
+                    >
                         <button
                             onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/registrieren?type=commercial')}
                             className="bg-gold hover:bg-white text-forest font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-2"
@@ -317,83 +372,87 @@ function ProvidersContent() {
                         >
                             Alle Inserate durchsuchen
                         </button>
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
             {/* ── Breadcrumbs below Hero ── */}
-            <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-6 pb-1">
-                <Breadcrumbs
-                    items={[{ label: 'Camping-Anbieter' }]}
-                    variant="light"
-                />
-            </div>
+            <ScrollSectionWrapper delay={0.05}>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-1">
+                    <Breadcrumbs
+                        items={[{ label: 'Camping-Anbieter' }]}
+                        variant="light"
+                    />
+                </div>
+            </ScrollSectionWrapper>
 
             {/* ── Main Content Area ── */}
-            <main className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
                 {/* Filter & Search Header */}
-                <div className="bg-sand/30 border border-forest/10 rounded-2xl p-4 sm:p-6 mb-10 shadow-sm">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <ScrollSectionWrapper delay={0.05}>
+                    <div className="bg-sand/30 border border-forest/10 rounded-2xl p-4 sm:p-6 mb-10 shadow-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
-                        {/* Search Input */}
-                        <div className="relative sm:col-span-2">
-                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal/40" />
-                            <input
-                                type="text"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Anbieter, Name, Spezialisierung..."
-                                className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 font-medium"
-                            />
+                            {/* Search Input */}
+                            <div className="relative sm:col-span-2">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal/40" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Anbieter, Name, Spezialisierung..."
+                                    className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 font-medium"
+                                />
+                            </div>
+
+                            {/* Location Select */}
+                            <div>
+                                <select
+                                    value={selectedLocation}
+                                    onChange={(e) => setSelectedLocation(e.target.value)}
+                                    className="w-full px-3.5 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal focus:outline-none focus:ring-1.5 focus:ring-forest/20 font-medium cursor-pointer"
+                                >
+                                    <option value="all">Alle Standorte</option>
+                                    {locationsList.map((loc, idx) => (
+                                        <option key={idx} value={loc}>{loc}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Sort Select */}
+                            <div>
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="w-full px-3.5 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal focus:outline-none focus:ring-1.5 focus:ring-forest/20 font-medium cursor-pointer"
+                                >
+                                    <option value="listings">Meiste Inserate</option>
+                                    <option value="name_asc">Name (A – Z)</option>
+                                    <option value="name_desc">Name (Z – A)</option>
+                                </select>
+                            </div>
+
                         </div>
 
-                        {/* Location Select */}
-                        <div>
-                            <select
-                                value={selectedLocation}
-                                onChange={(e) => setSelectedLocation(e.target.value)}
-                                className="w-full px-3.5 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal focus:outline-none focus:ring-1.5 focus:ring-forest/20 font-medium cursor-pointer"
-                            >
-                                <option value="all">Alle Standorte</option>
-                                {locationsList.map((loc, idx) => (
-                                    <option key={idx} value={loc}>{loc}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {/* Active filter count & reset */}
+                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-forest/5 text-xs">
+                            <span className="font-mono text-charcoal/60 uppercase tracking-widest text-[11px]">
+                                {sortedProviders.length} {sortedProviders.length === 1 ? 'Anbieter' : 'Anbieter'} gefunden
+                            </span>
 
-                        {/* Sort Select */}
-                        <div>
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                                className="w-full px-3.5 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal focus:outline-none focus:ring-1.5 focus:ring-forest/20 font-medium cursor-pointer"
-                            >
-                                <option value="listings">Meiste Inserate</option>
-                                <option value="rating">Beste Bewertung</option>
-                                <option value="name">Name (A – Z)</option>
-                            </select>
+                            {(searchTerm || selectedLocation !== 'all' || sortBy !== 'listings') && (
+                                <button
+                                    onClick={handleReset}
+                                    className="text-gold hover:text-forest font-bold uppercase tracking-wider text-[10px] flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                    <X className="w-3 h-3" />
+                                    Filter zurücksetzen
+                                </button>
+                            )}
                         </div>
-
                     </div>
-
-                    {/* Active filter count & reset */}
-                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-forest/5 text-xs">
-                        <span className="font-mono text-charcoal/60 uppercase tracking-widest text-[11px]">
-                            {sortedProviders.length} {sortedProviders.length === 1 ? 'Anbieter' : 'Anbieter'} gefunden
-                        </span>
-
-                        {(searchTerm || selectedLocation !== 'all' || sortBy !== 'listings') && (
-                            <button
-                                onClick={handleReset}
-                                className="text-gold hover:text-forest font-bold uppercase tracking-wider text-[10px] flex items-center gap-1 cursor-pointer transition-colors"
-                            >
-                                <X className="w-3 h-3" />
-                                Filter zurücksetzen
-                            </button>
-                        )}
-                    </div>
-                </div>
+                </ScrollSectionWrapper>
 
                 {/* ── Providers Grid ── */}
                 {loading ? (
@@ -436,6 +495,7 @@ function ProvidersContent() {
                             <ProviderCard
                                 key={`${partner.id || partner.name}-${idx}`}
                                 partner={partner}
+                                index={idx}
                                 onAuthRequired={(url) => setAuthModalState({ isOpen: true, returnUrl: url })}
                             />
                         ))}
@@ -444,19 +504,18 @@ function ProvidersContent() {
 
             </main>
 
-
-            {/* ── Categories Section Carousel ── */}
-            <section className="py-16 px-4 bg-sand/20 border-t border-forest/5">
-                <div className="max-w-7xl mx-auto mb-10 text-center">
-                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.35em] text-gold block mb-2">
-                        ENTDECKEN
-                    </span>
-                    <h2 className="font-display text-3xl sm:text-5xl font-extrabold tracking-tight text-black">
-                        Passende Angebote nach Kategorie
-                    </h2>
+            {/* ── Categories Section ── */}
+            <ScrollSectionWrapper delay={0.05}>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
+                    <CategoriesSection
+                        title="Passende Angebote nach Kategorie"
+                        badge="ENTDECKEN"
+                        showHeader={true}
+                        align="center"
+                        isDocked={false}
+                    />
                 </div>
-                <CategoriesSection showHeader={false} />
-            </section>
+            </ScrollSectionWrapper>
 
             {/* ── Standard Auth Required Modal ── */}
             <AuthRequiredModal

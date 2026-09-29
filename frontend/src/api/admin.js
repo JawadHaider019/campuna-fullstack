@@ -33,6 +33,14 @@ export const getAdminUsers = (params = {}) => {
 };
 
 /**
+ * GET /api/admin/users/:id
+ * Retrieves full single user profile, balance, and listings.
+ */
+export const getAdminUserDetail = (userId) => {
+    return api.get(`/admin/users/${userId}`);
+};
+
+/**
  * PATCH /api/admin/users/:id/suspend
  * Toggles a user's suspended status.
  */

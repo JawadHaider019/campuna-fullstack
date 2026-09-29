@@ -13,9 +13,10 @@ export default function BlogSection() {
     const [posts, setPosts] = useState(BLOG_POSTS || []);
 
     useEffect(() => {
+        let isMounted = true;
         getPublicPosts({ limit: 4 })
             .then(res => {
-                if (res.data?.success && res.data.posts?.length > 0) {
+                if (isMounted && res.data?.success && res.data.posts?.length > 0) {
                     const formatted = res.data.posts.map(p => ({
                         id: p.id,
                         title: p.title,
@@ -28,7 +29,11 @@ export default function BlogSection() {
                     setPosts(formatted);
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const featuredPost = posts && posts.length > 0 ? posts[0] : null;
@@ -74,14 +79,17 @@ export default function BlogSection() {
         <section id="journal" className="py-10 sm:py-16 bg-white overflow-hidden scroll-mt-24">
             <div className="max-w-7xl mx-auto px-6 md:px-12">
                 {/* Section Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8">
-                    <div className="space-y-4">
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                    <div className="space-y-2">
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
                             Campuna Ratgeber
                         </span>
                         <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-black">
                             Camping-Ratgeber & Tipps
                         </h2>
+                        <p className="font-sans text-xs sm:text-sm text-charcoal/70 max-w-2xl font-light">
+                            Kaufberatung, Verkaufstipps, Technik und Praxiswissen: Im Ratgeber beantworten wir die Fragen, die sich Camper wirklich stellen.
+                        </p>
                     </div>
                     {/* Desktop View All - Hidden on Mobile & Tablet */}
                     <div className="hidden lg:block">
@@ -117,12 +125,10 @@ export default function BlogSection() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
 
                             <div className="absolute inset-x-10 bottom-10 space-y-4">
-                                <h3 className="font-display text-4xl font-extrabold text-white">
+                                <h3 className="font-display text-3xl font-extrabold text-white">
                                     {featuredPost.title}
                                 </h3>
-                                <p className="font-sans text-[15px] text-white/70 leading-relaxed font-light line-clamp-2 max-w-xl">
-                                    {featuredPost.excerpt}
-                                </p>
+
                                 <div className="pt-2 flex items-center justify-between border-t border-white/10 gap-4">
                                     <div className="flex items-center gap-4 text-[11px] text-white/60 font-mono">
                                         <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-gold" />{featuredPost.date}</span>

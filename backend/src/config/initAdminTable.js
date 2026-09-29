@@ -55,8 +55,8 @@ async function main() {
 
         INSERT INTO plans (name, price_cents, listing_limit, has_cover_image, has_spotlight, has_statistics, has_csv_import, description_limit, is_active, description)
         VALUES 
-            ('FREE', 0, 3, FALSE, FALSE, FALSE, FALSE, 500, TRUE, 'Kostenloser Basiszugang für Unternehmen (bis zu 3 aktive Inserate).'),
-            ('BUSINESS', 2900, 25, TRUE, FALSE, TRUE, TRUE, 1000, TRUE, 'Campuna Business – Bis zu 25 Inserate, Titelbild, Händler-Präsenz & Statistiken für 29 € / Monat.')
+            ('FREE', 0, 10, FALSE, FALSE, FALSE, FALSE, 500, TRUE, 'Kostenloser Basiszugang für Unternehmen (bis zu 10 aktive Inserate).'),
+            ('BUSINESS', 2900, -1, TRUE, FALSE, TRUE, TRUE, 1000, TRUE, 'Campuna Business – Unbegrenzte Inserate, Titelbild, Händler-Präsenz & Statistiken für 29 € / Monat.')
         ON CONFLICT (name) DO UPDATE SET 
             price_cents = EXCLUDED.price_cents,
             listing_limit = EXCLUDED.listing_limit,

@@ -24,7 +24,7 @@ import {
     spendSimulatedCredits,
     bookSpotlight,
 } from '@/api/profile';
-import { getMyListings, boostListing, deleteListing } from '@/api/listings';
+import { getMyListings, boostListing, deleteListing, toggleListingStatus } from '@/api/listings';
 import { logoutUser } from '@/api/auth';
 import { toast } from 'react-hot-toast';
 import CoinIcon from '@/app/components/CoinIcon';
@@ -32,6 +32,9 @@ import UserDashboard from './components/UserDashboard';
 import AccountChatTab from './components/AccountChatTab';
 import AccountFavoritesTab from './components/AccountFavoritesTab';
 import AccountCreateListingTab from './components/AccountCreateListingTab';
+import AccountSubscriptionTab from './components/AccountSubscriptionTab';
+import AccountCreditsTab from './components/AccountCreditsTab';
+import AccountPioneerTab from './components/AccountPioneerTab';
 import { useChatStore } from '@/store/useChatStore';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALIDATION_ERROR } from '@/utils/validation';
@@ -48,7 +51,8 @@ import {
     Crown, Calendar, ArrowRight, Receipt, Download, Printer, CreditCard,
     Rocket, Eye, LayoutDashboard, Gift, Users, CheckCircle2, Zap, ExternalLink,
     Clock, TrendingUp, Bell, Search, ShieldCheck, Compass, CheckCircle, Pencil, Send,
-    FileSpreadsheet, MessageSquare, Heart, Trash2, PanelLeftClose, PanelLeftOpen, PanelLeft
+    FileSpreadsheet, MessageSquare, Heart, Trash2, PanelLeftClose, PanelLeftOpen, PanelLeft,
+    Pause, Play, Power, BarChart2
 } from 'lucide-react';
 
 function Linkedin(props) {
@@ -62,7 +66,7 @@ function Linkedin(props) {
 }
 
 const ACCOUNT_TAB_LABELS = {
-    dashboard: 'Übersicht & Profil',
+    dashboard: 'Mein Profil',
     business_cockpit: 'Business Cockpit',
     inserate: 'Meine Inserate',
     create_listing: 'Inserat erstellen',
@@ -262,9 +266,24 @@ export default function MeinKontoPage() {
     const router = useRouter();
     const { isLoggedIn, user, accessToken, logout } = useAuthStore();
 
-    // Active Navigation Tab
-    // 'dashboard' | 'inserate' | 'finanzen' | 'credits' | 'pioneer'
-    const [activeTab, setActiveTab] = useState('dashboard');
+    // Active Navigation Tab with URL and Session Persistence
+    const [activeTab, setActiveTab] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const requestedTab = params.get('tab');
+            if (requestedTab) {
+                if (['nachrichten', 'messages', 'chat'].includes(requestedTab)) return 'nachrichten';
+                if (['favoriten', 'merkzettel', 'favorites'].includes(requestedTab)) return 'favoriten';
+                if (['create_listing', 'anzeige-erstellen', 'inserat-erstellen'].includes(requestedTab)) return 'create_listing';
+                return requestedTab;
+            }
+            try {
+                const savedTab = localStorage.getItem('campuna_active_account_tab');
+                if (savedTab) return savedTab;
+            } catch (_) {}
+        }
+        return 'dashboard';
+    });
 
     // Profile & User State
     const [profile, setProfile] = useState(null);
@@ -448,7 +467,6 @@ export default function MeinKontoPage() {
             { id: 'bio', label: 'Unternehmensbeschreibung (mind. 20 Zeichen)', met: hasBio },
             { id: 'phone', label: 'Telefonnummer', met: hasPhone },
             { id: 'location', label: 'Standort oder Adresse', met: hasLocation },
-            { id: 'verified', label: 'Verifiziertes Benutzerkonto', met: isVerified },
         ];
 
         const metCount = list.filter(i => i.met).length;
@@ -459,15 +477,14 @@ export default function MeinKontoPage() {
             hasBio,
             hasPhone,
             hasLocation,
-            isVerified,
             isCommercial: isCommercialUser,
             isBusinessSubscriber,
             list,
             metCount,
             totalCount: list.length,
-            allMet: isBusinessSubscriber && hasLogo && hasCover && hasBio && hasPhone && hasLocation && isVerified && isCommercialUser,
+            allMet: isBusinessSubscriber && hasLogo && hasCover && hasBio && hasPhone && hasLocation && isCommercialUser,
         };
-    }, [isEditing, draft, profile, isCommercial, user, subDetails]);
+    }, [isEditing, draft, profile, isCommercial, subDetails]);
 
     const hasPaidSpotlight = Boolean(
         profile?.has_paid_spotlight ||
@@ -486,9 +503,22 @@ export default function MeinKontoPage() {
                 (l.title && l.title.toLowerCase().includes(listingSearch.toLowerCase())) ||
                 (l.category && l.category.toLowerCase().includes(listingSearch.toLowerCase()));
 
-            const matchesStatus =
-                listingStatusFilter === 'ALL' ||
-                (listingStatusFilter === 'BOOSTED' ? (l.is_boosted || (l.boosted_until && new Date(l.boosted_until) > new Date())) : l.status === listingStatusFilter);
+            let matchesStatus = true;
+            if (listingStatusFilter === 'ALL') {
+                matchesStatus = true;
+            } else if (listingStatusFilter === 'BOOSTED') {
+                matchesStatus = Boolean(l.is_boosted || (l.boosted_until && new Date(l.boosted_until) > new Date()));
+            } else if (listingStatusFilter === 'APPROVED') {
+                matchesStatus = l.status === 'APPROVED' || l.status === 'AKTIV';
+            } else if (listingStatusFilter === 'INACTIVE') {
+                matchesStatus = l.status === 'INACTIVE' || l.status === 'DEACTIVATED';
+            } else if (listingStatusFilter === 'REVIEW') {
+                matchesStatus = l.status === 'REVIEW';
+            } else if (listingStatusFilter === 'REJECTED') {
+                matchesStatus = l.status === 'REJECTED';
+            } else {
+                matchesStatus = l.status === listingStatusFilter;
+            }
 
             return matchesSearch && matchesStatus;
         });
@@ -544,9 +574,6 @@ export default function MeinKontoPage() {
                         is_business: isBusiness,
                         expires_at: subRes.data.subscription?.expires_at ?? null,
                     });
-                    if (isBusiness) {
-                        setActiveTab(prev => (prev === 'dashboard' ? 'business_cockpit' : prev));
-                    }
                 }
             } else {
                 toast.error(profileRes.error || 'Profil konnte nicht geladen werden.');
@@ -692,19 +719,30 @@ export default function MeinKontoPage() {
             window.addEventListener('focus', handleFocus);
             window.addEventListener('campuna-unread-sync', handleFocus);
 
-            // Check if tab is requested via query param (e.g., ?tab=nachrichten or ?tab=favoriten or ?tab=create_listing)
+            // Check if tab is requested via query param or saved in localStorage
             if (typeof window !== 'undefined') {
                 const params = new URLSearchParams(window.location.search);
                 const requestedTab = params.get('tab');
-                if (['nachrichten', 'messages', 'chat'].includes(requestedTab)) {
-                    setActiveTab('nachrichten');
-                } else if (['favoriten', 'merkzettel', 'favorites'].includes(requestedTab)) {
-                    setActiveTab('favoriten');
-                } else if (['create_listing', 'anzeige-erstellen', 'inserat-erstellen'].includes(requestedTab)) {
-                    const editId = params.get('edit') || params.get('id');
-                    if (editId) setEditingListingId(editId);
-                    setActiveTab('create_listing');
+                if (requestedTab) {
+                    if (['nachrichten', 'messages', 'chat'].includes(requestedTab)) {
+                        setActiveTab('nachrichten');
+                    } else if (['favoriten', 'merkzettel', 'favorites'].includes(requestedTab)) {
+                        setActiveTab('favoriten');
+                    } else if (['create_listing', 'anzeige-erstellen', 'inserat-erstellen'].includes(requestedTab)) {
+                        const editId = params.get('edit') || params.get('id');
+                        if (editId) setEditingListingId(editId);
+                        setActiveTab('create_listing');
+                    } else {
+                        setActiveTab(requestedTab);
+                    }
                 }
+
+                const handlePopState = () => {
+                    const currentParams = new URLSearchParams(window.location.search);
+                    const tabFromUrl = currentParams.get('tab') || 'dashboard';
+                    setActiveTab(tabFromUrl);
+                };
+                window.addEventListener('popstate', handlePopState);
             }
 
             return () => {
@@ -725,6 +763,10 @@ export default function MeinKontoPage() {
         }
         setActiveTab(tabId);
         if (typeof window !== 'undefined') {
+            try {
+                localStorage.setItem('campuna_active_account_tab', tabId);
+            } catch (_) {}
+
             const url = new URL(window.location.href);
             if (tabId === 'dashboard') {
                 url.searchParams.delete('tab');
@@ -750,15 +792,15 @@ export default function MeinKontoPage() {
         const isBusinessUser = subDetails.is_business;
 
         if (isCommercial) {
-            const limit = isBusinessUser ? 25 : 3;
-            if (activeApprovedListings.length >= limit) {
-                setLimitModalOpen(true);
+            const limit = isBusinessUser ? -1 : 10;
+            if (limit !== -1 && activeApprovedListings.length >= limit) {
+                toast.error(`Du hast das Limit von ${limit} aktiven Inseraten im kostenlosen Firmentarif erreicht. Bitte upgrade auf den Business-Tarif für unbegrenzte Inserate.`);
                 return;
             }
         } else {
             // Private user: internal limit is 10 active listings
             if (activeApprovedListings.length >= 10) {
-                setLimitModalOpen(true);
+                toast.error('Veröffentlichung nicht möglich: Limit von 10 aktiven privaten Inseraten erreicht.');
                 return;
             }
         }
@@ -769,6 +811,32 @@ export default function MeinKontoPage() {
 
     const handleEditListing = (listingId) => {
         handleTabChange('create_listing', listingId);
+    };
+
+    const [togglingListingId, setTogglingListingId] = useState(null);
+
+    const handleToggleListingStatus = async (listingItem) => {
+        if (!listingItem?.id) return;
+        const currentIsActive = listingItem.status === 'APPROVED' || listingItem.status === 'AKTIV';
+        const targetStatus = currentIsActive ? 'INACTIVE' : 'APPROVED';
+        const actionLabel = currentIsActive ? 'pausiert' : 'aktiviert';
+        
+        setTogglingListingId(listingItem.id);
+        const toastId = toast.loading(`Inserat wird ${actionLabel}...`);
+        try {
+            const res = await toggleListingStatus(listingItem.id, targetStatus);
+            if (res.data?.success || res.status === 200) {
+                const newStatus = res.data?.status || targetStatus;
+                toast.success(res.data?.message || `Inserat erfolgreich ${actionLabel}.`, { id: toastId });
+                setUserListings(prev => prev.map(l => l.id === listingItem.id ? { ...l, status: newStatus } : l));
+            } else {
+                toast.error(res.data?.error || `Fehler beim ${actionLabel} des Inserats.`, { id: toastId });
+            }
+        } catch (err) {
+            console.error('Error toggling listing status:', err);
+        } finally {
+            setTogglingListingId(null);
+        }
     };
 
     const [deleteConfirmListing, setDeleteConfirmListing] = useState(null);
@@ -812,6 +880,14 @@ export default function MeinKontoPage() {
         setIsEditing(false);
     };
 
+    const sanitizeUrl = (url) => {
+        if (!url || typeof url !== 'string') return '';
+        const trimmed = url.trim();
+        if (!trimmed) return '';
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        return `https://${trimmed}`;
+    };
+
     const handleSave = async () => {
         if (draft.phone && draft.phone.trim() && !isValidPhoneNumber(draft.phone.trim())) {
             toast.error(PHONE_VALIDATION_ERROR);
@@ -822,6 +898,12 @@ export default function MeinKontoPage() {
         const toastId = toast.loading('Profil wird gespeichert...');
         try {
             const payload = { ...draft };
+
+            // Sanitize and trim external URLs safely
+            if (payload.website_url) payload.website_url = sanitizeUrl(payload.website_url);
+            if (payload.instagram_url) payload.instagram_url = sanitizeUrl(payload.instagram_url);
+            if (payload.facebook_url) payload.facebook_url = sanitizeUrl(payload.facebook_url);
+            if (payload.linkedin_url) payload.linkedin_url = sanitizeUrl(payload.linkedin_url);
 
             // 1. Upload pending avatar/logo file if newly chosen
             if (pendingAvatarFile) {
@@ -877,6 +959,8 @@ export default function MeinKontoPage() {
         }
     };
 
+    const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+
     const handleAvatarUpload = (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -887,7 +971,7 @@ export default function MeinKontoPage() {
             return;
         }
 
-        if (!file.type.startsWith('image/')) {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
             toast.error('Bitte lade eine gültige Bilddatei (JPEG, PNG, WEBP) hoch.');
             return;
         }
@@ -917,7 +1001,7 @@ export default function MeinKontoPage() {
             return;
         }
 
-        if (!file.type.startsWith('image/')) {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
             toast.error('Bitte lade eine gültige Bilddatei (JPEG, PNG, WEBP) hoch.');
             return;
         }
@@ -1154,14 +1238,15 @@ export default function MeinKontoPage() {
 
     // Navigation Items
     const navItems = [
-        ...(subDetails.is_business ? [
+        ...(isCommercial ? [
             {
                 id: 'business_cockpit',
-                label: 'Dashboard',
+                label: 'Business Cockpit',
                 icon: LayoutDashboard,
+                badge: !subDetails.is_business ? 'PRO' : null
             }
         ] : []),
-        { id: 'dashboard', label: subDetails.is_business ? 'Mein Profil' : 'Mein Profil & Übersicht', icon: User },
+        { id: 'dashboard', label: 'Mein Profil', icon: User },
         { id: 'inserate', label: 'Meine Inserate', icon: Rocket },
         { 
             id: 'nachrichten', 
@@ -1438,7 +1523,7 @@ export default function MeinKontoPage() {
                                             <span className="text-[10px] font-black uppercase tracking-widest">Campuna Business</span>
                                         </div>
                                         <p className="text-[11px] text-sand/80 font-sans leading-relaxed">
-                                            Bis zu 25 Inserate, professionelles Firmenprofil & Business-Tools freischalten.
+                                            Unbegrenzte Inserate, professionelles Firmenprofil & Business-Tools freischalten.
                                         </p>
                                         <button
                                             type="button"
@@ -1518,18 +1603,28 @@ export default function MeinKontoPage() {
                     </aside>
 
                     {/* ── 2. RIGHT MAIN UNIFIED CONTAINER CANVAS (All sections housed inside) ── */}
-                    <div className="flex-1 h-full min-h-0 overflow-y-auto p-4 sm:p-6 min-w-0">
+                    <div className={`flex-1 h-full min-h-0 min-w-0 ${
+                        activeTab === 'nachrichten'
+                            ? 'p-0 overflow-hidden flex flex-col'
+                            : 'overflow-y-auto p-3 sm:p-5 md:p-6 lg:p-7'
+                    }`}>
                         {/* ── Breadcrumbs inside page canvas (Mobile only) ── */}
-                        <div className="block lg:hidden mb-3.5">
-                            <Breadcrumbs
-                                items={activeTab === 'dashboard'
-                                    ? [{ label: 'Mein Konto' }]
-                                    : [{ label: 'Mein Konto', href: '/mein-konto' }, { label: navItems.find(n => n.id === activeTab)?.label || activeTab }]}
-                                variant="light"
-                            />
-                        </div>
+                        {activeTab !== 'nachrichten' && (
+                            <div className="block lg:hidden mb-3.5">
+                                <Breadcrumbs
+                                    items={activeTab === 'dashboard'
+                                        ? [{ label: 'Mein Konto' }]
+                                        : [{ label: 'Mein Konto', href: '/mein-konto' }, { label: navItems.find(n => n.id === activeTab)?.label || activeTab }]}
+                                    variant="light"
+                                />
+                            </div>
+                        )}
 
-                        <main className="w-full space-y-6">
+                        <main className={`w-full ${
+                            activeTab === 'nachrichten'
+                                ? 'h-full max-w-none space-y-0 overflow-hidden flex flex-col flex-1 min-h-0'
+                                : 'max-w-[1700px] mx-auto space-y-6'
+                        }`}>
 
                             {/* ═════════════════════════════════════════════════════════════
                                 TAB: CREATE / EDIT LISTING (IN-DASHBOARD)
@@ -1572,6 +1667,8 @@ export default function MeinKontoPage() {
                                         onCreateListing={handleCreateListingClick}
                                         onEditListing={handleEditListing}
                                         onDeleteListing={item => setDeleteConfirmListing(item)}
+                                        onOpenSpotlightModal={() => setSpotlightModalOpen(true)}
+                                        onNavigateTab={(tab) => setActiveTab(tab)}
                                         user={user}
                                     />
                                 ) : (
@@ -1579,7 +1676,7 @@ export default function MeinKontoPage() {
                                     <div className="space-y-6">
                                         <TabHeader
                                             title="Campuna Business Cockpit"
-                                            subtitle="Schalte professionelle Business-Werkzeuge, bis zu 25 Inserate und Live-Analysen frei"
+                                            subtitle="Schalte professionelle Business-Werkzeuge, unbegrenzte Inserate und Live-Analysen frei"
                                             icon={CreditCard}
                                             badge={
                                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-gold/20 text-gold-dark border border-gold/40">
@@ -1600,7 +1697,7 @@ export default function MeinKontoPage() {
                                                     Maximiere deinen Camping-Erfolg mit dem Campuna Business Plan
                                                 </h2>
                                                 <p className="text-sm text-sand/80 leading-relaxed font-sans">
-                                                    Erhalte Zugriff auf bis zu 25 aktive Inserate, ein professionelles Firmenprofil mit individuellem Cover & Bio, Echtzeit-Reichweitenanalysen, direkte Kundenanfragen-Pipeline sowie die exklusive Berechtigung zur flexiblen Spotlight-Buchung.
+                                                    Erhalte Zugriff auf unbegrenzt viele aktive Inserate, ein professionelles Firmenprofil mit individuellem Cover & Bio, Echtzeit-Reichweitenanalysen, direkte Kundenanfragen-Pipeline sowie die exklusive Berechtigung zur flexiblen Spotlight-Buchung.
                                                 </p>
                                                 <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
                                                     <button
@@ -1620,8 +1717,8 @@ export default function MeinKontoPage() {
                                                     <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
                                                         <Rocket className="w-4 h-4" />
                                                     </div>
-                                                    <h4 className="font-bold text-sm text-sand">Bis zu 25 Inserate</h4>
-                                                    <p className="text-xs text-sand/60">Erweitere dein Kontingent von 3 auf bis zu 25 gleichzeitig aktive Inserate.</p>
+                                                    <h4 className="font-bold text-sm text-sand">Unbegrenzte Inserate</h4>
+                                                    <p className="text-xs text-sand/60">Veröffentliche beliebig viele Inserate ohne Begrenzung gleichzeitig.</p>
                                                 </div>
                                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                                                     <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
@@ -1651,22 +1748,29 @@ export default function MeinKontoPage() {
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════
-                                TAB 1: DASHBOARD OVERVIEW & PROFILE
+                                TAB 1: MEIN PROFIL (DEDICATED PROFILE & ACCOUNT SETTINGS)
+                                (ANIMATED & FULLY RESPONSIVE - WIDE SCREEN OPTIMIZED)
                                ═════════════════════════════════════════════════════════════ */}
                             {activeTab === 'dashboard' && (
-                                <div className="space-y-6">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 14 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                                    className="space-y-6 w-full max-w-[1700px] mx-auto"
+                                >
                                     {/* Top Tab Header */}
                                     <TabHeader
-                                        title="Mein Profil & Übersicht"
-                                        subtitle="Verwalte deine persönlichen Profildaten, aktiven Inserate und Mitgliedschaft"
-                                        icon={LayoutDashboard}
+                                        title="Mein Profil & Kontoeinstellungen"
+                                        subtitle="Verwalte deine persönlichen Stammdaten, Kontaktinformationen und öffentliche Darstellung"
+                                        icon={User}
                                         action={
                                             !isEditing ? (
                                                 <button
                                                     id="btn-edit-profile"
                                                     type="button"
                                                     onClick={handleEdit}
-                                                    className="inline-flex items-center justify-center gap-2 bg-white hover:bg-sand border border-beige hover:border-gold/50 text-forest font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-full transition-all shadow-xs cursor-pointer group w-full sm:w-auto"
+                                                    className="inline-flex items-center justify-center gap-2 bg-white hover:bg-sand border border-beige hover:border-gold/50 text-forest font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-full transition-all shadow-xs cursor-pointer group w-full sm:w-auto active:scale-95"
                                                 >
                                                     <Edit3 className="w-3.5 h-3.5 text-gold-dark group-hover:scale-110 transition-transform" />
                                                     <span>Profil bearbeiten</span>
@@ -1676,7 +1780,7 @@ export default function MeinKontoPage() {
                                                     <button
                                                         type="button"
                                                         onClick={handleCancel}
-                                                        className="flex-1 sm:flex-initial bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-full transition-all cursor-pointer"
+                                                        className="flex-1 sm:flex-initial bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-full transition-all cursor-pointer active:scale-95"
                                                     >
                                                         Abbrechen
                                                     </button>
@@ -1685,7 +1789,7 @@ export default function MeinKontoPage() {
                                                         id="btn-save-profile"
                                                         onClick={handleSave}
                                                         disabled={saving}
-                                                        className="flex-1 sm:flex-initial bg-forest hover:bg-[#004d0a] text-sand font-black text-xs uppercase tracking-wider py-2.5 px-5 rounded-full transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                                                        className="flex-1 sm:flex-initial bg-forest hover:bg-[#004d0a] text-sand font-black text-xs uppercase tracking-wider py-2.5 px-5 rounded-full transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 active:scale-95"
                                                     >
                                                         {saving ? <Loader2 className="w-4 h-4 animate-spin text-gold" /> : <Save className="w-4 h-4 text-gold" />}
                                                         <span>{saving ? 'Speichern...' : 'Profil speichern'}</span>
@@ -1695,11 +1799,16 @@ export default function MeinKontoPage() {
                                         }
                                     />
 
-                                    {/* Top Profile Showcase Hero Card */}
-                                    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-beige overflow-hidden relative">
+                                    {/* Profile Hero & Branding Card */}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.3, delay: 0.05 }}
+                                        className="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-beige overflow-hidden relative"
+                                    >
                                         {/* Cover Banner for Commercial Users */}
                                         {isCommercial && (
-                                            <div className="relative h-44 sm:h-52 bg-gradient-to-r from-[#004709] via-[#002204] to-[#040805] overflow-hidden group">
+                                            <div className="relative h-44 sm:h-52 md:h-64 lg:h-72 bg-gradient-to-r from-[#004709] via-[#002204] to-[#040805] overflow-hidden group">
                                                 {(isEditing ? draft?.cover_image_url : profile?.cover_image_url) && subDetails.is_business ? (
                                                     <img
                                                         src={getImageUrl(isEditing ? draft?.cover_image_url : profile?.cover_image_url)}
@@ -1756,7 +1865,7 @@ export default function MeinKontoPage() {
                                                     )
                                                 )}
 
-                                                <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+                                                <div className="absolute top-4 right-4 z-20 flex items-center gap-2 flex-wrap">
                                                     <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gold text-forest shadow-sm flex items-center gap-1.5">
                                                         <Building2 className="w-3.5 h-3.5" /> Gewerblich
                                                     </span>
@@ -1767,8 +1876,8 @@ export default function MeinKontoPage() {
                                             </div>
                                         )}
 
-                                        {/* Profile Details Section */}
-                                        <div className="p-6 sm:p-7 relative">
+                                        {/* Profile Details & Form Section */}
+                                        <div className="p-5 sm:p-7 md:p-8 relative">
                                             {isEditing ? (
                                                 <div className="space-y-6">
                                                     <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
@@ -1861,7 +1970,7 @@ export default function MeinKontoPage() {
                                                     </div>
 
                                                     <div className="flex-1 text-center sm:text-left space-y-3 min-w-0 w-full">
-                                                        <div className="space-y-2 max-w-2xl w-full">
+                                                        <div className="space-y-2 max-w-4xl w-full">
                                                             <div className="flex items-center justify-center sm:justify-start gap-2.5 flex-wrap">
                                                                 <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-black text-forest tracking-tight">
                                                                     {displayName}
@@ -1920,6 +2029,9 @@ export default function MeinKontoPage() {
                                                                 <span className="flex items-center gap-1.5">
                                                                     <Mail className="w-3.5 h-3.5 text-gold-dark shrink-0" />
                                                                     <span className="truncate max-w-[200px] sm:max-w-none">{user?.email}</span>
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 shrink-0">
+                                                                        <Check className="w-2.5 h-2.5" /> Verifiziert
+                                                                    </span>
                                                                 </span>
                                                                 {profile?.phone && (
                                                                     <span className="flex items-center gap-1.5">
@@ -1927,6 +2039,10 @@ export default function MeinKontoPage() {
                                                                         {profile.phone}
                                                                     </span>
                                                                 )}
+                                                                <span className="flex items-center gap-1.5">
+                                                                    <Calendar className="w-3.5 h-3.5 text-gold-dark shrink-0" />
+                                                                    <span>Mitglied seit {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' }) : '2026'}</span>
+                                                                </span>
                                                             </div>
                                                         </div>
 
@@ -1958,389 +2074,278 @@ export default function MeinKontoPage() {
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                    </motion.div>
 
-                                    {/* ── COMMERCIAL SPOTLIGHT PROMINENCE CARD ── */}
-                                    {isCommercial && (
-                                        <div className={`bg-gradient-to-br from-[#faf8f3] via-white to-sand/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 border ${isSpotlightPaused ? 'border-amber-400 bg-amber-50/20' : 'border-gold/40'} shadow-sm relative overflow-hidden space-y-4`}>
-                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-3 border-b border-beige">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${isSpotlightPaused ? 'from-amber-400 to-amber-600' : 'from-gold to-amber-500'} text-forest flex items-center justify-center font-bold shadow-xs shrink-0`}>
-                                                        <Sparkles className="w-5 h-5 text-forest" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2 flex-wrap">
-                                                            <h3 className="font-display font-black text-charcoal text-base">Campuna Spotlight (Startseite)</h3>
-                                                            {isSpotlightActive ? (
-                                                                <span key="badge-active" className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1">
-                                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse shrink-0" />
-                                                                    <span>Aktiv (Live auf Startseite)</span>
-                                                                </span>
-                                                            ) : isSpotlightPaused ? (
-                                                                <span key="badge-paused" className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300 inline-flex items-center gap-1">
-                                                                    <AlertTriangle className="w-3 h-3 text-amber-700 shrink-0" />
-                                                                    <span>Pausiert (Profil unvollständig)</span>
-                                                                </span>
-                                                            ) : (
-                                                                <span key="badge-unbooked" className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-stone-100 text-charcoal/60 border border-beige inline-flex items-center">
-                                                                    <span>Nicht gebucht</span>
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-xs text-charcoal/60 mt-0.5 leading-relaxed">
-                                                            {isSpotlightActive
-                                                                ? `Dein Unternehmen rotiert aktiv im Spotlight auf der Campuna-Startseite (noch ${spotlightDaysLeft} ${spotlightDaysLeft === 1 ? 'Tag' : 'Tage'}).`
-                                                                : isSpotlightPaused
-                                                                ? `Spotlight ist für noch ${spotlightDaysLeft} ${spotlightDaysLeft === 1 ? 'Tag' : 'Tage'} gebucht, pausiert jedoch, da dein Profil unvollständig ist. Bitte ergänze die fehlenden Angaben, damit dein Unternehmen auf der Startseite live ausgespielt wird.`
-                                                                : subDetails.is_business
-                                                                ? 'Präsentiere dein Unternehmen prominent auf der Campuna Startseite für maximale Reichweite rund ums Camping.'
-                                                                : 'Exklusiv für Campuna Business Kunden: Buche flexible Spotlight-Platzierungen für maximale Sichtbarkeit auf der Startseite.'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        if (isSpotlightPaused && !spotlightRequirements.allMet) {
-                                                            setIsEditing(true);
-                                                        } else {
-                                                            setSpotlightModalOpen(true);
-                                                        }
-                                                    }}
-                                                    className="w-full sm:w-auto px-5 py-2.5 bg-forest hover:bg-[#004d0a] text-sand rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer shrink-0"
-                                                >
-                                                    <Sparkles className="w-4 h-4 text-gold" />
-                                                    <span>
-                                                        {isSpotlightActive 
-                                                            ? 'Spotlight verlängern' 
-                                                            : isSpotlightPaused 
-                                                            ? 'Profil vervollständigen' 
-                                                            : subDetails.is_business
-                                                            ? 'Spotlight buchen'
-                                                            : 'Spotlight ansehen'}
-                                                    </span>
-                                                </button>
-                                            </div>
-
-                                            {/* Requirements Mini-Checker */}
-                                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-0.5">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[11px] font-bold text-charcoal/70">Voraussetzungen für Spotlight:</span>
-                                                    <span className={`text-[11px] font-bold font-mono px-2 py-0.5 rounded-full ${spotlightRequirements.allMet ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
-                                                        {`${spotlightRequirements.metCount} / ${spotlightRequirements.totalCount} Kriterien erfüllt${spotlightRequirements.allMet ? (hasPaidSpotlight ? ' • Live auf Startseite' : ' • Bereit zur Buchung') : (hasPaidSpotlight ? ' • Spotlight pausiert' : '')}`}
-                                                    </span>
-                                                </div>
-                                                {!spotlightRequirements.allMet && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsEditing(true)}
-                                                        className="text-[11px] font-bold text-forest hover:text-gold-dark flex items-center gap-1 cursor-pointer underline"
-                                                    >
-                                                        <Edit3 className="w-3 h-3" />
-                                                        <span>Fehlende Angaben ergänzen</span>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* 2-Column Grid */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                                        {/* Left Column (7 cols) */}
-                                        <div className="lg:col-span-7 space-y-6">
-                                            {/* Active Listings Quick Hub */}
-                                            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4">
-                                                <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className="w-9 h-9 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
-                                                            <Rocket className="w-4 h-4" />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-bold text-charcoal text-sm">Meine Inserate</h3>
-                                                            <p className="text-[11px] text-charcoal/50 font-medium">
-                                                                {userListings.length} {userListings.length === 1 ? 'Angebot online' : 'Angebote online'}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setActiveTab('inserate')}
-                                                        className="text-xs font-bold text-forest hover:text-gold-dark flex items-center gap-1 transition-colors cursor-pointer"
-                                                    >
-                                                        <span>Alle verwalten</span>
-                                                        <ChevronRight className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-
-                                                {listingsLoading ? (
-                                                    <div className="py-12 flex justify-center">
-                                                        <Loader2 className="w-7 h-7 animate-spin text-forest" />
-                                                    </div>
-                                                ) : userListings.length === 0 ? (
-                                                    <div className="bg-[#faf8f3] border border-dashed border-beige rounded-2xl p-6 text-center space-y-3">
-                                                        <p className="text-xs text-charcoal/60 font-medium">Du hast noch keine Fahrzeuge oder Zubehör inseriert.</p>
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleCreateListingClick}
-                                                            className="inline-flex items-center gap-1.5 bg-forest text-sand px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider cursor-pointer hover:bg-[#004d0a] transition-all shadow-sm"
-                                                        >
-                                                            <Plus className="w-3.5 h-3.5 text-gold" /> Erstes Inserat schalten
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-3">
-                                                        {userListings.slice(0, 3).map((item) => {
-                                                            const isBoosted = Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
-                                                            const img = item.images && item.images.length > 0 ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500';
-
-                                                            return (
-                                                                <div key={item.id} className="flex items-center justify-between gap-3 p-3 bg-[#faf8f3] hover:bg-sand border border-beige rounded-2xl transition-all">
-                                                                    <div className="flex items-center gap-3 min-w-0">
-                                                                        <img src={img} alt={item.title} className="w-14 h-14 rounded-xl object-cover border border-white shadow-xs shrink-0" />
-                                                                        <div className="min-w-0">
-                                                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                                                <span className={`px-2 py-0.2 rounded-md text-[9px] font-black uppercase ${item.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                                                                                    {item.status === 'APPROVED' ? 'Veröffentlicht' : 'In Prüfung'}
-                                                                                </span>
-                                                                                {isBoosted && (
-                                                                                    <span className="px-2 py-0.2 rounded-md text-[9px] font-black uppercase bg-gold/20 text-gold-dark flex items-center gap-0.5">
-                                                                                        Hervorgehoben
-                                                                                    </span>
-                                                                                )}
-                                                                            </div>
-                                                                            <h4 className="font-bold text-xs text-charcoal truncate mt-0.5">{item.title}</h4>
-                                                                            <span className="text-xs font-black text-forest font-mono">
-                                                                                {parseFloat(item.price || 0).toLocaleString('de-DE')} €
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-1.5 shrink-0">
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => handleEditListing(item.id)}
-                                                                            className="p-1.5 rounded-xl bg-white hover:bg-sand border border-beige text-charcoal/70 hover:text-forest transition-all cursor-pointer"
-                                                                            title="Inserat bearbeiten"
-                                                                        >
-                                                                            <Pencil className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                        {item.status === 'APPROVED' ? (
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => handleOpenBoostModal(item)}
-                                                                                className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-gold/15 border border-beige hover:border-gold text-[10px] font-bold text-charcoal transition-all cursor-pointer flex items-center gap-1 shadow-xs"
-                                                                                title="Mit Campuna Credits hervorheben"
-                                                                            >
-                                                                                <Rocket className="w-3 h-3 text-gold-dark" />
-                                                                                <span className="hidden sm:inline">Hervorheben</span>
-                                                                            </button>
-                                                                        ) : (
-                                                                            <button
-                                                                                type="button"
-                                                                                disabled
-                                                                                className="px-2.5 py-1.5 rounded-xl bg-stone-100 border border-stone-200 text-[10px] font-bold text-stone-400 cursor-not-allowed flex items-center gap-1 opacity-60"
-                                                                                title="Hervorheben ist nur für freigegebene Inserate verfügbar"
-                                                                            >
-                                                                                <Rocket className="w-3 h-3 text-stone-400" />
-                                                                                <span className="hidden sm:inline">Hervorheben</span>
-                                                                            </button>
-                                                                        )}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => setDeleteConfirmListing(item)}
-                                                                            className="p-1.5 rounded-xl bg-white hover:bg-rose-50 border border-beige hover:border-rose-200 text-charcoal/60 hover:text-rose-600 transition-all cursor-pointer"
-                                                                            title="Inserat löschen"
-                                                                        >
-                                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                                        </button>
-                                                                        <Link
-                                                                            href={`/inserate/${item.slug || item.id}`}
-                                                                            className="p-1.5 rounded-xl bg-white hover:bg-sand border border-beige text-charcoal/60 hover:text-forest transition-all"
-                                                                            title="Inserat ansehen"
-                                                                        >
-                                                                            <Eye className="w-3.5 h-3.5" />
-                                                                        </Link>
-                                                                    </div>
+                                    {/* Responsive Profile & Account Settings Grid (Equal Height Aligned) */}
+                                    <div className={`grid grid-cols-1 ${isCommercial ? 'lg:grid-cols-12' : 'lg:grid-cols-2'} gap-5 sm:gap-6 items-stretch`}>
+                                        {/* Left Column (Spotlight + Credits for Commercial) */}
+                                        {isCommercial && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ duration: 0.3, delay: 0.1 }}
+                                                className="lg:col-span-7 flex flex-col justify-between gap-5 sm:gap-6 h-full"
+                                            >
+                                                {/* Spotlight Requirements & Status Card (For Commercial Sellers) */}
+                                                <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-gold/50 transition-all flex-1 flex flex-col justify-between">
+                                                    <div className="space-y-4">
+                                                        <div className="flex items-center justify-between pb-3 border-b border-beige">
+                                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                                <div className="w-9 h-9 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold-dark shadow-xs shrink-0">
+                                                                    <Sparkles className="w-4 h-4 text-gold-dark" />
                                                                 </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Recent Activity Timeline Widget */}
-                                            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4">
-                                                <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-700">
-                                                            <Clock className="w-4 h-4" />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-bold text-charcoal text-sm">Letzte Aktivitäten</h3>
-                                                            <p className="text-[11px] text-charcoal/50 font-medium">Status & Plattform-Ereignisse</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-3 text-xs">
-                                                    <div className="flex items-start gap-3 p-3 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                        <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-bold text-charcoal">Konto erfolgreich verifiziert</p>
-                                                            <p className="text-[11px] text-charcoal/60">Du kannst Angebote einstellen und mit Käufern chatten.</p>
-                                                        </div>
-                                                        <span className="text-[10px] text-charcoal/40 shrink-0">Aktiv</span>
-                                                    </div>
-
-                                                    {subDetails.is_business && (
-                                                        <div className="flex items-start gap-3 p-3 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                            <div className="w-6 h-6 rounded-full bg-gold/20 text-gold-dark flex items-center justify-center shrink-0 mt-0.5">
-                                                                <Sparkles className="w-3.5 h-3.5" />
+                                                                <div className="min-w-0">
+                                                                    <h3 className="font-bold text-charcoal text-sm truncate">Spotlight-Qualifizierung</h3>
+                                                                    <p className="text-[11px] text-charcoal/50 font-medium">Anforderungen für das Händler-Spotlight</p>
+                                                                </div>
                                                             </div>
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="font-bold text-charcoal">Campuna Business Status aktiv</p>
-                                                                <p className="text-[11px] text-charcoal/60">Bis zu 25 Inserate und professionelle Business-Tools freigeschaltet.</p>
-                                                            </div>
-                                                            <span className="text-[10px] text-emerald-600 font-bold shrink-0">Business</span>
-                                                        </div>
-                                                    )}
 
-                                                    <div className="flex items-start gap-3 p-3 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                        <div className="w-6 h-6 rounded-full bg-forest/10 text-forest flex items-center justify-center shrink-0 mt-0.5">
-                                                            <Gift className="w-3.5 h-3.5" />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="font-bold text-charcoal">Campuna Credits Wallet bereit</p>
-                                                            <p className="text-[11px] text-charcoal/60">{Number(creditBalance).toLocaleString('de-DE')} CC verfügbar für Inserate-Highlights & Spotlight.</p>
-                                                        </div>
-                                                        <span className="text-[10px] text-charcoal/40 shrink-0">Live</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Right Column (5 cols) */}
-                                        <div className="lg:col-span-5 space-y-6">
-                                            {/* Account Plan / Status Card */}
-                                            {isPrivate ? (
-                                                <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4">
-                                                    <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-forest flex items-center gap-1.5">
-                                                            <ShieldCheck className="w-3.5 h-3.5 text-forest" /> Konto-Status
-                                                        </span>
-                                                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-forest/10 text-forest border border-forest/20">
-                                                            Kostenloses Privatkonto
-                                                        </span>
-                                                    </div>
-
-                                                    <div>
-                                                        <h4 className="text-xl font-black text-charcoal">Kostenloses Privatkonto</h4>
-                                                        <p className="text-xs text-charcoal/70 mt-1 leading-relaxed">
-                                                            Dauerhaft kostenfreie Nutzung. Erstelle und verwalte deine Inserate ohne monatliche Fixkosten oder Abonnement.
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="space-y-2.5 pt-2 border-t border-beige text-xs text-charcoal/80">
-                                                        <div className="flex items-center justify-between p-2.5 bg-[#faf8f3] rounded-xl border border-beige/60">
-                                                            <div className="flex items-center gap-2">
-                                                                <Rocket className="w-4 h-4 text-forest shrink-0" />
-                                                                <span className="font-bold">Aktive Inserate:</span>
-                                                            </div>
-                                                            <span className="font-mono font-black text-forest">
-                                                                {userListings.filter(l => l.status === 'APPROVED').length} {userListings.filter(l => l.status === 'APPROVED').length === 1 ? 'Inserat aktiv' : 'Inserate aktiv'}
+                                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase shrink-0 ${
+                                                                isSpotlightActive
+                                                                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                                                    : isSpotlightPaused
+                                                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                                                    : spotlightRequirements.allMet
+                                                                    ? 'bg-forest/10 text-forest border border-forest/20'
+                                                                    : 'bg-[#faf8f3] text-charcoal/60 border border-beige'
+                                                            }`}>
+                                                                {isSpotlightActive
+                                                                    ? `Aktiv (${spotlightDaysLeft}d)`
+                                                                    : isSpotlightPaused
+                                                                    ? 'Pausiert'
+                                                                    : spotlightRequirements.allMet
+                                                                    ? 'Berechtigt'
+                                                                    : `${spotlightRequirements.metCount}/${spotlightRequirements.totalCount} Erfüllt`}
                                                             </span>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
-                                                            <span>Kein Abonnement, keine versteckten Gebühren</span>
+
+                                                        <div>
+                                                            <p className="text-xs text-charcoal/70 leading-relaxed font-sans">
+                                                                Mit dem Spotlight wird dein Unternehmensprofil prominent auf der Startseite und in den Kategoriesuchen hervorgehoben.
+                                                            </p>
+
+                                                            {/* Progress bar */}
+                                                            <div className="mt-3 space-y-1.5">
+                                                                <div className="flex items-center justify-between text-xs">
+                                                                    <span className="font-bold text-charcoal/70">Qualifizierungsfortschritt:</span>
+                                                                    <span className="font-mono font-black text-forest">
+                                                                        {Math.round((spotlightRequirements.metCount / spotlightRequirements.totalCount) * 100)}%
+                                                                    </span>
+                                                                </div>
+                                                                <div className="w-full h-2 rounded-full bg-sand overflow-hidden border border-beige/80">
+                                                                    <div
+                                                                        className="h-full bg-gradient-to-r from-forest to-gold transition-all duration-500 rounded-full"
+                                                                        style={{ width: `${(spotlightRequirements.metCount / spotlightRequirements.totalCount) * 100}%` }}
+                                                                    />
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
-                                                            <span>Direkter Chat-Kontakt mit Interessenten</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-gold-dark shrink-0" />
-                                                            <span>Optional: Einzelne Inserate hervorheben (ab 4,99 €)</span>
+
+                                                        {/* Requirements Checklist (2 in a row) */}
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-beige text-xs">
+                                                            {spotlightRequirements.list.map(item => (
+                                                                <div key={item.id} className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#faf8f3] border border-beige/60 hover:bg-sand/30 transition-colors">
+                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                        {item.met ? (
+                                                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                                                        ) : (
+                                                                            <Circle className="w-3.5 h-3.5 text-charcoal/30 shrink-0" />
+                                                                        )}
+                                                                        <span className={`truncate text-[11px] sm:text-xs ${item.met ? 'text-charcoal/90 font-medium' : 'text-charcoal/50'}`} title={item.label}>
+                                                                            {item.label}
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className={`text-[9px] sm:text-[10px] font-bold uppercase shrink-0 ${
+                                                                        item.met ? 'text-emerald-700' : 'text-amber-600'
+                                                                    }`}>
+                                                                        {item.met ? 'Erfüllt' : 'Ausstehend'}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
 
-                                                    <div className="pt-2">
+                                                    {/* Spotlight Actions CTA */}
+                                                    <div className="pt-3">
+                                                        {spotlightRequirements.allMet ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSpotlightModalOpen(true)}
+                                                                className="w-full bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                                                            >
+                                                                <Sparkles className="w-3.5 h-3.5 text-forest" />
+                                                                <span>{hasPaidSpotlight ? 'Spotlight verwalten' : 'Spotlight buchen'}</span>
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                onClick={!subDetails.is_business ? () => router.push('/abo/kasse') : handleEdit}
+                                                                className="w-full bg-[#faf8f3] hover:bg-sand border border-beige hover:border-gold/60 text-forest font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                                                            >
+                                                                {!subDetails.is_business ? (
+                                                                    <>
+                                                                        <Sparkles className="w-3.5 h-3.5 text-gold-dark" />
+                                                                        <span>Business-Tarif für Spotlight aktivieren</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <Edit3 className="w-3.5 h-3.5 text-forest" />
+                                                                        <span>Profil vervollständigen</span>
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Credits & Referral Widget Card (Below Spotlight section) */}
+                                                <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-gold/50 transition-all flex flex-col justify-between">
+                                                    <div>
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-beige">
+                                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                                <div className="w-9 h-9 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold-dark shadow-xs shrink-0">
+                                                                    <CoinIcon size="md" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <h3 className="font-bold text-charcoal text-sm truncate">Credits & Freunde</h3>
+                                                                    <p className="text-[11px] text-charcoal/50 font-medium">Guthaben für Inserate-Highlights & Spotlight</p>
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="self-start sm:self-auto bg-forest/5 sm:bg-transparent px-2.5 py-1 sm:p-0 rounded-xl sm:rounded-none border border-forest/10 sm:border-0">
+                                                                <span className="text-sm sm:text-base font-black font-mono text-forest">
+                                                                    {Number(creditBalance).toLocaleString('de-DE')} CC
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <p className="text-xs text-charcoal/60 leading-relaxed mt-3">
+                                                            Lade andere Camper oder gewerbliche Partner ein und erhalte sofort Campuna Credits für jede erfolgreiche Registrierung.
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="pt-2 flex items-center justify-between text-xs border-t border-beige mt-2">
+                                                        <span className="text-charcoal/50">Erfolgreiche Einladungen:</span>
+                                                        <span className="font-black text-charcoal font-mono">{referralStats.completed || 0}</span>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {/* Right Column / Side Column: Membership Status & Security */}
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.3, delay: 0.15 }}
+                                            className={`${isCommercial ? 'lg:col-span-5' : 'space-y-6'} flex flex-col justify-between gap-5 sm:gap-6 h-full`}
+                                        >
+                                            {/* Membership Plan Info Card */}
+                                            {isPrivate ? (
+                                                <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-forest/30 transition-all flex-1 flex flex-col justify-between">
+                                                    <div>
+                                                        <div className="flex items-center justify-between pb-3 border-b border-beige">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-forest flex items-center gap-1.5">
+                                                                <ShieldCheck className="w-3.5 h-3.5 text-forest" /> Tarif-Status
+                                                            </span>
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-forest/10 text-forest border border-forest/20">
+                                                                Kostenloses Privatkonto
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="mt-3">
+                                                            <h4 className="text-xl font-black text-charcoal">Kostenloses Privatkonto</h4>
+                                                            <p className="text-xs text-charcoal/70 mt-1 leading-relaxed">
+                                                                Dauerhaft kostenfreie Nutzung. Erstelle und verwalte deine Inserate ohne monatliche Fixkosten oder Abonnement.
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="space-y-2.5 pt-3 border-t border-beige text-xs text-charcoal/80 mt-3">
+                                                            <div className="flex items-center justify-between p-2.5 bg-[#faf8f3] rounded-xl border border-beige/60">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Rocket className="w-4 h-4 text-forest shrink-0" />
+                                                                    <span className="font-bold">Aktive Inserate:</span>
+                                                                </div>
+                                                                <span className="font-mono font-black text-forest">
+                                                                    {userListings.filter(l => l.status === 'APPROVED').length} {userListings.filter(l => l.status === 'APPROVED').length === 1 ? 'Inserat aktiv' : 'Inserate aktiv'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                                                                <span>Kein Abonnement, keine versteckten Gebühren</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                                                                <span>Direkter Chat-Kontakt mit Interessenten</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-gold-dark shrink-0" />
+                                                                <span>Optional: Einzelne Inserate hervorheben (ab 4,99 €)</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pt-3">
                                                         <button
                                                             type="button"
                                                             onClick={() => setActiveTab('inserate')}
-                                                            className="w-full bg-forest hover:bg-[#004d0a] text-sand font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer group"
+                                                            className="w-full bg-forest hover:bg-[#004d0a] text-sand font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer group active:scale-95"
                                                         >
                                                             <Rocket className="w-3.5 h-3.5 text-gold" />
-                                                            <span>Inserat hervorheben</span>
+                                                            <span>Inserate verwalten</span>
                                                         </button>
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <div className="bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-sand shadow-md space-y-4 relative overflow-hidden border border-gold/20">
-                                                    <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-gold flex items-center gap-1.5">
-                                                            <CreditCard className="w-3.5 h-3.5" /> Mitgliedschaft
-                                                        </span>
-                                                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-white/15 text-sand">
-                                                            {subDetails.is_business ? 'Business Aktiv' : 'Business Free'}
-                                                        </span>
-                                                    </div>
-
+                                                <div className="bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] rounded-2xl sm:rounded-3xl p-5 sm:p-6 text-sand shadow-md space-y-4 relative overflow-hidden border border-gold/20 flex-1 flex flex-col justify-between">
                                                     <div>
-                                                        <h4 className="text-xl font-black text-white">{subDetails.is_business ? 'Campuna Business Plan' : 'Business Free Plan'}</h4>
-                                                        <p className="text-xs text-sand/80 mt-1 leading-relaxed">
-                                                            {subDetails.is_business
-                                                                ? 'Bis zu 25 Inserate, professionelles Firmenprofil & Business-Tools.'
-                                                                : 'Erstelle bis zu 3 kostenfreie Inserate als gewerblicher Anbieter auf Campuna.'}
-                                                        </p>
-                                                    </div>
+                                                        <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-gold flex items-center gap-1.5">
+                                                                <CreditCard className="w-3.5 h-3.5" /> Mitgliedschaft
+                                                            </span>
+                                                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-white/15 text-sand">
+                                                                {subDetails.is_business ? 'Business Aktiv' : 'Business Free'}
+                                                            </span>
+                                                        </div>
 
-                                                    <div className="space-y-2 pt-2 border-t border-white/10 text-xs text-sand/90">
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                            <span>{subDetails.is_business ? 'Bis zu 25 aktive Inserate' : 'Maximal 3 aktive Inserate'}</span>
+                                                        <div className="mt-3">
+                                                            <h4 className="text-xl font-black text-white">{subDetails.is_business ? 'Campuna Business Plan' : 'Business Free Plan'}</h4>
+                                                            <p className="text-xs text-sand/80 mt-1 leading-relaxed">
+                                                                {subDetails.is_business
+                                                                    ? 'Unbegrenzte Inserate, professionelles Firmenprofil & Business-Cockpit.'
+                                                                    : 'Erstelle bis zu 3 kostenfreie Inserate als gewerblicher Anbieter auf Campuna.'}
+                                                            </p>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                            <span>{subDetails.is_business ? 'Berechtigt zur Spotlight-Buchung' : 'Basis-Sichtbarkeit'}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                            <span>{subDetails.is_business ? 'Individuelles Cover & Logo' : 'Standard Profil'}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                            <span>{subDetails.is_business ? '1.000 Zeichen Profil & Impressum' : '500 Zeichen Kurzprofil'}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                            <span>{subDetails.is_business ? '+ 1.000 Campuna Credits monatlich' : 'Inserate mit Credits hervorheben'}</span>
-                                                        </div>
-                                                    </div>
 
-                                                    <div className="pt-3 space-y-2">
-                                                        {subDetails.is_business ? (
-                                                            <div className="space-y-2">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={handleOpenInvoices}
-                                                                    className="w-full bg-white/15 hover:bg-white/25 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
-                                                                >
-                                                                    <Receipt className="w-3.5 h-3.5 text-gold" />
-                                                                    <span>Rechnungen ansehen</span>
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setCancelSubModalOpen(true)}
-                                                                    className="w-full text-center text-[11px] text-sand/60 hover:text-rose-300 transition-colors py-1 cursor-pointer"
-                                                                >
-                                                                    Abonnement kündigen
-                                                                </button>
+                                                        <div className="space-y-2 pt-3 border-t border-white/10 text-xs text-sand/90 mt-3">
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                                <span>{subDetails.is_business ? 'Unbegrenzt viele aktive Inserate' : 'Bis zu 3 kostenfreie Inserate'}</span>
                                                             </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                                <span>{subDetails.is_business ? 'Berechtigt zur Spotlight-Buchung' : 'Basis-Sichtbarkeit'}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                                <span>{subDetails.is_business ? 'Individuelles Cover & Logo' : 'Standard Profil'}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                                <span>{subDetails.is_business ? '1.000 Zeichen Profil & Impressum' : '500 Zeichen Kurzprofil'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pt-3">
+                                                        {subDetails.is_business ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setActiveTab('business_cockpit')}
+                                                                className="w-full bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-95"
+                                                            >
+                                                                <LayoutDashboard className="w-3.5 h-3.5 text-forest" />
+                                                                <span>Zum Business Cockpit Dashboard</span>
+                                                            </button>
                                                         ) : (
                                                             <button
                                                                 type="button"
@@ -2355,64 +2360,49 @@ export default function MeinKontoPage() {
                                                 </div>
                                             )}
 
-                                            {/* Credits & Referral Widget Card */}
-                                            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4">
-                                                <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <div className="w-9 h-9 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold-dark shadow-xs">
-                                                            <CoinIcon size="md" />
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-bold text-charcoal text-sm">Credits & Freunde</h3>
-                                                            <p className="text-[11px] text-charcoal/50 font-medium">Guthaben für Inserate-Highlights & Spotlight</p>
+                                            {/* Security & Password Quick Action */}
+                                            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-forest/30 transition-all flex flex-col justify-between">
+                                                <div>
+                                                    <div className="flex items-center justify-between pb-3 border-b border-beige">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="w-9 h-9 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
+                                                                <Shield className="w-4 h-4" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="font-bold text-charcoal text-sm">Sicherheit & Sitzung</h3>
+                                                                <p className="text-[11px] text-charcoal/50 font-medium">Zugangsdaten und Kontosicherheit verwalten</p>
+                                                            </div>
                                                         </div>
                                                     </div>
 
-                                                    <span className="text-sm font-black font-mono text-forest">
-                                                        {Number(creditBalance).toLocaleString('de-DE')} CC
-                                                    </span>
-                                                </div>
-
-                                                <p className="text-xs text-charcoal/60 leading-relaxed">
-                                                    Lade andere Camper oder gewerbliche Partner ein und erhalte sofort Campuna Credits für jede erfolgreiche Registrierung.
-                                                </p>
-
-                                                {user?.referral_code && (
-                                                    <ReferralQuickBadge code={user.referral_code} />
-                                                )}
-
-                                                <div className="pt-2 flex items-center justify-between text-xs border-t border-beige">
-                                                    <span className="text-charcoal/50">Erfolgreiche Einladungen:</span>
-                                                    <span className="font-black text-charcoal font-mono">{referralStats.completed || 0}</span>
+                                                    <div className="space-y-3 pt-3">
+                                                        <p className="text-xs text-charcoal/60 leading-relaxed">
+                                                            Passe dein Passwort an oder melde dich sicher von allen Geräten ab.
+                                                        </p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleLogout}
+                                                            className="w-full py-2.5 px-4 rounded-xl border border-beige hover:border-rose-300 bg-[#faf8f3] hover:bg-rose-50 text-xs font-bold text-charcoal/80 hover:text-rose-600 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                                                        >
+                                                            <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                                                            <span>Sicher abmelden</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     </div>
-                                </div>
+                                </motion.div>
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════
                                 TAB: NACHRICHTEN & KONTAKT-ANFRAGEN (CHAT SYSTEM)
                                ═════════════════════════════════════════════════════════════ */}
                             {activeTab === 'nachrichten' && (
-                                <div className="space-y-6">
-                                    <TabHeader
-                                        title="Nachrichten & Anfragen"
-                                        subtitle="Kommuniziere in Echtzeit mit Käufern und Verkäufern zu Campuna Inseraten"
-                                        icon={MessageSquare}
-                                        badge={
-                                            unreadMessagesCount > 0 ? (
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-forest text-sand border border-gold/40 shadow-xs">
-                                                    {unreadMessagesCount} {unreadMessagesCount === 1 ? 'neue Nachricht' : 'neue Nachrichten'}
-                                                </span>
-                                            ) : null
-                                        }
-                                    />
-                                    <AccountChatTab
-                                        currentUser={user}
-                                        onNavigateToListings={() => setActiveTab('inserate')}
-                                    />
-                                </div>
+                                <AccountChatTab
+                                    currentUser={user}
+                                    onNavigateToListings={() => setActiveTab('inserate')}
+                                />
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════
@@ -2426,46 +2416,67 @@ export default function MeinKontoPage() {
 
                             {/* ═════════════════════════════════════════════════════════════
                                 TAB 2: MEINE INSERATE (DEDICATED LISTINGS MANAGER)
-                               ═════════════════════════════════════════════════════════════ */}
+                                ═════════════════════════════════════════════════════════════ */}
                             {activeTab === 'inserate' && (
-                                <div className="space-y-6">
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 14 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.35, ease: 'easeOut' }}
+                                    className="space-y-5 sm:space-y-6"
+                                >
                                     {/* Top Tab Header */}
                                     <TabHeader
                                         title="Meine Inserate verwalten"
                                         subtitle="Übersicht, Bearbeitung und Reichweiten-Steuerung deiner Camping-Fahrzeuge & Zubehör"
                                         icon={Rocket}
                                         action={
-                                            <button
+                                            <motion.button
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
                                                 type="button"
                                                 onClick={handleCreateListingClick}
-                                                className="flex items-center justify-center gap-2 bg-forest hover:bg-[#004d0a] text-sand px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer w-full sm:w-auto"
+                                                className="flex items-center justify-center gap-2 bg-forest hover:bg-[#004d0a] text-sand px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md hover:shadow-lg cursor-pointer w-full sm:w-auto"
                                             >
                                                 <Plus className="w-4 h-4 text-gold" />
                                                 <span>Neues Inserat erstellen</span>
-                                            </button>
+                                            </motion.button>
                                         }
                                     />
 
-                                    {/* 4 Metric Overview Cards (Credits & Pioneer styled Bento Cards) */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                                    {/* 5 Metric Overview Cards (Responsive Bento Grid with Animated Entrances) */}
+                                    <motion.div 
+                                        variants={{
+                                            hidden: { opacity: 0 },
+                                            show: {
+                                                opacity: 1,
+                                                transition: { staggerChildren: 0.05 }
+                                            }
+                                        }}
+                                        initial="hidden"
+                                        animate="show"
+                                        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5"
+                                    >
                                         {/* 1. Gesamt Inserate (Forest-to-Dark Luxury Bento Hero Tile) */}
-                                        <button
+                                        <motion.button
+                                            variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+                                            whileHover={{ y: -3, scale: 1.01 }}
+                                            whileTap={{ scale: 0.98 }}
                                             type="button"
                                             onClick={() => setListingStatusFilter('ALL')}
-                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[130px] ${
+                                            className={`col-span-2 sm:col-span-1 relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[120px] sm:min-h-[135px] ${
                                                 listingStatusFilter === 'ALL'
-                                                    ? 'bg-gradient-to-br from-[#004709] via-[#002805] to-[#040805] text-sand shadow-lg ring-2 ring-gold border border-gold/40 scale-[1.01]'
-                                                    : 'bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] text-sand shadow-md border border-gold/20 hover:border-gold/50 hover:shadow-lg hover:-translate-y-0.5'
+                                                    ? 'bg-gradient-to-br from-[#004709] via-[#002805] to-[#040805] text-sand shadow-lg ring-2 ring-gold border border-gold/40'
+                                                    : 'bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] text-sand shadow-md border border-gold/20 hover:border-gold/50'
                                             }`}
                                         >
-                                            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gold/15 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform" />
+                                            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-gold/15 rounded-full blur-xl pointer-events-none group-hover:scale-125 transition-transform duration-500" />
                                             
                                             <div className="flex items-center justify-between relative z-10">
                                                 <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-sand/70">
-                                                    Gesamt Inserate
+                                                    Gesamt
                                                 </span>
-                                                <div className="w-8 h-8 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold shrink-0 group-hover:bg-gold group-hover:text-forest transition-colors shadow-xs">
-                                                    <Rocket className="w-4 h-4" />
+                                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold shrink-0 group-hover:bg-gold group-hover:text-forest transition-colors shadow-xs">
+                                                    <Rocket className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                 </div>
                                             </div>
 
@@ -2473,63 +2484,104 @@ export default function MeinKontoPage() {
                                                 <div className="text-2xl sm:text-3xl font-black font-mono text-gold tracking-tight">
                                                     {userListings.length}
                                                 </div>
-                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 text-[10px] text-sand/70">
-                                                    <span>Alle Fahrzeuge</span>
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 text-[9px] sm:text-[10px] text-sand/70">
+                                                    <span>Alle Inserate</span>
                                                     <span className="font-bold text-gold flex items-center gap-0.5">
-                                                        {isCommercial ? (subDetails.is_business ? 'Bis zu 25 Inserate' : `${userListings.length}/3 Free`) : 'Kostenlos aktiv'}
+                                                        {isCommercial ? (subDetails.is_business ? 'Unbegrenzt' : `${userListings.length}/10 Free`) : 'Kostenlos'}
                                                     </span>
                                                 </div>
                                             </div>
-                                        </button>
+                                        </motion.button>
 
                                         {/* 2. Veröffentlicht (Active / Approved) */}
-                                        <button
+                                        <motion.button
+                                            variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+                                            whileHover={{ y: -3, scale: 1.01 }}
+                                            whileTap={{ scale: 0.98 }}
                                             type="button"
                                             onClick={() => setListingStatusFilter('APPROVED')}
-                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[130px] ${
+                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[120px] sm:min-h-[135px] ${
                                                 listingStatusFilter === 'APPROVED'
-                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-emerald-500 border border-emerald-300 scale-[1.01]'
-                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-emerald-300 hover:shadow-md hover:-translate-y-0.5'
+                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-emerald-500 border border-emerald-300'
+                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-emerald-300 hover:shadow-md'
                                             }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-charcoal/50 group-hover:text-emerald-700 transition-colors">
                                                     Veröffentlicht
                                                 </span>
-                                                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors shadow-xs">
-                                                    <CheckCircle2 className="w-4 h-4" />
+                                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors shadow-xs">
+                                                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                 </div>
                                             </div>
 
                                             <div className="mt-2">
                                                 <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-700 tracking-tight">
-                                                    {userListings.filter(l => l.status === 'APPROVED').length}
+                                                    {userListings.filter(l => l.status === 'APPROVED' || l.status === 'AKTIV').length}
                                                 </div>
-                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[10px] text-charcoal/60">
-                                                    <span className="flex items-center gap-1">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live auf Marktplatz
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[9px] sm:text-[10px] text-charcoal/60">
+                                                    <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
                                                     </span>
-                                                    <span className="font-bold text-emerald-700">Aktiv</span>
+                                                    <span className="font-bold text-emerald-700">Öffentlich</span>
                                                 </div>
                                             </div>
-                                        </button>
+                                        </motion.button>
 
-                                        {/* 3. In Prüfung (Review Queue) */}
-                                        <button
+                                        {/* 3. Pausiert / Deaktiviert */}
+                                        <motion.button
+                                            variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+                                            whileHover={{ y: -3, scale: 1.01 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            type="button"
+                                            onClick={() => setListingStatusFilter('INACTIVE')}
+                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[120px] sm:min-h-[135px] ${
+                                                listingStatusFilter === 'INACTIVE'
+                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-slate-600 border border-slate-400'
+                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-slate-300 hover:shadow-md'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-charcoal/50 group-hover:text-slate-700 transition-colors">
+                                                    Pausiert
+                                                </span>
+                                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0 group-hover:bg-slate-700 group-hover:text-white transition-colors shadow-xs">
+                                                    <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-2">
+                                                <div className="text-2xl sm:text-3xl font-black font-mono text-slate-700 tracking-tight">
+                                                    {userListings.filter(l => l.status === 'INACTIVE' || l.status === 'DEACTIVATED').length}
+                                                </div>
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[9px] sm:text-[10px] text-charcoal/60">
+                                                    <span className="flex items-center gap-1 text-slate-500">
+                                                        Unsichtbar
+                                                    </span>
+                                                    <span className="font-bold text-slate-700">Deaktiviert</span>
+                                                </div>
+                                            </div>
+                                        </motion.button>
+
+                                        {/* 4. In Prüfung (Review Queue) */}
+                                        <motion.button
+                                            variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+                                            whileHover={{ y: -3, scale: 1.01 }}
+                                            whileTap={{ scale: 0.98 }}
                                             type="button"
                                             onClick={() => setListingStatusFilter('REVIEW')}
-                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[130px] ${
+                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[120px] sm:min-h-[135px] ${
                                                 listingStatusFilter === 'REVIEW'
-                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-amber-500 border border-amber-300 scale-[1.01]'
-                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-amber-300 hover:shadow-md hover:-translate-y-0.5'
+                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-amber-500 border border-amber-300'
+                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-amber-300 hover:shadow-md'
                                             }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-charcoal/50 group-hover:text-amber-700 transition-colors">
                                                     In Prüfung
                                                 </span>
-                                                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors shadow-xs">
-                                                    <Clock className="w-4 h-4" />
+                                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0 group-hover:bg-amber-600 group-hover:text-white transition-colors shadow-xs">
+                                                    <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                 </div>
                                             </div>
 
@@ -2537,33 +2589,36 @@ export default function MeinKontoPage() {
                                                 <div className="text-2xl sm:text-3xl font-black font-mono text-amber-700 tracking-tight">
                                                     {userListings.filter(l => l.status === 'REVIEW').length}
                                                 </div>
-                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[10px] text-charcoal/60">
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[9px] sm:text-[10px] text-charcoal/60">
                                                     <span className="flex items-center gap-1">
                                                         <ShieldCheck className="w-3 h-3 text-amber-600" /> Moderation
                                                     </span>
                                                     <span className="font-bold text-amber-700">
-                                                        {userListings.filter(l => l.status === 'REVIEW').length > 0 ? 'In Prüfung' : 'Keine'}
+                                                        {userListings.filter(l => l.status === 'REVIEW').length > 0 ? 'Wartet' : 'Keine'}
                                                     </span>
                                                 </div>
                                             </div>
-                                        </button>
+                                        </motion.button>
 
-                                        {/* 4. Hervorgehoben (Promoted Ads) */}
-                                        <button
+                                        {/* 5. Hervorgehoben (Promoted Ads) */}
+                                        <motion.button
+                                            variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
+                                            whileHover={{ y: -3, scale: 1.01 }}
+                                            whileTap={{ scale: 0.98 }}
                                             type="button"
                                             onClick={() => setListingStatusFilter('BOOSTED')}
-                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-5 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[130px] ${
+                                            className={`relative overflow-hidden rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 text-left transition-all duration-200 cursor-pointer group flex flex-col justify-between min-h-[120px] sm:min-h-[135px] ${
                                                 listingStatusFilter === 'BOOSTED'
-                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-gold border border-gold scale-[1.01]'
-                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-gold hover:shadow-md hover:-translate-y-0.5'
+                                                    ? 'bg-white text-charcoal shadow-md ring-2 ring-gold border border-gold'
+                                                    : 'bg-white text-charcoal shadow-xs border border-beige hover:border-gold hover:shadow-md'
                                             }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-charcoal/50 group-hover:text-gold-dark transition-colors">
                                                     Hervorgehoben
                                                 </span>
-                                                <div className="w-8 h-8 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold-dark shrink-0 group-hover:bg-gold group-hover:text-forest transition-colors shadow-xs">
-                                                    <Zap className="w-4 h-4" />
+                                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gold/15 border border-gold/30 flex items-center justify-center text-gold-dark shrink-0 group-hover:bg-gold group-hover:text-forest transition-colors shadow-xs">
+                                                    <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                                 </div>
                                             </div>
 
@@ -2571,55 +2626,58 @@ export default function MeinKontoPage() {
                                                 <div className="text-2xl sm:text-3xl font-black font-mono text-gold-dark tracking-tight">
                                                     {userListings.filter(l => l.is_boosted || (l.boosted_until && new Date(l.boosted_until) > new Date())).length}
                                                 </div>
-                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[10px] text-charcoal/60">
+                                                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-stone-100 text-[9px] sm:text-[10px] text-charcoal/60">
                                                     <span className="flex items-center gap-1">
                                                         <Sparkles className="w-3 h-3 text-gold-dark" /> Reichweite
                                                     </span>
-                                                    <span className="font-bold text-gold-dark">Top-Platzierung</span>
+                                                    <span className="font-bold text-gold-dark">Top-Platz</span>
                                                 </div>
                                             </div>
-                                        </button>
-                                    </div>
+                                        </motion.button>
+                                    </motion.div>
 
                                     {/* Filter & Search Toolbar */}
-                                    <div className="bg-white rounded-2xl p-3 sm:p-4 border border-beige shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                                    <div className="bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border border-beige shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                                         {/* Status Pills */}
-                                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                                        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 pb-1 -mx-1 px-1 sm:mx-0 sm:px-0">
                                             {[
                                                 { id: 'ALL', label: `Alle (${userListings.length})` },
-                                                { id: 'APPROVED', label: `Veröffentlicht (${userListings.filter(l => l.status === 'APPROVED').length})` },
+                                                { id: 'APPROVED', label: `Veröffentlicht (${userListings.filter(l => l.status === 'APPROVED' || l.status === 'AKTIV').length})` },
+                                                { id: 'INACTIVE', label: `Pausiert (${userListings.filter(l => l.status === 'INACTIVE' || l.status === 'DEACTIVATED').length})` },
                                                 { id: 'REVIEW', label: `In Prüfung (${userListings.filter(l => l.status === 'REVIEW').length})` },
-                                                { id: 'BOOSTED', label: 'Hervorgehoben' },
+                                                { id: 'REJECTED', label: `Abgelehnt (${userListings.filter(l => l.status === 'REJECTED').length})` },
+                                                { id: 'BOOSTED', label: `Hervorgehoben (${userListings.filter(l => l.is_boosted || (l.boosted_until && new Date(l.boosted_until) > new Date())).length})` },
                                             ].map(tab => (
-                                                <button
+                                                <motion.button
                                                     key={tab.id}
+                                                    whileTap={{ scale: 0.95 }}
                                                     type="button"
                                                     onClick={() => setListingStatusFilter(tab.id)}
-                                                    className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${listingStatusFilter === tab.id
+                                                    className={`shrink-0 px-3 sm:px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${listingStatusFilter === tab.id
                                                         ? 'bg-forest text-sand shadow-sm'
                                                         : 'bg-[#faf8f3] text-charcoal/70 hover:bg-sand border border-beige'
                                                         }`}
                                                 >
                                                     {tab.label}
-                                                </button>
+                                                </motion.button>
                                             ))}
                                         </div>
 
                                         {/* Search Box */}
-                                        <div className="relative w-full md:w-72">
-                                            <Search className="w-4 h-4 text-charcoal/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                                        <div className="relative w-full md:w-72 shrink-0">
+                                            <Search className="w-4 h-4 text-charcoal/40 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                             <input
                                                 type="text"
                                                 value={listingSearch}
                                                 onChange={e => setListingSearch(e.target.value)}
                                                 placeholder="Suche nach Titel oder Kategorie..."
-                                                className="w-full bg-[#faf8f3] border border-beige rounded-xl pl-9 pr-8 py-1.5 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:border-forest"
+                                                className="w-full bg-[#faf8f3] border border-beige rounded-xl pl-9 pr-8 py-2 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:border-forest focus:bg-white transition-all shadow-2xs"
                                             />
                                             {listingSearch && (
                                                 <button
                                                     type="button"
                                                     onClick={() => setListingSearch('')}
-                                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-charcoal/40 hover:text-charcoal cursor-pointer"
+                                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-charcoal/40 hover:text-charcoal cursor-pointer p-0.5 rounded-full hover:bg-stone-200/50 transition-colors"
                                                 >
                                                     <X className="w-3.5 h-3.5" />
                                                 </button>
@@ -2629,31 +2687,50 @@ export default function MeinKontoPage() {
 
                                     {/* Listings Grid */}
                                     {listingsLoading ? (
-                                        <div className="py-20 flex justify-center">
+                                        <div className="py-20 flex flex-col items-center justify-center gap-3">
                                             <Loader2 className="w-8 h-8 animate-spin text-forest" />
+                                            <span className="text-xs font-medium text-charcoal/60">Inserate werden geladen...</span>
                                         </div>
                                     ) : filteredListings.length === 0 ? (
-                                        <div className="p-12 text-center bg-white rounded-3xl border border-beige shadow-xs">
+                                        <motion.div 
+                                            initial={{ opacity: 0, scale: 0.98 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="p-8 sm:p-12 text-center bg-white rounded-3xl border border-beige shadow-xs"
+                                        >
                                             <div className="w-14 h-14 rounded-2xl bg-forest/5 text-forest flex items-center justify-center mx-auto mb-4">
                                                 <Compass className="w-7 h-7 text-forest" />
                                             </div>
                                             <h3 className="text-base font-bold text-charcoal">Keine Inserate gefunden</h3>
-                                            <p className="text-xs text-charcoal/60 max-w-md mx-auto mt-1 mb-6">
+                                            <p className="text-xs text-charcoal/60 max-w-md mx-auto mt-1 mb-6 leading-relaxed">
                                                 {listingSearch || listingStatusFilter !== 'ALL'
-                                                    ? 'Keine Inserate entsprechen deinen aktuellen Filterkriterien.'
+                                                    ? 'Keine Inserate entsprechen deinen aktuellen Filterkriterien. Versuche die Suche zurückzusetzen oder einen anderen Status zu wählen.'
                                                     : 'Du hast bisher noch keine Inserate angelegt. Erstelle jetzt dein erstes Camping-Inserat auf Campuna.'}
                                             </p>
-                                            <button
+                                            <motion.button
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
                                                 type="button"
                                                 onClick={handleCreateListingClick}
                                                 className="inline-flex items-center gap-2 bg-forest hover:bg-[#004d0a] text-sand px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer"
                                             >
                                                 <Plus className="w-4 h-4 text-gold" />
                                                 <span>Jetzt Inserat aufgeben</span>
-                                            </button>
-                                        </div>
+                                            </motion.button>
+                                        </motion.div>
                                     ) : (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-4.5">
+                                        <motion.div 
+                                            variants={{
+                                                hidden: { opacity: 0 },
+                                                show: {
+                                                    opacity: 1,
+                                                    transition: { staggerChildren: 0.04 }
+                                                }
+                                            }}
+                                            initial="hidden"
+                                            animate="show"
+                                            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3.5 sm:gap-4.5"
+                                        >
                                             {filteredListings.map((item) => {
                                                 const isBoosted = Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
                                                 const img = item.images && item.images.length > 0 ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
@@ -2666,18 +2743,19 @@ export default function MeinKontoPage() {
                                                 ].filter(Boolean);
 
                                                 return (
-                                                    <div
+                                                    <motion.div
                                                         key={item.id}
-                                                        className={`listing-card group relative flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-300 select-none justify-between ${
+                                                        variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
+                                                        className={`listing-card group relative flex flex-col h-full rounded-2xl overflow-hidden transition-all duration-300 select-none justify-between hover:-translate-y-1 ${
                                                             isBoosted
-                                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_16px_-2px_rgba(202,152,43,0.16)] hover:shadow-[0_6px_20px_-2px_rgba(202,152,43,0.24)]'
+                                                                ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/80 shadow-[0_4px_16px_-2px_rgba(202,152,43,0.16)] hover:shadow-[0_8px_24px_-2px_rgba(202,152,43,0.25)]'
                                                                 : 'bg-white border border-forest/10 hover:border-forest/25 shadow-xs hover:shadow-md'
                                                         }`}
                                                     >
                                                         <div>
                                                             {/* Compact Image */}
                                                             <div 
-                                                                className="relative h-36 w-full overflow-hidden bg-sand/20 cursor-pointer"
+                                                                className="relative h-40 sm:h-36 w-full overflow-hidden bg-sand/20 cursor-pointer"
                                                                 onClick={() => router.push(`/inserate/${item.slug || item.id}`)}
                                                             >
                                                                 <img
@@ -2688,9 +2766,32 @@ export default function MeinKontoPage() {
                                                                 />
                                                                 {/* Top Status Badges */}
                                                                 <div className="absolute top-2.5 left-2.5 flex items-center gap-1 flex-wrap z-10 pointer-events-none">
-                                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase shadow-xs ${item.status === 'APPROVED' ? 'bg-emerald-700 text-white' : 'bg-amber-600 text-white'}`}>
-                                                                        {item.status === 'APPROVED' ? 'Veröffentlicht' : 'In Prüfung'}
+                                                                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase shadow-xs ${
+                                                                        (item.status === 'APPROVED' || item.status === 'AKTIV')
+                                                                            ? 'bg-emerald-700 text-white'
+                                                                            : (item.status === 'INACTIVE' || item.status === 'DEACTIVATED')
+                                                                            ? 'bg-slate-700 text-white'
+                                                                            : item.status === 'REJECTED'
+                                                                            ? 'bg-rose-700 text-white'
+                                                                            : 'bg-amber-600 text-white'
+                                                                    }`}>
+                                                                        {(item.status === 'APPROVED' || item.status === 'AKTIV')
+                                                                            ? 'Veröffentlicht'
+                                                                            : (item.status === 'INACTIVE' || item.status === 'DEACTIVATED')
+                                                                            ? 'Pausiert'
+                                                                            : (item.status === 'REJECTED' ? 'Abgelehnt' : 'In Prüfung')}
                                                                     </span>
+                                                                    {item.ai_score !== null && item.ai_score !== undefined && (
+                                                                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shadow-xs ${
+                                                                            item.ai_score > 60
+                                                                                ? 'bg-emerald-950/80 text-emerald-300 backdrop-blur-xs'
+                                                                                : item.ai_score < 40
+                                                                                    ? 'bg-rose-950/80 text-rose-300 backdrop-blur-xs'
+                                                                                    : 'bg-amber-950/80 text-amber-300 backdrop-blur-xs'
+                                                                        }`}>
+                                                                            Score: {item.ai_score}/100
+                                                                        </span>
+                                                                    )}
                                                                     {isBoosted && (
                                                                         <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest shadow-xs flex items-center gap-1 font-sans">
                                                                             <Rocket className="w-2.5 h-2.5" /> Hervorgehoben
@@ -2735,6 +2836,14 @@ export default function MeinKontoPage() {
                                                                     </div>
                                                                 )}
 
+                                                                {/* Rejection / Moderation Reason snippet */}
+                                                                {item.status === 'REJECTED' && (
+                                                                    <div className="mt-1.5 p-2 bg-rose-50 border border-rose-200 rounded-lg text-[10px] text-rose-900 leading-snug">
+                                                                        <span className="font-bold text-rose-950">Ablehnungsgrund: </span>
+                                                                        {item.admin_notes || (Array.isArray(item.ai_reasons) && item.ai_reasons.length > 0 ? item.ai_reasons.join(' ') : 'Verstoß gegen Inseratsrichtlinien.')}
+                                                                    </div>
+                                                                )}
+
                                                                 {/* Price Row */}
                                                                 <div className="pt-2 border-t border-forest/5 flex items-center justify-between">
                                                                     <span className="text-[10px] uppercase tracking-wider text-charcoal/45 font-medium">
@@ -2747,33 +2856,57 @@ export default function MeinKontoPage() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Bottom Actions Row */}
+                                                        {/* Bottom Actions Row (Responsive & Touch-Friendly) */}
                                                         <div className="p-3 pt-0 mt-1 border-t border-beige/60 pt-2.5 flex items-center justify-between gap-1.5">
-                                                            <button
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.95 }}
                                                                 type="button"
                                                                 onClick={() => handleEditListing(item.id)}
-                                                                className="flex-1 flex items-center justify-center gap-1 bg-[#faf8f3] hover:bg-forest hover:text-white border border-beige py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                                                                className="flex-1 flex items-center justify-center gap-1 bg-[#faf8f3] hover:bg-forest hover:text-white border border-beige py-2 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
                                                                 title="Inserat bearbeiten"
                                                             >
                                                                 <Pencil className="w-3 h-3" />
                                                                 <span>Bearbeiten</span>
-                                                            </button>
+                                                            </motion.button>
+
+                                                            {/* Pause / Activate Action Button */}
+                                                            {(item.status === 'APPROVED' || item.status === 'AKTIV' || item.status === 'INACTIVE' || item.status === 'DEACTIVATED') && (
+                                                                <motion.button
+                                                                    whileTap={{ scale: 0.92 }}
+                                                                    type="button"
+                                                                    onClick={() => handleToggleListingStatus(item)}
+                                                                    disabled={togglingListingId === item.id}
+                                                                    className={`p-2 border rounded-xl transition-all shrink-0 cursor-pointer shadow-2xs ${
+                                                                        (item.status === 'APPROVED' || item.status === 'AKTIV')
+                                                                            ? 'bg-[#faf8f3] hover:bg-amber-50 border-beige hover:border-amber-300 text-charcoal/70 hover:text-amber-800'
+                                                                            : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800 font-bold'
+                                                                    }`}
+                                                                    title={(item.status === 'APPROVED' || item.status === 'AKTIV') ? "Inserat pausieren (deaktivieren)" : "Inserat wieder aktivieren"}
+                                                                >
+                                                                    {(item.status === 'APPROVED' || item.status === 'AKTIV') ? (
+                                                                        <Pause className="w-3.5 h-3.5 text-amber-700" />
+                                                                    ) : (
+                                                                        <Play className="w-3.5 h-3.5 text-emerald-700" />
+                                                                    )}
+                                                                </motion.button>
+                                                            )}
 
                                                             {item.status === 'APPROVED' ? (
-                                                                <button
+                                                                <motion.button
+                                                                    whileTap={{ scale: 0.95 }}
                                                                     type="button"
                                                                     onClick={() => handleOpenBoostModal(item)}
-                                                                    className="flex-1 flex items-center justify-center gap-1 bg-gradient-to-r from-gold via-[#ffd269] to-gold hover:brightness-105 text-forest font-bold py-1.5 px-2 rounded-xl text-[11px] transition-all cursor-pointer shadow-2xs"
+                                                                    className="flex-1 flex items-center justify-center gap-1 bg-gradient-to-r from-gold via-[#ffd269] to-gold hover:brightness-105 text-forest font-bold py-2 px-2 rounded-xl text-[11px] transition-all cursor-pointer shadow-2xs"
                                                                     title="Mit Campuna Credits hervorheben"
                                                                 >
                                                                     <Rocket className="w-3 h-3 text-forest" />
                                                                     <span>Hervorheben</span>
-                                                                </button>
+                                                                </motion.button>
                                                             ) : (
                                                                 <button
                                                                     type="button"
                                                                     disabled
-                                                                    className="flex-1 flex items-center justify-center gap-1 bg-stone-100 border border-stone-200 text-stone-400 font-bold py-1.5 px-2 rounded-xl text-[11px] cursor-not-allowed opacity-60"
+                                                                    className="flex-1 flex items-center justify-center gap-1 bg-stone-100 border border-stone-200 text-stone-400 font-bold py-2 px-2 rounded-xl text-[11px] cursor-not-allowed opacity-60"
                                                                     title="Hervorheben ist nur für freigegebene Inserate verfügbar"
                                                                 >
                                                                     <Rocket className="w-3 h-3 text-stone-400" />
@@ -2783,27 +2916,28 @@ export default function MeinKontoPage() {
 
                                                             <Link
                                                                 href={`/inserate/${item.slug || item.id}`}
-                                                                className="p-1.5 bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/60 hover:text-forest rounded-xl transition-all shrink-0"
+                                                                className="p-2 bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/60 hover:text-forest rounded-xl transition-all shrink-0"
                                                                 title="Inserat ansehen"
                                                             >
                                                                 <Eye className="w-3.5 h-3.5" />
                                                             </Link>
 
-                                                            <button
+                                                            <motion.button
+                                                                whileTap={{ scale: 0.92 }}
                                                                 type="button"
                                                                 onClick={() => setDeleteConfirmListing(item)}
-                                                                className="p-1.5 bg-[#faf8f3] hover:bg-rose-50 border border-beige hover:border-rose-200 text-charcoal/60 hover:text-rose-600 rounded-xl transition-all shrink-0 cursor-pointer shadow-2xs"
+                                                                className="p-2 bg-[#faf8f3] hover:bg-rose-50 border border-beige hover:border-rose-200 text-charcoal/60 hover:text-rose-600 rounded-xl transition-all shrink-0 cursor-pointer shadow-2xs"
                                                                 title="Inserat löschen"
                                                             >
                                                                 <Trash2 className="w-3.5 h-3.5" />
-                                                            </button>
+                                                            </motion.button>
                                                         </div>
-                                                    </div>
+                                                    </motion.div>
                                                 );
                                             })}
-                                        </div>
+                                        </motion.div>
                                     )}
-                                </div>
+                                </motion.div>
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════
@@ -2813,779 +2947,50 @@ export default function MeinKontoPage() {
                                 TAB 3: ABONNEMENT (SUBSCRIPTIONS & PLANS)
                                ═════════════════════════════════════════════════════════════ */}
                             {activeTab === 'finanzen' && (
-                                <div className="space-y-6">
-                                    {/* Top Tab Header */}
-                                    <TabHeader
-                                        title="Abonnement"
-                                        subtitle="Dein aktueller Tarif, Inserate-Limits und verfügbare Campuna Mitgliedschaften"
-                                        icon={CreditCard}
-                                        badge={
-                                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${subDetails.is_business ? 'bg-emerald-100 text-emerald-800' : 'bg-[#faf8f3] text-charcoal/70 border border-beige'}`}>
-                                                {subDetails.is_business ? 'Business Aktiv' : 'Kostenloser Tarif'}
-                                            </span>
-                                        }
-                                    />
-
-                                    {/* ── 1. TOP SECTION: MEIN AKTUELLER TARIF & LIMITS ── */}
-                                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-7 border border-beige shadow-xs space-y-6">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-beige">
-                                            <div className="flex items-start sm:items-center gap-3.5">
-                                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-forest to-[#002204] flex items-center justify-center text-gold shadow-md shrink-0">
-                                                    <Sparkles className="w-6 h-6" />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <h2 className="text-lg sm:text-xl font-black text-forest">
-                                                            {subDetails.is_business ? 'Campuna Business Plan' : 'Business Free Plan'}
-                                                        </h2>
-                                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 ${subDetails.is_business ? 'bg-emerald-100 text-emerald-800' : 'bg-forest/10 text-forest'}`}>
-                                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                                            Aktiv
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-xs text-charcoal/60 mt-0.5 font-medium">
-                                                        {subDetails.is_business 
-                                                            ? `Monatlich 29,00 € • Automatische Verlängerung am: ${subDetails.expires_at ? new Date(subDetails.expires_at).toLocaleDateString('de-DE') : 'in 30 Tagen'}`
-                                                            : '0,00 € / Monat • Dauerhaft kostenloser Basis-Tarif für Unternehmen & professionelle Anbieter'}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2.5 flex-wrap">
-                                                {subDetails.is_business ? (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleOpenInvoices}
-                                                            className="px-4 py-2 bg-[#faf8f3] hover:bg-sand text-charcoal border border-beige rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-                                                        >
-                                                            <Receipt className="w-3.5 h-3.5 text-forest" />
-                                                            <span>Rechnungen</span>
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setCancelSubModalOpen(true)}
-                                                            className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                                                        >
-                                                            Abonnement kündigen
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => router.push('/abo/kasse')}
-                                                        className="px-5 py-2.5 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-gold/25 flex items-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
-                                                    >
-                                                        <span>Auf Business upgraden (29 €)</span>
-                                                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform duration-200" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Quota & Limits Visualizer Cards */}
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {/* Metric 1: Inserate Limit */}
-                                            <div className="p-4 bg-[#faf8f3] rounded-2xl border border-beige space-y-3">
-                                                <div className="flex items-center justify-between text-xs">
-                                                    <span className="font-bold text-charcoal/60 uppercase tracking-wider text-[10px]">Inserate-Kontingent</span>
-                                                    <span className="font-black text-forest font-mono">
-                                                        {subDetails.is_business ? `${userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length} / 25 Inserate` : `${userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length} / 3 Inserate`}
-                                                    </span>
-                                                </div>
-
-                                                {/* Progress Bar */}
-                                                <div className="space-y-1.5">
-                                                    <div className="w-full h-2.5 bg-stone-200 rounded-full overflow-hidden p-0.5">
-                                                        <div
-                                                            className={`h-full rounded-full transition-all duration-500 ${
-                                                                userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length >= (subDetails.is_business ? 25 : 3)
-                                                                    ? 'bg-rose-500'
-                                                                    : 'bg-forest'
-                                                            }`}
-                                                            style={{
-                                                                width: `${Math.min(100, Math.round((userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length / (subDetails.is_business ? 25 : 3)) * 100))}%`
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <p className="text-[11px] text-charcoal/60">
-                                                        {subDetails.is_business
-                                                            ? `${Math.max(0, 25 - userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length)} von 25 Inserat-Plätzen frei.`
-                                                            : userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length >= 3
-                                                                ? 'Limit erreicht. Jetzt auf Business upgraden für bis zu 25 Inserate.'
-                                                                : `Noch ${Math.max(0, 3 - userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length)} freie Inserat-Plätze verfügbar.`}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            {/* Metric 2: Profil-Beschreibung */}
-                                            <div className="p-4 bg-[#faf8f3] rounded-2xl border border-beige space-y-2">
-                                                <span className="font-bold text-charcoal/60 uppercase tracking-wider text-[10px]">Beschreibungslänge</span>
-                                                <div className="text-xl font-black text-charcoal font-mono">
-                                                    {subDetails.is_business ? '1.000 Zeichen' : '500 Zeichen'}
-                                                </div>
-                                                <p className="text-[11px] text-charcoal/60">
-                                                    {subDetails.is_business
-                                                        ? 'Erweiterte Unternehmens- & Fahrzeugbeschreibung freigeschaltet.'
-                                                        : 'Standard-Kurzprofil für gewerbliche Basis-Accounts.'}
-                                                </p>
-                                            </div>
-
-                                            {/* Metric 3: Cover & Branding */}
-                                            <div className="p-4 bg-[#faf8f3] rounded-2xl border border-beige space-y-2">
-                                                <span className="font-bold text-charcoal/60 uppercase tracking-wider text-[10px]">Firmenprofil & Branding</span>
-                                                <div className="text-xl font-black text-charcoal">
-                                                    {subDetails.is_business ? 'Firmenprofil & Cover' : 'Basis-Präsenz'}
-                                                </div>
-                                                <p className="text-[11px] text-charcoal/60">
-                                                    {subDetails.is_business
-                                                        ? 'Individuelles Firmen-Cover, 1.000 Zeichen Bio & Spotlight-Berechtigung.'
-                                                        : 'Basis-Layout ohne individuelles Cover & ohne Spotlight-Option.'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* ── 2. MIDDLE SECTION: VERFÜGBARE TARIFE IM VERGLEICH (OTHER PLANS) ── */}
-                                    <div className="space-y-4">
-                                        <div>
-                                            <h3 className="text-lg font-black text-forest">Tarife für Unternehmen & professionelle Anbieter</h3>
-                                            <p className="text-xs text-charcoal/60">Wähle die passende Lösung für dein Unternehmen und deine Fahrzeugangebote</p>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
-                                            {/* Plan Card 1: Business Free */}
-                                            <div className={`rounded-2xl sm:rounded-3xl p-6 flex flex-col justify-between transition-all ${
-                                                !subDetails.is_business 
-                                                    ? 'bg-white border-2 border-forest/40 shadow-sm relative' 
-                                                    : 'bg-white border border-beige shadow-xs hover:border-forest/20'
-                                            }`}>
-                                                <div className="space-y-4">
-                                                    <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                        <div>
-                                                            <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider block">Basis-Einstieg</span>
-                                                            <h4 className="text-xl font-black text-charcoal">Business Free</h4>
-                                                        </div>
-                                                        {!subDetails.is_business ? (
-                                                            <span className="px-3 py-1 bg-forest/10 text-forest text-[10px] font-black uppercase rounded-full border border-forest/20 flex items-center gap-1">
-                                                                <Check className="w-3 h-3 text-forest" /> Aktiver Tarif
-                                                            </span>
-                                                        ) : (
-                                                            <span className="px-3 py-1 bg-stone-100 text-charcoal/50 text-[10px] font-bold uppercase rounded-full">
-                                                                Kostenlos
-                                                            </span>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <div className="flex items-baseline gap-1.5">
-                                                            <span className="text-3xl font-black text-charcoal font-mono">0 €</span>
-                                                            <span className="text-xs text-charcoal/60 font-medium">/ dauerhaft kostenlos</span>
-                                                        </div>
-                                                        <p className="text-xs text-charcoal/60 mt-1">Kostenloser Einstieg für Unternehmen und professionelle Anbieter rund ums Camping.</p>
-                                                    </div>
-
-                                                    <div className="space-y-2.5 pt-3 border-t border-beige text-xs text-charcoal/80">
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
-                                                            <span><strong>Bis zu 3 aktive Inserate</strong> gleichzeitig</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
-                                                            <span>500 Zeichen Unternehmensbeschreibung</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
-                                                            <span>Inserate mit Credits hervorheben (ab 4,99 €)</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
-                                                            <span>Direkte Kundenanfragen per Chat</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5 text-charcoal/40">
-                                                            <X className="w-4 h-4 text-charcoal/30 shrink-0" />
-                                                            <span className="line-through">Keine Spotlight-Buchung möglich</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5 text-charcoal/40">
-                                                            <X className="w-4 h-4 text-charcoal/30 shrink-0" />
-                                                            <span className="line-through">Kein individuelles Firmen-Cover</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="pt-6">
-                                                    {!subDetails.is_business ? (
-                                                        <div className="w-full py-2.5 px-4 bg-[#faf8f3] text-charcoal/70 rounded-xl text-xs font-bold text-center border border-beige cursor-default">
-                                                            Aktuell aktiv
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-full py-2.5 px-4 bg-stone-50 text-charcoal/40 rounded-xl text-xs font-medium text-center border border-beige">
-                                                            Enthalten als Basis
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Plan Card 2: Campuna Business */}
-                                            <div className={`rounded-2xl sm:rounded-3xl p-6 flex flex-col justify-between transition-all relative overflow-hidden ${
-                                                subDetails.is_business
-                                                    ? 'bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] text-sand border-2 border-gold shadow-md'
-                                                    : 'bg-white border-2 border-gold shadow-sm hover:shadow-md'
-                                            }`}>
-                                                {/* Top Ribbon / Badge */}
-                                                <div className="absolute top-0 right-0">
-                                                    <span className="bg-gradient-to-r from-gold via-[#dfbe7f] to-gold text-forest text-[9px] font-black uppercase tracking-wider px-3.5 py-1 rounded-bl-xl shadow-xs">
-                                                        {subDetails.is_business ? 'Aktiver Plan' : 'Empfohlen für gewerbliche Anbieter'}
-                                                    </span>
-                                                </div>
-
-                                                <div className="space-y-4">
-                                                    <div className={`flex items-center justify-between pb-3 border-b ${subDetails.is_business ? 'border-white/15' : 'border-beige'}`}>
-                                                        <div>
-                                                            <span className={`text-[10px] font-bold uppercase tracking-wider block ${subDetails.is_business ? 'text-gold' : 'text-gold-dark'}`}>
-                                                                Gewerbe-Upgrade
-                                                            </span>
-                                                            <h4 className={`text-xl font-black ${subDetails.is_business ? 'text-white' : 'text-forest'}`}>
-                                                                Campuna Business
-                                                            </h4>
-                                                        </div>
-                                                    </div>
-
-                                                    <div>
-                                                        <div className="flex items-baseline gap-1.5">
-                                                            <span className={`text-3xl font-black font-mono ${subDetails.is_business ? 'text-gold' : 'text-forest'}`}>29,00 €</span>
-                                                            <span className={`text-xs font-medium ${subDetails.is_business ? 'text-sand/80' : 'text-charcoal/60'}`}>/ Monat (inkl. MwSt.)</span>
-                                                        </div>
-                                                        <p className={`text-xs mt-1 ${subDetails.is_business ? 'text-sand/70' : 'text-charcoal/60'}`}>
-                                                            Für Unternehmen und professionelle Anbieter rund ums Camping.
-                                                        </p>
-                                                    </div>
-
-                                                    <div className={`space-y-2.5 pt-3 border-t text-xs ${subDetails.is_business ? 'border-white/15 text-sand/90' : 'border-beige text-charcoal/80'}`}>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>Bis zu 25 aktive Inserate</strong> gleichzeitig</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>Professionelles Firmen-Cover & Logo</strong></span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>1.000 Zeichen</strong> Firmenbeschreibung</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>Präsenz im Verzeichnis</strong> für Camping-Anbieter</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>Spotlight-Berechtigung:</strong> Exklusiv berechtigt zur flexiblen Spotlight-Buchung</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span><strong>Detaillierte Live-Statistiken</strong> & Lead-Cockpit</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5">
-                                                            <CheckCircle2 className={`w-4 h-4 shrink-0 ${subDetails.is_business ? 'text-gold' : 'text-emerald-600'}`} />
-                                                            <span>Monatlich flexibel kündbar</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div className="pt-6">
-                                                    {subDetails.is_business ? (
-                                                        <div className="w-full py-3 px-4 bg-gold/20 text-gold rounded-xl text-xs font-black uppercase tracking-wider text-center border border-gold/40 flex items-center justify-center gap-2">
-                                                            <Check className="w-4 h-4" />
-                                                            <span>Dein aktiver Business-Tarif</span>
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => router.push('/abo/kasse')}
-                                                            className="w-full bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider py-3 px-4 rounded-xl transition-all duration-300 shadow-md hover:shadow-gold/25 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
-                                                        >
-                                                            <span>Jetzt auf Business upgraden</span>
-                                                            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* ── 3. BOTTOM SECTION: RECHNUNGEN & BELEGE ── */}
-                                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-2xl bg-forest/10 border border-forest/15 flex items-center justify-center text-forest shrink-0">
-                                                <Receipt className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-charcoal text-sm sm:text-base">Rechnungen & Zahlungsbelege</h3>
-                                                <p className="text-xs text-charcoal/60 mt-0.5">
-                                                    Lade alle Rechnungen mit ausgewiesener 19% MwSt. jederzeit bequem als PDF herunter.
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={handleOpenInvoices}
-                                            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-forest hover:bg-[#004d0a] text-sand py-2.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm cursor-pointer shrink-0"
-                                        >
-                                            <Receipt className="w-4 h-4 text-gold" />
-                                            <span>Rechnungen anzeigen</span>
-                                        </button>
-                                    </div>
-                                </div>
+                                <AccountSubscriptionTab
+                                    subDetails={subDetails}
+                                    userListings={userListings}
+                                    onOpenCancelModal={() => setCancelSubModalOpen(true)}
+                                    onUpgradeClick={() => router.push('/abo/kasse')}
+                                    TabHeader={TabHeader}
+                                />
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════
                                 TAB 4: CAMPUNA CREDITS & EMPFEHLUNGEN
                                ═════════════════════════════════════════════════════════════ */}
                             {activeTab === 'credits' && (
-                                <div className="space-y-6">
-                                    {/* Top Tab Header */}
-                                    <TabHeader
-                                        title="Campuna Credits & Empfehlungen"
-                                        subtitle={isCommercial ? "Nutze Credits flexibel für Inserate-Highlights & Spotlight-Buchungen und sichere dir neue durch Weiterempfehlungen" : "Nutze Credits flexibel für Inserate-Highlights und sichere dir neue durch Weiterempfehlungen"}
-                                        icon={Gift}
-                                        action={
-                                            <div className="inline-flex items-center gap-2 bg-gold/20 border border-gold/40 text-gold-dark px-3.5 py-1.5 rounded-full text-xs font-black font-mono shadow-xs">
-                                                <CoinIcon size="sm" />
-                                                <span>{Number(creditBalance).toLocaleString('de-DE')} CC</span>
-                                            </div>
-                                        }
-                                    />
-
-                                    {/* Wallet Balance Hero Card */}
-                                    <div className="bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-sand shadow-md relative overflow-hidden border border-gold/20">
-                                        <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-gold/15 rounded-full blur-3xl pointer-events-none" />
-
-                                        <div className="flex flex-row items-center justify-between gap-4 relative z-10">
-                                            <div className="flex-1 space-y-2 text-left min-w-0">
-                                                <span className="text-[11px] sm:text-xs text-sand/70 font-sans uppercase tracking-wider block">Verfügbares Guthaben</span>
-                                                <div className="text-3xl sm:text-4xl md:text-5xl font-black font-mono text-gold tracking-tight">
-                                                    {Number(creditBalance).toLocaleString('de-DE')} CC
-                                                </div>
-                                                <p className="text-xs sm:text-sm text-sand/80 leading-relaxed max-w-xl pt-1">
-                                                    1 Credit = 1 Cent Gegenwert. Verwende Credits flexibel für 7-, 14- oder 30-Tage Inserate-Highlights{isCommercial ? ' sowie Spotlight-Buchungen' : ''}.
-                                                </p>
-                                            </div>
-
-                                            <div className="shrink-0 flex items-center justify-center relative p-1 sm:p-2">
-                                                <div className="absolute inset-0 bg-gold/25 rounded-full blur-xl transform scale-90 pointer-events-none" />
-                                                <img
-                                                    src="/coin.png"
-                                                    alt="Campuna Credits"
-                                                    className="w-20 h-20 xs:w-24 xs:h-24 sm:w-32 sm:h-32 object-contain drop-shadow-[0_10px_25px_rgba(200,169,107,0.45)] select-none pointer-events-none"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* 3 Metric Cards */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                                        <div className="p-4 bg-white rounded-2xl border border-beige shadow-xs text-center flex flex-col items-center justify-center">
-                                            <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider">Gesamt Eingeladen</span>
-                                            <p className="text-xl sm:text-2xl font-black text-forest font-mono mt-1">{referralStats.total || 0}</p>
-                                        </div>
-                                        <div className="p-4 bg-white rounded-2xl border border-beige shadow-xs text-center flex flex-col items-center justify-center">
-                                            <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider">Ausstehend</span>
-                                            <p className="text-xl sm:text-2xl font-black text-amber-700 font-mono mt-1">{referralStats.pending || 0}</p>
-                                        </div>
-                                        <div className="p-4 bg-white rounded-2xl border border-beige shadow-xs text-center flex flex-col items-center justify-center">
-                                            <span className="text-[10px] font-bold text-charcoal/50 uppercase tracking-wider">Erfolgreich Vergütet</span>
-                                            <p className="text-xl sm:text-2xl font-black text-emerald-700 font-mono mt-1">{referralStats.completed || 0}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* 2-Column Grid */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                                        {/* Left Column (7 cols): Share Hub */}
-                                        <div className="lg:col-span-7 bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-5">
-                                            <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
-                                                        <Gift className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-bold text-charcoal text-sm">Freunde & Partner einladen</h3>
-                                                        <p className="text-[11px] text-charcoal/50 font-medium">Verteile deinen persönlichen Einladungscode</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {user?.referral_code ? (
-                                                <div className="space-y-4">
-                                                    <ReferralQuickBadge code={user.referral_code} />
-
-                                                    {/* Quick 3-Step Guide */}
-                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                                                        <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
-                                                            <span className="text-xs font-black text-forest font-mono">1. Teilen</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Gib deinen Link oder Code an Camping-Freunde und Partner weiter.</p>
-                                                        </div>
-                                                        <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
-                                                            <span className="text-xs font-black text-forest font-mono">2. Registrieren</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Dein Kontakt meldet sich mit deinem Code bei Campuna an.</p>
-                                                        </div>
-                                                        <div className="p-3 bg-[#faf8f3] rounded-xl border border-beige text-left">
-                                                            <span className="text-xs font-black text-forest font-mono">3. Beide profitieren</span>
-                                                            <p className="text-[11px] text-charcoal/70 mt-0.5">Privat: 500 CC nach 1. Inserat. Gewerblich: 1.000 CC nach vollständigem Firmenprofil.</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <p className="text-xs text-charcoal/40">Kein Empfehlungscode verfügbar.</p>
-                                            )}
-                                        </div>
-
-                                        {/* Right Column (5 cols): Invites List */}
-                                        <div className="lg:col-span-5 bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4">
-                                            <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
-                                                        <Users className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-bold text-charcoal text-sm">Deine Einladungen</h3>
-                                                        <p className="text-[11px] text-charcoal/50 font-medium">{referralsList.length} Einladungen registriert</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {referralsList.length === 0 ? (
-                                                <div className="py-8 text-center bg-[#faf8f3] rounded-2xl border border-dashed border-beige p-6 space-y-2">
-                                                    <p className="text-xs text-charcoal/60 font-medium">Noch keine Einladungen vorhanden.</p>
-                                                    <p className="text-[11px] text-charcoal/40">Teile deinen Code mit Camping-Freunden & Partnern!</p>
-                                                </div>
-                                            ) : (
-                                                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-                                                    {referralsList.map((ref) => (
-                                                        <div key={ref.id} className="flex items-center justify-between p-3 bg-[#faf8f3] rounded-xl border border-beige text-xs">
-                                                            <div>
-                                                                <p className="font-bold text-charcoal">{ref.referred_name || 'Campuna Mitglied'}</p>
-                                                                <p className="text-[10px] text-charcoal/50 uppercase">{ref.referred_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'}</p>
-                                                            </div>
-                                                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${ref.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                                                                {ref.status === 'COMPLETED' ? 'Erfolgreich' : 'Ausstehend'}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Guthaben aufladen (Credits-Pakete) */}
-                                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-5">
-                                        <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-xl bg-gold/15 flex items-center justify-center text-gold-dark">
-                                                    <CoinIcon size="sm" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-bold text-charcoal text-sm">Guthaben aufladen (Credits-Pakete)</h3>
-                                                    <p className="text-[11px] text-charcoal/50 font-medium">Kaufe Campuna Credits für flexible Inserate-Highlights{isCommercial ? ' & Spotlight-Buchungen' : ''}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                                            {[
-                                                { credits: 500, priceEur: '4,99 €', label: '7 Tage Inserat-Highlight', popular: false },
-                                                { credits: 800, priceEur: '7,99 €', label: '14 Tage Inserat-Highlight', popular: true },
-                                                { credits: 1300, priceEur: '12,99 €', label: '30 Tage Inserat-Highlight', popular: false },
-                                                { credits: 2500, priceEur: '24,99 €', label: '2.500 CC Guthaben', popular: false },
-                                            ].map((pkg) => (
-                                                <div
-                                                    key={pkg.credits}
-                                                    className={`p-4 rounded-2xl border transition-all flex flex-col justify-between relative bg-[#faf8f3] hover:bg-sand/60 ${
-                                                        pkg.popular ? 'border-forest/60 ring-2 ring-forest/15 shadow-sm' : 'border-beige'
-                                                    }`}
-                                                >
-                                                    {pkg.popular && (
-                                                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-forest text-sand tracking-tight shadow-xs">
-                                                            Beliebt
-                                                        </span>
-                                                    )}
-                                                    {pkg.badge && (
-                                                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-gold text-forest tracking-tight shadow-xs">
-                                                            {pkg.badge}
-                                                        </span>
-                                                    )}
-                                                    <div className="space-y-1">
-                                                        <div className="flex items-center gap-1.5 font-mono font-black text-lg text-forest">
-                                                            <CoinIcon size="sm" />
-                                                            <span>{pkg.credits.toLocaleString('de-DE')} CC</span>
-                                                        </div>
-                                                        <div className="text-sm font-bold text-charcoal">{pkg.priceEur}</div>
-                                                        <p className="text-[11px] text-charcoal/60 leading-tight pt-1">{pkg.label}</p>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleOpenBuyCreditModal(pkg.credits)}
-                                                        className="mt-4 w-full bg-forest hover:bg-[#004d0a] text-sand py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                                                    >
-                                                        <span>Jetzt aufladen</span>
-                                                        <ArrowRight className="w-3 h-3 text-gold" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Transaktionsverlauf (Ledger Activity) */}
-                                    <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4">
-                                        <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                            <div className="flex items-center gap-2.5">
-                                                <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
-                                                    <Receipt className="w-4 h-4" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="font-bold text-charcoal text-sm">Guthaben- & Transaktionsverlauf</h3>
-                                                    <p className="text-[11px] text-charcoal/50 font-medium">Vollständiger Audit-Verlauf aller Gutschriften & Ausgaben</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-xs font-mono font-bold text-charcoal/60">
-                                                {creditTransactions.length} {creditTransactions.length === 1 ? 'Eintrag' : 'Einträge'}
-                                            </span>
-                                        </div>
-
-                                        {creditTransactions.length === 0 ? (
-                                            <div className="py-8 text-center bg-[#faf8f3] rounded-2xl border border-dashed border-beige p-6 space-y-1">
-                                                <p className="text-xs text-charcoal/60 font-medium">Noch keine Transaktionen aufgezeichnet.</p>
-                                                <p className="text-[11px] text-charcoal/40">Sobald du Guthaben auflädst, Freunde einlädst oder Inserate hervorhebst, erscheinen die Einträge hier.</p>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1">
-                                                {creditTransactions.map((tx) => {
-                                                    const isPositive = tx.amount > 0;
-                                                    const isZero = tx.amount === 0;
-                                                    return (
-                                                        <div key={tx.id} className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-xl border border-beige text-xs gap-3">
-                                                            <div className="min-w-0 flex-1">
-                                                                <p className="font-bold text-charcoal truncate">{tx.description || tx.type}</p>
-                                                                <p className="text-[10px] text-charcoal/50 font-mono mt-0.5">
-                                                                    {new Date(tx.created_at).toLocaleDateString('de-DE', {
-                                                                        day: '2-digit',
-                                                                        month: '2-digit',
-                                                                        year: 'numeric',
-                                                                        hour: '2-digit',
-                                                                        minute: '2-digit'
-                                                                    })}
-                                                                </p>
-                                                            </div>
-                                                            <div className="shrink-0 text-right">
-                                                                <span className={`font-mono font-black text-xs ${
-                                                                    isPositive ? 'text-emerald-700' : isZero ? 'text-forest' : 'text-rose-600'
-                                                                }`}>
-                                                                    {isPositive ? `+${tx.amount.toLocaleString('de-DE')} CC` : isZero ? 'Direktzahlung' : `${tx.amount.toLocaleString('de-DE')} CC`}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                                <AccountCreditsTab
+                                    creditBalance={creditBalance}
+                                    referralStats={referralStats}
+                                    referralsList={referralsList}
+                                    creditTransactions={creditTransactions}
+                                    isCommercial={isCommercial}
+                                    user={user}
+                                    onOpenBuyCreditModal={handleOpenBuyCreditModal}
+                                    TabHeader={TabHeader}
+                                    ReferralQuickBadge={ReferralQuickBadge}
+                                />
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════
                                 TAB 5: PIONEER STATUS
                                ═════════════════════════════════════════════════════════════ */}
                             {activeTab === 'pioneer' && (
-                                <div className="space-y-6">
-                                    {/* Top Tab Header */}
-                                    <TabHeader
-                                        title={pioneerBadge ? "Campuna Pioneer Status" : "Campuna Pioneer Badge erhalten"}
-                                        subtitle={pioneerBadge ? "Exklusiver Status & dauerhafte Auszeichnung für die ersten 300 aktiven Campuna Mitglieder" : "Werde einer der ersten 300 Campuna Pioniere und sichere dir deinen dauerhaften Pioneer-Status."}
-                                        icon={Award}
-                                        badge={
-                                            pioneerBadge ? (
-                                                <PioneerBadge size="sm" text="Campuna Pioneer" />
-                                            ) : (
-                                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gold/15 text-gold-dark border border-gold/30 flex items-center gap-1">
-                                                    <Sparkles className="w-3 h-3 text-gold-dark" /> In Qualifikation
-                                                </span>
-                                            )
-                                        }
-                                    />
-
-                                    {/* Pioneer Hero Card */}
-                                    <div className="bg-gradient-to-br from-[#004709] via-[#002204] to-[#040805] rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-sand shadow-md relative overflow-hidden border border-gold/20 flex flex-col sm:flex-row items-center justify-between gap-6">
-                                        <div className="space-y-2 text-center sm:text-left max-w-xl">
-                                            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-gold flex items-center justify-center sm:justify-start gap-1.5">
-                                                <Sparkles className="w-3.5 h-3.5" /> Streng Limitiert auf 300 Mitglieder
-                                            </span>
-                                            <h2 className="text-2xl sm:text-3xl font-black text-white">Campuna Pioneer Award</h2>
-                                            <p className="text-xs sm:text-sm text-sand/80 leading-relaxed">
-                                                Als Pioneer gehörst du zu den ersten 300 aktiven Mitgliedern der Campuna Plattform. Dein Profil und deine Inserate erhalten dauerhaft den goldenen Pioneer-Badge als besondere Anerkennung für dein frühes Engagement auf Campuna.
-                                            </p>
-                                        </div>
-
-                                        <PioneerBadge variant="hero" />
-                                    </div>
-
-                                    {/* 2-Column Grid */}
-                                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                                        {/* Left Column (6 cols): Qualification Checklist */}
-                                        <div className="lg:col-span-6 bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-5">
-                                            <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
-                                                        <CheckCircle2 className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-bold text-charcoal text-sm">Qualifikations-Kriterien</h3>
-                                                        <p className="text-[11px] text-charcoal/50 font-medium">Automatische Freischaltung bei Erfüllung</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-3 text-xs">
-                                                {isCommercial && commercialPioneerCriteria ? (
-                                                    commercialPioneerCriteria.list.map((item) => (
-                                                        <div key={item.id} className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white shrink-0 ${item.met ? 'bg-forest' : 'bg-stone-300'}`}>
-                                                                    <Check className="w-3.5 h-3.5" />
-                                                                </div>
-                                                                <div>
-                                                                    <span className="font-bold text-charcoal block">{item.label}</span>
-                                                                    <span className="text-[11px] text-charcoal/50">{item.detail}</span>
-                                                                </div>
-                                                            </div>
-                                                            <span className={`font-black uppercase text-[10px] shrink-0 ${item.met ? 'text-emerald-600' : 'text-charcoal/40'}`}>
-                                                                {item.value || (item.met ? 'Erfüllt' : 'Ausstehend')}
-                                                            </span>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <>
-                                                        <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${isProfileComplete ? 'bg-forest' : 'bg-stone-300'}`}>
-                                                                    <Check className="w-3.5 h-3.5" />
-                                                                </div>
-                                                                <div>
-                                                                    <span className="font-bold text-charcoal block">Profil vollständig ausgefüllt</span>
-                                                                    <span className="text-[11px] text-charcoal/50">Name, Bio und Standort hinterlegt</span>
-                                                                </div>
-                                                            </div>
-                                                            <span className={`font-black uppercase text-[10px] ${isProfileComplete ? 'text-emerald-600' : 'text-charcoal/40'}`}>
-                                                                {isProfileComplete ? 'Erfüllt' : 'Ausstehend'}
-                                                            </span>
-                                                        </div>
-
-                                                        <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${approvedListingsCount >= 3 ? 'bg-forest' : 'bg-stone-300'}`}>
-                                                                    <Check className="w-3.5 h-3.5" />
-                                                                </div>
-                                                                <div>
-                                                                    <span className="font-bold text-charcoal block">Mindestens 3 freigegebene Inserate</span>
-                                                                    <span className="text-[11px] text-charcoal/50">Von der Moderation genehmigt</span>
-                                                                </div>
-                                                            </div>
-                                                            <span className="font-black font-mono text-forest">
-                                                                {approvedListingsCount} / 3
-                                                            </span>
-                                                        </div>
-
-                                                        <div className="flex items-center justify-between p-3.5 bg-[#faf8f3] rounded-2xl border border-beige">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white ${user?.email_verified ? 'bg-forest' : 'bg-stone-300'}`}>
-                                                                    <Check className="w-3.5 h-3.5" />
-                                                                </div>
-                                                                <div>
-                                                                    <span className="font-bold text-charcoal block">Konto verifiziert</span>
-                                                                    <span className="text-[11px] text-charcoal/50">E-Mail-Adresse bestätigt</span>
-                                                                </div>
-                                                            </div>
-                                                            <span className={`font-black uppercase text-[10px] ${user?.email_verified ? 'text-emerald-600' : 'text-charcoal/40'}`}>
-                                                                {user?.email_verified ? 'Erfüllt' : 'Ausstehend'}
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-
-                                            <div className="pt-2">
-                                                {pioneerBadge ? (
-                                                    <div className="p-3.5 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-200 font-bold text-xs flex items-center justify-center gap-2">
-                                                        <Sparkles className="w-4 h-4 text-gold-dark" />
-                                                        <span>Glückwunsch! Du bist Campuna Pioneer</span>
-                                                    </div>
-                                                ) : !(isCommercial ? commercialPioneerCriteria?.isProfileOnlyComplete : isProfileComplete) ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { setIsEditing(true); setActiveTab('dashboard'); }}
-                                                        className="w-full bg-forest hover:bg-[#004d0a] text-sand py-3 px-5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
-                                                    >
-                                                        <Pencil className="w-4 h-4 text-gold" />
-                                                        <span>Profil jetzt vervollständigen</span>
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleCreateListingClick}
-                                                        className="w-full bg-forest hover:bg-[#004d0a] text-sand py-3 px-5 rounded-full text-xs font-bold uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
-                                                    >
-                                                        <Plus className="w-4 h-4 text-gold" />
-                                                        <span>Jetzt Inserat schalten & qualifizieren ({Math.max(0, 3 - approvedListingsCount)} erforderlich)</span>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Right Column (6 cols): Pioneer Privileges */}
-                                        <div className="lg:col-span-6 bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4">
-                                            <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-xl bg-gold/15 flex items-center justify-center text-gold-dark">
-                                                        <Crown className="w-4 h-4" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-bold text-charcoal text-sm">Exklusive Vorteile</h3>
-                                                        <p className="text-[11px] text-charcoal/50 font-medium">Dauerhafte Auszeichnung</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-3 text-xs text-charcoal/80">
-                                                <div className="p-3.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
-                                                    <h5 className="font-bold text-charcoal flex items-center gap-1.5">
-                                                        <Crown className="w-3.5 h-3.5 text-gold-dark" /> Goldener Badge im Profil & Inseraten
-                                                    </h5>
-                                                    <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Dein Account sticht mit einem exklusiven Siegel hervor und zeichnet dich als frühen Unterstützer und aktives Mitglied der ersten Stunde aus.
-                                                    </p>
-                                                </div>
-
-                                                <div className="p-3.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
-                                                    <h5 className="font-bold text-charcoal flex items-center gap-1.5">
-                                                        <Sparkles className="w-3.5 h-3.5 text-gold-dark" /> 1.000 CC Einmal-Bonus
-                                                    </h5>
-                                                    <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Einmalige Prämie von 1.000 Campuna Credits direkt nach erfolgreicher Qualifikation (nutzbar für Inserate-Highlights{isCommercial ? ' & Spotlight-Buchungen' : ''}).
-                                                    </p>
-                                                </div>
-
-                                                <div className="p-3.5 bg-[#faf8f3] rounded-2xl border border-beige space-y-1">
-                                                    <h5 className="font-bold text-charcoal flex items-center gap-1.5">
-                                                        <Award className="w-3.5 h-3.5 text-gold-dark" /> Dauerhafter Pioneer-Status
-                                                    </h5>
-                                                    <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                                        Als Pioneer bleibt dein Ehrenstatus dauerhaft erhalten – streng limitiert auf die ersten 300 aktiven Mitglieder auf Campuna.
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <AccountPioneerTab
+                                    pioneerBadge={pioneerBadge}
+                                    isCommercial={isCommercial}
+                                    commercialPioneerCriteria={commercialPioneerCriteria}
+                                    isProfileComplete={isProfileComplete}
+                                    approvedListingsCount={approvedListingsCount}
+                                    user={user}
+                                    onNavigateToEditProfile={() => {
+                                        setIsEditing(true);
+                                        setActiveTab('dashboard');
+                                    }}
+                                    onCreateListing={handleCreateListingClick}
+                                    TabHeader={TabHeader}
+                                />
                             )}
 
                         </main>
@@ -3961,14 +3366,14 @@ export default function MeinKontoPage() {
                             <div>
                                 <h3 className="font-black text-charcoal text-lg">
                                     {isCommercial
-                                        ? `Inserate-Limit erreicht (${userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length} / ${subDetails.is_business ? 25 : 3})`
+                                        ? `Inserate-Limit erreicht (${userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length} / 10)`
                                         : 'Veröffentlichung nicht möglich'}
                                 </h3>
                                 <p className="text-xs text-charcoal/70 leading-relaxed mt-1">
                                     {isCommercial
                                         ? (!subDetails.is_business
-                                            ? 'Im kostenfreien Business Free Tarif können maximal 3 Inserate gleichzeitig aktiv sein. Mit dem Campuna Business Plan kannst du bis zu 25 Inserate gleichzeitig schalten!'
-                                            : 'Du hast das maximale Limit von 25 aktiven Inseraten erreicht.')
+                                            ? 'Im kostenfreien Free Tarif können maximal 10 Inserate gleichzeitig aktiv sein. Mit dem Campuna Business Plan kannst du unbegrenzt viele Inserate gleichzeitig schalten!'
+                                            : 'Du hast dein aktives Inserate-Kontingent erreicht.')
                                         : 'Ungewöhnlich hohe Inseratsaktivität deutet auf eine gewerbliche Nutzung hin. Wenn du gewerblich Inserate aufgeben möchtest, erstelle bitte ein gewerbliches Anbieterkonto oder wende dich an unseren Support.'}
                                 </p>
                             </div>
