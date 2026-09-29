@@ -64,7 +64,9 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
         window.removeEventListener('campuna-unread-sync', handleSync);
       };
     } else if (mounted && !isLoggedIn) {
-      disconnectSocket();
+      if (typeof disconnectSocket === 'function') {
+        disconnectSocket();
+      }
     }
   }, [mounted, isLoggedIn, token, fetchUnreadCount, initGlobalSocket, disconnectSocket]);
 

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { getUnreadMessagesCount, getConversations } from '@/api/conversations';
-import { getSocket } from '@/utils/socket';
+import { getSocket, disconnectSocket as socketUtilsDisconnect } from '@/utils/socket';
 
 export const useChatStore = create((set, get) => ({
     unreadCount: 0,
@@ -73,5 +73,12 @@ export const useChatStore = create((set, get) => ({
 
         set({ socketInitialized: true });
         return socket;
+    },
+
+    disconnectSocket: () => {
+        try {
+            socketUtilsDisconnect();
+        } catch {}
+        set({ socketInitialized: false });
     }
 }));

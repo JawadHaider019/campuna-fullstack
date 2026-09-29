@@ -22,7 +22,8 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     ArrowUpRight,
-    Layers
+    Layers,
+    Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAdminDashboardStats } from '@/api/admin';
