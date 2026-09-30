@@ -48,12 +48,11 @@ export default function ToolsFloatingModal() {
 
     return (
         <>
-            {/* Simple Rounded Floating Action Button with animated forest glowing ripple waves */}
+            {/* Simple Rounded Floating Action Button with subtle contained glow */}
             <div className="fixed right-6 bottom-22 sm:bottom-24 z-[80] flex items-center justify-center">
-                {/* Expanding Forest Waves / Rings */}
-                <div className="absolute -inset-2 rounded-full border-2 border-forest/50 animate-ping pointer-events-none opacity-40 duration-1000" />
-                <div className="absolute -inset-3.5 rounded-full border border-forest/35 animate-pulse pointer-events-none" />
-                <div className="absolute -inset-1 rounded-full bg-forest/25 blur-md pointer-events-none" />
+                {/* Subtle contained glow — no overflow rings */}
+                <div className="absolute inset-0 rounded-full bg-forest/30 blur-lg pointer-events-none animate-pulse" />
+                <div className="absolute inset-0 rounded-full bg-forest/15 blur-xl pointer-events-none" />
 
                 <motion.button
                     type="button"

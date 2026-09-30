@@ -37,7 +37,7 @@ export default function FeaturedShowcaseSection() {
             try {
                 const res = await getAllListings();
                 const listingList = res.data?.listings || res.listings || (Array.isArray(res.data) ? res.data : []);
-                
+
                 if (Array.isArray(listingList) && listingList.length > 0) {
                     // Priority 1: Boosted / Featured listing with at least one image
                     // Priority 2: Any approved listing with images
@@ -125,23 +125,23 @@ export default function FeaturedShowcaseSection() {
     return (
         <section id="featured-showcase" className="py-10 sm:py-14 md:py-20 bg-sand/20 scroll-mt-24">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12">
-                
+
                 {/* Section Header */}
-                <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 md:mb-14 space-y-2 px-2">
+                <div className="text-center max-w-7xl mx-auto mb-8 sm:mb-12 md:mb-14 space-y-2 px-2">
                     <span className="font-sans text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.4em] text-gold block">
-                        Highlights & Empfehlungen
+                        Highlights & Entdeckungen
                     </span>
-                    <h2 className="font-display text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-forest leading-tight">
-                        Ausgewähltes Inserat der Woche
+                    <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-forest leading-tight whitespace-nowrap sm:whitespace-normal">
+                        Campuna Fundstück der Woche
                     </h2>
                     <p className="font-sans text-xs sm:text-sm md:text-base text-charcoal/70 max-w-xl mx-auto font-light leading-relaxed">
-                        Entdecke besonders gefragte Camping-Fahrzeuge und Ausrüstung mit geprüften Angaben und sofortiger Verfügbarkeit.
+                        Entdecke besondere Camping-Fahrzeuge, Zubehör und Ausrüstung aus unserer Community.
                     </p>
                 </div>
 
                 {/* 2-Column Split Hero (Image on Left/Top, Clean Editorial Content on Right/Bottom) */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-14 items-center">
-                    
+
                     {/* Left Column (6 cols): Responsive Product Image Container */}
                     <motion.div
                         initial={{ opacity: 0, y: 15 }}
@@ -176,7 +176,7 @@ export default function FeaturedShowcaseSection() {
                                 className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all duration-300 shadow-md cursor-pointer ${isFavorite
                                     ? 'bg-rose-500 text-white hover:bg-rose-600 scale-105'
                                     : 'bg-white/90 hover:bg-white text-forest hover:text-rose-500 hover:scale-105 border border-forest/10'
-                                }`}
+                                    }`}
                             >
                                 <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current text-white' : ''}`} />
                             </button>
@@ -199,12 +199,12 @@ export default function FeaturedShowcaseSection() {
                         transition={{ duration: 0.6 }}
                         className="lg:col-span-6 flex flex-col justify-center space-y-4 sm:space-y-6"
                     >
-                        {/* Bestseller Badge & Headline */}
+                        {/* Campuna Fundstück der Woche Badge & Headline */}
                         <div className="space-y-2 sm:space-y-3">
                             <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest text-gold text-[10px] sm:text-[11px] font-bold uppercase tracking-wider shadow-xs">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest text-gold text-[10px] sm:text-[11px] font-bold uppercase tracking-wider shadow-xs whitespace-nowrap">
                                     <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                                    <span>Bestseller Inserat</span>
+                                    <span>Campuna Fundstück der Woche</span>
                                 </span>
                             </div>
 

@@ -33,7 +33,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
     return (
         <section
             id="hero"
-            className="relative min-h-[80vh] md:min-h-[82vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-30 sm:mt-30 mb-0 mx-4 md:mx-8 lg:mx-12 shadow-2xl border border-forest/10"
+            className="relative min-h-[80vh] md:min-h-[82vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-30 sm:mt-30 mb-0 mx-4 md:mx-8 lg:mx-12 shadow-2xl"
         >
             {/* Background Cinematic Image with Zoom Animation */}
             <div className="absolute inset-0 z-0">
@@ -74,7 +74,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                         initial={{ opacity: 0, y: 25 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-                        className="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-5 leading-[1.1]"
+                        className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-5 leading-[1.15]"
                     >
                         Dein Camping-Marktplatz:{' '}
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white">

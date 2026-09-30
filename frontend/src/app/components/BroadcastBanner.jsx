@@ -22,6 +22,7 @@ import {
     markAllBroadcastsAsRead
 } from '@/api/broadcasts';
 import { useAuthStore } from '@/store/useAuthStore';
+import { getSocket } from '@/utils/socket';
 
 export default function BroadcastBanner() {
     const [broadcasts, setBroadcasts] = useState([]);
@@ -33,6 +34,7 @@ export default function BroadcastBanner() {
 
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const user = useAuthStore((state) => state.user);
+    const token = useAuthStore((state) => state.accessToken);
     const isAdmin = user?.role === 'ADMIN';
 
     // Don't show in admin portal pages or for admin users
@@ -48,15 +50,23 @@ export default function BroadcastBanner() {
             ]);
 
             if (bRes?.success && bRes.data) {
-                setBroadcasts(bRes.data.broadcasts || []);
-            }
-            if (cRes?.success && cRes.data) {
-                setUnreadCount(cRes.data.unread_count || 0);
+                const fetchedBroadcasts = bRes.data.broadcasts || [];
+                setBroadcasts(fetchedBroadcasts);
+
+                // Calculate unread count for visitors or use server count for logged in users
+                if (isLoggedIn) {
+                    if (cRes?.success && cRes.data) {
+                        setUnreadCount(cRes.data.unread_count ?? 0);
+                    }
+                } else {
+                    const unread = fetchedBroadcasts.filter(b => !b.is_read).length;
+                    setUnreadCount(unread);
+                }
             }
         } catch {
             // Non-critical background polling
         }
-    }, [shouldHide]);
+    }, [shouldHide, isLoggedIn]);
 
     useEffect(() => {
         if (!shouldHide) {
@@ -64,29 +74,66 @@ export default function BroadcastBanner() {
         }
     }, [isLoggedIn, pathname, shouldHide, fetchBroadcasts]);
 
-    const handleMarkAsRead = async (broadcastId) => {
-        if (!isLoggedIn || isAdmin) return;
-        try {
-            await markBroadcastAsRead(broadcastId);
-            setBroadcasts(prev => prev.map(b => b.id === broadcastId ? { ...b, is_read: true } : b));
+    // Realtime Socket Listener for Live Broadcast Delivery
+    useEffect(() => {
+        if (shouldHide) return;
+
+        const socket = getSocket(token);
+        if (!socket) return;
+
+        const handleNewBroadcast = () => {
+            fetchBroadcasts();
+        };
+
+        const handleUpdateBroadcast = () => {
+            fetchBroadcasts();
+        };
+
+        const handleDeleteBroadcast = ({ broadcastId }) => {
+            setBroadcasts(prev => prev.filter(b => b.id !== broadcastId));
             setUnreadCount(prev => Math.max(0, prev - 1));
-        } catch (err) {
-            console.error('Error marking broadcast as read:', err);
+        };
+
+        socket.on('new_broadcast', handleNewBroadcast);
+        socket.on('update_broadcast', handleUpdateBroadcast);
+        socket.on('delete_broadcast', handleDeleteBroadcast);
+
+        return () => {
+            socket.off('new_broadcast', handleNewBroadcast);
+            socket.off('update_broadcast', handleUpdateBroadcast);
+            socket.off('delete_broadcast', handleDeleteBroadcast);
+        };
+    }, [shouldHide, token, fetchBroadcasts]);
+
+    const handleMarkAsRead = async (broadcastId) => {
+        if (isAdmin) return;
+        if (isLoggedIn) {
+            try {
+                await markBroadcastAsRead(broadcastId);
+            } catch (err) {
+                console.error('Error marking broadcast as read:', err);
+            }
         }
+        setBroadcasts(prev => prev.map(b => b.id === broadcastId ? { ...b, is_read: true } : b));
+        setUnreadCount(prev => Math.max(0, prev - 1));
     };
 
     const handleMarkAllRead = async () => {
-        if (!isLoggedIn || isAdmin) return;
+        if (isAdmin) return;
         setLoading(true);
-        try {
-            await markAllBroadcastsAsRead();
-            setBroadcasts(prev => prev.map(b => ({ ...b, is_read: true })));
-            setUnreadCount(0);
-        } catch (err) {
-            console.error('Error marking all as read:', err);
-        } finally {
+        if (isLoggedIn) {
+            try {
+                await markAllBroadcastsAsRead();
+            } catch (err) {
+                console.error('Error marking all as read:', err);
+            } finally {
+                setLoading(false);
+            }
+        } else {
             setLoading(false);
         }
+        setBroadcasts(prev => prev.map(b => ({ ...b, is_read: true })));
+        setUnreadCount(0);
     };
 
     // Find the highest priority unread broadcast that hasn't been temporarily dismissed in current session
@@ -166,17 +213,19 @@ export default function BroadcastBanner() {
                 )}
             </AnimatePresence>
 
-            {/* Floating Notification Bell Trigger for Authenticated Users with Unread Messages */}
-            {isLoggedIn && unreadCount > 0 && !urgentUnread && (
+            {/* Floating Notification Bell Trigger with Realtime Unread Counter */}
+            {broadcasts.length > 0 && (
                 <button
                     onClick={() => setModalOpen(true)}
                     className="fixed bottom-6 right-6 z-40 p-3.5 rounded-full bg-forest text-sand shadow-2xl hover:bg-forest/90 border-2 border-gold flex items-center justify-center group cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                    title="Neue Mitteilungen von Campuna"
+                    title="Mitteilungen von Campuna"
                 >
                     <Bell className="w-5 h-5 text-gold group-hover:rotate-12 transition-transform" />
-                    <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">
-                        {unreadCount}
-                    </span>
+                    {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-pulse">
+                            {unreadCount}
+                        </span>
+                    )}
                 </button>
             )}
 

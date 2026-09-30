@@ -149,3 +149,27 @@ export function emitNewMessage({ conversationId, message, recipientId, buyerId, 
         sellerId
     });
 }
+
+/**
+ * Broadcast new broadcast announcement to all connected clients
+ */
+export function emitNewBroadcast(broadcast) {
+    if (!io) return;
+    io.emit('new_broadcast', { broadcast });
+}
+
+/**
+ * Broadcast updated broadcast announcement
+ */
+export function emitUpdateBroadcast(broadcast) {
+    if (!io) return;
+    io.emit('update_broadcast', { broadcast });
+}
+
+/**
+ * Broadcast deleted broadcast announcement
+ */
+export function emitDeleteBroadcast(broadcastId) {
+    if (!io) return;
+    io.emit('delete_broadcast', { broadcastId });
+}

@@ -134,7 +134,7 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
 
-      <div className="overflow-x-hidden">
+      <div className="overflow-x-clip">
         {/* 1. Hero Section */}
         <Hero />
 

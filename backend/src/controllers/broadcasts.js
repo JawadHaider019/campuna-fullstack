@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import crypto from 'crypto';
+import { emitNewBroadcast, emitUpdateBroadcast, emitDeleteBroadcast } from '../socket.js';
 
 const VALID_TARGET_TYPES = ['ALL', 'PRIVATE', 'COMMERCIAL'];
 const VALID_PRIORITIES = ['NORMAL', 'IMPORTANT', 'URGENT'];
@@ -453,10 +454,17 @@ export const createAdminBroadcast = async (req, res) => {
             expDate
         ]);
 
+        const createdBroadcast = result.rows[0];
+        try {
+            emitNewBroadcast(createdBroadcast);
+        } catch (socketErr) {
+            console.warn('Socket broadcast emit error:', socketErr.message);
+        }
+
         return res.status(201).json({
             success: true,
             message: 'Rundschreiben erfolgreich veröffentlicht.',
-            broadcast: result.rows[0]
+            broadcast: createdBroadcast
         });
 
     } catch (error) {
@@ -529,10 +537,17 @@ export const updateAdminBroadcast = async (req, res) => {
             id
         ]);
 
+        const updatedBroadcast = updateRes.rows[0];
+        try {
+            emitUpdateBroadcast(updatedBroadcast);
+        } catch (socketErr) {
+            console.warn('Socket broadcast emit error:', socketErr.message);
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Rundschreiben erfolgreich aktualisiert.',
-            broadcast: updateRes.rows[0]
+            broadcast: updatedBroadcast
         });
 
     } catch (error) {
@@ -554,6 +569,12 @@ export const deleteAdminBroadcast = async (req, res) => {
 
         if (result.rowCount === 0) {
             return res.status(404).json({ success: false, error: 'Rundschreiben nicht gefunden.' });
+        }
+
+        try {
+            emitDeleteBroadcast(id);
+        } catch (socketErr) {
+            console.warn('Socket broadcast emit error:', socketErr.message);
         }
 
         return res.status(200).json({

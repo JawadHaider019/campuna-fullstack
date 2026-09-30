@@ -55,23 +55,23 @@ input::-ms-clear {
 }
 
 
-/* Custom scrollbar to match the premium aesthetic */
+/* Clean modern scrollbar with transparent background */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f7f3ea;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #00630D;
-  border-radius: 10px;
+  background: linear-gradient(180deg, #00630D, #1A1A1A);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #004d0a;
+  background: linear-gradient(180deg, #007a10, #000000);
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
