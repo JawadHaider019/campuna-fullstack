@@ -93,7 +93,7 @@ async function main() {
         SELECT u.id, p.id, 'ACTIVE', NOW(), NOW() + INTERVAL '90 days', 'PROMO', '3 Monate Campuna Business Willkommensphase', NOW(), NOW()
         FROM users u
         INNER JOIN plans p ON p.name = 'BUSINESS'
-        WHERE (u.user_type = 'COMMERCIAL' OR u.account_type = 'COMMERCIAL')
+        WHERE u.user_type = 'COMMERCIAL'
           AND EXISTS (SELECT 1 FROM users u2 WHERE u2.id = u.id)
           AND NOT EXISTS (
               SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.status = 'ACTIVE'

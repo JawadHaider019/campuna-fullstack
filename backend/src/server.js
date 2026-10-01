@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import 'express-async-errors';
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
@@ -80,8 +81,17 @@ app.use('/api/broadcasts', broadcastRoutes);
 app.use('/api/posts', postsRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Global error handling middleware (handles Multer errors and others)
+// 404 Not Found Handler for undefined routes
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    error: `Endpunkt nicht gefunden: ${req.method} ${req.originalUrl}`
+  });
+});
+
+// Global error handling middleware (handles Multer, JWT, Prisma, Syntax and general errors)
 app.use((err, req, res, next) => {
+  // Multer & File Upload Errors
   if (err.name === 'MulterError' || err.code === 'LIMIT_FILE_SIZE') {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
@@ -94,14 +104,45 @@ app.use((err, req, res, next) => {
       error: `Dateiupload-Fehler: ${err.message}`
     });
   }
-  if (err) {
-    console.error('Unhandled error:', err);
-    return res.status(500).json({
+
+  // JSON Body Syntax Error
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
       success: false,
-      error: err.message || 'Ein interner Serverfehler ist aufgetreten.'
+      error: 'Ungültiges JSON-Format im Anfrage-Body.'
     });
   }
-  next();
+
+  // JWT Errors
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      success: false,
+      error: 'Ungültiges Authentifizierungs-Token.'
+    });
+  }
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      success: false,
+      error: 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.'
+    });
+  }
+
+  // Database Unique Constraint or Record Errors
+  if (err.code === '23505' || err.code === 'P2002') {
+    return res.status(409).json({
+      success: false,
+      error: 'Ein Eintrag mit diesen Daten existiert bereits.'
+    });
+  }
+
+  const statusCode = err.status || err.statusCode || (res.statusCode >= 400 ? res.statusCode : 500);
+  console.error(`[Server Error] [${req.method} ${req.originalUrl}] [${statusCode}]:`, err);
+
+  return res.status(statusCode).json({
+    success: false,
+    error: err.message || 'Ein unerwarteter Serverfehler ist aufgetreten.',
+    ...(process.env.NODE_ENV === 'development' ? { stack: err.stack } : {})
+  });
 });
 
 // Crash prevention handlers to keep server alive

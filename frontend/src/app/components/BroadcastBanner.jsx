@@ -37,9 +37,17 @@ export default function BroadcastBanner() {
     const token = useAuthStore((state) => state.accessToken);
     const isAdmin = user?.role === 'ADMIN';
 
-    // Don't show in admin portal pages or for admin users
+    // Only show broadcasts for logged-in regular users; never on admin routes, auth pages, or for guests/logged-out visitors
     const isAdminRoute = pathname?.startsWith('/admin');
-    const shouldHide = isAdminRoute || isAdmin;
+    const isAuthPage = 
+        pathname === '/login' || 
+        pathname === '/register' || 
+        pathname === '/anmelden' || 
+        pathname === '/registrieren' ||
+        pathname?.startsWith('/email-bestaetigen') ||
+        pathname?.startsWith('/verify-email');
+
+    const shouldHide = !isLoggedIn || isAdminRoute || isAdmin || isAuthPage;
 
     const fetchBroadcasts = useCallback(async () => {
         if (shouldHide) return;
@@ -136,6 +144,8 @@ export default function BroadcastBanner() {
         setUnreadCount(0);
     };
 
+    const isHomePage = pathname === '/' || pathname === '/de';
+
     // Find the highest priority unread broadcast that hasn't been temporarily dismissed in current session
     const urgentUnread = broadcasts.find(
         b => !b.is_read && (b.priority === 'URGENT' || b.priority === 'IMPORTANT') && !dismissedBannerIds.includes(b.id)
@@ -145,9 +155,9 @@ export default function BroadcastBanner() {
 
     return (
         <>
-            {/* Top Announcement Bar for Urgent / Important Broadcasts */}
+            {/* Top Announcement / Welcome Bar - Strictly displayed on Home Page only */}
             <AnimatePresence>
-                {urgentUnread && (
+                {isHomePage && urgentUnread && (
                     <motion.aside
                         aria-label="Wichtige Plattformmitteilung"
                         initial={{ height: 0, opacity: 0 }}

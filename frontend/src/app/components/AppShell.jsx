@@ -10,14 +10,20 @@ import ScrollSectionWrapper from './ScrollSectionWrapper';
 
 export default function AppShell({ children }) {
     const pathname = usePathname();
-    const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/anmelden' || pathname === '/registrieren';
+    const isAuthPage = 
+        pathname === '/login' || 
+        pathname === '/register' || 
+        pathname === '/anmelden' || 
+        pathname === '/registrieren' ||
+        pathname?.startsWith('/email-bestaetigen') ||
+        pathname?.startsWith('/verify-email');
     const isAdminRoute = pathname?.startsWith('/admin');
     const isUserAccountRoute = pathname?.startsWith('/mein-konto') || pathname?.startsWith('/de/mein-konto');
     const hideHeaderFooter = isAuthPage || isAdminRoute || isUserAccountRoute;
 
     return (
         <>
-            <BroadcastBanner />
+            {!isAuthPage && !isAdminRoute && <BroadcastBanner />}
             {!hideHeaderFooter && <Navbar />}
             <main className={`flex-1 ${hideHeaderFooter ? 'h-full min-h-0 overflow-hidden flex flex-col' : ''}`}>
                 {children}

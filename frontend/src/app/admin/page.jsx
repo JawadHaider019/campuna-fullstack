@@ -37,7 +37,8 @@ import {
     ArrowDownRight,
     Rocket,
     Hexagon,
-    BarChart3
+    BarChart3,
+    AlertTriangle
 } from 'lucide-react';
 import { getAdminDashboardStats } from '@/api/admin';
 import { getImageUrl } from '@/utils/imageUrl';
@@ -60,8 +61,13 @@ export default function AdminDashboard() {
         setLoading(true);
         try {
             const res = await getAdminDashboardStats();
-            if (res.data?.success) {
+            if (res?.success && res?.data?.success && res?.data?.stats) {
                 setStats(res.data.stats);
+            } else if (res?.data?.stats) {
+                setStats(res.data.stats);
+            } else {
+                console.error("Dashboard stats response not successful:", res);
+                showFeedback(res?.error || "Fehler beim Laden der Live-Statistiken. Bitte überprüfe deine Admin-Berechtigung.", "error");
             }
         } catch (err) {
             console.error("Error loading dashboard stats:", err);
