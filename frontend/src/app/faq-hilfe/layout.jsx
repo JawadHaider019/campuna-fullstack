@@ -68,7 +68,7 @@ export default function FaqHilfeLayout({ children }) {
                 name: 'Für wen ist Campuna geeignet?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'Campuna richtet sich an alle Campingbegeisterten – von privaten Campern bis hin zu verifizierten gewerblichen Anbietern, Händlern und Vermietern.',
+                    text: 'Campuna richtet sich an alle Campingbegeisterten – von privaten Campern bis hin zu gewerblichen Anbietern, Händlern und Vermietern.',
                 },
             },
             {

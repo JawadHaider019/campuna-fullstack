@@ -264,11 +264,15 @@ export default function AccountCreateListingTab({
     const removeImage = (index) => {
         const removedPreview = previewUrls[index];
 
-        if (typeof removedPreview === 'string' && (removedPreview.startsWith('http') || removedPreview.startsWith('/'))) {
+        if (typeof removedPreview === 'string' && !removedPreview.startsWith('blob:') && !removedPreview.startsWith('data:')) {
             setDeletedExistingImages(prev => [...prev, removedPreview]);
         } else {
-            const fileIdx = images.findIndex((_, idx) => idx === index);
-            if (fileIdx > -1) {
+            // Count how many existing (non-blob) images were before this index
+            const existingCountBefore = previewUrls
+                .slice(0, index)
+                .filter(u => typeof u === 'string' && !u.startsWith('blob:') && !u.startsWith('data:')).length;
+            const fileIdx = index - existingCountBefore;
+            if (fileIdx >= 0 && fileIdx < images.length) {
                 const updatedFiles = [...images];
                 updatedFiles.splice(fileIdx, 1);
                 setImages(updatedFiles);
@@ -502,7 +506,7 @@ export default function AccountCreateListingTab({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
                         <motion.div 
                             initial={{ scale: 0.95, opacity: 0, y: 10 }}

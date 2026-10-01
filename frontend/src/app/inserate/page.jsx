@@ -791,10 +791,28 @@ function ListingsContent() {
                 } else {
                     list = STATIC_LISTINGS.map(mapListing).filter(Boolean);
                 }
-                if (active) setListings(list);
+
+                // Deduplicate listings by unique key (id or slug)
+                const seen = new Set();
+                const uniqueList = list.filter(item => {
+                    const key = item?.id || item?.slug || item?.title;
+                    if (!key || seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+
+                if (active) setListings(uniqueList);
             } catch (err) {
                 console.error("Error fetching listings from database:", err);
-                if (active) setListings(STATIC_LISTINGS.map(mapListing).filter(Boolean));
+                const fallbackList = STATIC_LISTINGS.map(mapListing).filter(Boolean);
+                const seen = new Set();
+                const uniqueFallback = fallbackList.filter(item => {
+                    const key = item?.id || item?.slug || item?.title;
+                    if (!key || seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+                if (active) setListings(uniqueFallback);
             } finally {
                 if (active) setLoading(false);
             }

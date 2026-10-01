@@ -23,6 +23,8 @@ import {
     earnSimulatedCredits,
     spendSimulatedCredits,
     bookSpotlight,
+    createStripeCheckoutSession,
+    verifyStripeSession,
 } from '@/api/profile';
 import { getMyListings, boostListing, deleteListing, toggleListingStatus } from '@/api/listings';
 import { logoutUser } from '@/api/auth';
@@ -42,6 +44,8 @@ import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import { PROVIDER_CATEGORIES } from '@/data';
 
 
 import {
@@ -52,7 +56,7 @@ import {
     Rocket, Eye, LayoutDashboard, Gift, Users, CheckCircle2, Zap, ExternalLink,
     Clock, TrendingUp, Bell, Search, ShieldCheck, Compass, CheckCircle, Pencil, Send,
     FileSpreadsheet, MessageSquare, Heart, Trash2, PanelLeftClose, PanelLeftOpen, PanelLeft,
-    Pause, Play, Power, BarChart2
+    Pause, Play, Power, BarChart2, Circle
 } from 'lucide-react';
 
 function Linkedin(props) {
@@ -552,6 +556,34 @@ export default function MeinKontoPage() {
 
         try {
             setLoading(true);
+
+            // Handle Stripe return redirect callback if present
+            if (typeof window !== 'undefined') {
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('session_id');
+                const isStripeSuccess = urlParams.get('stripe_success') === 'true' || urlParams.get('spotlight_success') === 'true';
+                const isStripeCancelled = urlParams.get('stripe_cancelled') === 'true' || urlParams.get('spotlight_cancelled') === 'true';
+
+                if (isStripeCancelled) {
+                    toast.error('Zahlungsvorgang über Stripe abgebrochen.');
+                    window.history.replaceState({}, document.title, window.location.pathname + (urlParams.get('tab') ? `?tab=${urlParams.get('tab')}` : ''));
+                } else if (sessionId && isStripeSuccess) {
+                    try {
+                        const verifyRes = await verifyStripeSession(sessionId);
+                        if (verifyRes.success && verifyRes.data?.paid) {
+                            if (verifyRes.data.type === 'CREDIT_PURCHASE') {
+                                toast.success('🎉 Campuna Credits erfolgreich über Stripe aufgeladen!', { duration: 5000 });
+                            } else if (verifyRes.data.type === 'SPOTLIGHT_PURCHASE') {
+                                toast.success('🎉 Spotlight-Platzierung erfolgreich über Stripe aktiviert!', { duration: 5000 });
+                            } else if (verifyRes.data.type === 'SUBSCRIPTION') {
+                                toast.success('🎉 Campuna Business erfolgreich über Stripe aktiviert!', { duration: 5000 });
+                            }
+                        }
+                    } catch (_) {}
+                    window.history.replaceState({}, document.title, window.location.pathname + (urlParams.get('tab') ? `?tab=${urlParams.get('tab')}` : ''));
+                }
+            }
+
             const profileRes = await getMyProfile();
             if (profileRes.success) {
                 setProfile(profileRes.data.profile);
@@ -1033,26 +1065,23 @@ export default function MeinKontoPage() {
         setBuyingCredits(true);
         const PACKAGES_EUR = { 500: '4,99 €', 800: '7,99 €', 1300: '12,99 €', 2500: '24,99 €' };
         const priceEur = PACKAGES_EUR[selectedCreditPkg] || '4,99 €';
-        const toastId = toast.loading(`Kauf von ${selectedCreditPkg.toLocaleString('de-DE')} CC (${priceEur}) wird verarbeitet...`);
+        const toastId = toast.loading(`Kauf von ${selectedCreditPkg.toLocaleString('de-DE')} CC (${priceEur}) wird vorbereitet...`);
 
         try {
-            const res = await purchaseCredits(selectedCreditPkg, creditPaymentMethod);
-            if (res.success || res.data?.success) {
-                toast.success(`🎉 +${selectedCreditPkg.toLocaleString('de-DE')} Campuna Credits erfolgreich aufgeladen!`, { id: toastId });
-                if (res.data?.new_balance !== undefined) {
-                    setCreditBalance(res.data.new_balance);
-                }
-                // Refresh transaction list
-                const txRes = await getCreditTransactions().catch(() => null);
-                if (txRes?.success && Array.isArray(txRes.data?.transactions)) {
-                    setCreditTransactions(txRes.data.transactions);
-                }
-                setBuyCreditModalOpen(false);
+            const stripeRes = await createStripeCheckoutSession({
+                type: 'CREDIT_PURCHASE',
+                package_credits: selectedCreditPkg,
+                return_url: window.location.origin,
+            });
+
+            if (stripeRes.success && stripeRes.data?.url) {
+                toast.success('Weiterleitung zu Stripe...', { id: toastId });
+                window.location.href = stripeRes.data.url;
             } else {
-                toast.error(res.error || res.data?.error || 'Guthabenkauf fehlgeschlagen.', { id: toastId });
+                toast.error(stripeRes.error || 'Fehler beim Erstellen der Stripe-Zahlungssitzung.', { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Guthabenkauf fehlgeschlagen.', { id: toastId });
+            toast.error(err.response?.data?.error || err.message || 'Guthabenkauf über Stripe fehlgeschlagen.', { id: toastId });
         } finally {
             setBuyingCredits(false);
         }
@@ -1069,46 +1098,71 @@ export default function MeinKontoPage() {
         const cost = SPOTLIGHT_COSTS[spotlightDuration] || 1500;
         const priceEur = SPOTLIGHT_PRICES[spotlightDuration] || '14,99 €';
 
-        if (spotlightPaymentMethod === 'CREDIT' && (Number(creditBalance) || 0) < cost) {
-            toast.error(`Nicht genügend Credits (${creditBalance} CC vorhanden, ${cost} CC benötigt). Wähle stattdessen Direktzahlung.`);
-            return;
-        }
-
-        setBookingSpotlight(true);
-        const toastId = toast.loading(spotlightPaymentMethod === 'CREDIT' ? 'Spotlight wird aktiviert...' : `Zahlung von ${priceEur} wird verarbeitet...`);
-
-        try {
-            const res = await bookSpotlight({
-                durationDays: spotlightDuration,
-                payment_method: spotlightPaymentMethod
-            });
-
-            if (res.success || res.data?.success) {
-                toast.success(`🎉 Glückwunsch! Dein Unternehmen ist jetzt für ${spotlightDuration} Tage im Campuna Spotlight aktiv!`, { id: toastId });
-                if (res.data?.new_balance !== undefined) {
-                    setCreditBalance(res.data.new_balance);
-                }
-                setProfile(prev => prev ? {
-                    ...prev,
-                    spotlight_until: res.data?.spotlight_until || res.spotlight_until,
-                    is_spotlight_active: true,
-                    spotlight_days_left: res.data?.days_left || spotlightDuration
-                } : prev);
-
-                getCreditTransactions().then(txRes => {
-                    if (txRes?.success && Array.isArray(txRes.data?.transactions)) {
-                        setCreditTransactions(txRes.data.transactions);
-                    }
-                }).catch(() => {});
-
-                setSpotlightModalOpen(false);
-            } else {
-                toast.error(res.error || res.data?.error || 'Spotlight-Buchung fehlgeschlagen.', { id: toastId });
+        if (spotlightPaymentMethod === 'CREDIT') {
+            if ((Number(creditBalance) || 0) < cost) {
+                toast.error(`Nicht genügend Credits (${creditBalance} CC vorhanden, ${cost} CC benötigt).`);
+                return;
             }
-        } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Spotlight-Buchung fehlgeschlagen.', { id: toastId });
-        } finally {
-            setBookingSpotlight(false);
+
+            setBookingSpotlight(true);
+            const toastId = toast.loading('Spotlight wird mit Credits aktiviert...');
+
+            try {
+                const res = await bookSpotlight({
+                    durationDays: spotlightDuration,
+                    payment_method: 'CREDIT'
+                });
+
+                if (res.success || res.data?.success) {
+                    toast.success(`🎉 Glückwunsch! Dein Unternehmen ist jetzt für ${spotlightDuration} Tage im Campuna Spotlight aktiv!`, { id: toastId });
+                    if (res.data?.new_balance !== undefined) {
+                        setCreditBalance(res.data.new_balance);
+                    }
+                    setProfile(prev => prev ? {
+                        ...prev,
+                        spotlight_until: res.data?.spotlight_until || res.spotlight_until,
+                        is_spotlight_active: true,
+                        spotlight_days_left: res.data?.days_left || spotlightDuration
+                    } : prev);
+
+                    getCreditTransactions().then(txRes => {
+                        if (txRes?.success && Array.isArray(txRes.data?.transactions)) {
+                            setCreditTransactions(txRes.data.transactions);
+                        }
+                    }).catch(() => {});
+
+                    setSpotlightModalOpen(false);
+                } else {
+                    toast.error(res.error || res.data?.error || 'Spotlight-Buchung fehlgeschlagen.', { id: toastId });
+                }
+            } catch (err) {
+                toast.error(err.response?.data?.error || err.message || 'Spotlight-Buchung fehlgeschlagen.', { id: toastId });
+            } finally {
+                setBookingSpotlight(false);
+            }
+        } else {
+            // Stripe Payment Method
+            setBookingSpotlight(true);
+            const toastId = toast.loading(`Spotlight-Zahlung (${priceEur}) über Stripe wird vorbereitet...`);
+
+            try {
+                const stripeRes = await createStripeCheckoutSession({
+                    type: 'SPOTLIGHT_PURCHASE',
+                    duration_days: spotlightDuration,
+                    return_url: window.location.origin,
+                });
+
+                if (stripeRes.success && stripeRes.data?.url) {
+                    toast.success('Weiterleitung zu Stripe...', { id: toastId });
+                    window.location.href = stripeRes.data.url;
+                } else {
+                    toast.error(stripeRes.error || 'Fehler beim Erstellen der Stripe-Sitzung.', { id: toastId });
+                }
+            } catch (err) {
+                toast.error(err.response?.data?.error || err.message || 'Stripe-Zahlung fehlgeschlagen.', { id: toastId });
+            } finally {
+                setBookingSpotlight(false);
+            }
         }
     };
 
@@ -1738,8 +1792,8 @@ export default function MeinKontoPage() {
                                                     <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
                                                         <ShieldCheck className="w-4 h-4" />
                                                     </div>
-                                                    <h4 className="font-bold text-sm text-sand">Gewerbe-Siegel & Firmen-Cover</h4>
-                                                    <p className="text-xs text-sand/60">Individuelles Firmen-Cover, 1.000 Zeichen Bio und verifiziertes Unternehmens-Siegel.</p>
+                                                    <h4 className="font-bold text-sm text-sand">Firmen-Cover & Business-Kennzeichnung</h4>
+                                                    <p className="text-xs text-sand/60">Individuelles Firmen-Cover, 1.000 Zeichen Bio und exklusive Business-Präsenz.</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1902,14 +1956,33 @@ export default function MeinKontoPage() {
                                                                         placeholder="Nachname" icon={User} />
                                                                 </div>
                                                             ) : (
-                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                                    <FormField label="Firmenname" value={profile?.company_name} editValue={draft.company_name}
-                                                                        isEditing={true} onChange={v => setDraft(d => ({ ...d, company_name: v }))}
-                                                                        placeholder="z.B. Alpine Camper GmbH" icon={Building2} />
-                                                                    <FormField label="Telefon" value={profile?.phone} editValue={draft.phone}
-                                                                        isEditing={true} onChange={v => setDraft(d => ({ ...d, phone: v }))}
-                                                                        placeholder="+49 30 ..." icon={Phone} type="tel" />
-                                                                </div>
+                                                                    <div className="space-y-4">
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                            <FormField label="Firmenname" value={profile?.company_name} editValue={draft.company_name}
+                                                                                isEditing={true} onChange={v => setDraft(d => ({ ...d, company_name: v }))}
+                                                                                placeholder="z.B. Alpine Camper GmbH" icon={Building2} />
+                                                                            <FormField label="Telefon" value={profile?.phone} editValue={draft.phone}
+                                                                                isEditing={true} onChange={v => setDraft(d => ({ ...d, phone: v }))}
+                                                                                placeholder="+49 30 ..." icon={Phone} type="tel" />
+                                                                        </div>
+
+                                                                        <div className="flex flex-col gap-1.5">
+                                                                            <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                                                                                <Building2 className="w-3.5 h-3.5 text-forest" /> Haupt-Anbieterkategorie
+                                                                            </label>
+                                                                            <select
+                                                                                value={draft.provider_category || profile?.provider_category || 'Wohnmobil- & Wohnwagenhändler'}
+                                                                                onChange={e => setDraft(d => ({ ...d, provider_category: e.target.value }))}
+                                                                                className="w-full bg-[#faf8f3] border border-beige rounded-2xl px-4 py-2.5 text-sm text-charcoal focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans cursor-pointer"
+                                                                            >
+                                                                                {PROVIDER_CATEGORIES.map(cat => (
+                                                                                    <option key={cat.id} value={cat.name}>
+                                                                                        {cat.name}
+                                                                                    </option>
+                                                                                ))}
+                                                                            </select>
+                                                                        </div>
+                                                                    </div>
                                                             )}
 
                                                             <FormField
@@ -2733,7 +2806,8 @@ export default function MeinKontoPage() {
                                         >
                                             {filteredListings.map((item) => {
                                                 const isBoosted = Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
-                                                const img = item.images && item.images.length > 0 ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
+                                                const hasImg = Array.isArray(item.images) && item.images.length > 0;
+                                                const img = hasImg ? getImageUrl(item.images[0]) : null;
                                                 const features = [
                                                     item.subcategory,
                                                     item.condition,
@@ -2758,12 +2832,17 @@ export default function MeinKontoPage() {
                                                                 className="relative h-40 sm:h-36 w-full overflow-hidden bg-sand/20 cursor-pointer"
                                                                 onClick={() => router.push(`/inserate/${item.slug || item.id}`)}
                                                             >
-                                                                <img
-                                                                    src={img}
-                                                                    alt={item.title}
-                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                                                    loading="lazy"
-                                                                />
+                                                                {hasImg && img ? (
+                                                                    <img
+                                                                        src={img}
+                                                                        alt={item.title}
+                                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                                        loading="lazy"
+                                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                                    />
+                                                                ) : (
+                                                                    <ListingImagePlaceholder category={item.category} size="sm" />
+                                                                )}
                                                                 {/* Top Status Badges */}
                                                                 <div className="absolute top-2.5 left-2.5 flex items-center gap-1 flex-wrap z-10 pointer-events-none">
                                                                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase shadow-xs ${
@@ -3011,7 +3090,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
                         onClick={() => !bookingSpotlight && setSpotlightModalOpen(false)}
                     >
                         <motion.div
@@ -3138,31 +3217,39 @@ export default function MeinKontoPage() {
 
                             {/* Payment Method Selector */}
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider">Zahlungsmethode:</label>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    {[
-                                        { id: 'CREDIT', label: 'Campuna Credits', icon: CoinIcon, isCoin: true },
-                                        { id: 'CREDIT_CARD', label: 'Kreditkarte', icon: CreditCard },
-                                        { id: 'PAYPAL', label: 'PayPal', icon: ShieldCheck },
-                                        { id: 'SEPA', label: 'SEPA', icon: Building2 },
-                                    ].map((m) => {
-                                        const Icon = m.icon;
-                                        return (
-                                            <button
-                                                key={m.id}
-                                                type="button"
-                                                onClick={() => setSpotlightPaymentMethod(m.id)}
-                                                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                                                    spotlightPaymentMethod === m.id
-                                                        ? 'border-forest bg-sand/60 shadow-xs ring-2 ring-forest/20 text-forest font-bold'
-                                                        : 'border-beige bg-[#faf8f3] text-charcoal hover:bg-sand/40'
-                                                }`}
-                                            >
-                                                {m.isCoin ? <CoinIcon size="xs" /> : <Icon className="w-3.5 h-3.5 text-forest" />}
-                                                <span className="text-[10px] leading-tight">{m.label}</span>
-                                            </button>
-                                        );
-                                    })}
+                                <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider font-sans">Zahlungsmethode:</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSpotlightPaymentMethod('CREDIT')}
+                                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
+                                            spotlightPaymentMethod === 'CREDIT'
+                                                ? 'border-forest bg-forest text-sand shadow-sm ring-2 ring-forest/20 font-bold'
+                                                : 'border-beige bg-[#faf8f3] text-charcoal hover:bg-sand/40'
+                                        }`}
+                                    >
+                                        <CoinIcon size="xs" />
+                                        <span className="text-xs font-sans">Campuna Credits</span>
+                                        <span className={`text-[10px] font-sans ${spotlightPaymentMethod === 'CREDIT' ? 'text-sand/80' : 'text-charcoal/50'}`}>
+                                            ({Number(creditBalance).toLocaleString('de-DE')} CC verfügbar)
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setSpotlightPaymentMethod('STRIPE')}
+                                        className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1.5 ${
+                                            spotlightPaymentMethod === 'STRIPE'
+                                                ? 'border-[#635BFF] bg-[#635BFF] text-white shadow-sm ring-2 ring-[#635BFF]/20 font-bold'
+                                                : 'border-beige bg-[#faf8f3] text-charcoal hover:bg-sand/40'
+                                        }`}
+                                    >
+                                        <CreditCard className="w-4 h-4" />
+                                        <span className="text-xs font-sans">Stripe Checkout</span>
+                                        <span className={`text-[10px] font-sans ${spotlightPaymentMethod === 'STRIPE' ? 'text-white/80' : 'text-charcoal/50'}`}>
+                                            Karte / SEPA / Apple Pay
+                                        </span>
+                                    </button>
                                 </div>
                             </div>
 
@@ -3180,19 +3267,23 @@ export default function MeinKontoPage() {
                                     type="button"
                                     onClick={handleBookSpotlight}
                                     disabled={bookingSpotlight || !spotlightRequirements.allMet || (spotlightPaymentMethod === 'CREDIT' && Number(creditBalance) < (spotlightDuration === 7 ? 1500 : spotlightDuration === 14 ? 2500 : 4000))}
-                                    className="flex-1 bg-forest hover:bg-[#004d0a] text-sand py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className={`flex-1 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                                        spotlightPaymentMethod === 'STRIPE'
+                                            ? 'bg-[#635BFF] hover:bg-[#534be8] text-white'
+                                            : 'bg-forest hover:bg-[#004d0a] text-sand'
+                                    }`}
                                 >
                                     {bookingSpotlight ? <Loader2 className="w-4 h-4 animate-spin text-gold" /> : <Sparkles className="w-4 h-4 text-gold" />}
                                     <span>
                                         {bookingSpotlight
-                                            ? 'Wird aktiviert...'
+                                            ? 'Wird weitergeleitet...'
                                             : !subDetails?.is_business
                                             ? 'Campuna Business erforderlich'
                                             : !spotlightRequirements.allMet
                                             ? 'Profil unvollständig'
                                             : spotlightPaymentMethod === 'CREDIT'
                                             ? `Mit ${(spotlightDuration === 7 ? 1500 : spotlightDuration === 14 ? 2500 : 4000).toLocaleString('de-DE')} CC aktivieren`
-                                            : `Jetzt für ${spotlightDuration === 7 ? '14,99 €' : spotlightDuration === 14 ? '24,99 €' : '39,99 €'} buchen`}
+                                            : `Sicher mit Stripe bezahlen (${spotlightDuration === 7 ? '14,99 €' : spotlightDuration === 14 ? '24,99 €' : '39,99 €'})`}
                                     </span>
                                 </button>
                                 <button
@@ -3215,7 +3306,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
                         <motion.div
                             initial={{ scale: 0.95, y: 20 }}
@@ -3276,33 +3367,20 @@ export default function MeinKontoPage() {
                                 </div>
                             </div>
 
-                            {/* Select Payment Method */}
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider">Zahlungsmethode:</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {[
-                                        { id: 'CREDIT_CARD', label: 'Kreditkarte', icon: CreditCard },
-                                        { id: 'SEPA', label: 'SEPA', icon: Building2 },
-                                        { id: 'PAYPAL', label: 'PayPal', icon: ShieldCheck },
-                                    ].map((m) => {
-                                        const Icon = m.icon;
-                                        return (
-                                            <button
-                                                key={m.id}
-                                                type="button"
-                                                onClick={() => setCreditPaymentMethod(m.id)}
-                                                className={`p-3 rounded-2xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                                                    creditPaymentMethod === m.id
-                                                        ? 'border-forest bg-sand/60 shadow-xs ring-2 ring-forest/20 text-forest font-bold'
-                                                        : 'border-beige bg-[#faf8f3] text-charcoal hover:bg-sand/40'
-                                                }`}
-                                            >
-                                                <Icon className="w-4 h-4 text-forest" />
-                                                <span className="text-[11px]">{m.label}</span>
-                                            </button>
-                                        );
-                                    })}
+                            {/* Stripe Secure Payment Banner */}
+                            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#635BFF]/10 via-[#faf8f3] to-white border border-[#635BFF]/25 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#635BFF] text-white">
+                                            Stripe Checkout
+                                        </span>
+                                        <span className="text-xs font-bold text-charcoal font-sans">Sichere 256-Bit SSL Zahlung</span>
+                                    </div>
+                                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
                                 </div>
+                                <p className="text-[11px] text-charcoal/70 leading-relaxed font-sans">
+                                    Zahle bequem per <strong>Kreditkarte (Visa, Mastercard, Amex)</strong>, <strong>SEPA-Lastschrift</strong>, <strong>Apple Pay</strong> oder <strong>Google Pay</strong> über Stripe.
+                                </p>
                             </div>
 
                             {/* Summary Box */}
@@ -3327,10 +3405,10 @@ export default function MeinKontoPage() {
                                     type="button"
                                     onClick={handlePurchaseCreditPackage}
                                     disabled={buyingCredits}
-                                    className="flex-1 bg-forest hover:bg-[#004d0a] text-sand py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                                    className="flex-1 bg-[#635BFF] hover:bg-[#534be8] text-white py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                                 >
-                                    {buyingCredits ? <Loader2 className="w-4 h-4 animate-spin text-gold" /> : <CoinIcon size="sm" />}
-                                    <span>{buyingCredits ? 'Wird aufgeladen...' : `Jetzt für ${selectedCreditPkg === 500 ? '4,99 €' : selectedCreditPkg === 800 ? '7,99 €' : selectedCreditPkg === 1300 ? '12,99 €' : '24,99 €'} aufladen`}</span>
+                                    {buyingCredits ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                                    <span>{buyingCredits ? 'Weiterleitung zu Stripe...' : `Sicher mit Stripe bezahlen (${selectedCreditPkg === 500 ? '4,99 €' : selectedCreditPkg === 800 ? '7,99 €' : selectedCreditPkg === 1300 ? '12,99 €' : '24,99 €'})`}</span>
                                 </button>
                                 <button
                                     type="button"
@@ -3352,7 +3430,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
                         <motion.div
                             initial={{ scale: 0.95, y: 20 }}
@@ -3423,7 +3501,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
                         <motion.div
                             initial={{ scale: 0.95, y: 20 }}
@@ -3484,7 +3562,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
                         <motion.div
                             initial={{ scale: 0.95, y: 20 }}
@@ -3573,7 +3651,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto"
                         onClick={() => setBadgeModalOpen(false)}
                     >
                         <motion.div
@@ -3782,7 +3860,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                         onClick={() => !isDeletingListing && setDeleteConfirmListing(null)}
                     >
                         <motion.div
@@ -3853,7 +3931,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
                         onClick={() => setRewardCelebrationModalOpen(false)}
                     >
                         <motion.div
@@ -3975,7 +4053,7 @@ export default function MeinKontoPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                         onClick={() => !loggingOut && setLogoutConfirmOpen(false)}
                     >
                         <motion.div

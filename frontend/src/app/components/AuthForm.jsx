@@ -10,10 +10,12 @@ import {
     loginUser,
     requestPasswordReset,
     verifyResetOtp,
-    resetPassword
+    resetPassword,
+    resendVerificationEmail
 } from '@/api/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
+import { PROVIDER_CATEGORIES } from '@/data';
 
 /* ─── Glass input ─── */
 const Field = ({ id, type = 'text', placeholder, value, onChange, autoComplete }) => {
@@ -80,6 +82,7 @@ function AuthFormContent({ initialMode = 'login' }) {
     const [companyName, setCompanyName] = useState('');
     const [companyEmail, setCompanyEmail] = useState('');
     const [websiteUrl, setWebsiteUrl] = useState('');
+    const [providerCategory, setProviderCategory] = useState('Wohnmobil- & Wohnwagenhändler');
 
     // Query params detection for referral code and account type (e.g. ?ref=CAMP-XXXX or ?type=commercial)
     useEffect(() => {
@@ -108,6 +111,11 @@ function AuthFormContent({ initialMode = 'login' }) {
             setMode(modeParam);
         }
 
+        if (searchParams.get('verified') === 'true') {
+            setMode('login');
+            setVerificationNotice(null);
+        }
+
         const handlePopState = () => {
             if (typeof window === 'undefined') return;
             const path = window.location.pathname;
@@ -134,7 +142,34 @@ function AuthFormContent({ initialMode = 'login' }) {
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [resetError, setResetError] = useState('');
     const [authError, setAuthError] = useState('');
+    const [verificationNotice, setVerificationNotice] = useState(null);
+    const [resendCooldown, setResendCooldown] = useState(0); // 120s cooldown
+    const [otpResendCooldown, setOtpResendCooldown] = useState(0); // 120s cooldown
     const login = useAuthStore((state) => state.login);
+
+    // 2-minute countdown timer for verification email resend
+    useEffect(() => {
+        if (resendCooldown <= 0) return;
+        const timer = setInterval(() => {
+            setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [resendCooldown]);
+
+    // 2-minute countdown timer for OTP code resend
+    useEffect(() => {
+        if (otpResendCooldown <= 0) return;
+        const timer = setInterval(() => {
+            setOtpResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [otpResendCooldown]);
+
+    const formatTimer = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
 
     useEffect(() => {
         if (mode !== 'verify-email' || !signupEmail) return;
@@ -234,6 +269,7 @@ function AuthFormContent({ initialMode = 'login' }) {
                     setLoading(false);
                     if (res.success) {
                         setForgotStep('otp');
+                        setOtpResendCooldown(120);
                         toast.success('6-stelliger Bestätigungscode wurde per E-Mail gesendet!');
                     } else {
                         toast.error(res.error || 'Fehler beim Senden des Codes.');
@@ -318,28 +354,21 @@ function AuthFormContent({ initialMode = 'login' }) {
                 company_name: companyName,
                 company_email: userType === 'business' ? companyEmail : undefined,
                 website_url: userType === 'business' ? websiteUrl : undefined,
+                provider_category: userType === 'business' ? providerCategory : undefined,
                 referred_by_code: referredByCode,
             };
 
             const response = await registerUser(userData);
             setLoading(false);
             if (response.success) {
-                const user = response.data?.user;
-                const accessToken = response.data?.access_token;
-                const refreshToken = response.data?.refresh_token;
-
-                if (user && accessToken) {
-                    login(user, accessToken, refreshToken);
-                    toast.success('Registrierung erfolgreich! Willkommen bei Campuna.');
-                    if (user?.role === 'ADMIN') {
-                        router.push('/admin');
-                    } else {
-                        router.push('/mein-konto');
-                    }
-                } else {
-                    toast.success('Konto erfolgreich erstellt!');
-                    setMode('login');
-                }
+                setLoginEmail(signupEmail);
+                setVerificationNotice({
+                    email: signupEmail,
+                    message: response.message || 'Wir haben dir einen Bestätigungslink per E-Mail gesendet.'
+                });
+                setResendCooldown(120);
+                setMode('login');
+                toast.success('Bestätigungs-E-Mail gesendet! Bitte überprüfe dein Postfach.');
             } else {
                 const errMsg = response.error || 'Registrierung fehlgeschlagen.';
                 setAuthError(errMsg);
@@ -363,9 +392,17 @@ function AuthFormContent({ initialMode = 'login' }) {
                     router.push('/mein-konto');
                 }
             } else {
-                const errMsg = response.error || 'Login fehlgeschlagen.';
-                setAuthError(errMsg);
-                toast.error(errMsg);
+                if (response.data?.requires_verification || (response.status === 403 && response.error?.toLowerCase().includes('bestätig'))) {
+                    setVerificationNotice({
+                        email: loginEmail,
+                        message: response.error || 'Bitte bestätige zuerst deine E-Mail-Adresse.'
+                    });
+                    toast.error('Bitte bestätige zuerst deine E-Mail-Adresse.');
+                } else {
+                    const errMsg = response.error || 'Login fehlgeschlagen.';
+                    setAuthError(errMsg);
+                    toast.error(errMsg);
+                }
             }
         }
     };
@@ -528,6 +565,21 @@ function AuthFormContent({ initialMode = 'login' }) {
                                                     <Field id="biz-website" type="url" placeholder="https://firma.de" value={websiteUrl}
                                                         onChange={e => setWebsiteUrl(e.target.value)} autoComplete="url" />
                                                 </div>
+
+                                                {/* Provider Category ── full width */}
+                                                <div className="flex flex-col gap-1">
+                                                    <label htmlFor="biz-category" className={labelCls}>Haupt-Anbieterkategorie</label>
+                                                    <SelectField
+                                                        id="biz-category"
+                                                        value={providerCategory}
+                                                        onChange={e => setProviderCategory(e.target.value)}
+                                                        options={PROVIDER_CATEGORIES.map(cat => ({
+                                                            value: cat.name,
+                                                            label: cat.name
+                                                        }))}
+                                                        placeholder="Kategorie auswählen"
+                                                    />
+                                                </div>
                                             </div>
                                         </motion.div>
                                     )}
@@ -616,13 +668,42 @@ function AuthFormContent({ initialMode = 'login' }) {
                                     </p>
                                 </div>
 
-                                <motion.button
-                                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                                    onClick={() => switchMode('login')}
-                                    className="w-full bg-white text-forest font-sans font-bold text-sm py-3 rounded-xl hover:bg-forest hover:text-white transition-all duration-300 shadow-lg cursor-pointer mt-2"
-                                >
-                                    Zurück zum Login
-                                </motion.button>
+                                <div className="space-y-2 mt-2">
+                                    <motion.button
+                                        whileHover={{ scale: resendCooldown > 0 ? 1 : 1.02 }} whileTap={{ scale: resendCooldown > 0 ? 1 : 0.97 }}
+                                        type="button"
+                                        disabled={loading || resendCooldown > 0}
+                                        onClick={async () => {
+                                            if (!signupEmail || resendCooldown > 0) return;
+                                            setLoading(true);
+                                            try {
+                                                const res = await resendVerificationEmail(signupEmail);
+                                                setLoading(false);
+                                                if (res.success) {
+                                                    setResendCooldown(120);
+                                                    toast.success('Ein neuer Bestätigungslink wurde gesendet!');
+                                                } else {
+                                                    toast.error(res.error || 'Fehler beim Senden.');
+                                                }
+                                            } catch {
+                                                setLoading(false);
+                                                toast.error('Fehler beim Senden des Links.');
+                                            }
+                                        }}
+                                        className="w-full bg-gold/90 text-forest font-sans font-bold text-xs py-2.5 rounded-xl hover:bg-gold transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {loading ? 'Wird gesendet...' : resendCooldown > 0 ? `Link erneut senden (${formatTimer(resendCooldown)})` : 'Bestätigungslink erneut senden'}
+                                    </motion.button>
+
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                                        type="button"
+                                        onClick={() => switchMode('login')}
+                                        className="w-full bg-white/20 hover:bg-white/30 text-white font-sans font-bold text-xs py-2.5 rounded-xl transition-all cursor-pointer"
+                                    >
+                                        Zurück zum Login
+                                    </motion.button>
+                                </div>
                             </motion.div>
                         ) : mode === 'forgot' ? (
                             /* ── FORGOT PASSWORD ── */
@@ -747,12 +828,15 @@ function AuthFormContent({ initialMode = 'login' }) {
                                             </button>
                                             <button
                                                 type="button"
+                                                disabled={loading || otpResendCooldown > 0}
                                                 onClick={async () => {
+                                                    if (otpResendCooldown > 0 || !forgotEmail) return;
                                                     setOtpCode(['', '', '', '', '', '']);
                                                     setOtpError('');
                                                     try {
                                                         const res = await requestPasswordReset(forgotEmail);
                                                         if (res.success) {
+                                                            setOtpResendCooldown(120);
                                                             toast.success(`Neuer Code an ${forgotEmail} gesendet!`);
                                                         } else {
                                                             toast.error(res.error || 'Fehler beim Senden des Codes.');
@@ -761,9 +845,9 @@ function AuthFormContent({ initialMode = 'login' }) {
                                                         toast.error('Fehler beim erneuten Senden des Codes.');
                                                     }
                                                 }}
-                                                className="text-gold/80 hover:text-gold font-semibold transition-colors cursor-pointer"
+                                                className={`font-semibold transition-colors ${otpResendCooldown > 0 ? 'text-white/40 cursor-not-allowed' : 'text-gold/80 hover:text-gold cursor-pointer'}`}
                                             >
-                                                Code erneut senden
+                                                {otpResendCooldown > 0 ? `Code erneut senden (${formatTimer(otpResendCooldown)})` : 'Code erneut senden'}
                                             </button>
                                         </div>
                                     </div>
@@ -790,7 +874,7 @@ function AuthFormContent({ initialMode = 'login' }) {
                                             className="w-full bg-white text-forest font-sans font-bold text-sm py-3 rounded-xl hover:bg-forest hover:text-white transition-all duration-300 shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 mt-1 cursor-pointer"
                                         >
                                             {loading
-                                                ? <span className="w-4 h-4 border-2 border-forest/30 border-t-forest rounded-full animate-spin inline-block" />
+                                                 ? <span className="w-4 h-4 border-2 border-forest/30 border-t-forest rounded-full animate-spin inline-block" />
                                                 : 'OTP Code anfordern'}
                                         </motion.button>
                                     </>
@@ -827,7 +911,62 @@ function AuthFormContent({ initialMode = 'login' }) {
                                     </p>
                                 </div>
 
-                                {authError && (
+                                {verificationNotice && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -6 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="bg-emerald-500/20 border border-emerald-400/40 rounded-2xl p-3.5 flex flex-col gap-2 backdrop-blur-md text-white"
+                                    >
+                                        <div className="flex items-start gap-2.5">
+                                            <div className="w-7 h-7 rounded-full bg-emerald-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                                                <Mail className="w-4 h-4 text-emerald-300" />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-sans font-bold text-xs text-emerald-200">
+                                                    Bitte bestätige deine E-Mail-Adresse
+                                                </p>
+                                                <p className="font-sans text-[11px] text-white/85 leading-relaxed mt-0.5">
+                                                    Wir haben einen Bestätigungslink an <strong className="text-white underline">{verificationNotice.email}</strong> gesendet. Klicke auf den Link in der E-Mail, um dein Konto zu aktivieren.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-between pt-1 border-t border-white/10 text-[10px]">
+                                            <button
+                                                type="button"
+                                                disabled={loading || resendCooldown > 0}
+                                                onClick={async () => {
+                                                    if (resendCooldown > 0 || !verificationNotice?.email) return;
+                                                    setLoading(true);
+                                                    try {
+                                                        const res = await resendVerificationEmail(verificationNotice.email);
+                                                        setLoading(false);
+                                                        if (res.success) {
+                                                            setResendCooldown(120);
+                                                            toast.success('Neuer Bestätigungslink wurde gesendet!');
+                                                        } else {
+                                                            toast.error(res.error || 'Fehler beim Senden.');
+                                                        }
+                                                    } catch {
+                                                        setLoading(false);
+                                                        toast.error('Fehler beim Senden des Links.');
+                                                    }
+                                                }}
+                                                className={`font-semibold transition-colors ${resendCooldown > 0 ? 'text-white/40 cursor-not-allowed' : 'text-gold hover:underline cursor-pointer'}`}
+                                            >
+                                                {resendCooldown > 0 ? `Link erneut senden (${formatTimer(resendCooldown)})` : (loading ? 'Wird gesendet...' : 'Link erneut senden')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setVerificationNotice(null)}
+                                                className="text-white/50 hover:text-white transition-colors cursor-pointer"
+                                            >
+                                                Schließen
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {authError && !verificationNotice && (
                                     <div className="bg-red-500/20 border border-red-500/50 rounded-xl p-3 text-red-200 text-xs font-sans">
                                         {authError}
                                     </div>

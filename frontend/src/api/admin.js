@@ -184,3 +184,36 @@ export const deleteAdminBroadcast = (id) => {
     return api.delete(`/admin/broadcasts/${id}`);
 };
 
+/**
+ * POST /api/admin/benefits/grant
+ * Grants a complimentary benefit (Free Business, Boost, Spotlight, Credits) to a user.
+ */
+export const grantAdminBenefit = (data) => {
+    return api.post('/admin/benefits/grant', data);
+};
+
+/**
+ * POST /api/admin/benefits/apply-transition-period
+ * Activates a 3-month free Campuna Business transition period for existing commercial partners.
+ */
+export const applyCommercialTransitionPeriod = () => {
+    return api.post('/admin/benefits/apply-transition-period');
+};
+
+/**
+ * GET /api/admin/benefits/user-listings/:userId
+ * Retrieves user's listings to select for free boost grant.
+ */
+export const getAdminUserListings = (userId) => {
+    return api.get(`/admin/benefits/user-listings/${userId}`);
+};
+
+/**
+ * PATCH /api/admin/users/:id/provider-category
+ * Manually updates/assigns the provider category for a commercial partner.
+ */
+export const updateUserProviderCategory = (userId, provider_category) => {
+    return api.patch(`/admin/users/${userId}/provider-category`, { provider_category });
+};
+
+

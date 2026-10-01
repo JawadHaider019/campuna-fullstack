@@ -108,9 +108,7 @@ function formatMemberSince(dateStr) {
     return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80';
-const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
+
 
 // ─── Normalizer & Listing Card (Matches Home Page ListingCard) ─────────────────
 
@@ -383,8 +381,8 @@ export default function ProviderDetails() {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
-    const [coverSrc, setCoverSrc] = useState(DEFAULT_COVER);
-    const [logoSrc, setLogoSrc] = useState(DEFAULT_LOGO);
+    const [coverSrc, setCoverSrc] = useState(null);
+    const [logoSrc, setLogoSrc] = useState(null);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -466,8 +464,8 @@ export default function ProviderDetails() {
                     id: matchedStaticUser.id,
                     name: matchedStaticUser.name,
                     type: matchedStaticUser.sellerType || (matchedStaticUser.account_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat'),
-                    logo: matchedStaticUser.logo || DEFAULT_LOGO,
-                    cover: matchedStaticUser.coverImage || DEFAULT_COVER,
+                    logo: matchedStaticUser.logo || null,
+                    cover: matchedStaticUser.coverImage || null,
                     bio: matchedStaticUser.description || '',
                     location: matchedStaticUser.location || 'Deutschland',
                     email: matchedStaticUser.email || ('kontakt@' + slugifyName(matchedStaticUser.name) + '.de'),
@@ -484,8 +482,8 @@ export default function ProviderDetails() {
                     achievements: matchedStaticUser.achievements || [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
                 });
 
-                setCoverSrc(matchedStaticUser.coverImage || DEFAULT_COVER);
-                setLogoSrc(matchedStaticUser.logo || DEFAULT_LOGO);
+                setCoverSrc(matchedStaticUser.coverImage ? getImageUrl(matchedStaticUser.coverImage) : null);
+                setLogoSrc(matchedStaticUser.logo ? getImageUrl(matchedStaticUser.logo) : null);
 
                 // Find user's assigned listings from static marketplace dataset
                 const userListings = STATIC_LISTINGS.filter(l =>
@@ -505,15 +503,15 @@ export default function ProviderDetails() {
                     p.id === rawSlug ||
                     (p.slug && p.slug.includes(cleanSlug))
                 );
-            }) || PROVIDERS[0];
+            });
 
             if (matchedMock) {
                 setProvider({
                     id: matchedMock.id,
                     name: matchedMock.name,
                     type: matchedMock.sellerType || 'Gewerblich',
-                    logo: matchedMock.logo || DEFAULT_LOGO,
-                    cover: matchedMock.coverImage || DEFAULT_COVER,
+                    logo: matchedMock.logo || null,
+                    cover: matchedMock.coverImage || null,
                     bio: matchedMock.description || '',
                     location: matchedMock.location || 'Deutschland',
                     email: 'kontakt@' + slugifyName(matchedMock.name) + '.de',
@@ -530,8 +528,8 @@ export default function ProviderDetails() {
                     achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
                 });
 
-                setCoverSrc(matchedMock.coverImage || DEFAULT_COVER);
-                setLogoSrc(matchedMock.logo || DEFAULT_LOGO);
+                setCoverSrc(matchedMock.coverImage ? getImageUrl(matchedMock.coverImage) : null);
+                setLogoSrc(matchedMock.logo ? getImageUrl(matchedMock.logo) : null);
 
                 const userListings = STATIC_LISTINGS.filter(l =>
                     l.seller?.name?.toLowerCase() === matchedMock.name.toLowerCase()
@@ -564,8 +562,8 @@ export default function ProviderDetails() {
                             ? (p.company_name || 'Gewerblicher Anbieter')
                             : (`${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Privatverkäufer');
 
-                        const logo = p.logo_url || p.profile_image_url || DEFAULT_LOGO;
-                        const cover = p.cover_image_url || DEFAULT_COVER;
+                        const logo = p.logo_url || p.profile_image_url || null;
+                        const cover = p.cover_image_url || null;
 
                         setProvider({
                             id: userId,
@@ -590,8 +588,8 @@ export default function ProviderDetails() {
                             achievements: profileRes.data.achievements || [],
                         });
 
-                        setCoverSrc(getImageUrl(cover, DEFAULT_COVER));
-                        setLogoSrc(getImageUrl(logo, DEFAULT_LOGO));
+                        setCoverSrc(cover ? getImageUrl(cover) : null);
+                        setLogoSrc(logo ? getImageUrl(logo) : null);
 
                         if (listingsRes.success && Array.isArray(listingsRes.data?.listings)) {
                             setListings(listingsRes.data.listings);
@@ -629,7 +627,7 @@ export default function ProviderDetails() {
                     '@id': `https://campuna.de/anbieter/${encodeURIComponent(rawSlug)}#seller`,
                     name: provider.name,
                     description: provider.bio || `${provider.name} auf Campuna.`,
-                    image: logoSrc || DEFAULT_LOGO,
+                    image: logoSrc || undefined,
                     address: provider.location ? {
                         '@type': 'PostalAddress',
                         addressLocality: provider.location,
@@ -724,14 +722,20 @@ export default function ProviderDetails() {
 
                         {/* Cover - Only for Commercial Users */}
                         {provider.type !== 'Privat' && (
-                            <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-sand/20">
-                                <img
-                                    src={coverSrc}
-                                    alt={`${provider.name} Banner`}
-                                    className="w-full h-full object-cover"
-                                    onError={() => setCoverSrc(DEFAULT_COVER)}
-                                    referrerPolicy="no-referrer"
-                                />
+                            <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-gradient-to-br from-[#0c2e17] via-[#103d20] to-[#041a0b] flex items-center justify-center">
+                                {coverSrc ? (
+                                    <img
+                                        src={coverSrc}
+                                        alt={`${provider.name} Banner`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        referrerPolicy="no-referrer"
+                                    />
+                                ) : (
+                                    <div className="text-sand/30 font-display font-bold text-base md:text-xl tracking-widest uppercase select-none">
+                                        Campuna Partner
+                                    </div>
+                                )}
                                 {/* Subtle bottom gradient for readability */}
                                 <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                             </div>
@@ -742,13 +746,19 @@ export default function ProviderDetails() {
                             <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
                                 <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
                                     <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
-                                        <img
-                                            src={logoSrc}
-                                            alt={`${provider.name} Logo`}
-                                            className="w-full h-full object-cover"
-                                            onError={() => setLogoSrc(DEFAULT_LOGO)}
-                                            referrerPolicy="no-referrer"
-                                        />
+                                        {logoSrc ? (
+                                            <img
+                                                src={logoSrc}
+                                                alt={`${provider.name} Logo`}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full rounded-full bg-gradient-to-br from-forest to-[#0d381e] text-sand flex items-center justify-center font-display font-bold text-2xl">
+                                                {provider.name?.slice(0, 2).toUpperCase() || 'CP'}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="space-y-3 flex-1 min-w-0">
                                         {/* Name */}
@@ -835,13 +845,19 @@ export default function ProviderDetails() {
                             <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
                                 <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
                                     <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
-                                        <img
-                                            src={logoSrc}
-                                            alt={`${provider.name} Logo`}
-                                            className="w-full h-full object-cover"
-                                            onError={() => setLogoSrc(DEFAULT_LOGO)}
-                                            referrerPolicy="no-referrer"
-                                        />
+                                        {logoSrc ? (
+                                            <img
+                                                src={logoSrc}
+                                                alt={`${provider.name} Logo`}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                referrerPolicy="no-referrer"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full rounded-full bg-gradient-to-br from-forest to-[#0d381e] text-sand flex items-center justify-center font-display font-bold text-2xl">
+                                                {provider.name?.slice(0, 2).toUpperCase() || 'CP'}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Left — Info */}
@@ -1096,13 +1112,19 @@ export default function ProviderDetails() {
 
                             {/* Provider Header Snippet */}
                             <div className="bg-sand/30 border-b border-forest/10 p-5 flex items-center gap-4">
-                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-forest/5 border border-forest/10 shrink-0">
-                                    <img
-                                        src={logoSrc || DEFAULT_LOGO}
-                                        alt={provider.name}
-                                        className="w-full h-full object-cover"
-                                        onError={() => setLogoSrc(DEFAULT_LOGO)}
-                                    />
+                                <div className="w-16 h-16 rounded-xl overflow-hidden bg-forest/5 border border-forest/10 shrink-0 flex items-center justify-center">
+                                    {logoSrc ? (
+                                        <img
+                                            src={logoSrc}
+                                            alt={provider.name}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-forest text-gold flex items-center justify-center font-display font-bold text-lg">
+                                            {provider.name?.slice(0, 2).toUpperCase() || 'CP'}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-1.5 flex-wrap">

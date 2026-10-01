@@ -115,3 +115,17 @@ export const uploadCover = async (file) => {
  * @param {{ durationDays: number, payment_method: string }} data
  */
 export const bookSpotlight = (data) => api.post('/profile/spotlight', data);
+
+// ─── Stripe API ───────────────────────────────────────────────────────────────
+/**
+ * POST /api/stripe/create-checkout-session
+ * @param {{ type: 'SUBSCRIPTION'|'CREDIT_PURCHASE'|'SPOTLIGHT_PURCHASE', plan_name?: string, duration_months?: number, package_credits?: number, duration_days?: number, return_url?: string }} options
+ */
+export const createStripeCheckoutSession = (options) => api.post('/stripe/create-checkout-session', options);
+
+/**
+ * GET /api/stripe/verify-session?session_id=...
+ * @param {string} sessionId
+ */
+export const verifyStripeSession = (sessionId) => api.get(`/stripe/verify-session?session_id=${encodeURIComponent(sessionId)}`);
+

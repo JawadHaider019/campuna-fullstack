@@ -48,7 +48,7 @@ const CATEGORIES_DATA = [
         cleanUrl: '/kategorie/wohnmobile-camper',
         tag: 'FAHRZEUGE',
         icon: Truck,
-        desc: 'Finde dein nächstes mobiles Zuhause oder verkaufe dein Reisefahrzeug. Entdecke gepflegte Kastenwagen, wendige Campervans, geräumige Teil- und Vollintegrierte sowie klassische Wohnwagen von privaten Campern und geprüften Fachhändlern aus ganz Deutschland.',
+        desc: 'Finde dein nächstes mobiles Zuhause oder verkaufe dein Reisefahrzeug. Entdecke gepflegte Kastenwagen, wendige Campervans, geräumige Teil- und Vollintegrierte sowie klassische Wohnwagen von privaten Campern und Fachhändlern aus ganz Deutschland.',
         subcategories: ['Kastenwagen', 'Alkoven', 'Teilintegriert', 'Vollintegriert', 'Wohnwagen', 'Sonstige Fahrzeuge']
     },
     {

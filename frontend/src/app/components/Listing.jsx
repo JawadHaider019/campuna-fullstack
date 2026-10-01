@@ -10,8 +10,6 @@ import { STATIC_LISTINGS } from '@/data';
 import { getImageUrl } from '@/utils/imageUrl';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
-
 function normalizeListing(item) {
     if (!item) return null;
 
@@ -293,19 +291,32 @@ export default function Listing({
     }, []);
 
     const activeListings = useMemo(() => {
+        let rawList = [];
         if (propListings && propListings.length > 0) {
-            return propListings;
+            rawList = propListings;
+        } else if (apiListings && apiListings.length > 0) {
+            rawList = apiListings;
+        } else {
+            rawList = STATIC_LISTINGS;
         }
-        if (apiListings && apiListings.length > 0) {
-            return apiListings;
-        }
-        return STATIC_LISTINGS;
+
+        // Deduplicate by id or slug
+        const seen = new Set();
+        return rawList.filter(item => {
+            const key = item?.id || item?.slug || item?.title;
+            if (!key || seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
     }, [apiListings, propListings]);
 
     const filteredListings = useMemo(() => {
+        const seenKeys = new Set();
         return activeListings.filter((rawItem) => {
             const item = normalizeListing(rawItem);
             if (!item) return false;
+            const uniqueKey = item.id || item.slug || item.title;
+            if (uniqueKey && seenKeys.has(uniqueKey)) return false;
             if (selectedCategoryFilter && item.category !== selectedCategoryFilter) return false;
             if (searchQuery) {
                 const query = searchQuery.toLowerCase();
@@ -317,6 +328,7 @@ export default function Listing({
                 const loc = searchLocation.toLowerCase();
                 if (!item.location.toLowerCase().includes(loc)) return false;
             }
+            if (uniqueKey) seenKeys.add(uniqueKey);
             return true;
         });
     }, [activeListings, selectedCategoryFilter, searchQuery, searchLocation]);

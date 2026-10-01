@@ -653,7 +653,7 @@ export default function AdminBroadcastsPage() {
             {/* ─── Create / Edit Modal (Fully Responsive & Secure) ─── */}
             <AnimatePresence>
                 {modalOpen && (
-                    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+                    <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 15 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -849,7 +849,7 @@ export default function AdminBroadcastsPage() {
             {/* ─── Delete Confirmation Modal (Responsive) ─── */}
             <AnimatePresence>
                 {deleteModalOpen && itemToDelete && (
-                    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+                    <div className="fixed inset-0 z-[99999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95, y: 15 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}

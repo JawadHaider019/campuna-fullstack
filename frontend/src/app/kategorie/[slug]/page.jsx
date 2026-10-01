@@ -441,7 +441,16 @@ export default function CategoryPage() {
                     ? all.filter(l => l.category.toLowerCase() === categoryName.toLowerCase())
                     : all;
 
-                if (active) setListings(filtered);
+                // Deduplicate
+                const seen = new Set();
+                const uniqueFiltered = filtered.filter(item => {
+                    const key = item?.id || item?.slug || item?.title;
+                    if (!key || seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+
+                if (active) setListings(uniqueFiltered);
             } catch (err) {
                 console.error('Error fetching category listings from database:', err);
                 if (active) setListings([]);

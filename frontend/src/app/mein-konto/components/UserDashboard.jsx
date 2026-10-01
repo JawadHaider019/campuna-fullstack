@@ -58,6 +58,7 @@ import {
 } from '@/api/profile';
 import CoinIcon from '@/app/components/CoinIcon';
 import { getImageUrl } from '@/utils/imageUrl';
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
 
 export default function UserDashboard({
     subDetails = {},
@@ -309,8 +310,55 @@ export default function UserDashboard({
         return Math.round(sum / scored.length);
     }, [userListings]);
 
+    const isTransition = subDetails?.subscription?.payment_method === 'TRANSITION_PERIOD' || (typeof subDetails?.subscription?.notes === 'string' && subDetails.subscription.notes.includes('TRANSITION'));
+    const isComplimentary = subDetails?.subscription?.payment_method === 'ADMIN_GRANT' || (typeof subDetails?.subscription?.notes === 'string' && subDetails.subscription.notes.includes('COMPLIMENTARY')) || isTransition;
+    const expiryFormatted = subDetails?.subscription?.expires_at ? new Date(subDetails.subscription.expires_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : null;
+    const daysRemaining = subDetails?.subscription?.expires_at ? Math.max(0, Math.ceil((new Date(subDetails.subscription.expires_at) - new Date()) / (1000 * 60 * 60 * 24))) : null;
+
     return (
         <div className="space-y-7 w-full max-w-[1700px] mx-auto pb-16">
+
+            {/* ─── Transition / Complimentary Period Notice Banner ─── */}
+            {isComplimentary && expiryFormatted && (
+                <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-r from-[#FFF9E6] via-[#FFFDF5] to-[#F3F9F2] border border-gold/40 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gold to-[#b38f2a] text-forest flex items-center justify-center font-bold shrink-0 shadow-md">
+                            <Crown className="w-6 h-6" />
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gold text-forest shadow-2xs">
+                                    {isTransition ? '3-Monate Übergangsphase aktiv' : 'Kostenloser Partner-Vorteil'}
+                                </span>
+                                {daysRemaining !== null && (
+                                    <span className="text-[11px] font-bold text-forest font-mono">
+                                        Noch {daysRemaining} Tage kostenlos (bis {expiryFormatted})
+                                    </span>
+                                )}
+                            </div>
+                            <h3 className="text-sm sm:text-base font-black text-charcoal font-display">
+                                {isTransition
+                                    ? 'Deine 3-monatige Campuna Business Übergangsphase ist aktiv'
+                                    : 'Kostenloser Campuna Business Zugang freigeschaltet'}
+                            </h3>
+                            <p className="text-xs text-charcoal/70 leading-relaxed max-w-3xl">
+                                Als geschätzter Partner nutzt du alle Business-Vorteile (individuelles Titelbild, Firmenprofil, Händler-Tools & unbegrenzte Inserate) kostenfrei. Nach Ablauf kannst du flexibel für 29 €/Monat auf Business bleiben oder kostenfrei zu <strong>Business Free</strong> wechseln — <strong>es erfolgt keine automatische Verlängerung oder Abbuchung</strong>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0 pt-2 md:pt-0">
+                        <button
+                            type="button"
+                            onClick={() => onNavigateTab ? onNavigateTab('abo') : router.push('/abo/kasse')}
+                            className="px-4 py-2.5 bg-forest hover:bg-[#004d0a] text-sand text-xs font-bold uppercase tracking-wider rounded-2xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                        >
+                            <span>Tarif-Details</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* ═════════════════════════════════════════════════════════════
                 1. LUXURY EXECUTIVE COMMAND HEADER
@@ -1027,12 +1075,12 @@ export default function UserDashboard({
                                 </span>
                             </div>
                             <p className="text-[11px] text-charcoal/60 mt-1.5 leading-relaxed">
-                                Optimierte Bilder, vollständige Stammdaten und verifizierter gewerblicher Status sichern Top-Suchplatzierungen.
+                                Optimierte Bilder, vollständige Stammdaten und ein detailliertes Profil sichern Top-Suchplatzierungen.
                             </p>
                         </div>
 
                         <div className="pt-2 border-t border-beige/60 flex items-center justify-between text-[11px]">
-                            <span className="text-charcoal/50">Geprüfte Inserate:</span>
+                            <span className="text-charcoal/50">Aktive Inserate:</span>
                             <span className="font-mono font-bold text-forest">{activeListingsCount} von {userListings.length} Live</span>
                         </div>
                     </div>
@@ -1113,7 +1161,8 @@ export default function UserDashboard({
                         <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
                             {filteredListings.map((item) => {
                                 const isBoosted = Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
-                                const img = (item.images && item.images.length > 0) ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=200';
+                                const hasImage = item.images && item.images.length > 0;
+                                const img = hasImage ? getImageUrl(item.images[0]) : null;
 
                                 return (
                                     <div
@@ -1121,12 +1170,17 @@ export default function UserDashboard({
                                         className="p-3.5 sm:p-4 bg-[#faf8f3] hover:bg-sand/50 border border-beige rounded-2xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-xs group"
                                     >
                                         <div className="flex items-center gap-3.5 min-w-0">
-                                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-sand/30 overflow-hidden shrink-0 border border-white shadow-xs relative">
-                                                <img
-                                                    src={img}
-                                                    alt={item.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                />
+                                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-sand/30 overflow-hidden shrink-0 border border-white shadow-xs relative flex items-center justify-center">
+                                                {img ? (
+                                                    <img
+                                                        src={img}
+                                                        alt={item.title}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                ) : (
+                                                    <ListingImagePlaceholder category={item.category} size="sm" />
+                                                )}
                                                 {isBoosted && (
                                                     <span className="absolute top-1 left-1 w-3 h-3 rounded-full bg-gold border-2 border-white shadow-xs" title="Hervorgehobenes Highlight" />
                                                 )}

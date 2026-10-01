@@ -148,7 +148,7 @@ export default function Home() {
           <Listing />
         </ScrollSectionWrapper>
 
-        {/* 4. Provider / Partner Spotlight */}
+        {/* 4. Provider / Partner Spotlight (Premium Paid Exposure) */}
         <ScrollSectionWrapper delay={0.05}>
           <Providers />
         </ScrollSectionWrapper>

@@ -12,6 +12,7 @@ import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -159,7 +160,7 @@ export default function FavoritesPage() {
                             {favoriteListings.map((item) => {
                                 const previewImg = Array.isArray(item.images) && item.images.length > 0
                                     ? item.images[0]
-                                    : (typeof item.images === 'string' ? item.images : '/hero.webp');
+                                    : (typeof item.images === 'string' && item.images.trim() ? item.images : null);
                                 const slug = item.slug || buildListingSlug(item.title, item.id);
                                 const priceNum = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
                                 const isBoosted = isListingBoosted(item);
@@ -180,12 +181,16 @@ export default function FavoritesPage() {
                                         <div>
                                             {/* Image */}
                                             <div className="relative aspect-[16/9] bg-sand/30 overflow-hidden cursor-pointer" onClick={() => router.push(`/inserate/${slug}`)}>
-                                                <img
-                                                    src={getImageUrl(previewImg)}
-                                                    alt={item.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                                    onError={(e) => { e.currentTarget.src = '/hero.webp'; }}
-                                                />
+                                                {previewImg ? (
+                                                    <img
+                                                        src={getImageUrl(previewImg)}
+                                                        alt={item.title}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                ) : (
+                                                    <ListingImagePlaceholder category={item.category} />
+                                                )}
                                                 <div className="absolute top-3 left-3 pointer-events-none z-10">
                                                     <ListingBadgesRow item={item} />
                                                 </div>

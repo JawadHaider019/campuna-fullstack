@@ -21,6 +21,7 @@ import {
 import { toast } from 'react-hot-toast';
 import Breadcrumbs from '../components/Breadcrumbs';
 import CTA from '../components/CTA';
+import api from '@/api/client';
 
 const CONTACT_TOPICS = [
     {
@@ -109,11 +110,27 @@ function KontaktFormInner() {
         }
 
         setIsSubmitting(true);
-        setTimeout(() => {
+        try {
+            const res = await api.post('/contact', {
+                name: formData.name.trim(),
+                email: formData.email.trim(),
+                topic: formData.topic,
+                subject: formData.subject.trim(),
+                message: formData.message.trim(),
+            });
+
+            if (res.success) {
+                setIsSubmitted(true);
+                toast.success(res.data?.message || 'Deine Nachricht wurde erfolgreich übermittelt!');
+            } else {
+                toast.error(res.error || 'Fehler beim Senden. Bitte versuche es erneut.');
+            }
+        } catch (err) {
+            console.error('Contact submit error:', err);
+            toast.error('Verbindungsfehler. Bitte überprüfe deine Internetverbindung.');
+        } finally {
             setIsSubmitting(false);
-            setIsSubmitted(true);
-            toast.success('Deine Nachricht wurde erfolgreich übermittelt!');
-        }, 800);
+        }
     };
 
     const selectedTopicObj = CONTACT_TOPICS.find((t) => t.id === formData.topic) || CONTACT_TOPICS[0];

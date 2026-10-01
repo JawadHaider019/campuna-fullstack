@@ -6,16 +6,15 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import {
     getMyProfile,
-    getMySubscription,
-    getMyFeatures,
     subscribeToPlan,
     getCreditBalance,
+    createStripeCheckoutSession,
+    verifyStripeSession,
 } from '@/api/profile';
 import { toast } from 'react-hot-toast';
 import {
     CreditCard, Building2, Shield, Check, Lock, Sparkles,
-    Crown, ArrowRight, ArrowLeft, Loader2, FileText, CheckCircle2,
-    Zap, AlertCircle, Download, Printer, User, MapPin
+    Crown, ArrowRight, ArrowLeft, Loader2, AlertCircle, MapPin
 } from 'lucide-react';
 
 export default function CheckoutBillingPage() {
@@ -26,9 +25,8 @@ export default function CheckoutBillingPage() {
 
     // Form & Plan State
     const [selectedDuration, setSelectedDuration] = useState(1); // 1, 3, or 12 months
-    const [paymentMethod, setPaymentMethod] = useState('CREDIT_CARD'); // 'CREDIT_CARD' | 'SEPA' | 'CREDIT'
+    const [paymentMethod, setPaymentMethod] = useState('STRIPE'); // 'STRIPE' | 'CREDIT'
     const [creditBalance, setCreditBalance] = useState(0);
-    const [userProfile, setUserProfile] = useState(null);
 
     // Billing Details
     const [billingDetails, setBillingDetails] = useState({
@@ -42,25 +40,10 @@ export default function CheckoutBillingPage() {
         vat_id: '',
     });
 
-    // Payment Details
-    const [cardDetails, setCardDetails] = useState({
-        card_holder: '',
-        card_number: '',
-        exp_date: '',
-        cvc: '',
-    });
-
-    const [sepaDetails, setSepaDetails] = useState({
-        account_holder: '',
-        iban: '',
-        bic: '',
-    });
-
     const [agreedToTerms, setAgreedToTerms] = useState(true);
 
     // Processing & Success State
     const [isProcessing, setIsProcessing] = useState(false);
-    const [processingStep, setProcessingStep] = useState(0);
     const [successData, setSuccessData] = useState(null);
 
     useEffect(() => {
@@ -84,7 +67,6 @@ export default function CheckoutBillingPage() {
 
                 if (profRes?.success) {
                     const p = profRes.data.profile || {};
-                    setUserProfile(p);
                     setBillingDetails({
                         company_name: p.company_name || '',
                         first_name: p.first_name || '',
@@ -95,18 +77,45 @@ export default function CheckoutBillingPage() {
                         country: 'Deutschland',
                         vat_id: p.vat_id || '',
                     });
-                    setCardDetails(prev => ({
-                        ...prev,
-                        card_holder: (p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.company_name || 'MAXIMILIAN SCHNEIDER').toUpperCase()
-                    }));
-                    setSepaDetails(prev => ({
-                        ...prev,
-                        account_holder: (p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.company_name || 'Maximilian Schneider')
-                    }));
                 }
 
                 if (credRes?.success) {
                     setCreditBalance(credRes.data?.balance ?? 0);
+                }
+
+                // Check for Stripe redirect return
+                if (typeof window !== 'undefined') {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const sessionId = urlParams.get('session_id');
+                    const isStripeSuccess = urlParams.get('stripe_success') === 'true' || urlParams.get('success') === 'true';
+                    const isCancelled = urlParams.get('cancelled') === 'true';
+
+                    if (isCancelled) {
+                        toast.error('Zahlungsvorgang über Stripe wurde abgebrochen.');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    } else if (sessionId && isStripeSuccess) {
+                        try {
+                            const verifyRes = await verifyStripeSession(sessionId);
+                            if (verifyRes.success && verifyRes.data?.paid) {
+                                const details = verifyRes.data.details || {};
+                                setSuccessData({
+                                    invoice_number: details.invoiceNumber || 'INV-' + Math.floor(100000 + Math.random() * 900000),
+                                    plan_name: 'Campuna Business',
+                                    credits_granted: 1000,
+                                    new_balance: (credRes?.data?.balance ?? 0) + 1000,
+                                    amount_paid: '29,00 €',
+                                    duration: '1 Monat',
+                                    payment_method: 'Stripe (Kreditkarte / SEPA / Apple Pay)',
+                                    billing_name: (profRes?.data?.profile?.first_name ? `${profRes.data.profile.first_name} ${profRes.data.profile.last_name}` : 'Campuna Partner'),
+                                    company_name: profRes?.data?.profile?.company_name || '',
+                                });
+                                toast.success('🎉 Stripe-Zahlung erfolgreich! Business-Tarif ist jetzt aktiv.');
+                            }
+                        } catch (err) {
+                            console.error('Verify error:', err);
+                        }
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
                 }
             } finally {
                 setLoading(false);
@@ -144,60 +153,10 @@ export default function CheckoutBillingPage() {
             vat: (29 - 29 / 1.19).toFixed(2),
             savings: null,
             monthlyEquiv: '29,00 €',
-            creditsRequired: 2900,
         };
     };
 
     const priceInfo = getPricing();
-
-    // 1-Click Dummy Data Autofill
-    const handleAutofillDummy = () => {
-        setBillingDetails({
-            company_name: 'AlpenCamp Bayern GmbH',
-            first_name: 'Maximilian',
-            last_name: 'Schneider',
-            street: 'Campingstraße 12a',
-            zip: '80331',
-            city: 'München',
-            country: 'Deutschland',
-            vat_id: 'DE314892019',
-        });
-        setCardDetails({
-            card_holder: 'MAXIMILIAN SCHNEIDER',
-            card_number: '4242 4242 4242 4242',
-            exp_date: '12/28',
-            cvc: '123',
-        });
-        setSepaDetails({
-            account_holder: 'Maximilian Schneider',
-            iban: 'DE89 3704 0044 0532 0130 00',
-            bic: 'GENODEF1M01',
-        });
-        toast.success('Dummy-Testdaten erfolgreich ausgefüllt!');
-    };
-
-    // Format Card Number input with spaces
-    const handleCardNumberChange = (e) => {
-        const val = e.target.value.replace(/\D/g, '').slice(0, 16);
-        const formatted = val.match(/.{1,4}/g)?.join(' ') || val;
-        setCardDetails(prev => ({ ...prev, card_number: formatted }));
-    };
-
-    // Format Expiration MM/YY
-    const handleExpChange = (e) => {
-        let val = e.target.value.replace(/\D/g, '').slice(0, 4);
-        if (val.length >= 2) {
-            val = val.slice(0, 2) + '/' + val.slice(2);
-        }
-        setCardDetails(prev => ({ ...prev, exp_date: val }));
-    };
-
-    // Format IBAN input with spaces
-    const handleIbanChange = (e) => {
-        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 22);
-        const formatted = val.match(/.{1,4}/g)?.join(' ') || val;
-        setSepaDetails(prev => ({ ...prev, iban: formatted }));
-    };
 
     // Submit Checkout
     const handleSubmitCheckout = async (e) => {
@@ -208,73 +167,26 @@ export default function CheckoutBillingPage() {
             return;
         }
 
-        // Basic validations
-        if (!billingDetails.first_name || !billingDetails.last_name || !billingDetails.street || !billingDetails.zip || !billingDetails.city) {
-            toast.error('Bitte fülle alle Pflichtfelder der Rechnungsadresse aus (oder nutze den Test-Autofill).');
-            return;
-        }
-
-        if (paymentMethod === 'CREDIT_CARD') {
-            if (!cardDetails.card_number || cardDetails.card_number.replace(/\s/g, '').length < 16) {
-                toast.error('Bitte gib eine gültige 16-stellige Kreditkartennummer ein (z.B. 4242 4242 4242 4242).');
-                return;
-            }
-        } else if (paymentMethod === 'SEPA') {
-            if (!sepaDetails.iban || sepaDetails.iban.replace(/\s/g, '').length < 15) {
-                toast.error('Bitte gib eine gültige IBAN ein (z.B. DE89 3704 0044 0532 0130 00).');
-                return;
-            }
-        } else if (paymentMethod === 'CREDIT') {
-            if (creditBalance < priceInfo.creditsRequired) {
-                toast.error(`Nicht genügend Campuna Credits vorhanden. Erforderlich: ${priceInfo.creditsRequired} CC, Verfügbar: ${creditBalance} CC`);
-                return;
-            }
-        }
-
+        // Stripe Checkout is the exclusive payment method for Business Subscriptions
         setIsProcessing(true);
-        setProcessingStep(1);
-
+        const toastId = toast.loading('Stripe Checkout wird vorbereitet...');
         try {
-            // Step 1: Simulated SSL Handshake & Auth
-            await new Promise(r => setTimeout(r, 600));
-            setProcessingStep(2);
-
-            // Step 2: API Call
-            const payload = {
+            const res = await createStripeCheckoutSession({
+                type: 'SUBSCRIPTION',
                 plan_name: 'BUSINESS',
-                payment_method: paymentMethod,
                 duration_months: selectedDuration,
-                billing_details: billingDetails,
-                payment_details: paymentMethod === 'CREDIT_CARD' ? cardDetails : (paymentMethod === 'SEPA' ? sepaDetails : {}),
-            };
+                return_url: window.location.origin,
+            });
 
-            const res = await subscribeToPlan(payload);
-
-            if (res.success) {
-                setProcessingStep(3);
-                await new Promise(r => setTimeout(r, 500));
-                setProcessingStep(4);
-                await new Promise(r => setTimeout(r, 400));
-
-                setSuccessData({
-                    invoice_number: res.data?.invoice_number || 'INV-' + Math.floor(100000 + Math.random() * 900000),
-                    plan_name: 'Campuna Business',
-                    credits_granted: res.data?.credits_granted ?? 1000,
-                    new_balance: res.data?.new_balance ?? 0,
-                    amount_paid: priceInfo.baseGross.toFixed(2).replace('.', ',') + ' €',
-                    duration: selectedDuration === 1 ? '1 Monat' : `${selectedDuration} Monate`,
-                    payment_method: paymentMethod === 'CREDIT_CARD' ? 'Kreditkarte' : (paymentMethod === 'SEPA' ? 'SEPA-Lastschrift' : 'Campuna Credits'),
-                    billing_name: `${billingDetails.first_name} ${billingDetails.last_name}`,
-                    company_name: billingDetails.company_name,
-                });
-                toast.success('Business-Abonnement erfolgreich aktiviert!');
+            if (res.success && res.data?.url) {
+                toast.success('Weiterleitung zu Stripe...', { id: toastId });
+                window.location.href = res.data.url;
             } else {
-                toast.error(res.error || 'Zahlung fehlgeschlagen. Bitte prüfe deine Eingaben.');
+                toast.error(res.error || res.data?.error || 'Fehler beim Starten von Stripe Checkout.', { id: toastId });
                 setIsProcessing(false);
             }
         } catch (err) {
-            console.error(err);
-            toast.error('Netzwerkfehler bei der Kaufabwicklung.');
+            toast.error(err.response?.data?.error || 'Stripe Checkout konnte nicht gestartet werden.', { id: toastId });
             setIsProcessing(false);
         }
     };
@@ -308,23 +220,12 @@ export default function CheckoutBillingPage() {
                     <div>
                         <div className="inline-flex items-center gap-2 bg-gold/20 text-gold-dark border border-gold/30 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider mb-2">
                             <Lock className="w-3 h-3 text-gold-dark" />
-                            Sichere 256-Bit SSL Kasse
+                            Sichere 256-Bit SSL Kasse & Stripe Zahlungsabwicklung
                         </div>
                         <h1 className="text-3xl md:text-4xl font-black text-charcoal font-sans">
                             Business-Abonnement abschließen
                         </h1>
                     </div>
-
-                    {/* Quick 1-Click Autofill Button */}
-                    <button
-                        type="button"
-                        onClick={handleAutofillDummy}
-                        className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-gold/25 to-gold/10 hover:from-gold/35 hover:to-gold/20 border border-gold/40 text-charcoal font-bold px-4 py-2.5 rounded-2xl text-xs uppercase tracking-wider shadow-sm transition-all hover:scale-105 cursor-pointer self-start md:self-auto"
-                        title="Füllt automatisch realistische Dummy-Daten für Rechnungsadresse und Zahlung ein"
-                    >
-                        <Sparkles className="w-4 h-4 text-gold-dark" />
-                        <span>Test-Daten einfügen</span>
-                    </button>
                 </div>
             </div>
 
@@ -414,10 +315,9 @@ export default function CheckoutBillingPage() {
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Vorname *</label>
+                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Vorname</label>
                                         <input
                                             type="text"
-                                            required
                                             value={billingDetails.first_name}
                                             onChange={e => setBillingDetails(d => ({ ...d, first_name: e.target.value }))}
                                             placeholder="Vorname"
@@ -425,10 +325,9 @@ export default function CheckoutBillingPage() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Nachname *</label>
+                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Nachname</label>
                                         <input
                                             type="text"
-                                            required
                                             value={billingDetails.last_name}
                                             onChange={e => setBillingDetails(d => ({ ...d, last_name: e.target.value }))}
                                             placeholder="Nachname"
@@ -438,23 +337,21 @@ export default function CheckoutBillingPage() {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Straße & Hausnummer *</label>
+                                    <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Straße & Hausnummer</label>
                                     <input
                                         type="text"
-                                        required
                                         value={billingDetails.street}
                                         onChange={e => setBillingDetails(d => ({ ...d, street: e.target.value }))}
-                                        placeholder="z.B. Musterstraße 42"
+                                        placeholder="z.B. Campingstraße 12"
                                         className="w-full bg-sand/40 border border-beige rounded-xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-sans"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">PLZ *</label>
+                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">PLZ</label>
                                         <input
                                             type="text"
-                                            required
                                             value={billingDetails.zip}
                                             onChange={e => setBillingDetails(d => ({ ...d, zip: e.target.value }))}
                                             placeholder="80331"
@@ -462,10 +359,9 @@ export default function CheckoutBillingPage() {
                                         />
                                     </div>
                                     <div className="space-y-1 sm:col-span-2">
-                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Stadt *</label>
+                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Stadt</label>
                                         <input
                                             type="text"
-                                            required
                                             value={billingDetails.city}
                                             onChange={e => setBillingDetails(d => ({ ...d, city: e.target.value }))}
                                             placeholder="München"
@@ -481,210 +377,36 @@ export default function CheckoutBillingPage() {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <span className="w-7 h-7 rounded-full bg-forest text-sand flex items-center justify-center font-bold text-xs font-sans">3</span>
-                                    <h2 className="text-lg font-bold text-charcoal font-sans">Zahlungsart wählen</h2>
+                                    <h2 className="text-lg font-bold text-charcoal font-sans">Zahlungsabwicklung via Stripe</h2>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-bold">
-                                    <Shield className="w-4 h-4" /> Verschlüsselt
+                                    <Shield className="w-4 h-4" /> 256-Bit SSL Verschlüsselt
                                 </div>
                             </div>
 
-                            {/* Payment Method Tabs */}
-                            <div className="grid grid-cols-3 gap-2 p-1 bg-sand/40 border border-beige rounded-2xl">
-                                <button
-                                    type="button"
-                                    onClick={() => setPaymentMethod('CREDIT_CARD')}
-                                    className={`py-2.5 px-3 rounded-xl text-xs font-bold font-sans transition-all flex items-center justify-center gap-1.5 ${paymentMethod === 'CREDIT_CARD'
-                                        ? 'bg-forest text-sand shadow-sm'
-                                        : 'text-charcoal/60 hover:text-charcoal'}`}
-                                >
-                                    <CreditCard className="w-3.5 h-3.5" />
-                                    <span>Kreditkarte</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setPaymentMethod('SEPA')}
-                                    className={`py-2.5 px-3 rounded-xl text-xs font-bold font-sans transition-all flex items-center justify-center gap-1.5 ${paymentMethod === 'SEPA'
-                                        ? 'bg-forest text-sand shadow-sm'
-                                        : 'text-charcoal/60 hover:text-charcoal'}`}
-                                >
-                                    <Building2 className="w-3.5 h-3.5" />
-                                    <span>SEPA Lastschrift</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setPaymentMethod('CREDIT')}
-                                    className={`py-2.5 px-3 rounded-xl text-xs font-bold font-sans transition-all flex items-center justify-center gap-1.5 ${paymentMethod === 'CREDIT'
-                                        ? 'bg-forest text-sand shadow-sm'
-                                        : 'text-charcoal/60 hover:text-charcoal'}`}
-                                >
-                                    <img src="/coin.png" className="w-3.5 h-3.5" alt="CC" />
-                                    <span>CC Credits</span>
-                                </button>
+                            {/* Stripe Info Card */}
+                            <div className="p-5 rounded-2xl bg-gradient-to-br from-[#635BFF]/10 via-white to-sand/40 border border-[#635BFF]/30 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#635BFF] text-white">
+                                            Stripe Checkout
+                                        </span>
+                                        <span className="text-xs font-bold text-charcoal font-sans">Sichere & zertifizierte Zahlung</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-charcoal/60">
+                                        <CreditCard className="w-4 h-4 text-[#635BFF]" />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-charcoal/70 leading-relaxed font-sans">
+                                    Abonnements werden sicher über die offizielle Stripe Checkout-Seite abgerechnet. Du kannst bequem per <strong>Kreditkarte (Visa, Mastercard, American Express)</strong>, <strong>SEPA-Lastschrift</strong>, <strong>Apple Pay</strong> oder <strong>Google Pay</strong> bezahlen.
+                                </p>
+                                <div className="pt-2 border-t border-beige/60 flex flex-wrap items-center gap-2 text-[11px] text-charcoal/60">
+                                    <span className="px-2 py-0.5 bg-white border border-beige rounded-md font-medium">💳 Kreditkarte</span>
+                                    <span className="px-2 py-0.5 bg-white border border-beige rounded-md font-medium">🏦 SEPA-Lastschrift</span>
+                                    <span className="px-2 py-0.5 bg-white border border-beige rounded-md font-medium">🍎 Apple Pay</span>
+                                    <span className="px-2 py-0.5 bg-white border border-beige rounded-md font-medium">📱 Google Pay</span>
+                                </div>
                             </div>
-
-                            {/* Option A: Credit Card Form + Interactive Visual Card */}
-                            {paymentMethod === 'CREDIT_CARD' && (
-                                <div className="space-y-4 pt-1">
-                                    {/* Visual Card Preview */}
-                                    <div className="relative w-full max-w-sm mx-auto h-44 rounded-2xl p-5 text-white bg-gradient-to-tr from-charcoal via-forest to-forest/80 shadow-xl overflow-hidden flex flex-col justify-between border border-white/20">
-                                        <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-gold/20 blur-xl pointer-events-none" />
-                                        <div className="flex justify-between items-center relative z-10">
-                                            <span className="font-display font-black text-sm tracking-widest text-gold uppercase">Campuna Pay</span>
-                                            <span className="text-xs font-bold tracking-widest text-white/60">TEST CARD</span>
-                                        </div>
-                                        <div className="relative z-10 space-y-1">
-                                            <div className="text-lg font-mono tracking-wider text-white">
-                                                {cardDetails.card_number || '•••• •••• •••• ••••'}
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between items-end relative z-10 text-[10px] uppercase font-sans">
-                                            <div>
-                                                <span className="text-white/50 block text-[8px]">Inhaber</span>
-                                                <span className="font-bold tracking-wider">{cardDetails.card_holder || 'MAX MUSTERMANN'}</span>
-                                            </div>
-                                            <div>
-                                                <span className="text-white/50 block text-[8px]">Gültig bis</span>
-                                                <span className="font-bold tracking-wider">{cardDetails.exp_date || 'MM/YY'}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Card inputs */}
-                                    <div className="space-y-3">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Karteninhaber *</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                value={cardDetails.card_holder}
-                                                onChange={e => setCardDetails(c => ({ ...c, card_holder: e.target.value.toUpperCase() }))}
-                                                placeholder="MAX MUSTERMANN"
-                                                className="w-full bg-sand/40 border border-beige rounded-xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-sans uppercase"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Kartennummer *</label>
-                                            <div className="relative">
-                                                <CreditCard className="w-4 h-4 text-charcoal/35 absolute left-3.5 top-3" />
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={cardDetails.card_number}
-                                                    onChange={handleCardNumberChange}
-                                                    placeholder="4242 4242 4242 4242"
-                                                    className="w-full bg-sand/40 border border-beige rounded-xl pl-10 pr-4 py-2.5 text-sm text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-mono"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-3.5">
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Ablaufdatum (MM/YY) *</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    value={cardDetails.exp_date}
-                                                    onChange={handleExpChange}
-                                                    placeholder="12/28"
-                                                    className="w-full bg-sand/40 border border-beige rounded-xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-mono"
-                                                />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">CVC / CVV *</label>
-                                                <input
-                                                    type="text"
-                                                    required
-                                                    maxLength={4}
-                                                    value={cardDetails.cvc}
-                                                    onChange={e => setCardDetails(c => ({ ...c, cvc: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
-                                                    placeholder="123"
-                                                    className="w-full bg-sand/40 border border-beige rounded-xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-mono"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Option B: SEPA Direct Debit */}
-                            {paymentMethod === 'SEPA' && (
-                                <div className="space-y-3.5 pt-1">
-                                    <div className="bg-sand/30 border border-beige/60 rounded-2xl p-4 text-xs text-charcoal/70 leading-relaxed font-sans">
-                                        Mit der Angabe deiner Kontodaten ermächtigst du Campuna, Zahlungen von deinem Konto mittels Lastschrift einzuziehen.
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">Kontoinhaber *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={sepaDetails.account_holder}
-                                            onChange={e => setSepaDetails(s => ({ ...s, account_holder: e.target.value }))}
-                                            placeholder="Maximilian Schneider"
-                                            className="w-full bg-sand/40 border border-beige rounded-xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-sans"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">IBAN *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={sepaDetails.iban}
-                                            onChange={handleIbanChange}
-                                            placeholder="DE89 3704 0044 0532 0130 00"
-                                            className="w-full bg-sand/40 border border-beige rounded-xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-mono"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-bold text-charcoal/60 uppercase tracking-wider font-sans">BIC (optional)</label>
-                                        <input
-                                            type="text"
-                                            value={sepaDetails.bic}
-                                            onChange={e => setSepaDetails(s => ({ ...s, bic: e.target.value.toUpperCase() }))}
-                                            placeholder="GENODEF1M01"
-                                            className="w-full bg-sand/40 border border-beige rounded-xl px-4 py-2.5 text-sm text-charcoal placeholder-charcoal/30 focus:outline-none focus:ring-2 focus:ring-forest/30 font-mono"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Option C: Campuna Credits */}
-                            {paymentMethod === 'CREDIT' && (
-                                <div className="space-y-4 pt-1">
-                                    <div className="bg-gradient-to-r from-gold/15 to-gold/5 border border-gold/30 rounded-2xl p-4 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <img src="/coin.png" className="w-10 h-10" alt="CC" />
-                                            <div>
-                                                <span className="text-xs text-charcoal/60 font-sans block">Dein aktuelles Guthaben:</span>
-                                                <span className="text-xl font-black text-gold-dark font-sans">{(Number(creditBalance) || 0).toLocaleString('de-DE')} CC</span>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-xs text-charcoal/60 font-sans block">Erforderlich:</span>
-                                            <span className="text-lg font-bold text-forest font-sans">{(Number(priceInfo?.creditsRequired) || 2900).toLocaleString('de-DE')} CC</span>
-                                        </div>
-                                    </div>
-
-                                    {(Number(creditBalance) || 0) < (Number(priceInfo?.creditsRequired) || 0) ? (
-                                        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
-                                            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                                            <p className="text-xs text-amber-800 font-sans leading-relaxed">
-                                                Dein Credit-Guthaben reicht für diese Buchung leider nicht aus (fehlen noch {Math.max(0, (Number(priceInfo?.creditsRequired) || 0) - (Number(creditBalance) || 0)).toLocaleString('de-DE')} CC). Bitte wähle <strong>Kreditkarte</strong> oder <strong>SEPA</strong> für die Zahlung.
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center gap-3">
-                                            <Check className="w-5 h-5 text-emerald-600 shrink-0" />
-                                            <p className="text-xs text-emerald-800 font-sans">
-                                                Perfekt! Der Betrag wird automatisch von deinem CC-Konto abgebucht.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
 
                     </div>
@@ -767,28 +489,37 @@ export default function CheckoutBillingPage() {
                                 </label>
                             </div>
 
-                            {/* Submit Button */}
+                            {/* Action Button */}
                             <button
                                 type="submit"
                                 id="btn-submit-order"
                                 disabled={isProcessing || (paymentMethod === 'CREDIT' && creditBalance < priceInfo.creditsRequired)}
-                                className="w-full bg-forest hover:bg-forest/90 disabled:opacity-50 text-sand py-4 px-6 rounded-2xl font-sans font-bold text-sm uppercase tracking-wider shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 group cursor-pointer"
+                                className={`w-full py-4 px-6 rounded-2xl font-sans font-bold text-sm uppercase tracking-wider shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 group cursor-pointer disabled:opacity-50 ${
+                                    paymentMethod === 'STRIPE'
+                                        ? 'bg-[#635BFF] hover:bg-[#534be8] text-white'
+                                        : 'bg-forest hover:bg-forest/90 text-sand'
+                                }`}
                             >
                                 {isProcessing ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
                                         <span>Wird verarbeitet…</span>
                                     </>
+                                ) : paymentMethod === 'STRIPE' ? (
+                                    <>
+                                        <span>Sicher mit Stripe bezahlen</span>
+                                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                                    </>
                                 ) : (
                                     <>
-                                        <span>Kostenpflichtig abonnieren</span>
+                                        <span>Mit Campuna Credits bezahlen</span>
                                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                                     </>
                                 )}
                             </button>
 
                             <div className="mt-4 pt-4 border-t border-beige/60 flex items-center justify-center gap-4 text-[10px] text-charcoal/40 font-sans uppercase tracking-wider">
-                                <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-gold-dark" /> SSL 256-Bit</span>
+                                <span className="flex items-center gap-1"><Lock className="w-3 h-3 text-gold-dark" /> Stripe SSL 256-Bit</span>
                                 <span>•</span>
                                 <span>DSGVO Konform</span>
                                 <span>•</span>
@@ -800,58 +531,6 @@ export default function CheckoutBillingPage() {
 
                 </form>
             </div>
-
-            {/* ══════════════════════════════════════════════════════════════
-                PROCESSING MODAL
-            ══════════════════════════════════════════════════════════════ */}
-            <AnimatePresence>
-                {isProcessing && !successData && (
-                    <motion.div
-                        key="processing-modal"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                    >
-                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-beige/60 relative z-10 p-8 text-center space-y-6"
-                        >
-                            <div className="w-16 h-16 rounded-full bg-forest/10 border border-forest/20 flex items-center justify-center mx-auto text-forest">
-                                <Loader2 className="w-8 h-8 animate-spin" />
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <h3 className="text-xl font-black text-charcoal font-sans">Abonnement wird eingerichtet</h3>
-                                <p className="text-xs text-charcoal/60 font-sans">Bitte schließe das Fenster nicht.</p>
-                            </div>
-
-                            {/* Processing steps */}
-                            <div className="space-y-2 text-left bg-sand/30 p-4 rounded-2xl border border-beige/60 text-xs font-sans">
-                                <div className={`flex items-center gap-2 ${processingStep >= 1 ? 'text-forest font-bold' : 'text-charcoal/40'}`}>
-                                    {processingStep > 1 ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Loader2 className="w-4 h-4 animate-spin" />}
-                                    <span>Zahlungsdaten verifizieren</span>
-                                </div>
-                                <div className={`flex items-center gap-2 ${processingStep >= 2 ? 'text-forest font-bold' : 'text-charcoal/40'}`}>
-                                    {processingStep > 2 ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : (processingStep === 2 ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="w-4 h-4 rounded-full border border-charcoal/20" />)}
-                                    <span>Rechnung & Beleg generieren</span>
-                                </div>
-                                <div className={`flex items-center gap-2 ${processingStep >= 3 ? 'text-forest font-bold' : 'text-charcoal/40'}`}>
-                                    {processingStep > 3 ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : (processingStep === 3 ? <Loader2 className="w-4 h-4 animate-spin" /> : <div className="w-4 h-4 rounded-full border border-charcoal/20" />)}
-                                    <span>+ 1.000 Campuna Credits gutschreiben</span>
-                                </div>
-                                <div className={`flex items-center gap-2 ${processingStep >= 4 ? 'text-forest font-bold' : 'text-charcoal/40'}`}>
-                                    {processingStep >= 4 ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <div className="w-4 h-4 rounded-full border border-charcoal/20" />}
-                                    <span>Business-Status aktivieren</span>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* ══════════════════════════════════════════════════════════════
                 SUCCESS & INVOICE CELEBRATION MODAL

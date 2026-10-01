@@ -37,8 +37,13 @@ export default function BroadcastBanner() {
     const token = useAuthStore((state) => state.accessToken);
     const isAdmin = user?.role === 'ADMIN';
 
-    // Only show broadcasts for logged-in regular users; never on admin routes, auth pages, or for guests/logged-out visitors
+    // Only show broadcasts for logged-in regular users; never on admin routes, auth pages, user account page, or for guests/logged-out visitors
     const isAdminRoute = pathname?.startsWith('/admin');
+    const isAccountPage = 
+        pathname?.startsWith('/mein-konto') || 
+        pathname?.startsWith('/de/mein-konto') ||
+        pathname?.startsWith('/konto') ||
+        pathname?.startsWith('/de/konto');
     const isAuthPage = 
         pathname === '/login' || 
         pathname === '/register' || 
@@ -47,7 +52,7 @@ export default function BroadcastBanner() {
         pathname?.startsWith('/email-bestaetigen') ||
         pathname?.startsWith('/verify-email');
 
-    const shouldHide = !isLoggedIn || isAdminRoute || isAdmin || isAuthPage;
+    const shouldHide = !isLoggedIn || isAdminRoute || isAdmin || isAuthPage || isAccountPage;
 
     const fetchBroadcasts = useCallback(async () => {
         if (shouldHide) return;

@@ -44,6 +44,10 @@ export const resetPassword = async (email, reset_token, new_password) => {
     return api.post('/reset-password', { email, reset_token, new_password });
 };
 
+export const resendVerificationEmail = async (email) => {
+    return api.post('/resend-verification', { email });
+};
+
 export default {
     register: registerUser,
     login: loginUser,
@@ -53,4 +57,5 @@ export default {
     requestPasswordReset,
     verifyResetOtp,
     resetPassword,
+    resendVerificationEmail,
 };

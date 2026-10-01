@@ -41,11 +41,13 @@ import {
     getAdminListings,
     updateAdminListingStatus,
     deleteAdminListing,
-    toggleAdminListingFeatured
+    toggleAdminListingFeatured,
+    grantAdminBenefit
 } from '@/api/admin';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
 
 export default function AdminListingsPage() {
     const router = useRouter();
@@ -83,6 +85,14 @@ export default function AdminListingsPage() {
     const [listingToReject, setListingToReject] = useState(null);
     const [rejectionReason, setRejectionReason] = useState('');
     const [activeImageIdx, setActiveImageIdx] = useState(0);
+
+    // Free Boost Modal State
+    const [boostModalOpen, setBoostModalOpen] = useState(false);
+    const [listingForBoost, setListingForBoost] = useState(null);
+    const [boostDurationDays, setBoostDurationDays] = useState(14);
+    const [boostCustomEndDate, setBoostCustomEndDate] = useState('');
+    const [boostAdminNote, setBoostAdminNote] = useState('Kostenloser Inserate-Boost durch Administration');
+    const [grantingBoost, setGrantingBoost] = useState(false);
 
     // Fetch Listings with filters
     const fetchListings = useCallback(async () => {
@@ -191,6 +201,47 @@ export default function AdminListingsPage() {
             toast.error(err.response?.data?.error || err.message || 'Fehler beim Ändern des Featured-Status.', { id: toastId });
         } finally {
             setActionLoading(false);
+        }
+    };
+
+    const handleOpenBoostModal = (item) => {
+        if (!item) return;
+        setListingForBoost(item);
+        setBoostDurationDays(14);
+        setBoostCustomEndDate('');
+        setBoostAdminNote('Kostenloser Inserate-Boost durch Administration');
+        setBoostModalOpen(true);
+    };
+
+    const handleGrantBoost = async (e) => {
+        e?.preventDefault();
+        if (!listingForBoost) return;
+
+        setGrantingBoost(true);
+        const toastId = toast.loading('Inserate-Boost wird kostenlos aktiviert...');
+
+        try {
+            const res = await grantAdminBenefit({
+                user_id: listingForBoost.user_id,
+                benefit_type: 'LISTING_BOOST',
+                listing_id: listingForBoost.id,
+                duration_days: boostCustomEndDate ? undefined : boostDurationDays,
+                custom_end_date: boostCustomEndDate || undefined,
+                admin_note: boostAdminNote.trim() || 'Kostenloser Inserate-Boost durch Administration',
+            });
+
+            if (res.data?.success || res.success) {
+                toast.success('🚀 Inserat erfolgreich kostenlos geboostet!', { id: toastId });
+                setBoostModalOpen(false);
+                setListingForBoost(null);
+                fetchListings();
+            } else {
+                toast.error(res.data?.error || res.error || 'Boost fehlgeschlagen.', { id: toastId });
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.error || err.message || 'Fehler beim Boosten.', { id: toastId });
+        } finally {
+            setGrantingBoost(false);
         }
     };
 
@@ -617,7 +668,7 @@ export default function AdminListingsPage() {
                                     </tr>
                                 ) : (
                                     listings.map((item) => {
-                                        const mainImage = item.images?.[0] ? getImageUrl(item.images[0], '/logo.webp') : '/logo.webp';
+                                        const mainImage = item.images?.[0] ? getImageUrl(item.images[0]) : null;
                                         const isReview = item.status === 'REVIEW';
                                         const isCampunaClub = Boolean(item.is_campuna_club);
 
@@ -630,15 +681,19 @@ export default function AdminListingsPage() {
                                                 {/* 1. Thumbnail & Title */}
                                                 <td className="py-3.5 px-5">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-12 h-12 rounded-xl bg-slate-100 border border-[#E8EAEF] overflow-hidden shrink-0 relative">
-                                                            <Image
-                                                                src={mainImage}
-                                                                alt={item.title}
-                                                                fill
-                                                                sizes="48px"
-                                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                                                unoptimized
-                                                            />
+                                                        <div className="w-12 h-12 rounded-xl bg-slate-100 border border-[#E8EAEF] overflow-hidden shrink-0 relative flex items-center justify-center">
+                                                            {mainImage ? (
+                                                                <Image
+                                                                    src={mainImage}
+                                                                    alt={item.title}
+                                                                    fill
+                                                                    sizes="48px"
+                                                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                                                    unoptimized
+                                                                />
+                                                            ) : (
+                                                                <Tag className="w-5 h-5 text-slate-400 opacity-40" />
+                                                            )}
                                                             {item.images?.length > 1 && (
                                                                 <span className="absolute bottom-0.5 right-0.5 px-1 py-0.2 bg-black/60 text-white text-[9px] rounded font-mono">
                                                                     +{item.images.length - 1}
@@ -760,6 +815,18 @@ export default function AdminListingsPage() {
                                                         >
                                                             <ExternalLink className="w-4 h-4" />
                                                         </a>
+
+                                                        {/* Free Boost / Highlight Button */}
+                                                        <button
+                                                            onClick={() => handleOpenBoostModal(item)}
+                                                            title="Kostenlos hervorheben (Boost)"
+                                                            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${item.is_boosted || item.boosted_until
+                                                                ? 'text-amber-700 bg-amber-100 hover:bg-amber-200'
+                                                                : 'text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                                            }`}
+                                                        >
+                                                            <Rocket className="w-4 h-4" />
+                                                        </button>
 
                                                         {/* Feature / Empfehlen Toggle */}
                                                          <button
@@ -893,7 +960,7 @@ export default function AdminListingsPage() {
                             </div>
                         ) : (
                             listings.map((item, idx) => {
-                                const mainImage = item.images?.[0] ? getImageUrl(item.images[0]) : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600';
+                                const mainImage = item.images?.[0] ? getImageUrl(item.images[0]) : null;
                                 const isBoosted = Boolean(item.is_boosted);
                                 const isCampunaClub = Boolean(item.is_campuna_club);
                                 const features = [
@@ -928,14 +995,19 @@ export default function AdminListingsPage() {
                                                     setActiveImageIdx(0);
                                                     setDetailModalOpen(true);
                                                 }}
-                                                className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20 cursor-pointer"
+                                                className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20 cursor-pointer flex items-center justify-center"
                                             >
-                                                <img
-                                                    src={mainImage}
-                                                    alt={item.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
-                                                    loading="lazy"
-                                                />
+                                                {mainImage ? (
+                                                    <img
+                                                        src={mainImage}
+                                                        alt={item.title}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                                                        loading="lazy"
+                                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                                    />
+                                                ) : (
+                                                    <ListingImagePlaceholder category={item.category} />
+                                                )}
                                                 {/* Top Status & Boost Badges */}
                                                 <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-10 pointer-events-none">
                                                     {isCampunaClub && (
@@ -1172,7 +1244,7 @@ export default function AdminListingsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 15 }}
@@ -1260,7 +1332,7 @@ export default function AdminListingsPage() {
                                     <div className="space-y-3">
                                         <div className="relative aspect-video sm:aspect-2/1 bg-slate-900 rounded-2xl overflow-hidden shadow-inner">
                                             <Image
-                                                src={selectedListing.images[activeImageIdx] ? getImageUrl(selectedListing.images[activeImageIdx], '/logo.webp') : '/logo.webp'}
+                                                src={getImageUrl(selectedListing.images[activeImageIdx])}
                                                 alt={selectedListing.title}
                                                 fill
                                                 className="object-contain"
@@ -1461,7 +1533,7 @@ export default function AdminListingsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 15 }}
@@ -1533,7 +1605,7 @@ export default function AdminListingsPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 15 }}
@@ -1577,6 +1649,128 @@ export default function AdminListingsPage() {
                                     className="px-4 py-2 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
                                 >
                                     {actionLoading ? 'Wird gelöscht...' : 'Löschen'}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ─── MODAL: FREE BOOST / HIGHLIGHT ─── */}
+            <AnimatePresence>
+                {boostModalOpen && listingForBoost && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
+                            className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#E8EAEF]"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl border border-amber-200">
+                                    <Rocket className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900 font-display">
+                                        Inserat kostenlos hervorheben
+                                    </h3>
+                                    <p className="text-xs text-slate-400">
+                                        Boost / Highlight kostenlos vergeben
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+                                <span className="text-slate-400 block text-[10px] uppercase font-bold">Inserat:</span>
+                                <span className="font-bold text-slate-800 block truncate">{listingForBoost.title}</span>
+                            </div>
+
+                            {/* Duration selector */}
+                            <div className="space-y-2">
+                                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                                    Laufzeit des Boosts wählen:
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[
+                                        { days: 7, label: '7 Tage' },
+                                        { days: 14, label: '14 Tage' },
+                                        { days: 30, label: '30 Tage' },
+                                    ].map((preset) => (
+                                        <button
+                                            key={preset.days}
+                                            type="button"
+                                            onClick={() => {
+                                                setBoostDurationDays(preset.days);
+                                                setBoostCustomEndDate('');
+                                            }}
+                                            className={`py-2 px-2 rounded-xl text-center border text-xs font-bold transition-all cursor-pointer ${
+                                                boostDurationDays === preset.days && !boostCustomEndDate
+                                                    ? 'bg-forest text-sand border-forest shadow-xs'
+                                                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                                            }`}
+                                        >
+                                            {preset.label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-1 pt-1">
+                                    <label className="text-[10px] font-semibold text-slate-500">
+                                        Oder individuelles Enddatum:
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={boostCustomEndDate}
+                                        onChange={(e) => setBoostCustomEndDate(e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Admin Note */}
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                                    Begründung / Anmerkung:
+                                </label>
+                                <input
+                                    type="text"
+                                    value={boostAdminNote}
+                                    onChange={(e) => setBoostAdminNote(e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30"
+                                />
+                            </div>
+
+                            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-800 flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                                <span>Endet automatisch nach Ablauf der Frist (keine Kosten für den Nutzer).</span>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setBoostModalOpen(false);
+                                        setListingForBoost(null);
+                                    }}
+                                    disabled={grantingBoost}
+                                    className="px-4 py-2 rounded-xl border border-[#E2E4E8] text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                                >
+                                    Abbrechen
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleGrantBoost}
+                                    disabled={grantingBoost}
+                                    className="px-4 py-2 rounded-xl bg-forest text-sand text-xs font-bold hover:bg-[#004d0a] transition-all flex items-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-50"
+                                >
+                                    {grantingBoost ? <div className="w-4 h-4 border-2 border-sand border-t-transparent rounded-full animate-spin" /> : <Rocket className="w-4 h-4 text-gold" />}
+                                    <span>Boost kostenlos aktivieren</span>
                                 </button>
                             </div>
                         </motion.div>

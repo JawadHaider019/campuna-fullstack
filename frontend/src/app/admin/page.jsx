@@ -861,10 +861,10 @@ export default function AdminDashboard() {
                                                     }`}>
                                                     {u.avatar ? (
                                                         <img
-                                                            src={getImageUrl(u.avatar, 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80')}
+                                                            src={getImageUrl(u.avatar)}
                                                             alt={u.name}
                                                             className="w-full h-full object-cover rounded-full"
-                                                            onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'; }}
+                                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                                         />
                                                     ) : (
                                                         u.name?.slice(0, 2).toUpperCase() || 'CP'

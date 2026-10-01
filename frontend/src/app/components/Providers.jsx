@@ -10,18 +10,12 @@ import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/imageUrl';
 import AuthRequiredModal from './AuthRequiredModal';
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1513311068348-19c8fbdc0bb6?auto=format&fit=crop&w=1200&q=80';
-const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=400&q=80';
-
 const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, router }) => {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-    const [coverSrc, setCoverSrc] = useState(getImageUrl(partner.coverImage, DEFAULT_COVER));
-    const [logoSrc, setLogoSrc] = useState(getImageUrl(partner.logo, DEFAULT_LOGO));
-
-    useEffect(() => {
-        setCoverSrc(getImageUrl(partner.coverImage, DEFAULT_COVER));
-        setLogoSrc(getImageUrl(partner.logo, DEFAULT_LOGO));
-    }, [partner.coverImage, partner.logo]);
+    const hasCover = Boolean(partner.coverImage);
+    const hasLogo = Boolean(partner.logo);
+    const coverUrl = hasCover ? getImageUrl(partner.coverImage) : null;
+    const logoUrl = hasLogo ? getImageUrl(partner.logo) : null;
 
     const handleCardClick = () => {
         const nameSlug = partner.name
@@ -50,18 +44,20 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
     return (
         <div
             onClick={handleCardClick}
-            className="provider-card group relative flex-shrink-0 w-[360px] sm:w-[370px] md:w-[500px] lg:w-[550px] h-[150px] sm:h-[180px] md:h-[210px] lg:h-[240px] rounded-[24px] sm:rounded-[32px] overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-all duration-500 select-none border border-white/10 flex"
+            className="provider-card group relative flex-shrink-0 w-[360px] sm:w-[370px] md:w-[500px] lg:w-[550px] h-[150px] sm:h-[180px] md:h-[210px] lg:h-[240px] rounded-[24px] sm:rounded-[32px] overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-all duration-500 select-none border border-white/10 flex bg-gradient-to-br from-[#0c2e17] via-[#103d20] to-[#041a0b]"
         >
             {/* Background Image & Overlay */}
-            <div className="absolute inset-0 z-0">
-                <img
-                    src={coverSrc}
-                    alt={partner.name}
-                    className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
-                    onError={() => setCoverSrc(DEFAULT_COVER)}
-                />
-                <div className="absolute inset-0 bg-black/50 group-hover:bg-black/65 transition-colors duration-500" />
-            </div>
+            {coverUrl && (
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src={coverUrl}
+                        alt={partner.name}
+                        className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    />
+                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/65 transition-colors duration-500" />
+                </div>
+            )}
 
             {/* LEFT PANEL (35%) — Centered Circular Logo */}
             <div className="relative z-10 flex items-center justify-center p-3 sm:p-4 shrink-0" style={{ width: '35%' }}>
@@ -71,12 +67,18 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
                 </div>
 
                 <div className="relative z-10 w-20 h-20 sm:w-22 sm:h-22 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full bg-white shadow-md border-2 border-white/10 overflow-hidden flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
-                    <img
-                        src={logoSrc}
-                        alt={`${partner.name} Logo`}
-                        className="w-full h-full object-cover"
-                        onError={() => setLogoSrc(DEFAULT_LOGO)}
-                    />
+                    {logoUrl ? (
+                        <img
+                            src={logoUrl}
+                            alt={`${partner.name} Logo`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                    ) : (
+                        <div className="w-full h-full rounded-full bg-gradient-to-br from-forest to-[#0d381e] text-sand flex items-center justify-center font-display font-bold text-lg sm:text-xl">
+                            {partner.name?.slice(0, 2).toUpperCase() || 'CP'}
+                        </div>
+                    )}
                 </div>
             </div>
 

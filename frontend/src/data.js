@@ -161,7 +161,7 @@ export const CATEGORIES = [
     heroSubtitle: 'Werkstatt, Gasprüfung, Reparatur und Aufbereitung für Wohnmobil und Wohnwagen: Camping-Services aus ganz Deutschland finden oder selbst anbieten.',
     seoHeading: 'Professionelle Camping-Services und Werkstätten',
     seoParagraphs: [
-      'Finde geprüfte Werkstätten, zertifizierte Gasprüfer, Experten für Van-Ausbauten und professionelle Aufbereiter in deiner Region.',
+      'Finde Werkstätten, zertifizierte Gasprüfer, Experten für Van-Ausbauten und professionelle Aufbereiter in deiner Region.',
       'Gewerbliches Profil erstellen: Präsentiere deine Dienstleistungen gezielt Campern in ganz Deutschland mit einem professionellen Firmenprofil.'
     ],
     faqs: [
@@ -951,3 +951,79 @@ export const FAQS = [
     answer: 'Campuna setzt auf direkte Kommunikation zwischen Käufer und Verkäufer und klare Regeln für sicheres Handeln. Wir empfehlen bei Fahrzeugen immer Besichtigung, Probefahrt und einen schriftlichen Kaufvertrag. Praktische Tipps dazu findest du im Ratgeber und auf der Seite Sicher handeln.'
   }
 ];
+
+export const PROVIDER_CATEGORIES = [
+  {
+    id: 'dealers',
+    name: 'Wohnmobil- & Wohnwagenhändler',
+    slug: 'wohnmobil-wohnwagenhaendler',
+    shortName: 'Händler & Autohäuser',
+    description: 'Verkauf von Neu- und Gebrauchtfahrzeugen, Caravans, Reisemobilen und Kastenwagen.',
+    iconName: 'Truck'
+  },
+  {
+    id: 'campsites',
+    name: 'Campingplätze & Stellplätze',
+    slug: 'campingplaetze-stellplaetze',
+    shortName: 'Camping- & Stellplätze',
+    description: 'Idyllische Campingplätze, Wohnmobilstellplätze, Ferienanlagen und naturnahe Übernachtungsorte.',
+    iconName: 'MapPin'
+  },
+  {
+    id: 'rental',
+    name: 'Vermietung & Rental',
+    slug: 'vermietung-rental',
+    shortName: 'Fahrzeugvermietung',
+    description: 'Wohnmobil- und Wohnwagenvermieter für den spontanen oder geplanten Traumurlaub.',
+    iconName: 'Compass'
+  },
+  {
+    id: 'workshops',
+    name: 'Werkstatt & Service',
+    slug: 'werkstatt-service',
+    shortName: 'Werkstatt & Gasprüfung',
+    description: 'Fachwerkstätten für Reparaturen, Gasprüfung (G607), Wartung, Einbauten und Aufbereitung.',
+    iconName: 'Wrench'
+  },
+  {
+    id: 'conversions',
+    name: 'Camper-Ausbau & Tuning',
+    slug: 'camper-ausbau',
+    shortName: 'Camper-Ausbau & Manufakturen',
+    description: 'Individueller Van-Ausbau, Möbelmodule, Aufstelldächer, Dämmung und Elektrik-Installationen.',
+    iconName: 'Hammer'
+  },
+  {
+    id: 'accessories',
+    name: 'Zubehör & Shop',
+    slug: 'zubehoer-shop',
+    shortName: 'Zubehör & Outdoor-Shops',
+    description: 'Fachgeschäfte und Onlineshops für Campingzubehör, Vorzelte, Solar, Grills und Lifestyle.',
+    iconName: 'ShoppingBag'
+  },
+  {
+    id: 'manufacturers',
+    name: 'Hersteller & Marken',
+    slug: 'hersteller-marken',
+    shortName: 'Hersteller & Marken',
+    description: 'Offizielle Hersteller von Freizeitfahrzeugen, Anhängern, Zeltaufbauten und Campingkomponenten.',
+    iconName: 'Building'
+  },
+  {
+    id: 'tinyhouses',
+    name: 'Tiny Houses & Modulheime',
+    slug: 'tiny-houses-modulheime',
+    shortName: 'Tiny Houses & Chalets',
+    description: 'Mobile Tiny Houses, Chalets, Wohnmodule und kompakte Lebensräume im Grünen.',
+    iconName: 'Home'
+  },
+  {
+    id: 'boats',
+    name: 'Boote & Wassersport',
+    slug: 'boote-wassersport',
+    shortName: 'Boote & Wassersport',
+    description: 'Kajaks, SUPs, Schlauchboote, Bootsmotoren, Trailer und Zubehör für Abenteuer auf dem Wasser.',
+    iconName: 'Anchor'
+  }
+];
+

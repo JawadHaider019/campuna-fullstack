@@ -33,8 +33,7 @@ import CoinIcon from '@/app/components/CoinIcon';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
-
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80';
+import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
 
 const BOOST_PACKAGES = [
     {
@@ -331,7 +330,7 @@ export default function BoostListingPage() {
         );
     }
 
-    const listingImage = listing.images?.[0]?.url || listing.images?.[0] || listing.image_url || DEFAULT_IMAGE;
+    const listingImage = listing.images?.[0]?.url || listing.images?.[0] || listing.image_url || null;
 
     return (
         <div className="min-h-screen bg-[#fcfbf9] font-sans text-charcoal pt-24 sm:pt-28 pb-20">
@@ -397,12 +396,17 @@ export default function BoostListingPage() {
 
                         {/* Selected Listing Summary Card */}
                         <div className="bg-white rounded-3xl p-5 sm:p-6 border border-beige shadow-sm flex items-center gap-4">
-                            <div className="w-20 h-20 rounded-2xl bg-forest/5 overflow-hidden border border-forest/10 shrink-0">
-                                <img
-                                    src={getImageUrl(listingImage)}
-                                    alt={listing.title}
-                                    className="w-full h-full object-cover"
-                                />
+                            <div className="w-20 h-20 rounded-2xl bg-forest/5 overflow-hidden border border-forest/10 shrink-0 flex items-center justify-center">
+                                {listingImage ? (
+                                    <img
+                                        src={getImageUrl(listingImage)}
+                                        alt={listing.title}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                    />
+                                ) : (
+                                    <ListingImagePlaceholder category={listing.category} size="sm" />
+                                )}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <span className="text-[10px] font-bold uppercase tracking-wider text-charcoal/40 block mb-0.5">
@@ -658,12 +662,17 @@ export default function BoostListingPage() {
 
                             {/* Simulated Boosted Listing Card */}
                             <div className="rounded-2xl overflow-hidden border border-amber-300/60 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.22)] bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] relative">
-                                <div className="relative aspect-[16/10] w-full bg-sand/30">
-                                    <img
-                                        src={getImageUrl(listingImage)}
-                                        alt={listing.title}
-                                        className="w-full h-full object-cover"
-                                    />
+                                <div className="relative aspect-[16/10] w-full bg-sand/30 flex items-center justify-center">
+                                    {listingImage ? (
+                                        <img
+                                            src={getImageUrl(listingImage)}
+                                            alt={listing.title}
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                        />
+                                    ) : (
+                                        <ListingImagePlaceholder category={listing.category} />
+                                    )}
                                     {/* Simulated Boost Badge */}
                                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
                                         <span className="bg-gradient-to-r from-amber-400 via-amber-300 to-yellow-400 text-slate-950 text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full shadow-lg border border-yellow-100/90 flex items-center gap-1">

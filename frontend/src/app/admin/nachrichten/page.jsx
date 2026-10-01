@@ -26,7 +26,8 @@ import {
     Layers,
     ChevronLeft,
     Building2,
-    Crown
+    Crown,
+    Compass
 } from 'lucide-react';
 import {
     getConversations,

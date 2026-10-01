@@ -2,25 +2,34 @@
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search,
     MapPin,
     ArrowRight,
     Building2,
     Package,
-    X
+    X,
+    Truck,
+    Compass,
+    Wrench,
+    Hammer,
+    ShoppingBag,
+    Building,
+    Home,
+    Anchor,
+    Sparkles,
+    CheckCircle2
 } from 'lucide-react';
 import { getAllProfiles } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
-import CategoriesSection from '@/app/components/CategoriesSection';
 import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
-
 import ScrollSectionWrapper from '@/app/components/ScrollSectionWrapper';
+import { PROVIDER_CATEGORIES } from '@/data';
 
 // Helper to escape characters for safe JSON-LD embedding (XSS protection)
 function safeJsonLd(obj) {
@@ -29,9 +38,6 @@ function safeJsonLd(obj) {
         .replace(/>/g, '\\u003e')
         .replace(/&/g, '\\u0026');
 }
-
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1000&q=80';
-const DEFAULT_LOGO = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80';
 
 function slugifyName(name = '') {
     return name
@@ -49,12 +55,32 @@ function buildProviderSlug(name = '', id = '') {
     return id ? `${slug}-${id}` : slug;
 }
 
+// Icon mapper for provider categories
+const CATEGORY_ICONS = {
+    Truck,
+    MapPin,
+    Compass,
+    Wrench,
+    Hammer,
+    ShoppingBag,
+    Building,
+    Home,
+    Anchor,
+    Building2
+};
+
+function getCategoryIcon(iconName) {
+    return CATEGORY_ICONS[iconName] || Building2;
+}
+
 // ─── Provider Card Component ──────────────────────────────────────────────────────────
 const ProviderCard = React.memo(function ProviderCard({ partner, onAuthRequired, index = 0 }) {
     const router = useRouter();
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-    const [coverSrc, setCoverSrc] = useState(getImageUrl(partner.coverImage, DEFAULT_COVER));
-    const [logoSrc, setLogoSrc] = useState(getImageUrl(partner.logo, DEFAULT_LOGO));
+    const hasCover = Boolean(partner.coverImage);
+    const hasLogo = Boolean(partner.logo);
+    const coverUrl = hasCover ? getImageUrl(partner.coverImage) : null;
+    const logoUrl = hasLogo ? getImageUrl(partner.logo) : null;
 
     const isPioneer = Boolean(partner.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
 
@@ -83,35 +109,53 @@ const ProviderCard = React.memo(function ProviderCard({ partner, onAuthRequired,
             className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-forest/10 hover:border-forest/25 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full select-none will-change-transform"
         >
             {/* Cover Banner */}
-            <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-sand/30">
-                <img
-                    src={coverSrc}
-                    alt={`${partner.name} Cover`}
-                    className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105 pointer-events-none"
-                    onError={() => setCoverSrc(DEFAULT_COVER)}
-                    loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pointer-events-none" />
-
-                {/* Top Badge: Pioneer (only if earned) */}
-                {isPioneer && (
-                    <div className="absolute top-3.5 right-3.5 z-10 pointer-events-none">
-                        <PioneerBadge variant="forest" size="xs" text="Pioneer" className="shadow-lg backdrop-blur-xs" />
+            <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-gradient-to-br from-[#0c2e17] via-[#103d20] to-[#041a0b] flex items-center justify-center">
+                {coverUrl ? (
+                    <img
+                        src={coverUrl}
+                        alt={`${partner.name} Cover`}
+                        className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105 pointer-events-none"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        loading="lazy"
+                    />
+                ) : (
+                    <div className="text-sand/30 font-display font-bold text-sm tracking-widest uppercase select-none">
+                        Campuna Partner
                     </div>
                 )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent pointer-events-none" />
+
+                {/* Top Badges */}
+                <div className="absolute top-3.5 right-3.5 z-10 flex items-center gap-1.5 pointer-events-none">
+                    {partner.isSpotlightEligible && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-gold/90 backdrop-blur-md text-forest text-[10px] font-black uppercase tracking-wider shadow-md">
+                            <Sparkles className="w-2.5 h-2.5 fill-forest" />
+                            Spotlight
+                        </span>
+                    )}
+                    {isPioneer && (
+                        <PioneerBadge variant="forest" size="xs" text="Pioneer" className="shadow-lg backdrop-blur-xs" />
+                    )}
+                </div>
             </div>
 
             {/* Logo Avatar overlapping cover & Content */}
             <div className="relative px-5 pt-0 pb-5 flex flex-col flex-1 justify-between">
                 <div className="flex items-end justify-between -mt-10 mb-3">
-                    <div className="w-20 h-20 rounded-full bg-white p-1 shadow-lg border-2 border-white ring-2 ring-forest/10 overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300 select-none">
-                        <img
-                            src={logoSrc}
-                            alt={`${partner.name} Logo`}
-                            className="w-full h-full object-cover rounded-full bg-sand/20"
-                            onError={() => setLogoSrc(DEFAULT_LOGO)}
-                            loading="lazy"
-                        />
+                    <div className="w-20 h-20 rounded-full bg-white p-1 shadow-lg border-2 border-white ring-2 ring-forest/10 overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-300 select-none flex items-center justify-center">
+                        {logoUrl ? (
+                            <img
+                                src={logoUrl}
+                                alt={`${partner.name} Logo`}
+                                className="w-full h-full object-cover rounded-full bg-sand/20"
+                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                loading="lazy"
+                            />
+                        ) : (
+                            <div className="w-full h-full rounded-full bg-gradient-to-br from-forest to-[#0d381e] text-sand flex items-center justify-center font-display font-bold text-lg">
+                                {partner.name?.slice(0, 2).toUpperCase() || 'CP'}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -126,22 +170,14 @@ const ProviderCard = React.memo(function ProviderCard({ partner, onAuthRequired,
                         )}
                     </div>
 
-                    {/* Location & Type below heading */}
+                    {/* Location below heading */}
                     <div className="flex items-center gap-1.5 text-xs text-charcoal/65 font-medium">
                         <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
                         <span className="line-clamp-1">{partner.location || 'Deutschland'}</span>
-                        {partner.type && (
-                            <>
-                                <span className="text-charcoal/30 shrink-0">•</span>
-                                <span className="text-[10px] font-semibold text-forest bg-forest/5 px-2 py-0.5 rounded-full border border-forest/10 shrink-0">
-                                    {partner.type}
-                                </span>
-                            </>
-                        )}
                     </div>
 
                     <p className="font-sans text-xs text-charcoal/70 leading-relaxed font-light line-clamp-2 pt-1">
-                        {partner.description || 'Spezialisierter Anbieter für Camping, Wohnmobile & Ausrüstung auf Campuna.'}
+                        {partner.description || 'Spezialisierter Fachbetrieb für Camping, Reisemobile & Ausrüstung auf Campuna.'}
                     </p>
                 </div>
 
@@ -173,6 +209,7 @@ function ProvidersContent() {
     const { isLoggedIn } = useAuthStore();
 
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedLocation, setSelectedLocation] = useState('all');
     const [sortBy, setSortBy] = useState('listings'); // 'listings', 'name_asc', 'name_desc'
     const [authModalState, setAuthModalState] = useState({ isOpen: false, returnUrl: '' });
@@ -180,10 +217,24 @@ function ProvidersContent() {
     const [providers, setProviders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Initialize from URL search query if provided
+    // Initialize from URL search query & category
     useEffect(() => {
         const q = searchParams.get('q') || '';
         if (q) setSearchTerm(q);
+
+        const catParam = searchParams.get('category') || searchParams.get('kategorie') || '';
+        if (catParam) {
+            const matched = PROVIDER_CATEGORIES.find(
+                c => c.slug.toLowerCase() === catParam.toLowerCase() ||
+                     c.id.toLowerCase() === catParam.toLowerCase() ||
+                     c.name.toLowerCase() === catParam.toLowerCase()
+            );
+            if (matched) {
+                setSelectedCategory(matched.name);
+            } else if (catParam !== 'all') {
+                setSelectedCategory(catParam);
+            }
+        }
     }, [searchParams]);
 
     // Fetch Providers from database API
@@ -204,11 +255,12 @@ function ProvidersContent() {
                             backendProfiles.push({
                                 id: p.id,
                                 name: p.name,
-                                logo: p.logo || DEFAULT_LOGO,
-                                coverImage: p.coverImage || DEFAULT_COVER,
+                                logo: p.logo || '',
+                                coverImage: p.coverImage || '',
                                 description: p.description || '',
                                 listingsCount: p.listingsCount || 0,
                                 location: p.location || 'Deutschland',
+                                providerCategory: p.providerCategory || 'Wohnmobil- & Wohnwagenhändler',
                                 type: p.type || 'Gewerblich',
                                 isSpotlightEligible: p.isSpotlightEligible || false,
                                 isBusiness: p.isBusiness || false,
@@ -233,22 +285,50 @@ function ProvidersContent() {
         return () => { active = false; };
     }, []);
 
+    // Select category and update URL param smoothly
+    const handleCategoryClick = (categoryName) => {
+        setSelectedCategory(categoryName);
+        const params = new URLSearchParams(searchParams.toString());
+        if (categoryName === 'all') {
+            params.delete('category');
+        } else {
+            const catObj = PROVIDER_CATEGORIES.find(c => c.name === categoryName);
+            params.set('category', catObj ? catObj.slug : categoryName);
+        }
+        const qs = params.toString();
+        router.replace(`/anbieter${qs ? `?${qs}` : ''}`, { scroll: false });
+    };
+
     // Filtered & Sorted Providers List
     const filteredProviders = useMemo(() => {
         return providers.filter(p => {
+            // Category filter
+            if (selectedCategory !== 'all') {
+                const pCat = (p.providerCategory || '').toLowerCase();
+                const selCat = selectedCategory.toLowerCase();
+                if (!pCat.includes(selCat) && !selCat.includes(pCat)) {
+                    return false;
+                }
+            }
+
+            // Search query filter
             if (searchTerm.trim()) {
                 const term = searchTerm.toLowerCase();
                 const inName = p.name?.toLowerCase().includes(term);
                 const inDesc = p.description?.toLowerCase().includes(term);
                 const inLoc = p.location?.toLowerCase().includes(term);
-                if (!inName && !inDesc && !inLoc) return false;
+                const inCat = p.providerCategory?.toLowerCase().includes(term);
+                if (!inName && !inDesc && !inLoc && !inCat) return false;
             }
+
+            // Location filter
             if (selectedLocation !== 'all') {
                 if (!p.location?.toLowerCase().includes(selectedLocation.toLowerCase())) return false;
             }
+
             return true;
         });
-    }, [providers, searchTerm, selectedLocation]);
+    }, [providers, selectedCategory, searchTerm, selectedLocation]);
 
     const sortedProviders = useMemo(() => {
         const list = [...filteredProviders];
@@ -275,9 +355,11 @@ function ProvidersContent() {
 
     const handleReset = useCallback(() => {
         setSearchTerm('');
+        setSelectedCategory('all');
         setSelectedLocation('all');
         setSortBy('listings');
-    }, []);
+        router.replace('/anbieter', { scroll: false });
+    }, [router]);
 
     // Structured Data (ItemList for SEO)
     const directoryStructuredData = useMemo(() => {
@@ -303,11 +385,11 @@ function ProvidersContent() {
                 dangerouslySetInnerHTML={{ __html: safeJsonLd(directoryStructuredData) }}
             />
 
-            {/* ── Hero Banner (Matching Inserate / Kategorie Hero Style) ── */}
+            {/* ── Hero Banner ── */}
             <section
                 className="relative min-h-[32vh] sm:min-h-[36vh] md:min-h-[40vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-20 mx-4 md:mx-8 lg:mx-12 shadow-xl border border-forest/10"
             >
-                {/* Background Cinematic Image with Subtle Zoom Animation */}
+                {/* Background Cinematic Image */}
                 <div className="absolute inset-0 z-0">
                     <motion.div
                         initial={{ scale: 1.08, opacity: 0 }}
@@ -323,7 +405,7 @@ function ProvidersContent() {
                             decoding="async"
                         />
                     </motion.div>
-                    {/* Deep luxurious multi-layered gradient overlay */}
+                    {/* Deep gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/80" />
                 </div>
 
@@ -333,7 +415,7 @@ function ProvidersContent() {
                 {/* Hero Content */}
                 <div className="relative z-10 max-w-4xl mx-auto px-6 py-10 sm:py-12 flex flex-col justify-center items-center w-full text-center">
                     <span className="font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.35em] text-gold block mb-2">
-                        CAMPUNA PARTNER & NETZWERK
+                        CAMPUNA ANBIETER-VERZEICHNIS & NETZWERK
                     </span>
                     <motion.h1
                         initial={{ opacity: 0, y: 15 }}
@@ -341,7 +423,7 @@ function ProvidersContent() {
                         transition={{ duration: 0.6, delay: 0.1 }}
                         className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 drop-shadow-xl leading-tight"
                     >
-                        Camping-Anbieter <span className="text-gold">& Spezialisten</span>
+                        Camping-Anbieter <span className="text-gold">& Spezialisten entdecken</span>
                     </motion.h1>
                     <motion.p
                         initial={{ opacity: 0, y: 15 }}
@@ -349,7 +431,7 @@ function ProvidersContent() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="font-sans text-xs sm:text-sm md:text-base text-sand/90 leading-relaxed max-w-2xl mx-auto font-light drop-shadow-md mb-6"
                     >
-                        Entdecke zertifizierte Fachhändler, Ausbauer, Werkstätten, Vermieter und Campingplatzbetreiber in ganz Deutschland. Finde den passenden Partner für dein nächstes Camping-Abenteuer.
+                        Finde zertifizierte Fachhändler, Ausbauer, Werkstätten, Vermieter, Zubehör-Shops und Campingplätze in ganz Deutschland nach Fachkategorie sortiert.
                     </motion.p>
 
                     {/* Action buttons */}
@@ -364,13 +446,13 @@ function ProvidersContent() {
                             className="bg-gold hover:bg-white text-forest font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-2"
                         >
                             <Building2 className="w-4 h-4" />
-                            Kostenlos Anbieter werden
+                            Als Anbieter registrieren
                         </button>
                         <button
                             onClick={() => router.push('/inserate')}
                             className="bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full transition-all duration-300 cursor-pointer"
                         >
-                            Alle Inserate durchsuchen
+                            Alle Inserate ansehen
                         </button>
                     </motion.div>
                 </div>
@@ -389,9 +471,74 @@ function ProvidersContent() {
             {/* ── Main Content Area ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-                {/* Filter & Search Header */}
+                {/* ── Unified Filter & Search Bar ── */}
                 <ScrollSectionWrapper delay={0.05}>
-                    <div className="bg-sand/30 border border-forest/10 rounded-2xl p-4 sm:p-6 mb-10 shadow-sm">
+                    <div className="bg-sand/30 border border-forest/10 rounded-2xl p-4 sm:p-6 mb-8 shadow-sm">
+                        
+                        {/* Category Pills (Horizontal Chips with Icons & Counts) */}
+                        <div className="mb-4 pb-4 border-b border-forest/5">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[11px] font-bold uppercase tracking-wider text-charcoal/60">
+                                    Fachbereich wählen:
+                                </span>
+                                {selectedCategory !== 'all' && (
+                                    <button
+                                        onClick={() => handleCategoryClick('all')}
+                                        className="text-xs font-semibold text-gold hover:text-forest transition-colors cursor-pointer"
+                                    >
+                                        Alle anzeigen
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                    onClick={() => handleCategoryClick('all')}
+                                    className={`px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                                        selectedCategory === 'all'
+                                            ? 'bg-forest text-white shadow-md'
+                                            : 'bg-white hover:bg-sand text-charcoal border border-forest/10'
+                                    }`}
+                                >
+                                    <span>Alle Anbieter</span>
+                                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                                        selectedCategory === 'all' ? 'bg-white/20 text-white' : 'bg-forest/10 text-forest'
+                                    }`}>
+                                        {providers.length}
+                                    </span>
+                                </button>
+
+                                {PROVIDER_CATEGORIES.map((cat) => {
+                                    const IconComponent = getCategoryIcon(cat.iconName);
+                                    const isSelected = selectedCategory === cat.name;
+                                    const count = providers.filter(p => (p.providerCategory || '').toLowerCase().includes(cat.name.toLowerCase())).length;
+
+                                    return (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => handleCategoryClick(cat.name)}
+                                            className={`px-3.5 py-2 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                                                isSelected
+                                                    ? 'bg-forest text-white shadow-md'
+                                                    : 'bg-white hover:bg-sand text-charcoal border border-forest/10'
+                                            }`}
+                                        >
+                                            <IconComponent className={`w-3.5 h-3.5 ${isSelected ? 'text-gold' : 'text-forest'}`} />
+                                            <span>{cat.shortName || cat.name}</span>
+                                            {count > 0 && (
+                                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                                                    isSelected ? 'bg-white/20 text-white' : 'bg-forest/10 text-forest'
+                                                }`}>
+                                                    {count}
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Search, Location, and Sort Inputs */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
                             {/* Search Input */}
@@ -401,7 +548,7 @@ function ProvidersContent() {
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Anbieter, Name, Spezialisierung..."
+                                    placeholder="Anbieter, Name, PLZ, Ort..."
                                     className="w-full pl-10 pr-4 py-2.5 text-xs rounded-full border border-forest/15 bg-white text-charcoal placeholder:text-charcoal/35 focus:outline-none focus:ring-1.5 focus:ring-forest/20 font-medium"
                                 />
                             </div>
@@ -436,12 +583,12 @@ function ProvidersContent() {
                         </div>
 
                         {/* Active filter count & reset */}
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-forest/5 text-xs">
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-forest/5 text-xs">
                             <span className="font-mono text-charcoal/60 uppercase tracking-widest text-[11px]">
-                                {sortedProviders.length} {sortedProviders.length === 1 ? 'Anbieter' : 'Anbieter'} gefunden
+                                {sortedProviders.length} {sortedProviders.length === 1 ? 'Anbieter' : 'Anbieter'} in dieser Auswahl
                             </span>
 
-                            {(searchTerm || selectedLocation !== 'all' || sortBy !== 'listings') && (
+                            {(searchTerm || selectedCategory !== 'all' || selectedLocation !== 'all' || sortBy !== 'listings') && (
                                 <button
                                     onClick={handleReset}
                                     className="text-gold hover:text-forest font-bold uppercase tracking-wider text-[10px] flex items-center gap-1 cursor-pointer transition-colors"
@@ -476,10 +623,10 @@ function ProvidersContent() {
                     <div className="text-center py-20 px-4 bg-sand/20 rounded-[32px] border border-dashed border-forest/10 flex flex-col items-center justify-center">
                         <Building2 className="w-12 h-12 text-forest/40 mb-4" />
                         <p className="font-display text-lg font-bold text-forest mb-2">
-                            Keine Anbieter gefunden
+                            Keine Anbieter in dieser Kategorie gefunden
                         </p>
                         <p className="font-sans text-xs text-charcoal/60 max-w-sm mb-6 font-light">
-                            Es wurden keine Partner gefunden, die deinen Suchkriterien entsprechen. Probiere einen anderen Suchbegriff.
+                            Es wurden keine Partner gefunden, die deinen Kriterien entsprechen. Setze die Filter zurück oder wähle einen anderen Fachbereich.
                         </p>
                         <button
                             onClick={handleReset}
@@ -503,19 +650,6 @@ function ProvidersContent() {
                 )}
 
             </main>
-
-            {/* ── Categories Section ── */}
-            <ScrollSectionWrapper delay={0.05}>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 mb-16">
-                    <CategoriesSection
-                        title="Passende Angebote nach Kategorie"
-                        badge="ENTDECKEN"
-                        showHeader={true}
-                        align="center"
-                        isDocked={false}
-                    />
-                </div>
-            </ScrollSectionWrapper>
 
             {/* ── Standard Auth Required Modal ── */}
             <AuthRequiredModal

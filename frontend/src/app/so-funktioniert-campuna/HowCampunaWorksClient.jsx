@@ -340,7 +340,7 @@ export default function HowCampunaWorksClient() {
                                         Erstelle kostenlos dein Inserat oder entdecke Angebote anderer Camper und Anbieter. Ob Wohnmobil, Wohnwagen, Campingzubehör, Stellplatz, Campingplatz oder Vermietung – Fotos hochladen, Beschreibung ergänzen und Angebot veröffentlichen.
                                     </p>
                                     <p className="text-charcoal/70 text-xs sm:text-sm">
-                                        Campuna ist Deutschlands Marktplatz für die gesamte Camping-Community. Entdecke Angebote von privaten Campern und verifizierten gewerblichen Anbietern – alles an einem zentralen Ort.
+                                        Campuna ist Deutschlands Marktplatz für die gesamte Camping-Community. Entdecke Angebote von privaten Campern und gewerblichen Anbietern – alles an einem zentralen Ort.
                                     </p>
                                 </div>
 

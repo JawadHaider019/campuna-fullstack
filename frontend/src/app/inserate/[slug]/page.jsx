@@ -486,6 +486,9 @@ export default function ListingDetailPage() {
                     setActiveImageIdx(0);
 
                     // Fetch related listings from database or fallback to static
+                    const currentId = String(foundListing.id || '').toLowerCase();
+                    const currentTitleSlug = slugifyTitle(foundListing.title || '');
+
                     getAllListings().then(res => {
                         if (res.success && active && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
                             const dbListings = res.data.listings;
@@ -496,18 +499,52 @@ export default function ListingDetailPage() {
                                 pricePeriod: l.category === 'Mieten & Vermieten' ? 'pro Tag' : 'Kaufpreis',
                                 location: l.location || 'Deutschland',
                                 displayLocation: l.location || 'Deutschland',
-                                images: (l.images && l.images.length > 0 ? l.images : ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80']).map(img => getImageUrl(img))
+                                category: l.category || '',
+                                features: [l.condition, l.subcategory].filter(Boolean),
+                                is_boosted: Boolean(l.is_boosted || l.featured),
+                                images: (Array.isArray(l.images) ? l.images : (typeof l.images === 'string' && l.images.trim() ? [l.images] : [])).map(img => getImageUrl(img)).filter(Boolean)
                             }));
-                            const related = mapped.filter(item => item.id !== foundListing.id);
+
+                            const seenKeys = new Set();
+                            const related = [];
+                            for (const item of mapped) {
+                                const itemKey = String(item.id || '').toLowerCase();
+                                const itemTitleSlug = slugifyTitle(item.title || '');
+                                if (itemKey === currentId || itemTitleSlug === currentTitleSlug) continue;
+                                if (seenKeys.has(itemKey) || seenKeys.has(itemTitleSlug)) continue;
+                                seenKeys.add(itemKey);
+                                seenKeys.add(itemTitleSlug);
+                                related.push(item);
+                            }
                             setRelatedListings(related);
                         } else if (active) {
-                            const related = STATIC_LISTINGS.filter(item => item.id !== foundListing.id);
+                            const seenKeys = new Set();
+                            const related = [];
+                            for (const item of STATIC_LISTINGS) {
+                                const itemKey = String(item.id || '').toLowerCase();
+                                const itemTitleSlug = slugifyTitle(item.title || '');
+                                if (itemKey === currentId || itemTitleSlug === currentTitleSlug) continue;
+                                if (seenKeys.has(itemKey) || seenKeys.has(itemTitleSlug)) continue;
+                                seenKeys.add(itemKey);
+                                seenKeys.add(itemTitleSlug);
+                                related.push({
+                                    id: item.id,
+                                    title: item.title,
+                                    price: item.price,
+                                    pricePeriod: item.pricePeriod || 'Kaufpreis',
+                                    location: item.location,
+                                    displayLocation: item.location,
+                                    category: item.category,
+                                    features: item.features || [],
+                                    is_boosted: item.is_boosted,
+                                    images: item.images.map(img => getImageUrl(img)).filter(Boolean)
+                                });
+                            }
                             setRelatedListings(related);
                         }
                     }).catch(err => {
                         if (active) {
-                            const related = STATIC_LISTINGS.filter(item => item.id !== foundListing.id);
-                            setRelatedListings(related);
+                            setRelatedListings([]);
                         }
                     });
                 }

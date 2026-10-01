@@ -87,6 +87,11 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
   }, []);
 
   const isHomepage = pathname === '/';
+  const isAccountPage = 
+    pathname?.startsWith('/mein-konto') || 
+    pathname?.startsWith('/de/mein-konto') || 
+    pathname?.startsWith('/konto') || 
+    pathname?.startsWith('/de/konto');
 
   const baseNavLinks = [
     { label: 'Startseite', id: 'top' },
@@ -370,7 +375,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                     <div className="relative">
                       <span className="whitespace-nowrap flex items-center gap-1.5">
                         {isLoggedIn ? 'Konto' : 'Einloggen'}
-                        {isLoggedIn && effectiveAlertCount > 0 && (
+                        {isLoggedIn && !isAccountPage && effectiveAlertCount > 0 && (
                           <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
                             <Bell className="w-3.5 h-3.5 shrink-0" />
                             <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
@@ -395,7 +400,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
               >
                 <div className="relative">
                   {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                  {isLoggedIn && effectiveAlertCount > 0 && (
+                  {isLoggedIn && !isAccountPage && effectiveAlertCount > 0 && (
                     <span className="absolute top-0 -right-1 flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
@@ -483,7 +488,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                       <div className="relative">
                         <span className="whitespace-nowrap flex items-center gap-1.5">
                           {isLoggedIn ? 'Konto' : 'Einloggen'}
-                          {isLoggedIn && effectiveAlertCount > 0 && (
+                          {isLoggedIn && !isAccountPage && effectiveAlertCount > 0 && (
                             <span className="relative flex items-center justify-center text-gold group-hover:text-forest">
                               <Bell className="w-3.5 h-3.5 shrink-0" />
                               <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
