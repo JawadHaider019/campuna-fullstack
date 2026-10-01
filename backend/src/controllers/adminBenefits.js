@@ -116,7 +116,8 @@ export const grantAdminBenefit = async (req, res) => {
 
         // ── 1. BUSINESS SUBSCRIPTION (Free of charge - Commercial accounts only) ──
         if (benefit_type === 'BUSINESS_SUBSCRIPTION') {
-            if (targetUser.account_type === 'PRIVATE') {
+            const isPrivate = (targetUser.user_type === 'PRIVATE' || targetUser.account_type === 'PRIVATE');
+            if (isPrivate) {
                 return res.status(400).json({
                     success: false,
                     error: 'Campuna Business Tarife sind gewerblichen Konten vorbehalten. Für Privatnutzer stehen Inserate-Boosts und Campuna Credits zur Verfügung.'
@@ -210,7 +211,8 @@ export const grantAdminBenefit = async (req, res) => {
 
         // ── 3. SPOTLIGHT (Homepage - Commercial accounts only) ──
         else if (benefit_type === 'SPOTLIGHT') {
-            if (targetUser.account_type === 'PRIVATE' || !targetUser.company_profile) {
+            const isPrivate = (targetUser.user_type === 'PRIVATE' || targetUser.account_type === 'PRIVATE');
+            if (isPrivate || !targetUser.company_profile) {
                 return res.status(400).json({
                     success: false,
                     error: 'Homepage-Spotlights sind gewerblichen Profilen mit Firmenprofil vorbehalten. Für Privatnutzer stehen Inserate-Boosts und Campuna Credits zur Verfügung.'
