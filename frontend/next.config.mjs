@@ -77,6 +77,42 @@ const nextConfig = {
         destination: '/blog',
         permanent: true,
       },
+      // Account & User Panel Aliases -> /mein-konto
+      {
+        source: '/myaccount',
+        destination: '/mein-konto',
+        permanent: true,
+      },
+      {
+        source: '/my-account',
+        destination: '/mein-konto',
+        permanent: true,
+      },
+      {
+        source: '/account',
+        destination: '/mein-konto',
+        permanent: true,
+      },
+      {
+        source: '/profil',
+        destination: '/mein-konto',
+        permanent: true,
+      },
+      {
+        source: '/profile',
+        destination: '/mein-konto',
+        permanent: true,
+      },
+      {
+        source: '/dashboard',
+        destination: '/mein-konto',
+        permanent: true,
+      },
+      {
+        source: '/user',
+        destination: '/mein-konto',
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

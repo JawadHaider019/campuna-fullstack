@@ -18,7 +18,7 @@ export default function AppShell({ children }) {
         pathname?.startsWith('/email-bestaetigen') ||
         pathname?.startsWith('/verify-email');
     const isAdminRoute = pathname?.startsWith('/admin');
-    const isUserAccountRoute = pathname?.startsWith('/mein-konto') || pathname?.startsWith('/de/mein-konto');
+    const isUserAccountRoute = pathname?.startsWith('/mein-konto');
     const hideHeaderFooter = isAuthPage || isAdminRoute || isUserAccountRoute;
 
     return (

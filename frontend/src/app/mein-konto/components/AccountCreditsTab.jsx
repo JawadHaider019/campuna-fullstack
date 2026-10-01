@@ -60,7 +60,7 @@ export default function AccountCreditsTab({
         const origin = typeof window !== 'undefined' && window.location?.origin 
             ? window.location.origin 
             : 'https://campuna.de';
-        return `${origin}/de/registrieren?ref=${encodeURIComponent(referralCode)}`;
+        return `${origin}/registrieren?ref=${encodeURIComponent(referralCode)}`;
     }, [referralCode]);
 
     const handleCopyReferral = useCallback((e) => {
