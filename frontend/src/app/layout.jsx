@@ -57,6 +57,7 @@ export const metadata = {
         alt: "Campuna Camping Marktplatz",
       },
     ],
+
   },
   twitter: {
     card: "summary_large_image",

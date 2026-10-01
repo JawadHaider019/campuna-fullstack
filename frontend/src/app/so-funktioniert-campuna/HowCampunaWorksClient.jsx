@@ -83,7 +83,7 @@ export default function HowCampunaWorksClient() {
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 className="relative min-h-[36vh] sm:min-h-[42vh] md:min-h-[48vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-20 sm:mt-20 mx-4 md:mx-8 lg:mx-12 shadow-xl border border-forest/10 will-change-transform"
             >
-                {/* Background Cinematic Image */}
+
                 <div className="absolute inset-0 z-0">
                     <motion.div
                         initial={{ scale: 1.12, opacity: 0 }}
