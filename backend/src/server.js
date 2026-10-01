@@ -60,12 +60,19 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), handl
 
 app.use(express.json());
 
-// Ensure uploads directory exists and serve static files with CORS
+// Ensure uploads directory exists and serve static files with unrestricted cross-origin access
 const uploadsPath = path.resolve(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsPath)) {
   fs.mkdirSync(uploadsPath, { recursive: true });
 }
-app.use('/uploads', cors(), express.static(uploadsPath));
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  next();
+}, express.static(uploadsPath));
 
 app.get('/', (req, res) => {
   res.send(`API Working on port ${PORT}`);
