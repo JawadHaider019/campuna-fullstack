@@ -17,6 +17,27 @@ export const getUserSubscription = async (userId) => {
         .first();
 
     if (activeSub?.plan) {
+        // Check if subscription has expired
+        if (activeSub.expires_at && new Date(activeSub.expires_at) < new Date()) {
+            // Automatically mark subscription as EXPIRED
+            await db.orm.public.Subscription
+                .where((s) => s.id.eq(activeSub.id))
+                .update({ status: 'EXPIRED' })
+                .catch(() => null);
+
+            // Sync company profile tier back to FREE
+            await db.orm.public.CompanyProfile
+                .where((cp) => cp.user_id.eq(userId))
+                .update({ tier: 'FREE' })
+                .catch(() => null);
+
+            const freePlan = await db.orm.public.Plan
+                .where({ name: 'FREE' })
+                .first();
+
+            return { subscription: null, plan: freePlan };
+        }
+
         return { subscription: activeSub, plan: activeSub.plan };
     }
 
@@ -191,24 +212,14 @@ export const subscribe = async (req, res) => {
         if (monthsNum === 3) totalCost = 7900; // €79
         if (monthsNum === 12) totalCost = 29000; // €290 (2 months free)
 
-        const normMethod = (payment_method || 'CREDIT_CARD').toUpperCase();
+        const normMethod = (payment_method || 'STRIPE').toUpperCase();
 
-        // --- Credit payment flow ---
+        // Subscriptions cannot be paid with Campuna Credits
         if (normMethod === 'CREDIT' && totalCost > 0) {
-            // Calculate current credit balance
-            const transactions = await db.orm.public.CreditTransaction
-                .where({ user_id: userId })
-                .all();
-            const balance = transactions.reduce((sum, t) => sum + t.amount, 0);
-
-            if (balance < totalCost) {
-                return res.status(402).json({
-                    success: false,
-                    error: `Nicht genügend Campuna-Guthaben. Erforderlich: ${totalCost / 100}€ (${totalCost} CC), Verfügbar: ${balance / 100}€ (${balance} CC)`,
-                    required: totalCost,
-                    balance,
-                });
-            }
+            return res.status(400).json({
+                success: false,
+                error: 'Business-Abonnements können nicht mit Campuna Credits bezahlt werden. Bitte nutze die offizielle Stripe-Zahlungsabwicklung.',
+            });
         }
 
         // Generate invoice number & metadata

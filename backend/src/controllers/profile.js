@@ -18,6 +18,7 @@ const PRIVATE_ALLOWED_FIELDS = [
 
 const COMPANY_ALLOWED_FIELDS = [
     'company_name',
+    'provider_category',
     'first_name',
     'last_name',
     'bio',
@@ -368,53 +369,98 @@ export const getPublicProfile = async (req, res) => {
         const uuidMatch = rawUserId.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
         const targetUserId = uuidMatch ? uuidMatch[1] : rawUserId;
 
-        const user = await db.orm.public.User
-            .where((u) => u.id.eq(targetUserId))
-            .first();
+        // Admin Account Profile -> Campuna Club Business Profile
+        if (targetUserId === 'admin' || targetUserId === 'campuna-club') {
+            return res.status(200).json({
+                success: true,
+                profile_type: 'COMMERCIAL',
+                profile: {
+                    company_name: 'Campuna Club',
+                    first_name: 'Campuna',
+                    last_name: 'Club',
+                    tier: 'BUSINESS',
+                    is_business: true,
+                    is_spotlight_active: true,
+                    bio: 'Offizielle Angebote, exklusive geprüfte Fahrzeuge & Camping-Equipment direkt vom Campuna Club.',
+                    location: 'Deutschland',
+                    phone: '+49 30 12345678',
+                    website_url: 'https://campuna.de',
+                    logo_url: '/logo.webp',
+                    cover_image_url: '/hero-cover.jpg',
+                },
+                user: {
+                    role: 'ADMIN',
+                    user_type: 'COMMERCIAL',
+                },
+                achievements: [
+                    { badge_key: 'CAMPUNA_PIONEER', position: 1 }
+                ],
+            });
+        }
 
-        if (!user || user.is_suspended) {
+        const userRes = await pool.query(
+            'SELECT id, email, user_type, role, email_verified, is_suspended, created_at FROM users WHERE id::text = $1',
+            [targetUserId]
+        );
+
+        if (userRes.rowCount === 0) {
             return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
         }
 
-        const achievements = await db.orm.public.UserAchievement
-            .where({ user_id: targetUserId })
-            .all();
+        const user = userRes.rows[0];
 
-        if (user.user_type === 'PRIVATE') {
-            const profile = await db.orm.public.PrivateProfile
-                .where((p) => p.user_id.eq(targetUserId))
-                .first();
+        if (user.is_suspended) {
+            return res.status(404).json({ success: false, error: 'Dieser Benutzer ist nicht mehr aktiv.' });
+        }
+
+        const achRes = await pool.query(
+            'SELECT badge_key, position, awarded_at FROM user_achievements WHERE user_id = $1',
+            [user.id]
+        ).catch(() => ({ rows: [] }));
+        const achievements = achRes.rows || [];
+
+        const isCommercial = user.user_type === 'COMMERCIAL' || user.role === 'ADMIN';
+
+        if (user.user_type === 'PRIVATE' && user.role !== 'ADMIN') {
+            const ppRes = await pool.query('SELECT * FROM private_profiles WHERE user_id = $1', [user.id]);
+            const profile = ppRes.rows[0];
 
             if (!profile) {
                 return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
             }
 
-            // Public view — exclude internal/sensitive fields
             const { id, user_id, created_at, updated_at, ...publicFields } = profile;
 
             return res.status(200).json({
                 success: true,
                 profile_type: 'PRIVATE',
                 profile: { ...publicFields, member_since: user.created_at },
+                user: {
+                    id: user.id,
+                    role: user.role,
+                    user_type: user.user_type,
+                },
                 achievements,
             });
         }
 
-        if (user.user_type === 'COMMERCIAL') {
-            const rawCpRes = await pool.query('SELECT * FROM company_profiles WHERE user_id = $1', [targetUserId]);
+        if (isCommercial) {
+            const rawCpRes = await pool.query('SELECT * FROM company_profiles WHERE user_id = $1', [user.id]);
             const profile = rawCpRes.rows[0];
 
             if (!profile) {
                 return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
             }
 
-            const activeSub = await db.orm.public.Subscription
-                .where({ user_id: targetUserId, status: 'ACTIVE' })
-                .include('plan')
-                .first()
-                .catch(() => null);
+            const subRes = await pool.query(
+                `SELECT s.*, p.name as plan_name FROM subscriptions s 
+                 JOIN plans p ON p.id = s.plan_id 
+                 WHERE s.user_id = $1 AND s.status = 'ACTIVE' LIMIT 1`,
+                [user.id]
+            ).catch(() => ({ rows: [] }));
+            const activeSub = subRes.rows?.[0];
 
-            const isBusiness = profile.tier === 'BUSINESS' || profile.is_strategic_partner || activeSub?.plan?.name === 'BUSINESS';
+            const isBusiness = profile.tier === 'BUSINESS' || profile.is_strategic_partner || activeSub?.plan_name === 'BUSINESS';
             const spotlightUntil = profile?.spotlight_until ? new Date(profile.spotlight_until) : null;
             const now = new Date();
             const hasPaidSpotlight = Boolean(spotlightUntil && spotlightUntil > now) || Boolean(profile?.is_strategic_partner);
@@ -444,14 +490,18 @@ export const getPublicProfile = async (req, res) => {
                     spotlight_until: profile?.spotlight_until || null,
                     member_since: user.created_at 
                 },
+                user: {
+                    id: user.id,
+                    role: user.role,
+                    user_type: user.user_type,
+                },
                 achievements,
             });
         }
 
-        // Default fallback for any other user type (ADMIN, etc.)
-        const fallbackProfile = await db.orm.public.PrivateProfile
-            .where((p) => p.user_id.eq(targetUserId))
-            .first();
+        // Fallback for any other type
+        const fallbackRes = await pool.query('SELECT * FROM private_profiles WHERE user_id = $1', [user.id]);
+        const fallbackProfile = fallbackRes.rows[0];
 
         if (!fallbackProfile) {
             return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
@@ -463,6 +513,11 @@ export const getPublicProfile = async (req, res) => {
             success: true,
             profile_type: 'PRIVATE',
             profile: { ...publicFields, member_since: user.created_at },
+            user: {
+                id: user.id,
+                role: user.role,
+                user_type: user.user_type,
+            },
             achievements,
         });
 
@@ -789,11 +844,21 @@ export const bookSpotlight = async (req, res) => {
  */
 export const getAllProfiles = async (req, res) => {
     try {
+        const { category } = req.query;
+        let whereExtra = '';
+        const params = [];
+
+        if (category && category !== 'ALL' && category !== 'all') {
+            params.push(`%${category.trim().toLowerCase()}%`);
+            whereExtra = ` AND LOWER(COALESCE(cp.provider_category, '')) LIKE $1`;
+        }
+
         const query = `
             SELECT 
                 u.id,
                 COALESCE(cp.company_name, 'Gewerblicher Anbieter') as name,
                 COALESCE(cp.logo_url, '') as logo,
+                COALESCE(cp.provider_category, 'Wohnmobil- & Wohnwagenhändler') as "providerCategory",
                 CASE 
                     WHEN cp.tier = 'BUSINESS' OR sub.id IS NOT NULL OR cp.is_strategic_partner = TRUE 
                     THEN COALESCE(cp.cover_image_url, '') 
@@ -834,11 +899,11 @@ export const getAllProfiles = async (req, res) => {
                 JOIN plans p ON p.id = s.plan_id
                 WHERE s.status = 'ACTIVE' AND p.name = 'BUSINESS'
             ) sub ON sub.user_id = u.id
-            WHERE (u.is_suspended IS FALSE OR u.is_suspended IS NULL) AND u.user_type = 'COMMERCIAL'
+            WHERE (u.is_suspended IS FALSE OR u.is_suspended IS NULL) AND u.user_type = 'COMMERCIAL'${whereExtra}
             ORDER BY "isSpotlightEligible" DESC, "isBusiness" DESC, "listingsCount" DESC, u.created_at DESC
-            LIMIT 50;
+            LIMIT 100;
         `;
-        const result = await pool.query(query);
+        const result = await pool.query(query, params);
 
         return res.status(200).json({
             success: true,
@@ -849,4 +914,6 @@ export const getAllProfiles = async (req, res) => {
         return res.status(500).json({ success: false, error: 'Fehler beim Laden der Profile.' });
     }
 };
+
+
 

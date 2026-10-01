@@ -456,9 +456,19 @@ export const getAllListings = async (req, res) => {
             };
         });
 
+        // Deduplicate listings by unique ID
+        const seenListingIds = new Set();
+        const uniqueListings = [];
+        for (const item of mappedListings) {
+            if (item.id && !seenListingIds.has(item.id)) {
+                seenListingIds.add(item.id);
+                uniqueListings.push(item);
+            }
+        }
+
         return res.status(200).json({
             success: true,
-            listings: mappedListings
+            listings: uniqueListings
         });
     } catch (error) {
         console.error('❌ getAllListings error:', error.message);

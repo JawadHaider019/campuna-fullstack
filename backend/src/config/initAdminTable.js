@@ -35,6 +35,7 @@ async function main() {
         ALTER TABLE listings DROP CONSTRAINT IF EXISTS listings_reviewed_by_id_fkey;
         ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS linkedin_url TEXT;
         ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS spotlight_until TIMESTAMPTZ;
+        ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS provider_category TEXT DEFAULT 'Wohnmobil- & Wohnwagenhändler';
     `).catch((err) => console.log('Notice on listings/company columns:', err.message));
 
     // Ensure plans table exists and has updated configuration

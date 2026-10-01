@@ -6,6 +6,7 @@ import {
     logout, 
     refresh, 
     verifyEmail,
+    resendVerificationEmail,
     requestPasswordReset,
     verifyResetOtp,
     resetPassword
@@ -25,6 +26,8 @@ router.post('/refresh', refresh);
 router.get('/verify-status', getVerificationStatus);
 // POST /api/verify-email
 router.post('/verify-email', verifyEmail);
+// POST /api/resend-verification
+router.post('/resend-verification', resendVerificationEmail);
 
 // Password Reset endpoints
 // POST /api/forgot-password

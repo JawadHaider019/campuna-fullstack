@@ -16,6 +16,9 @@ import conversationRoutes from './routes/conversations.js';
 import broadcastRoutes from './routes/broadcasts.js';
 import postsRoutes from './routes/posts.js';
 import aiRoutes from './routes/ai.js';
+import contactRoutes from './routes/contact.js';
+import stripeRoutes from './routes/stripe.js';
+import { handleWebhook as handleStripeWebhook } from './controllers/stripe.js';
 import './config/initAdminTable.js';
 import './config/initChatTables.js';
 import './config/initReportsTable.js';
@@ -51,6 +54,10 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 app.use(cors());
+
+// Stripe webhook requires raw unparsed body for cryptographic signature verification
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), handleStripeWebhook);
+
 app.use(express.json());
 
 // Ensure uploads directory exists and serve static files with CORS
@@ -69,7 +76,9 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api', authRoutes);
+app.use('/api', contactRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/stripe', stripeRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/credits', creditRoutes);
 app.use('/api/referrals', referralRoutes);

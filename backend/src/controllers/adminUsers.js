@@ -76,6 +76,7 @@ export const getAdminUsers = async (req, res) => {
                 pp.location as private_location,
                 -- Company profile data
                 cp.company_name,
+                cp.provider_category as company_provider_category,
                 cp.first_name as company_first_name,
                 cp.last_name as company_last_name,
                 cp.logo_url as company_logo,
@@ -164,6 +165,7 @@ export const getAdminUsers = async (req, res) => {
                 phone: row.company_phone || '',
                 website: row.company_website || '',
                 tier: row.company_tier || 'FREE',
+                provider_category: isCommercial ? (row.company_provider_category || 'Wohnmobil- & Wohnwagenhändler') : null,
                 referral_code: row.referral_code,
                 email_verified: row.email_verified,
                 is_suspended: row.is_suspended,
@@ -241,6 +243,7 @@ export const getAdminUserById = async (req, res) => {
                 pp.bio as private_bio,
                 -- Company profile
                 cp.company_name,
+                cp.provider_category as company_provider_category,
                 cp.first_name as company_first_name,
                 cp.last_name as company_last_name,
                 cp.logo_url as company_logo,
@@ -316,6 +319,7 @@ export const getAdminUserById = async (req, res) => {
                 website: row.company_website || '',
                 bio: isCommercial ? (row.company_description || '') : (row.private_bio || ''),
                 tier: row.company_tier || 'FREE',
+                provider_category: isCommercial ? (row.company_provider_category || 'Wohnmobil- & Wohnwagenhändler') : null,
                 referral_code: row.referral_code,
                 email_verified: row.email_verified,
                 is_suspended: row.is_suspended,
@@ -536,3 +540,59 @@ export const deleteAdminUser = async (req, res) => {
         });
     }
 };
+
+/**
+ * PATCH /api/admin/users/:id/provider-category
+ * Manually updates/assigns a commercial provider category.
+ */
+export const updateUserProviderCategory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { provider_category } = req.body;
+
+        if (!provider_category || !provider_category.trim()) {
+            return res.status(400).json({
+                success: false,
+                error: 'Anbieterkategorie ist erforderlich.'
+            });
+        }
+
+        const categoryVal = provider_category.trim();
+
+        // Check user existence
+        const userCheck = await pool.query('SELECT id, user_type FROM users WHERE id = $1', [id]);
+        if (userCheck.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                error: 'Benutzer nicht gefunden.'
+            });
+        }
+
+        const cpCheck = await pool.query('SELECT user_id FROM company_profiles WHERE user_id = $1', [id]);
+        if (cpCheck.rowCount === 0) {
+            await pool.query(
+                `INSERT INTO company_profiles (user_id, company_name, provider_category, created_at, updated_at)
+                 VALUES ($1, 'Gewerblicher Anbieter', $2, NOW(), NOW())`,
+                [id, categoryVal]
+            );
+        } else {
+            await pool.query(
+                `UPDATE company_profiles SET provider_category = $1, updated_at = NOW() WHERE user_id = $2`,
+                [categoryVal, id]
+            );
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Anbieterkategorie erfolgreich auf "${categoryVal}" gesetzt.`,
+            provider_category: categoryVal
+        });
+    } catch (error) {
+        console.error('❌ updateUserProviderCategory error:', error.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Fehler beim Aktualisieren der Anbieterkategorie.'
+        });
+    }
+};
+

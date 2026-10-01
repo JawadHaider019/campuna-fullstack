@@ -129,6 +129,7 @@ export const register = async (req, res) => {
             company_name,
             company_email,
             website_url,
+            provider_category,
             impressum,
             referred_by_code,
         } = req.body;
@@ -164,7 +165,7 @@ export const register = async (req, res) => {
                 user_type: normalizedAccountType,
                 referral_code: generateReferralCode(),
                 referred_by_code: referred_by_code ? referred_by_code.trim().toUpperCase() : null,
-                email_verified: true,
+                email_verified: false,
             });
 
             if (normalizedAccountType === 'PRIVATE') {
@@ -200,28 +201,36 @@ export const register = async (req, res) => {
             return newUser;
         });
 
-        // Immediately generate access & refresh tokens
-        const { accessToken, refreshToken } = generateTokens(result);
+        // Set provider category for commercial user
+        if (normalizedAccountType === 'COMMERCIAL') {
+            const categoryToSet = provider_category && provider_category.trim()
+                ? provider_category.trim()
+                : 'Wohnmobil- & Wohnwagenhändler';
+            await pool.query(
+                'UPDATE company_profiles SET provider_category = $1, updated_at = NOW() WHERE user_id = $2',
+                [categoryToSet, result.id]
+            ).catch((err) => console.log('Notice updating provider category:', err.message));
+        }
 
-        // Check Pioneer badge eligibility
-        await checkAndAwardPioneerBadge(result.id).catch((err) => {
-            console.error('Pioneer check on register error:', err.message);
-        });
+        // Send verification / welcome email via Brevo
+        const verificationToken = generateVerificationToken(result.id);
+        sendVerificationEmail(result.email, verificationToken, first_name || company_name)
+            .then(() => console.log(`📧 [Brevo] Verification email sent to ${result.email}`))
+            .catch((err) => console.warn(`⚠️ [Brevo Notice] Failed to send verification email to ${result.email}:`, err.message));
 
-        console.log(`✅ User registered and auto-verified: ${result.email} (ID: ${result.id})`);
+        console.log(`✅ User registered (pending verification): ${result.email} (ID: ${result.id})`);
 
         return res.status(201).json({
             success: true,
-            message: 'Registrierung erfolgreich.',
-            access_token: accessToken,
-            refresh_token: refreshToken,
+            requires_verification: true,
+            message: 'Registrierung erfolgreich! Bitte überprüfe dein E-Mail-Postfach und bestätige deine E-Mail-Adresse innerhalb von 15 Minuten, um dein Konto zu aktivieren.',
             user: {
                 id: result.id,
                 email: result.email,
                 role: result.role,
                 account_type: result.user_type,
                 referral_code: result.referral_code,
-                email_verified: true,
+                email_verified: false,
             },
         });
 
@@ -250,23 +259,23 @@ export const getVerificationStatus = async (req, res) => {
             return res.status(404).json({ success: false, error: 'Benutzer nicht gefunden.' });
         }
 
-        if (!user.email_verified) {
-            await db.orm.public.User
-                .where((u) => u.id.eq(user.id))
-                .update({ email_verified: true })
-                .catch(() => {});
+        let tokens = {};
+        if (user.email_verified) {
+            tokens = generateTokens(user);
         }
 
         return res.status(200).json({
             success: true,
-            email_verified: true,
+            email_verified: Boolean(user.email_verified),
+            access_token: tokens.accessToken || null,
+            refresh_token: tokens.refreshToken || null,
             user: {
                 id: user.id,
                 email: user.email,
                 role: user.role,
                 account_type: user.user_type,
                 referral_code: user.referral_code,
-                email_verified: true,
+                email_verified: Boolean(user.email_verified),
             },
         });
 
@@ -370,10 +379,12 @@ export const login = async (req, res) => {
         }
 
         if (!user.email_verified) {
-            await db.orm.public.User
-                .where((u) => u.id.eq(user.id))
-                .update({ email_verified: true })
-                .catch(() => {});
+            return res.status(403).json({
+                success: false,
+                requires_verification: true,
+                email: user.email,
+                error: 'Bitte bestätige zuerst deine E-Mail-Adresse. Wir haben dir einen Bestätigungslink per E-Mail gesendet.'
+            });
         }
 
         let userReferralCode = user.referral_code;
@@ -533,14 +544,63 @@ export const verifyEmail = async (req, res) => {
             console.error('Pioneer check during email verification error:', err.message);
         });
 
+        const { accessToken, refreshToken } = generateTokens(user);
+
         return res.status(200).json({
             success: true,
-            message: 'E-Mail-Adresse erfolgreich verifiziert!',
+            message: 'E-Mail-Adresse erfolgreich verifiziert! Dein Konto ist jetzt aktiv.',
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                account_type: user.user_type,
+                referral_code: user.referral_code,
+                email_verified: true,
+            },
         });
 
     } catch (error) {
         console.error('❌ Email verification error:', error.message);
         return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
+    }
+};
+
+/**
+ * POST /api/resend-verification
+ * Generates a fresh verification token and emails it via Brevo
+ */
+export const resendVerificationEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, error: 'E-Mail-Adresse ist erforderlich.' });
+        }
+
+        const normalizedEmail = normalizeEmail(email);
+        const user = await db.orm.public.User
+            .where((u) => u.email.eq(normalizedEmail))
+            .first();
+
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'Kein Benutzer mit dieser E-Mail-Adresse gefunden.' });
+        }
+
+        if (user.email_verified) {
+            return res.status(400).json({ success: false, error: 'Diese E-Mail-Adresse ist bereits verifiziert. Du kannst dich direkt anmelden.' });
+        }
+
+        const verificationToken = generateVerificationToken(user.id);
+        await sendVerificationEmail(user.email, verificationToken);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Ein neuer Bestätigungslink wurde an deine E-Mail-Adresse gesendet.'
+        });
+    } catch (error) {
+        console.error('❌ resendVerificationEmail error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Senden des Bestätigungslinks.' });
     }
 };
 
@@ -591,14 +651,10 @@ export const requestPasswordReset = async (req, res) => {
 
         console.log(`🔑 [Password Reset OTP] Email: ${normalizedEmail} | OTP Code: ${otpCode}`);
 
-        // Send OTP email via Resend
-        if (process.env.RESEND_API_KEY) {
-            sendPasswordResetOtpEmail(normalizedEmail, otpCode)
-                .then(() => console.log(`📧 Password reset OTP sent to ${normalizedEmail}`))
-                .catch((err) => console.warn(`⚠️ Warning: Failed to send OTP email to ${normalizedEmail}:`, err.message));
-        } else {
-            console.log(`ℹ️ [Resend] RESEND_API_KEY not set in .env. Password Reset OTP for ${normalizedEmail}: ${otpCode}`);
-        }
+        // Send OTP email via Brevo
+        sendPasswordResetOtpEmail(normalizedEmail, otpCode)
+            .then(() => console.log(`📧 [Brevo] Password reset OTP sent to ${normalizedEmail}`))
+            .catch((err) => console.warn(`⚠️ [Brevo Notice] Failed to send OTP email to ${normalizedEmail}:`, err.message));
 
         return res.status(200).json({
             success: true,

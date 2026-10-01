@@ -5,7 +5,8 @@ import {
     getAdminUserById,
     toggleUserSuspension,
     manuallyVerifyUserEmail,
-    deleteAdminUser
+    deleteAdminUser,
+    updateUserProviderCategory
 } from '../controllers/adminUsers.js';
 import {
     getAdminListings,
@@ -78,6 +79,7 @@ router.get('/users', getAdminUsers);
 router.get('/users/:id', getAdminUserById);
 router.patch('/users/:id/suspend', toggleUserSuspension);
 router.patch('/users/:id/verify-email', manuallyVerifyUserEmail);
+router.patch('/users/:id/provider-category', updateUserProviderCategory);
 router.delete('/users/:id', deleteAdminUser);
 
 // Listing moderation endpoints
@@ -86,10 +88,21 @@ router.patch('/listings/:id/status', updateAdminListingStatus);
 router.patch('/listings/:id/featured', toggleAdminListingFeatured);
 router.delete('/listings/:id', deleteAdminListing);
 
+import {
+    grantAdminBenefit,
+    applyCommercialTransitionPeriod,
+    getAdminUserListings
+} from '../controllers/adminBenefits.js';
+
 // AI Decisions & Simulation endpoints
 router.get('/decisions', getAdminDecisions);
 router.post('/decisions/:id/simulate-scan', simulateAiScan);
 router.post('/decisions/:id/admin-decision', submitAdminManualDecision);
+
+// Complimentary Benefits & Goodwill endpoints
+router.post('/benefits/grant', grantAdminBenefit);
+router.post('/benefits/apply-transition-period', applyCommercialTransitionPeriod);
+router.get('/benefits/user-listings/:userId', getAdminUserListings);
 
 export default router;
 
