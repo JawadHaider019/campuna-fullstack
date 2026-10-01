@@ -48,3 +48,9 @@ Thumbs.db
 
 # Vercel / Deployment
 .vercel
+
+# Local documentation and agent configurations
+.agents/
+docs/
+"Content Files"
+Content\ Files/
