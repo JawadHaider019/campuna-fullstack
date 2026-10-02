@@ -111,41 +111,23 @@ export default function AccountSubscriptionTab({
 
                 {/* Quota & Limits Visualizer Bento Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-                    {/* Metric 1: Inserate Limit */}
+                    {/* Metric 1: Aktive Inserate */}
                     <motion.div
                         whileHover={{ y: -2 }}
                         transition={{ duration: 0.2 }}
-                        className="p-4 sm:p-4.5 bg-[#faf8f3] rounded-2xl border border-beige hover:border-gold/40 transition-all space-y-3 shadow-2xs"
+                        className="p-4 sm:p-4.5 bg-[#faf8f3] rounded-2xl border border-beige hover:border-gold/40 transition-all space-y-2 shadow-2xs"
                     >
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-charcoal/60 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                                <FileText className="w-3.5 h-3.5 text-gold-dark" /> Inserate-Kontingent
-                            </span>
-                            <span className="font-black text-forest font-mono">
-                                {isBusiness ? `${activeListingsCount} / Unbegrenzt` : `${activeListingsCount} / 10 Inserate`}
-                            </span>
+                        <span className="font-bold text-charcoal/60 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                            <FileText className="w-3.5 h-3.5 text-gold-dark" /> Aktive Inserate
+                        </span>
+                        <div className="text-lg sm:text-xl font-black text-charcoal font-sans">
+                            {activeListingsCount} {activeListingsCount === 1 ? 'Inserat online' : 'Inserate online'}
                         </div>
-
-                        {/* Progress Bar */}
-                        <div className="space-y-1.5">
-                            <div className="w-full h-2.5 bg-stone-200 rounded-full overflow-hidden p-0.5">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${progressPercent}%` }}
-                                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                                    className={`h-full rounded-full transition-all duration-500 ${
-                                        !isBusiness && activeListingsCount >= 10 ? 'bg-rose-500' : 'bg-forest'
-                                    }`}
-                                />
-                            </div>
-                            <p className="text-[11px] text-charcoal/60 leading-relaxed">
-                                {isBusiness
-                                    ? 'Unbegrenzt aktive Inserate im Business-Tarif freigeschaltet.'
-                                    : activeListingsCount >= 10
-                                        ? 'Limit von 10 Inseraten erreicht. Jetzt upgraden für unbegrenzte Inserate.'
-                                        : `Noch ${remainingFreeListings} von 10 freien Inserat-Plätzen verfügbar.`}
-                            </p>
-                        </div>
+                        <p className="text-[11px] text-charcoal/60 leading-relaxed">
+                            {isBusiness
+                                ? 'Deine Inserate profitieren von maximaler Reichweite und Telemetrie.'
+                                : 'Deine aktuell auf Campuna veröffentlichten Anzeigen.'}
+                        </p>
                     </motion.div>
 
                     {/* Metric 2: Performance-Analytics */}
@@ -234,7 +216,7 @@ export default function AccountSubscriptionTab({
                             <ul className="space-y-2.5 pt-3 border-t border-beige text-xs text-charcoal/80 font-sans">
                                 <li className="flex items-center gap-2.5">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                    <span><strong>Bis zu 10 aktive Inserate</strong> gleichzeitig</span>
+                                    <span><strong>Kostenlose Inserate</strong> aufgeben</span>
                                 </li>
                                 <li className="flex items-center gap-2.5">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -321,7 +303,7 @@ export default function AccountSubscriptionTab({
                             <ul className={`space-y-2.5 pt-3 border-t text-xs font-sans ${isBusiness ? 'border-white/15 text-sand/90' : 'border-beige text-charcoal/80'}`}>
                                 <li className="flex items-center gap-2.5">
                                     <CheckCircle2 className={`w-4 h-4 shrink-0 ${isBusiness ? 'text-gold' : 'text-emerald-600'}`} />
-                                    <span><strong>Unbegrenzt viele aktive Inserate</strong> gleichzeitig</span>
+                                    <span><strong>Maximale Reichweite</strong> für alle deine Inserate</span>
                                 </li>
                                 <li className="flex items-center gap-2.5">
                                     <CheckCircle2 className={`w-4 h-4 shrink-0 ${isBusiness ? 'text-gold' : 'text-emerald-600'}`} />

@@ -216,4 +216,40 @@ export const updateUserProviderCategory = (userId, provider_category) => {
     return api.patch(`/admin/users/${userId}/provider-category`, { provider_category });
 };
 
+/**
+ * GET /api/admin/feedback
+ * Lists all user feedback and inquiries for admin review.
+ */
+export const getAdminFeedbacks = (params = {}) => {
+    return api.get('/admin/feedback', { params });
+};
+
+/**
+ * GET /api/admin/feedback/:id
+ * Retrieves full feedback thread with user details.
+ */
+export const getAdminFeedbackDetail = (id) => {
+    return api.get(`/admin/feedback/${id}`);
+};
+
+/**
+ * POST /api/admin/feedback/:id/reply
+ * Admin replies to a user feedback ticket.
+ */
+export const replyAdminFeedback = (id, message, status = 'REPLIED') => {
+    return api.post(`/admin/feedback/${id}/reply`, { message, status });
+};
+
+/**
+ * PATCH /api/admin/feedback/:id/status
+ * Updates status, priority, favorite flag, or admin note on a feedback item.
+ */
+export const updateAdminFeedbackStatus = (id, statusOrData, maybeAdminNote) => {
+    if (typeof statusOrData === 'object' && statusOrData !== null) {
+        return api.patch(`/admin/feedback/${id}/status`, statusOrData);
+    }
+    return api.patch(`/admin/feedback/${id}/status`, { status: statusOrData, admin_note: maybeAdminNote });
+};
+
+
 

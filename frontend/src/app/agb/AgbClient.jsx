@@ -172,15 +172,13 @@ export default function AgbClient() {
                             (3) Gewerbliche Verkäufer erhalten ab Registrierung eine kostenlose Einführungsphase von zwei Monaten. Die Einführungsphase beginnt mit dem Registrierungsdatum des gewerblichen Accounts. Während dieser Einführungsphase können gewerbliche Verkäufer die Plattform kostenlos gewerblich nutzen und Inserate erstellen. Nach Ablauf der Einführungsphase ist für die weitere gewerbliche Nutzung ein kostenpflichtiges Business-Paket erforderlich. Es gibt keine dauerhaft kostenlosen Einzelinserate für gewerbliche Verkäufer.
                         </p>
                         <p>
-                            (4) Gewerbliche Verkäufer können nach Ablauf der Einführungsphase folgende Business-Pakete buchen:
+                            (4) Gewerbliche Verkäufer können das Campuna Business-Abonnement buchen:
                         </p>
                         <ul className="list-disc pl-6 space-y-1.5 font-normal text-forest">
-                            <li>a. Business Basic: 39 € / Monat, bis zu 10 aktive Inserate</li>
-                            <li>b. Business Plus: 69 € / Monat, bis zu 25 aktive Inserate</li>
-                            <li>c. Business Pro: 99 € / Monat, bis zu 50 aktive Inserate</li>
+                            <li>Campuna Business: 29 € / Monat (monatlich flexibel kündbar, inkl. Firmenprofil, Cover, Performance-Analytics und Verzeichnispräsenz)</li>
                         </ul>
                         <p>
-                            (5) Business-Pakete gelten nur für gewerbliche Verkäufer. Die Anzahl bezieht sich auf aktive Inserate. Die Abrechnung erfolgt monatlich im Voraus. Die Laufzeit beträgt jeweils einen Monat. Das Paket ist monatlich kündbar. Bei Kündigung endet die kostenpflichtige Nutzung zum Ende des jeweiligen Abrechnungszeitraums. Nach Ablauf bzw. Kündigung können gewerbliche Verkäufer ohne aktives Business-Paket keine weiteren gewerblichen Inserate veröffentlichen bzw. bestehende gewerbliche Inserate können deaktiviert/ausgeblendet werden.
+                            (5) Das Business-Abonnement gilt für gewerbliche Verkäufer und Partner. Die Abrechnung erfolgt im Voraus. Das Abonnement ist monatlich kündbar. Bei Kündigung endet die kostenpflichtige Nutzung zum Ende des jeweiligen Abrechnungszeitraums.
                         </p>
                         <p>
                             (6) Private und gewerbliche Verkäufer können einzelne Inserate optional kostenpflichtig hervorheben. Diese Zusatzoptionen sind unabhängig von den Business-Paketen. Hierbei bestehen die folgenden Optionen:

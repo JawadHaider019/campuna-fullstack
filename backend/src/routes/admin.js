@@ -104,5 +104,18 @@ router.post('/benefits/grant', grantAdminBenefit);
 router.post('/benefits/apply-transition-period', applyCommercialTransitionPeriod);
 router.get('/benefits/user-listings/:userId', getAdminUserListings);
 
+import {
+    getAdminFeedbackList,
+    getAdminFeedbackDetail,
+    replyToFeedbackAdmin,
+    updateAdminFeedbackStatus
+} from '../controllers/feedback.js';
+
+// Feedback & User Inquiries moderation endpoints
+router.get('/feedback', getAdminFeedbackList);
+router.get('/feedback/:id', getAdminFeedbackDetail);
+router.post('/feedback/:id/reply', replyToFeedbackAdmin);
+router.patch('/feedback/:id/status', updateAdminFeedbackStatus);
+
 export default router;
 

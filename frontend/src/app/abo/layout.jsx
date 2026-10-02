@@ -1,6 +1,6 @@
 export const metadata = {
     title: 'Campuna Business-Abo | Preise & Tarife für Camping-Anbieter',
-    description: 'Mehr Sichtbarkeit, unbegrenzt Inserate, eigenes Firmen-Cover & Logo, Verzeichnis-Präsenz und Lead-Analytics. Starte mit Campuna Business.',
+    description: 'Mehr Sichtbarkeit, eigenes Firmen-Cover & Logo, Verzeichnis-Präsenz und Lead-Analytics. Starte mit Campuna Business.',
     alternates: {
         canonical: 'https://campuna.de/abo',
         languages: {
@@ -55,7 +55,7 @@ export default function AboLayout({ children }) {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: 'Campuna Business-Abonnement',
-        description: 'Professionelles Firmenprofil mit unbegrenzten Inseraten, Lead-Analytics, Cover-Image und Händlerverzeichnis-Präsenz.',
+        description: 'Professionelles Firmenprofil mit Lead-Analytics, Cover-Image und Händlerverzeichnis-Präsenz.',
         image: 'https://campuna.de/hero-campuna.webp',
         offers: {
             '@type': 'Offer',

@@ -736,7 +736,7 @@ export default function AdminUserDetailPage() {
                                     <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-[11px] text-emerald-900 leading-relaxed flex items-start gap-2">
                                         <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                                         <span>
-                                            <strong>Privatnutzer-Vorteile</strong>: Private Konten inserieren kostenfrei (bis zu 10 Inserate) und benötigen kein Business-Abo. Du kannst Inserate-Highlights (Boosts) oder Campuna Credits vergeben.
+                                            <strong>Privatnutzer-Vorteile</strong>: Private Konten inserieren kostenfrei und benötigen kein Business-Abo. Du kannst Inserate-Highlights (Boosts) oder Campuna Credits vergeben.
                                         </span>
                                     </div>
                                 )}

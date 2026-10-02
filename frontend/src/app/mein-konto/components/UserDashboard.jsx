@@ -50,7 +50,9 @@ import {
     Building2,
     Euro,
     Tag,
-    Star
+    Star,
+    MessageSquareHeart,
+    Send
 } from 'lucide-react';
 import {
     getSubscriptionAnalytics,
@@ -342,7 +344,7 @@ export default function UserDashboard({
                                     : 'Kostenloser Campuna Business Zugang freigeschaltet'}
                             </h3>
                             <p className="text-xs text-charcoal/70 leading-relaxed max-w-3xl">
-                                Als geschätzter Partner nutzt du alle Business-Vorteile (individuelles Titelbild, Firmenprofil, Händler-Tools & unbegrenzte Inserate) kostenfrei. Nach Ablauf kannst du flexibel für 29 €/Monat auf Business bleiben oder kostenfrei zu <strong>Business Free</strong> wechseln — <strong>es erfolgt keine automatische Verlängerung oder Abbuchung</strong>.
+                                Als geschätzter Partner nutzt du alle Business-Vorteile (individuelles Titelbild, Firmenprofil, Lead-Analytics & Händler-Tools) kostenfrei. Nach Ablauf kannst du flexibel für 29 €/Monat auf Business bleiben oder kostenfrei zu <strong>Business Free</strong> wechseln — <strong>es erfolgt keine automatische Verlängerung oder Abbuchung</strong>.
                             </p>
                         </div>
                     </div>
@@ -380,7 +382,7 @@ export default function UserDashboard({
                                 Live Telemetrie
                             </span>
                             <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-gold/15 text-gold border border-gold/30">
-                                Unbegrenzte Inserate
+                                Maximale Reichweite
                             </span>
                         </div>
 
@@ -422,10 +424,10 @@ export default function UserDashboard({
                ═════════════════════════════════════════════════════════════ */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
-                {/* 1. Inserate Auslastung */}
+                {/* 1. Aktive Inserate */}
                 <div className="bg-white p-5 rounded-3xl border border-beige shadow-xs hover:border-forest/40 transition-all flex flex-col justify-between space-y-3">
                     <div className="flex items-center justify-between text-[11px] font-bold text-charcoal/60 uppercase tracking-wider">
-                        <span>Bestand / Kontingent</span>
+                        <span>Aktive Inserate</span>
                         <div className="w-8 h-8 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
                             <Rocket className="w-4 h-4" />
                         </div>
@@ -433,13 +435,13 @@ export default function UserDashboard({
                     <div>
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-3xl font-black text-forest font-mono">{activeListingsCount}</span>
-                            <span className="text-xs text-charcoal/40 font-bold font-mono">/ 25 Live</span>
+                            <span className="text-xs text-charcoal/40 font-bold font-mono">online</span>
                         </div>
                         <div className="w-full h-1.5 bg-stone-100 rounded-full mt-2 overflow-hidden">
-                            <div className="h-full bg-forest rounded-full transition-all duration-700" style={{ width: `${Math.min(100, (activeListingsCount / 25) * 100)}%` }} />
+                            <div className="h-full bg-forest rounded-full transition-all duration-700" style={{ width: `${Math.min(100, Math.max(15, activeListingsCount * 10))}%` }} />
                         </div>
                     </div>
-                    <p className="text-[11px] text-charcoal/50 font-medium">{Math.max(0, 25 - activeListingsCount)} Slots verfügbar</p>
+                    <p className="text-[11px] text-charcoal/50 font-medium">Veröffentlichte Anzeigen</p>
                 </div>
 
                 {/* 2. Gesamtaufrufe */}
@@ -1409,6 +1411,37 @@ export default function UserDashboard({
                                 Abonnement kündigen
                             </button>
                         </div>
+                    </div>
+
+                    {/* 4. Direct Feedback & Wishes */}
+                    <div className="bg-gradient-to-br from-[#faf8f3] via-white to-sand/40 rounded-3xl p-6 sm:p-7 border border-gold/30 shadow-xs space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-beige">
+                            <div className="flex items-center gap-2.5">
+                                <div className="w-8 h-8 rounded-xl bg-gold/20 flex items-center justify-center text-forest">
+                                    <MessageSquareHeart className="w-4 h-4 text-forest" />
+                                </div>
+                                <div>
+                                    <h3 className="font-black text-charcoal text-base">Feedback & Wünsche</h3>
+                                    <p className="text-[11px] text-charcoal/50">Direkt an die Plattformleitung</p>
+                                </div>
+                            </div>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-forest text-sand">
+                                Ideen-Box
+                            </span>
+                        </div>
+
+                        <p className="text-xs text-charcoal/70 leading-relaxed">
+                            Hast du Verbesserungswünsche für dein Händler-Konto, Vermarktungsideen oder Funktionsvorschläge? Reiche dein Feedback direkt ein.
+                        </p>
+
+                        <button
+                            type="button"
+                            onClick={() => onNavigateTab('feedback')}
+                            className="w-full bg-forest hover:bg-[#004d0a] text-sand py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+                        >
+                            <Send className="w-3.5 h-3.5 text-gold" />
+                            <span>Feedback einreichen</span>
+                        </button>
                     </div>
 
                 </div>

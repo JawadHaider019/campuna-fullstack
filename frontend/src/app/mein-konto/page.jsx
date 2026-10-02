@@ -37,6 +37,7 @@ import AccountCreateListingTab from './components/AccountCreateListingTab';
 import AccountSubscriptionTab from './components/AccountSubscriptionTab';
 import AccountCreditsTab from './components/AccountCreditsTab';
 import AccountPioneerTab from './components/AccountPioneerTab';
+import AccountFeedbackTab from './components/AccountFeedbackTab';
 import { useChatStore } from '@/store/useChatStore';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALIDATION_ERROR } from '@/utils/validation';
@@ -56,7 +57,7 @@ import {
     Rocket, Eye, LayoutDashboard, Gift, Users, CheckCircle2, Zap, ExternalLink,
     Clock, TrendingUp, Bell, Search, ShieldCheck, Compass, CheckCircle, Pencil, Send,
     FileSpreadsheet, MessageSquare, Heart, Trash2, PanelLeftClose, PanelLeftOpen, PanelLeft,
-    Pause, Play, Power, BarChart2, Circle
+    Pause, Play, Power, BarChart2, Circle, MessageSquareHeart
 } from 'lucide-react';
 
 function Linkedin(props) {
@@ -80,7 +81,8 @@ const ACCOUNT_TAB_LABELS = {
     credits: 'Campuna Credits',
     empfehlen: 'Freunde werben',
     sicherheit: 'Sicherheit',
-    pioneer: 'Pionier Status'
+    pioneer: 'Pionier Status',
+    feedback: 'Feedback & Kontakt'
 };
 
 // ─── Sub-Components ───────────────────────────────────────────────────────────
@@ -826,13 +828,13 @@ export default function MeinKontoPage() {
         if (isCommercial) {
             const limit = isBusinessUser ? -1 : 10;
             if (limit !== -1 && activeApprovedListings.length >= limit) {
-                toast.error(`Du hast das Limit von ${limit} aktiven Inseraten im kostenlosen Firmentarif erreicht. Bitte upgrade auf den Business-Tarif für unbegrenzte Inserate.`);
+                toast.error('Du hast das Inserate-Limit im kostenlosen Firmentarif erreicht. Bitte upgrade auf den Business-Tarif für maximale Reichweite.');
                 return;
             }
         } else {
             // Private user: internal limit is 10 active listings
             if (activeApprovedListings.length >= 10) {
-                toast.error('Veröffentlichung nicht möglich: Limit von 10 aktiven privaten Inseraten erreicht.');
+                toast.error('Veröffentlichung nicht möglich: Du hast das Inserate-Kontingent für private Konten erreicht.');
                 return;
             }
         }
@@ -1315,6 +1317,7 @@ export default function MeinKontoPage() {
         ] : []),
         { id: 'credits', label: 'Campuna Credits', icon: Gift },
         { id: 'pioneer', label: pioneerBadge ? 'Campuna Pioneer' : 'Pioneer Auszeichnung', icon: Award },
+        { id: 'feedback', label: 'Feedback & Support', icon: MessageSquareHeart },
     ];
 
 
@@ -1577,7 +1580,7 @@ export default function MeinKontoPage() {
                                             <span className="text-[10px] font-black uppercase tracking-widest">Campuna Business</span>
                                         </div>
                                         <p className="text-[11px] text-sand/80 font-sans leading-relaxed">
-                                            Unbegrenzte Inserate, professionelles Firmenprofil & Business-Tools freischalten.
+                                            Professionelles Firmenprofil, Live-Analytics & Business-Tools freischalten.
                                         </p>
                                         <button
                                             type="button"
@@ -1730,7 +1733,7 @@ export default function MeinKontoPage() {
                                     <div className="space-y-6">
                                         <TabHeader
                                             title="Campuna Business Cockpit"
-                                            subtitle="Schalte professionelle Business-Werkzeuge, unbegrenzte Inserate und Live-Analysen frei"
+                                            subtitle="Schalte professionelle Business-Werkzeuge, Firmen-Cover und Live-Analysen frei"
                                             icon={CreditCard}
                                             badge={
                                                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-gold/20 text-gold-dark border border-gold/40">
@@ -1751,7 +1754,7 @@ export default function MeinKontoPage() {
                                                     Maximiere deinen Camping-Erfolg mit dem Campuna Business Plan
                                                 </h2>
                                                 <p className="text-sm text-sand/80 leading-relaxed font-sans">
-                                                    Erhalte Zugriff auf unbegrenzt viele aktive Inserate, ein professionelles Firmenprofil mit individuellem Cover & Bio, Echtzeit-Reichweitenanalysen, direkte Kundenanfragen-Pipeline sowie die exklusive Berechtigung zur flexiblen Spotlight-Buchung.
+                                                    Erhalte Zugriff auf ein professionelles Firmenprofil mit individuellem Cover & Bio, Echtzeit-Reichweitenanalysen, direkte Kundenanfragen-Pipeline sowie die exklusive Berechtigung zur flexiblen Spotlight-Buchung.
                                                 </p>
                                                 <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
                                                     <button
@@ -1771,8 +1774,8 @@ export default function MeinKontoPage() {
                                                     <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
                                                         <Rocket className="w-4 h-4" />
                                                     </div>
-                                                    <h4 className="font-bold text-sm text-sand">Unbegrenzte Inserate</h4>
-                                                    <p className="text-xs text-sand/60">Veröffentliche beliebig viele Inserate ohne Begrenzung gleichzeitig.</p>
+                                                    <h4 className="font-bold text-sm text-sand">Maximale Reichweite</h4>
+                                                    <p className="text-xs text-sand/60">Profitiere von bevorzugter Auffindbarkeit und regionaler Sichtbarkeit.</p>
                                                 </div>
                                                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
                                                     <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
@@ -2384,15 +2387,15 @@ export default function MeinKontoPage() {
                                                             <h4 className="text-xl font-black text-white">{subDetails.is_business ? 'Campuna Business Plan' : 'Business Free Plan'}</h4>
                                                             <p className="text-xs text-sand/80 mt-1 leading-relaxed">
                                                                 {subDetails.is_business
-                                                                    ? 'Unbegrenzte Inserate, professionelles Firmenprofil & Business-Cockpit.'
-                                                                    : 'Erstelle bis zu 3 kostenfreie Inserate als gewerblicher Anbieter auf Campuna.'}
+                                                                    ? 'Professionelles Firmenprofil, Live-Analytics & Händler-Cockpit.'
+                                                                    : 'Kostenloses Basiskonto für gewerbliche Anbieter auf Campuna.'}
                                                             </p>
                                                         </div>
 
                                                         <div className="space-y-2 pt-3 border-t border-white/10 text-xs text-sand/90 mt-3">
                                                             <div className="flex items-center gap-2">
                                                                 <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                                <span>{subDetails.is_business ? 'Unbegrenzt viele aktive Inserate' : 'Bis zu 3 kostenfreie Inserate'}</span>
+                                                                <span>{subDetails.is_business ? 'Maximale Inserat-Reichweite' : 'Kostenlose Inserate'}</span>
                                                             </div>
                                                             <div className="flex items-center gap-2">
                                                                 <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0" />
@@ -2432,6 +2435,43 @@ export default function MeinKontoPage() {
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {/* Feedback & Wishes Quick Card */}
+                                            <div className="bg-gradient-to-br from-[#faf8f3] via-white to-sand/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-gold/30 hover:border-gold transition-all w-full flex flex-col justify-between group">
+                                                <div>
+                                                    <div className="flex items-center justify-between pb-3 border-b border-beige">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div className="w-9 h-9 rounded-xl bg-gold/20 flex items-center justify-center text-forest group-hover:scale-105 transition-transform">
+                                                                <MessageSquareHeart className="w-4 h-4 text-forest" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="font-bold text-charcoal text-sm flex items-center gap-1.5">
+                                                                    Feedback & Wünsche
+                                                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-gold/30 text-forest">Direkt</span>
+                                                                </h3>
+                                                                <p className="text-[11px] text-charcoal/50 font-medium">Direkt an die Plattformleitung</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pt-3">
+                                                        <p className="text-xs text-charcoal/70 leading-relaxed">
+                                                            Ideen für neue Funktionen, Wünsche oder Kritik? Teile uns dein Feedback mit – wir werten jeden Beitrag persönlich aus.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="pt-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setActiveTab('feedback')}
+                                                        className="w-full py-3 px-4 rounded-xl bg-forest hover:bg-[#004d0a] text-sand text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+                                                    >
+                                                        <Send className="w-3.5 h-3.5 text-gold" />
+                                                        <span>Feedback einreichen</span>
+                                                    </button>
+                                                </div>
+                                            </div>
 
                                             {/* Security & Password Quick Action */}
                                             <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-forest/30 transition-all w-full flex flex-col justify-between">
@@ -2563,7 +2603,7 @@ export default function MeinKontoPage() {
                                                 <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-white/10 text-[9px] sm:text-[10px] text-sand/70">
                                                     <span>Alle Inserate</span>
                                                     <span className="font-bold text-gold flex items-center gap-0.5">
-                                                        {isCommercial ? (subDetails.is_business ? 'Unbegrenzt' : `${userListings.length}/10 Free`) : 'Kostenlos'}
+                                                        {isCommercial ? (subDetails.is_business ? 'Business' : 'Standard') : 'Aktiv'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -3075,6 +3115,17 @@ export default function MeinKontoPage() {
                                 />
                             )}
 
+                            {/* ═════════════════════════════════════════════════════════════
+                                TAB 6: FEEDBACK & DIREKTER ADMIN-KONTAKT
+                               ═════════════════════════════════════════════════════════════ */}
+                            {activeTab === 'feedback' && (
+                                <AccountFeedbackTab
+                                    user={user}
+                                    isCommercial={isCommercial}
+                                    TabHeader={TabHeader}
+                                />
+                            )}
+
                         </main>
                     </div>
 
@@ -3447,13 +3498,13 @@ export default function MeinKontoPage() {
                             <div>
                                 <h3 className="font-black text-charcoal text-lg">
                                     {isCommercial
-                                        ? `Inserate-Limit erreicht (${userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length} / 10)`
+                                        ? 'Inserate-Limit erreicht'
                                         : 'Veröffentlichung nicht möglich'}
                                 </h3>
                                 <p className="text-xs text-charcoal/70 leading-relaxed mt-1">
                                     {isCommercial
                                         ? (!subDetails.is_business
-                                            ? 'Im kostenfreien Free Tarif können maximal 10 Inserate gleichzeitig aktiv sein. Mit dem Campuna Business Plan kannst du unbegrenzt viele Inserate gleichzeitig schalten!'
+                                            ? 'Du hast das Inserate-Limit im kostenlosen Basistarif erreicht. Mit dem Campuna Business Plan erhältst du maximale Reichweite und professionelle Händler-Tools!'
                                             : 'Du hast dein aktives Inserate-Kontingent erreicht.')
                                         : 'Ungewöhnlich hohe Inseratsaktivität deutet auf eine gewerbliche Nutzung hin. Wenn du gewerblich Inserate aufgeben möchtest, erstelle bitte ein gewerbliches Anbieterkonto oder wende dich an unseren Support.'}
                                 </p>

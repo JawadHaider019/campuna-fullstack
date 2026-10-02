@@ -19,6 +19,7 @@ import {
     BookOpen,
     Crown,
     MessageSquare,
+    MessageSquareHeart,
     PanelLeftClose,
     PanelLeftOpen,
     ArrowUpRight,
@@ -26,7 +27,7 @@ import {
     Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAdminDashboardStats } from '@/api/admin';
+import { getAdminDashboardStats, getAdminFeedbacks } from '@/api/admin';
 import { getUnreadMessagesCount } from '@/api/conversations';
 import { logoutUser } from '@/api/auth';
 import { toast } from 'react-hot-toast';
@@ -41,6 +42,7 @@ export default function AdminLayout({ children }) {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
     const [pendingReportsCount, setPendingReportsCount] = useState(0);
+    const [pendingFeedbackCount, setPendingFeedbackCount] = useState(0);
     const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
     const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
@@ -101,6 +103,14 @@ export default function AdminLayout({ children }) {
                     })
                     .catch(() => { });
 
+                getAdminFeedbacks({ status: 'OPEN' })
+                    .then(res => {
+                        if (res.data?.success && res.data.summary?.open_count !== undefined) {
+                            setPendingFeedbackCount(res.data.summary.open_count);
+                        }
+                    })
+                    .catch(() => { });
+
                 getUnreadMessagesCount()
                     .then(res => {
                         if (res.success && typeof res.unread_count === 'number') {
@@ -140,6 +150,14 @@ export default function AdminLayout({ children }) {
             badge: unreadMessagesCount > 0 ? String(unreadMessagesCount) : null,
             badgeColor: 'bg-emerald-500 text-white font-black',
             hasDot: unreadMessagesCount > 0
+        },
+        {
+            label: 'Feedback & Support',
+            path: '/admin/feedback',
+            icon: MessageSquareHeart,
+            badge: pendingFeedbackCount > 0 ? String(pendingFeedbackCount) : null,
+            badgeColor: 'bg-amber-500 text-slate-900 font-black',
+            hasDot: pendingFeedbackCount > 0
         },
         {
             label: 'Meldungen',

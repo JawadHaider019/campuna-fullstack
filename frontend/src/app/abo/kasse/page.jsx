@@ -427,14 +427,14 @@ export default function CheckoutBillingPage() {
                                     Campuna Business
                                 </h3>
                                 <p className="text-xs text-charcoal/50 font-sans mt-0.5">
-                                    Unbegrenzte Inserate, professionelles Firmenprofil & Business-Tools
+                                    Professionelles Firmenprofil, Lead-Analytics & Business-Tools
                                 </p>
                             </div>
 
                             {/* Features list */}
                             <ul className="space-y-2 py-4 pb-5 border-b border-beige/60 text-xs font-sans text-charcoal/75">
                                 {[
-                                    'Unbegrenzt viele aktive Inserate gleichzeitig',
+                                    'Maximale Sichtbarkeit für alle deine Inserate',
                                     'Echtzeit Performance-Analytics & Cockpit-Telemetrie',
                                     'Professionelles Firmen-Cover & Logo',
                                     'Erweitertes Firmenprofil (1.000 Zeichen)',

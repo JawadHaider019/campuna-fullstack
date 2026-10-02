@@ -173,3 +173,27 @@ export function emitDeleteBroadcast(broadcastId) {
     if (!io) return;
     io.emit('delete_broadcast', { broadcastId });
 }
+
+/**
+ * Broadcast new user feedback to admin notifications room
+ */
+export function emitNewFeedback(feedback) {
+    if (!io) return;
+    io.to('admin:notifications').emit('admin_new_feedback', { feedback });
+}
+
+/**
+ * Broadcast feedback reply to recipient user or admin
+ */
+export function emitFeedbackReply({ feedbackId, reply, recipientUserId, senderRole }) {
+    if (!io) return;
+
+    if (senderRole === 'ADMIN' && recipientUserId) {
+        // Notify the specific user
+        io.to(`user:${recipientUserId}`).emit('user_feedback_reply', { feedbackId, reply });
+    } else if (senderRole === 'USER') {
+        // Notify all admins
+        io.to('admin:notifications').emit('admin_feedback_reply', { feedbackId, reply });
+    }
+}
+

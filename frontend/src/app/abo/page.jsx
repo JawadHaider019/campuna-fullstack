@@ -24,7 +24,6 @@ import ScrollSectionWrapper from '@/app/components/ScrollSectionWrapper';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FEATURE_ROWS = [
-    { key: 'listing_limit', label: 'Aktive Inserate gleichzeitig', icon: FileText, freeValue: 'Bis zu 10 Inserate', bizValue: 'Unbegrenzt Inserate' },
     { key: 'has_statistics', label: 'Performance-Analytics & Telemetrie', icon: BarChart2, freeValue: 'Basis-Statistiken', bizValue: 'Vollständige Live-Analytics & CTR' },
     { key: 'description_limit', label: 'Beschreibungslänge', icon: FileText, freeValue: '500 Zeichen', bizValue: '1.000 Zeichen' },
     { key: 'has_cover_image', label: 'Individuelles Firmen-Cover & Logo', icon: Shield, freeValue: false, bizValue: true },
@@ -36,14 +35,14 @@ const FEATURE_ROWS = [
 ];
 
 const TESTIMONIALS = [
-    { name: 'Camping Müller GmbH', text: 'Mit dem Business-Tarif haben wir unsere Buchungen um 40% gesteigert. Die unbegrenzten Inserate und die professionellen Business-Tools machen einen riesigen Unterschied!', plan: 'Business' },
+    { name: 'Camping Müller GmbH', text: 'Mit dem Business-Tarif haben wir unsere Buchungen um 40% gesteigert. Die professionellen Business-Tools und die hohe Reichweite machen einen riesigen Unterschied!', plan: 'Business' },
     { name: 'Outdoor Reisen Wagner', text: 'Die Reichweite und die detaillierten Statistiken haben uns geholfen, stetig neue Kunden zu gewinnen. Absolut empfehlenswert.', plan: 'Business' },
     { name: 'CamperWorld Bayern', text: 'Die Statistiken zeigen uns genau, welche Anzeigen funktionieren. Ein echter Gamechanger für unser Marketing.', plan: 'Business' },
 ];
 
 const FAQ = [
     { q: 'Wofür kann ich Campuna Credits einsetzen?', a: 'Campuna Credits (1 CC = €0,01) können flexibel für 7-, 14- oder 30-Tage Inserat-Reichweiten-Boosts sowie Spotlight-Platzierungen genutzt werden. Das Business-Abonnement (€29/Monat) wird regulär via SEPA-Lastschrift oder Kreditkarte abgerechnet.' },
-    { q: 'Was passiert mit meinen Anzeigen, wenn ich kündige?', a: 'Deine bestehenden Anzeigen bleiben erhalten, du kannst jedoch keine neuen mehr erstellen, sobald du das kostenlose Limit von 10 Anzeigen erreicht hast.' },
+    { q: 'Was passiert mit meinen Anzeigen, wenn ich kündige?', a: 'Deine bestehenden Anzeigen bleiben auf der Plattform aktiv. Bei einer Kündigung wechselt dein Konto zum Ende des gebuchten Zeitraums automatisch wieder auf das kostenfreie Basiskonto.' },
     { q: 'Kann ich monatlich kündigen?', a: 'Ja! Du kannst dein Business-Abonnement jederzeit kündigen. Es läuft noch bis zum Ende des gebuchten Zeitraums.' },
     { q: 'Gibt es einen Rabatt für mehrere Monate?', a: 'Ja! Beim 3-Monats-Paket sparst du gegenüber dem Einzelmonat, und beim Jahresplan erhältst du 2 Gratismonate (€290/Jahr).' },
 ];
@@ -280,7 +279,7 @@ export default function AboPage() {
                         transition={{ duration: 0.6, delay: 0.35 }}
                         className="font-sans text-xs sm:text-sm md:text-base lg:text-lg text-sand/90 leading-relaxed max-w-2xl mx-auto font-light drop-shadow-md mb-6"
                     >
-                        Das Business-Abo gibt deinem Unternehmen den professionellen Auftritt, den es verdient — mit unbegrenzten Inseraten, Firmen-Cover, Business-Tools und exklusiver Spotlight-Berechtigung.
+                        Das Business-Abo gibt deinem Unternehmen den professionellen Auftritt, den es verdient — mit Firmen-Cover, Performance-Analytics, Händler-Tools und exklusiver Spotlight-Berechtigung.
                     </motion.p>
 
                     <motion.div
@@ -382,13 +381,13 @@ export default function AboPage() {
                                             <span className="text-charcoal/40 font-sans text-sm mb-1.5">/ Monat</span>
                                         </div>
                                         <p className="text-charcoal/60 font-sans text-xs sm:text-sm leading-relaxed font-light">
-                                            Für Privatpersonen und gewerbliche Anbieter mit bis zu 10 Inseraten.
+                                            Für Privatpersonen und gewerbliche Einsteiger auf Campuna.
                                         </p>
                                     </div>
 
                                     <ul className="space-y-3 mb-8">
                                         {[
-                                            'Bis zu 10 aktive Inserate gleichzeitig',
+                                            'Kostenlose Inserate aufgeben',
                                             'Basis-Statistiken (Aufrufe & Merkliste)',
                                             'Firmenprofil (500 Zeichen)',
                                             'Credits mit Empfehlungen (500-1.000 CC)',
@@ -435,7 +434,7 @@ export default function AboPage() {
 
                                     <ul className="space-y-3 mb-8 relative">
                                         {[
-                                            'Unbegrenzt aktive Inserate',
+                                            'Maximale Sichtbarkeit für deine Inserate',
                                             'Echtzeit Performance-Analytics & Live-Telemetrie',
                                             'Professionelles Firmen-Cover & Logo',
                                             'Erweitertes Firmenprofil (1.000 Zeichen)',
