@@ -1,5 +1,3 @@
-import api from '@/api/client';
-
 /**
  * Campuna Category-Aware, Fact-Preserving Marketplace Description Engine
  * 
@@ -35,13 +33,15 @@ function normalizeKey(str = '') {
 }
 
 /**
- * Strips leading bullet symbols, numbering, and whitespace
+ * Strips leading bullet symbols, list numbering (e.g. 1. or 2)), and whitespace
  */
 function cleanBulletText(text = '') {
-    return text
-        .trim()
-        .replace(/^[\s•\-*+✓✔►–—\d\.\)\:\-]+/, '')
-        .replace(/^[:\-–—\s]+/, '')
+    const trimmed = text.trim();
+    if (/^\d+\.\s*hand\b/i.test(trimmed)) {
+        return trimmed;
+    }
+    return trimmed
+        .replace(/^(?:(?:\d{1,2}\.|\d{1,2}\))\s+|[\s•\-*+✓✔►–—\:\-])+/, '')
         .trim();
 }
 
@@ -62,7 +62,7 @@ const PATTERNS = {
     vehicleSpecs: /\b(modell|basisfahrzeug|chassis|ducato|crafter|sprinter|transit|boxer|jumper|t6|t6\.1|t5|leistung|ps\b|kw\b|multijet|tdi|diesel|benzin|schaltgetriebe|automatik|automatikgetriebe|gang|erstzulassung|ez\b|baujahr|kilometerstand|laufleistung|\bkm\b|gesamtgewicht|leergewicht|zuladung|zgg|3\.500\s*kg|3500\s*kg|farbe|lackierung|schadstoffklasse|euro\s*6|umweltplakette|länge|breite|höhe|schlafplätze|sitzplätze|gurtplätze|isofix)\b/i,
 
     // 2. Condition & History
-    conditionNotes: /\b(tüv|hu\b|au\b|gasprüfung|scheckheft|scheckheftgepflegt|inspektion|service|unfallfrei|vorbesitzer|halter|halteranzahl|nichtraucher|nichtraucherfahrzeug|tierfrei|garage|garagenfahrzeug|dicht|trocken|dichtigkeitsprüfung|rostfrei|kratzer|delle|beschädigung|nachlackierungsfrei|abnutzung|neuwertig|gebrauchsspuren|mängel)\b/i,
+    conditionNotes: /\b(tüv|hu\b|au\b|gasprüfung|scheckheft|scheckheftgepflegt|inspektion|service|unfallfrei|vorbesitzer|halter|halteranzahl|hand|\d+\.\s*hand|nichtraucher|nichtraucherfahrzeug|tierfrei|garage|garagenfahrzeug|dicht|trocken|dichtigkeitsprüfung|rostfrei|kratzer|delle|beschädigung|nachlackierungsfrei|abnutzung|neuwertig|gebrauchsspuren|mängel)\b/i,
 
     // 3. Autarky, Solar, Battery & Electronics
     autarkyElectronics: /\b(lifepo4|lithium|lithiumbatterie|batterie|akku|\bah\b|300\s*ah|200\s*ah|100\s*ah|ladebooster|booster|victron|smartshunt|shunt|wechselrichter|inverter|solaranlage|solarmodul|solarpanel|watt|solar|mppt|landstrom|laderegler|powerstation|ecoflow|jackery|bluetti)\b/i,
@@ -71,13 +71,13 @@ const PATTERNS = {
     factoryEquipment: /\b(paket|smart-paket|media-paket|styling-paket|fiat-paket|licht-paket|winter-paket|assistenzpaket|tempomat|abstandsregeltempomat|acc|klimaanlage|klimaautomatik|standheizung|truma|dieselheizung|alde|warmwasser|boiler|head-up|head-up-display|navigationssystem|navi|rückfahrkamera|dab\+|radio|bluetooth|apple\s*carplay|android\s*auto|lederlenkrad|multifunktionslenkrad|markise|anhängerkupplung|ahk|elektrische\s*trittstufe|fliegengitter|verdunkelung|plissee)\b/i,
 
     // 5. Add-on Accessories & Inclusions
-    accessoriesExtras: /\b(bwt|wasserfilter|filter|abwassertank|frischwassertank|zusätzliches\s*fenster|fenster|heckgarage|fahrradträger|radträger|thule|fiamma|vorzelt|sonnensegel|teppich|campingstuhl|campingtisch|auffahrkeile|keile|stromkabel|cee|gasflasche|alugas|duocontrol|monocontrol|stufe|stufe|geschirr|besteck|abdeckung|schutzhülle|matratze|topper)\b/i,
+    accessoriesExtras: /\b(bwt|wasserfilter|filter|abwassertank|frischwassertank|zusätzliches\s*fenster|fenster|heckgarage|fahrradträger|radträger|thule|fiamma|vorzelt|sonnensegel|teppich|campingstuhl|campingtisch|auffahrkeile|keile|stromkabel|cee|gasflasche|alugas|duocontrol|monocontrol|stufe|geschirr|besteck|abdeckung|schutzhülle|matratze|topper)\b/i,
 
-    // 6. Location identifiers
+    // 6. Location identifiers (already visible in ad metadata)
     location: /\b(standort|abholung in|plz|ort|kreis|besichtigung in|abzuholen in)\b/i,
 
-    // 7. Price identifiers
-    price: /\b(preis|festpreis|verhandlungsbasis|\bvb\b|vhs|euro|€)\b/i
+    // 7. Price identifiers (already visible in ad metadata)
+    price: /\b(preis|festpreis|verhandlungsbasis|\bvb\b|vhs|euro|€)\b|\d+[\.,]?\d*\s*(?:€|euro)\b/i
 };
 
 /**
@@ -117,15 +117,17 @@ export function extractFactualData(rawText = '', category = '') {
             continue;
         }
 
-        // Detect full narrative intro lines (e.g. "Wir verkaufen unseren gepflegten und umfangreich ausgestatteten...")
-        if (trimmed.length > 70 && !trimmed.startsWith('•') && !trimmed.startsWith('-') && !trimmed.includes(':')) {
+        const isCommaSeparatedList = (trimmed.includes(',') && trimmed.split(',').length >= 3) || trimmed.includes(';') || trimmed.includes('|') || trimmed.includes('•');
+
+        // Detect full narrative intro lines (e.g. "Wir verkaufen unseren gepflegten Camper schweren Herzens...")
+        if (!isCommaSeparatedList && trimmed.length > 70 && !trimmed.startsWith('•') && !trimmed.startsWith('-') && !trimmed.includes(':')) {
             introNarrative.push(trimmed);
             continue;
         }
 
-        // Split multi-item bullet lines
-        if ((trimmed.includes('•') || trimmed.includes('|') || trimmed.includes(';') || (trimmed.includes(',') && trimmed.split(',').length >= 3)) && !trimmed.startsWith('http')) {
-            const parts = trimmed.split(/[•|;]|\s*,\s*(?=[A-Z0-9])/);
+        // Split multi-item bullet lines or comma-separated specifications
+        if (isCommaSeparatedList && !trimmed.startsWith('http')) {
+            const parts = trimmed.split(/[•|;]|\s*,\s*/);
             for (const p of parts) {
                 const item = formatBulletPoint(p);
                 if (item && item.length > 1) {
@@ -235,11 +237,7 @@ export function generateAutoDescription({
     const isTent = cleanCategory.toLowerCase().includes('zelt');
     const isCampsite = cleanCategory.toLowerCase().includes('stellplatz') || cleanCategory.toLowerCase().includes('campingplatz');
 
-    // ─── 1. OFFER TITLE & INTRO NARRATIVE ───
-    if (cleanTitle) {
-        sections.push(`Angebot: ${cleanTitle}`);
-    }
-
+    // ─── 1. OPTIONAL INTRO NARRATIVE (Factual seller intro) ───
     if (facts.introNarrative.length > 0) {
         sections.push(facts.introNarrative.join('\n\n'));
     }
@@ -261,7 +259,7 @@ export function generateAutoDescription({
 
         // Add condition indicators related to vehicle history if present
         for (const cond of facts.conditionNotes) {
-            if (/nichtraucher|tierfrei|garage|garagenfahrzeug|scheckheft|unfallfrei/i.test(cond)) {
+            if (/nichtraucher|tierfrei|garage|garagenfahrzeug|scheckheft|unfallfrei|hand|vorbesitzer|halter/i.test(cond)) {
                 vData.push(formatBullet(cond));
             }
         }
@@ -297,7 +295,7 @@ export function generateAutoDescription({
         }
 
         // REMAINING CONDITION NOTES (Zustand & Wartung - TÜV, Gasprüfung etc.)
-        const techCondition = facts.conditionNotes.filter(c => !/nichtraucher|tierfrei|garage|garagenfahrzeug|scheckheft|unfallfrei/i.test(c));
+        const techCondition = facts.conditionNotes.filter(c => !/nichtraucher|tierfrei|garage|garagenfahrzeug|scheckheft|unfallfrei|hand|vorbesitzer|halter/i.test(c));
         if (techCondition.length > 0) {
             sections.push(`ZUSTAND & WARTUNG\n${techCondition.map(formatBullet).join('\n')}`);
         }
@@ -326,9 +324,6 @@ export function generateAutoDescription({
 
     } else if (isCampsite) {
         // CAMPSITE SPECIFIC
-        if (cleanLoc) {
-            sections.push(`STANDORT\n${cleanLoc}`);
-        }
         const siteData = [];
         if (cleanSub) siteData.push(formatBullet(`Art des Platzes: ${cleanSub}`));
         for (const spec of facts.vehicleSpecs.concat(facts.otherSpecs)) {
@@ -365,33 +360,6 @@ export function generateAutoDescription({
         }
         if (facts.accessoriesExtras.length > 0) {
             sections.push(`LIEFERUMFANG / ZUBEHÖR\n${facts.accessoriesExtras.map(formatBullet).join('\n')}`);
-        }
-    }
-
-    // ─── 3. PREIS SECTION ───
-    let priceOutput = '';
-    if (formattedPrice) {
-        priceOutput = `${formattedPrice} ${isNegotiable ? 'VB (Verhandlungsbasis)' : 'Festpreis'}`;
-    } else if (isNegotiable) {
-        priceOutput = 'Verhandlungsbasis (VB)';
-    } else if (facts.priceMention) {
-        priceOutput = facts.priceMention;
-    }
-    if (priceOutput) {
-        sections.push(`PREIS\n${priceOutput}`);
-    }
-
-    // ─── 4. STANDORT SECTION (conflict-aware, structured field first) ───
-    if (!isCampsite) {
-        let finalLocation = cleanLoc;
-        if (facts.locationMention && cleanLoc && !facts.locationMention.toLowerCase().includes(cleanLoc.toLowerCase()) && !cleanLoc.toLowerCase().includes(facts.locationMention.toLowerCase())) {
-            finalLocation = `${cleanLoc} (Hinweis im Text: ${facts.locationMention.replace(/^Standort:?\s*/i, '')})`;
-        } else if (!finalLocation && facts.locationMention) {
-            finalLocation = facts.locationMention.replace(/^Standort:?\s*/i, '');
-        }
-
-        if (finalLocation) {
-            sections.push(`STANDORT\n${finalLocation}`);
         }
     }
 

@@ -13,26 +13,26 @@ export const getAdminDashboardStats = async (req, res) => {
         // 1. Listing Aggregates
         const listingsStatsQuery = `
             SELECT 
-                COUNT(*) as total_listings,
-                COUNT(CASE WHEN status = 'APPROVED' THEN 1 END) as approved_count,
-                COUNT(CASE WHEN status = 'REVIEW' THEN 1 END) as review_count,
-                COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) as rejected_count,
-                COUNT(CASE WHEN status = 'DRAFT' THEN 1 END) as draft_count,
-                COUNT(CASE WHEN featured = TRUE THEN 1 END) as featured_count,
-                COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN price ELSE 0 END), 0) as total_active_value,
-                COALESCE(AVG(CASE WHEN status = 'APPROVED' THEN price ELSE NULL END), 0) as avg_price
+                COUNT(*)::int as total_listings,
+                COUNT(CASE WHEN status = 'APPROVED' THEN 1 END)::int as approved_count,
+                COUNT(CASE WHEN status = 'REVIEW' THEN 1 END)::int as review_count,
+                COUNT(CASE WHEN status = 'REJECTED' THEN 1 END)::int as rejected_count,
+                COUNT(CASE WHEN status = 'DRAFT' THEN 1 END)::int as draft_count,
+                COUNT(CASE WHEN featured = TRUE THEN 1 END)::int as featured_count,
+                COALESCE(SUM(CASE WHEN status = 'APPROVED' THEN (NULLIF(price::text, '')::numeric) ELSE 0 END), 0) as total_active_value,
+                COALESCE(AVG(CASE WHEN status = 'APPROVED' THEN (NULLIF(price::text, '')::numeric) ELSE NULL END), 0) as avg_price
             FROM listings;
         `;
 
         // 2. User Aggregates
         const usersStatsQuery = `
             SELECT 
-                COUNT(*) as total_users,
-                COUNT(CASE WHEN user_type = 'COMMERCIAL' THEN 1 END) as total_commercial,
-                COUNT(CASE WHEN user_type = 'PRIVATE' THEN 1 END) as total_private,
-                COUNT(CASE WHEN is_suspended = TRUE THEN 1 END) as total_suspended,
-                COUNT(CASE WHEN email_verified = FALSE THEN 1 END) as total_unverified,
-                COUNT(CASE WHEN email_verified = TRUE THEN 1 END) as total_verified
+                COUNT(*)::int as total_users,
+                COUNT(CASE WHEN user_type = 'COMMERCIAL' THEN 1 END)::int as total_commercial,
+                COUNT(CASE WHEN user_type = 'PRIVATE' THEN 1 END)::int as total_private,
+                COUNT(CASE WHEN is_suspended = TRUE THEN 1 END)::int as total_suspended,
+                COUNT(CASE WHEN email_verified = FALSE THEN 1 END)::int as total_unverified,
+                COUNT(CASE WHEN email_verified = TRUE THEN 1 END)::int as total_verified
             FROM users
             WHERE role != 'ADMIN';
         `;
@@ -40,16 +40,16 @@ export const getAdminDashboardStats = async (req, res) => {
         // 3. Strategic Partners, Business Subscriptions & Active Boosts
         const businessStatsQuery = `
             SELECT 
-                (SELECT COUNT(*) FROM company_profiles WHERE is_strategic_partner = TRUE) as strategic_partners_count,
-                (SELECT COUNT(*) FROM company_profiles WHERE tier = 'BUSINESS') as business_tier_count,
-                (SELECT COUNT(*) FROM subscriptions WHERE status = 'ACTIVE') as active_subscriptions_count,
-                (SELECT COUNT(*) FROM listings WHERE boosted_until IS NOT NULL AND boosted_until > NOW()) as active_boosts_count,
-                (SELECT COUNT(*) FROM company_profiles WHERE spotlight_until IS NOT NULL AND spotlight_until > NOW()) as active_spotlights_count
+                (SELECT COUNT(*)::int FROM company_profiles WHERE is_strategic_partner = TRUE) as strategic_partners_count,
+                (SELECT COUNT(*)::int FROM company_profiles WHERE tier = 'BUSINESS') as business_tier_count,
+                (SELECT COUNT(*)::int FROM subscriptions WHERE status = 'ACTIVE') as active_subscriptions_count,
+                (SELECT COUNT(*)::int FROM listings WHERE boosted_until IS NOT NULL AND boosted_until > NOW()) as active_boosts_count,
+                (SELECT COUNT(*)::int FROM company_profiles WHERE spotlight_until IS NOT NULL AND spotlight_until > NOW()) as active_spotlights_count
         `;
 
         // 4. Pioneer Awards Count
         const pioneerStatsQuery = `
-            SELECT COUNT(*) as pioneer_count
+            SELECT COUNT(*)::int as pioneer_count
             FROM user_achievements
             WHERE badge_key = 'CAMPUNA_PIONEER';
         `;
@@ -57,10 +57,10 @@ export const getAdminDashboardStats = async (req, res) => {
         // 5. AI Moderation Decision Stats
         const aiStatsQuery = `
             SELECT 
-                COUNT(*) as total_ai_scans,
-                COUNT(CASE WHEN ai_decision = 'AUTO_APPROVED' THEN 1 END) as auto_approved_count,
-                COUNT(CASE WHEN ai_decision = 'AUTO_REJECTED' THEN 1 END) as auto_rejected_count,
-                COUNT(CASE WHEN ai_decision = 'MANUAL_REVIEW' THEN 1 END) as manual_review_count,
+                COUNT(*)::int as total_ai_scans,
+                COUNT(CASE WHEN ai_decision = 'AUTO_APPROVED' THEN 1 END)::int as auto_approved_count,
+                COUNT(CASE WHEN ai_decision = 'AUTO_REJECTED' THEN 1 END)::int as auto_rejected_count,
+                COUNT(CASE WHEN ai_decision = 'MANUAL_REVIEW' THEN 1 END)::int as manual_review_count,
                 COALESCE(AVG(ai_score), 0) as avg_ai_score
             FROM listing_moderation;
         `;
@@ -79,8 +79,8 @@ export const getAdminDashboardStats = async (req, res) => {
         const categoryStatsQuery = `
             SELECT 
                 COALESCE(category, 'Allgemein') as category,
-                COUNT(*) as count,
-                COALESCE(SUM(price), 0) as total_value
+                COUNT(*)::int as count,
+                COALESCE(SUM(NULLIF(price::text, '')::numeric), 0) as total_value
             FROM listings
             GROUP BY COALESCE(category, 'Allgemein')
             ORDER BY count DESC
@@ -100,17 +100,17 @@ export const getAdminDashboardStats = async (req, res) => {
                 d.day,
                 TO_CHAR(d.day, 'Dy') as day_name,
                 TO_CHAR(d.day, 'DD.MM') as formatted_date,
-                COALESCE(l.listings_count, 0) as listings_count,
-                COALESCE(u.users_count, 0) as users_count
+                COALESCE(l.listings_count, 0)::int as listings_count,
+                COALESCE(u.users_count, 0)::int as users_count
             FROM days d
             LEFT JOIN (
-                SELECT DATE(created_at) as created_day, COUNT(*) as listings_count
+                SELECT DATE(created_at) as created_day, COUNT(*)::int as listings_count
                 FROM listings
                 WHERE created_at >= CURRENT_DATE - INTERVAL '6 days'
                 GROUP BY DATE(created_at)
             ) l ON d.day = l.created_day
             LEFT JOIN (
-                SELECT DATE(created_at) as created_day, COUNT(*) as users_count
+                SELECT DATE(created_at) as created_day, COUNT(*)::int as users_count
                 FROM users
                 WHERE created_at >= CURRENT_DATE - INTERVAL '6 days' AND role != 'ADMIN'
                 GROUP BY DATE(created_at)
@@ -130,7 +130,7 @@ export const getAdminDashboardStats = async (req, res) => {
                 l.images,
                 l.created_at,
                 u.email as seller_email,
-                u.user_type as seller_type,
+                COALESCE(u.user_type, 'PRIVATE') as seller_type,
                 pp.first_name as private_first_name,
                 pp.last_name as private_last_name,
                 cp.company_name,
@@ -144,7 +144,7 @@ export const getAdminDashboardStats = async (req, res) => {
             LEFT JOIN listing_moderation m ON l.id = m.listing_id
             WHERE l.status = 'REVIEW'
             ORDER BY l.created_at DESC
-            LIMIT 5;
+            LIMIT 10;
         `;
 
         // 9. Recent Users (Newest 5 registrations)

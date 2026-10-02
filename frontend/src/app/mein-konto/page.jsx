@@ -2150,7 +2150,7 @@ export default function MeinKontoPage() {
                                     </motion.div>
 
                                     {/* Responsive Profile & Account Settings Grid (Equal Height Aligned) */}
-                                    <div className={`grid grid-cols-1 ${isCommercial ? 'lg:grid-cols-12' : 'lg:grid-cols-2'} gap-5 sm:gap-6 items-stretch`}>
+                                    <div className={isCommercial ? "grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch" : "w-full flex flex-col gap-5 sm:gap-6"}>
                                         {/* Left Column (Spotlight + Credits for Commercial) */}
                                         {isCommercial && (
                                             <motion.div
@@ -2310,7 +2310,7 @@ export default function MeinKontoPage() {
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ duration: 0.3, delay: 0.15 }}
-                                            className={`${isCommercial ? 'lg:col-span-5' : 'space-y-6'} flex flex-col justify-between gap-5 sm:gap-6 h-full`}
+                                            className={`${isCommercial ? 'lg:col-span-5' : 'w-full'} flex flex-col justify-between gap-5 sm:gap-6 h-full`}
                                         >
                                             {/* Membership Plan Info Card */}
                                             {isPrivate ? (
@@ -2434,7 +2434,7 @@ export default function MeinKontoPage() {
                                             )}
 
                                             {/* Security & Password Quick Action */}
-                                            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-forest/30 transition-all flex flex-col justify-between">
+                                            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-forest/30 transition-all w-full flex flex-col justify-between">
                                                 <div>
                                                     <div className="flex items-center justify-between pb-3 border-b border-beige">
                                                         <div className="flex items-center gap-2.5">
@@ -2448,19 +2448,22 @@ export default function MeinKontoPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="space-y-3 pt-3">
+                                                    <div className="pt-3">
                                                         <p className="text-xs text-charcoal/60 leading-relaxed">
                                                             Passe dein Passwort an oder melde dich sicher von allen Geräten ab.
                                                         </p>
-                                                        <button
-                                                            type="button"
-                                                            onClick={handleLogout}
-                                                            className="w-full py-2.5 px-4 rounded-xl border border-beige hover:border-rose-300 bg-[#faf8f3] hover:bg-rose-50 text-xs font-bold text-charcoal/80 hover:text-rose-600 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                                                        >
-                                                            <LogOut className="w-3.5 h-3.5 text-rose-500" />
-                                                            <span>Sicher abmelden</span>
-                                                        </button>
                                                     </div>
+                                                </div>
+
+                                                <div className="pt-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleLogout}
+                                                        className="w-full py-3 px-4 rounded-xl border border-beige hover:border-rose-300 bg-[#faf8f3] hover:bg-rose-50 text-xs font-bold text-charcoal/80 hover:text-rose-600 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+                                                    >
+                                                        <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                                                        <span>Sicher abmelden</span>
+                                                    </button>
                                                 </div>
                                             </div>
                                         </motion.div>

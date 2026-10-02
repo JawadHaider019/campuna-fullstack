@@ -61,10 +61,11 @@ export default function AdminDashboard() {
         setLoading(true);
         try {
             const res = await getAdminDashboardStats();
-            if (res?.success && res?.data?.success && res?.data?.stats) {
-                setStats(res.data.stats);
-            } else if (res?.data?.stats) {
-                setStats(res.data.stats);
+            const extractedStats = res?.data?.stats || res?.stats || (res?.success && res?.data?.listings ? res?.data : null);
+            if (extractedStats) {
+                setStats(extractedStats);
+            } else if (res?.data) {
+                setStats(res.data);
             } else {
                 console.error("Dashboard stats response not successful:", res);
                 showFeedback(res?.error || "Fehler beim Laden der Live-Statistiken. Bitte überprüfe deine Admin-Berechtigung.", "error");
@@ -500,7 +501,7 @@ export default function AdminDashboard() {
 
                     <div className="pt-4 mt-4 border-t border-[#F2F4F7] flex items-center justify-between text-xs">
                         <span className="text-slate-400 text-[11px]">
-                            {`${stats?.pendingQueue?.length || 0} von ${stats?.listings?.review || 0} ausstehenden Inseraten angezeigt`}
+                            {`${stats?.pendingQueue?.length || 0} von ${Math.max(stats?.listings?.review || 0, stats?.pendingQueue?.length || 0)} ausstehenden Inseraten angezeigt`}
                         </span>
                         <button
                             onClick={() => router.push('/admin/entscheidungen')}

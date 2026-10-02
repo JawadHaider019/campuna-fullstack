@@ -193,13 +193,10 @@ function AdminListingFormContent() {
         const missing = [];
         if (!cleanTitle) missing.push('Titel');
         if (!cleanCategory) missing.push('Kategorie');
-        if (!cleanCondition) missing.push('Zustand');
-        if (!cleanPrice) missing.push('Preis');
-        if (!cleanLocation) missing.push('Standort');
         if (!rawText) missing.push('Entwurf / Notizen in der Beschreibung');
 
         if (missing.length > 0) {
-            toast.error(`Bitte fülle vor der KI-Verbesserung aus: ${missing.join(', ')}.`, {
+            toast.error(`Bitte gib vor der KI-Verbesserung an: ${missing.join(', ')}.`, {
                 icon: '💡',
                 duration: 4000
             });

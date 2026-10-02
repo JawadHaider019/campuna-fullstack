@@ -973,16 +973,21 @@ export default function UserDashboard({
                         </div>
 
                         {/* Quick Boost Trigger */}
-                        <div className="p-3.5 bg-[#faf8f3] border border-beige rounded-2xl flex items-center justify-between text-xs">
-                            <span className="text-charcoal/70 text-[11px] font-medium">Top-Inserate an Position 1 pushen:</span>
-                            <button
-                                type="button"
-                                onClick={() => userListings[0] && onOpenBoostModal(userListings[0])}
-                                className="px-4 py-1.5 bg-gradient-to-r from-gold to-[#dfbe7f] hover:brightness-105 text-forest font-black rounded-xl text-[10px] uppercase tracking-wider cursor-pointer shadow-sm transition-all"
-                            >
-                                Jetzt Boosten
-                            </button>
-                        </div>
+                        {userListings.some(l => l.status === 'APPROVED') && (
+                            <div className="p-3.5 bg-[#faf8f3] border border-beige rounded-2xl flex items-center justify-between text-xs">
+                                <span className="text-charcoal/70 text-[11px] font-medium">Top-Inserate an Position 1 pushen:</span>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const firstApproved = userListings.find(l => l.status === 'APPROVED');
+                                        if (firstApproved) onOpenBoostModal(firstApproved);
+                                    }}
+                                    className="px-4 py-1.5 bg-gradient-to-r from-gold to-[#dfbe7f] hover:brightness-105 text-forest font-black rounded-xl text-[10px] uppercase tracking-wider cursor-pointer shadow-sm transition-all"
+                                >
+                                    Jetzt Boosten
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -1242,18 +1247,20 @@ export default function UserDashboard({
 
                                         {/* Listing Quick Actions */}
                                         <div className="flex items-center gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-beige">
-                                            <button
-                                                type="button"
-                                                onClick={() => onOpenBoostModal(item)}
-                                                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                                                    isBoosted
-                                                        ? 'bg-gold/20 text-gold-dark border border-gold/40'
-                                                        : 'bg-white hover:bg-gold/15 border border-beige hover:border-gold text-charcoal shadow-xs'
-                                                }`}
-                                            >
-                                                <Rocket className="w-3.5 h-3.5 text-gold-dark" />
-                                                <span>{isBoosted ? 'Verlängern' : 'Boosten'}</span>
-                                            </button>
+                                            {item.status === 'APPROVED' && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onOpenBoostModal(item)}
+                                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                        isBoosted
+                                                            ? 'bg-gold/20 text-gold-dark border border-gold/40'
+                                                            : 'bg-white hover:bg-gold/15 border border-beige hover:border-gold text-charcoal shadow-xs'
+                                                    }`}
+                                                >
+                                                    <Rocket className="w-3.5 h-3.5 text-gold-dark" />
+                                                    <span>{isBoosted ? 'Verlängern' : 'Boosten'}</span>
+                                                </button>
+                                            )}
 
                                             <button
                                                 type="button"

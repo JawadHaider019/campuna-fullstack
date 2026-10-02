@@ -268,20 +268,23 @@ export async function generateListingDescriptionAI(data) {
         ? `You are a professional German marketplace copy editor for Campuna.
 STRICT RULES:
 1. You may improve formatting, spelling, grammar, and structure, but you may NEVER invent, assume, or extrapolate facts.
-2. Do NOT add fabricated marketing claims (e.g. "gepflegt und zuverlässig", "hervorragende Ausstattung", "sofort einsatzbereit") unless explicitly supplied in the seller's draft notes.
-3. Category-specific discrete sections:
-   - For Campers/Vehicles: FAHRZEUGDATEN → AUSSTATTUNG AB WERK → AUTARKIE & ELEKTRIK → ZUBEHÖR / WEITERE AUSSTATTUNG → PREIS → STANDORT
-   - For Tents/Outdoor: PRODUKTDATEN → AUSSTATTUNG → ZUSTAND → LIEFERUMFANG / ZUBEHÖR → PREIS → STANDORT
-   - For Campsites: STANDORT → STELLPLATZINFORMATIONEN → AUSSTATTUNG & SERVICES → PREIS
-4. Keep technical attributes as concise bullet points (• 140 PS, • Schaltgetriebe, • 106.000 km) instead of converting them into awkward sentences.
-5. Do NOT generate generic closing boilerplate like "Besichtigung und Kontaktaufnahme nach Absprache möglich" unless the seller explicitly provided viewing/contact details.
-6. Do NOT use emojis.
+2. DO NOT mention or repeat the price, payment terms (VB, Festpreis), location, or duplicate the ad title in the description text. These are already clearly visible in dedicated fields on the listing page.
+3. Do NOT add fabricated marketing claims (e.g. "gepflegt und zuverlässig", "hervorragende Ausstattung", "sofort einsatzbereit") unless explicitly supplied in the seller's draft notes.
+4. Category-specific discrete sections:
+   - For Campers/Vehicles: FAHRZEUGDATEN → AUSSTATTUNG AB WERK → AUTARKIE & ELEKTRIK → ZUBEHÖR / WEITERE AUSSTATTUNG → ZUSTAND & WARTUNG
+   - For Tents/Outdoor: PRODUKTDATEN → AUSSTATTUNG → ZUSTAND → LIEFERUMFANG / ZUBEHÖR
+   - For Campsites: STELLPLATZINFORMATIONEN → AUSSTATTUNG & SERVICES
+5. Keep technical attributes as concise bullet points (• 140 PS, • Schaltgetriebe, • 106.000 km) instead of converting them into awkward sentences.
+6. Do NOT generate generic closing boilerplate like "Besichtigung und Kontaktaufnahme nach Absprache möglich" unless the seller explicitly provided viewing/contact details.
+7. Do NOT use emojis.
 Respond ONLY with the final German listing description.
 /nothink /no_think`
         : `You are a professional German marketplace copy editor for Campuna.
-STRICT RULE: Only use the exact attributes provided by the seller. Never invent features, condition claims, marketing fluff, or unsolicited boilerplate.
-Keep technical specs as clean, concise bullet points (•).
-Do NOT use emojis.
+STRICT RULES:
+1. Only use the exact attributes provided by the seller. Never invent features, condition claims, marketing fluff, or unsolicited boilerplate.
+2. DO NOT mention the price, location, or repeating ad title in the description text.
+3. Keep technical specs as clean, concise bullet points (•).
+4. Do NOT use emojis.
 Respond ONLY with the final German listing description.
 /nothink /no_think`;
 
@@ -289,19 +292,15 @@ Respond ONLY with the final German listing description.
         ? `Titel: ${cleanTitle}
 Kategorie: ${cat}${sub ? ` / ${sub}` : ''}
 Zustand: ${cond}
-Preis: ${price}
-Standort: ${loc}
 Vorhandener Entwurf / Notizen:
 ${existing}
 
-Bitte erstelle daraus eine professionelle deutsche Inseratsbeschreibung unter Verwendung aller oben genannten Angaben. /nothink`
+Bitte erstelle daraus eine professionelle deutsche Inseratsbeschreibung (ohne Preis oder Standort zu wiederholen). /nothink`
         : `Titel: ${cleanTitle}
 Kategorie: ${cat}${sub ? ` / ${sub}` : ''}
 Zustand: ${cond}
-Preis: ${price}
-Standort: ${loc}
 
-Bitte erstelle eine ansprechende deutsche Inseratsbeschreibung. /nothink`;
+Bitte erstelle eine ansprechende deutsche Inseratsbeschreibung (ohne Preis oder Standort zu wiederholen). /nothink`;
 
     try {
         const response = await client.chat.completions.create({

@@ -74,10 +74,10 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                         initial={{ opacity: 0, y: 25 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-                        className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-5 leading-[1.15]"
+                        className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-5 leading-tight sm:leading-snug"
                     >
-                        Dein Camping-Marktplatz:{' '}
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white">
+                        <span className="block">Dein Camping-Marktplatz:</span>
+                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1.5 sm:mt-2">
                             Wir bringen Camping an einem Ort zusammen.
                         </span>
                     </motion.h1>

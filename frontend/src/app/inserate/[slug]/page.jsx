@@ -787,7 +787,7 @@ export default function ListingDetailPage() {
                             <span>Löschen</span>
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <div className={`grid gap-2 pt-1 ${listing.status === 'APPROVED' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                         <Link
                             href={currentUser?.role === 'ADMIN' ? `/admin/inserat-erstellen?edit=${listing.id}` : `/anzeige-erstellen?edit=${listing.id}`}
                             className="bg-white hover:bg-forest hover:text-white text-forest border border-forest/20 transition-all font-sans font-bold py-2.5 px-3 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center"
@@ -795,13 +795,15 @@ export default function ListingDetailPage() {
                             <Pencil className="w-3.5 h-3.5 shrink-0" />
                             Bearbeiten
                         </Link>
-                        <Link
-                            href={`/inserate/${listing.slug || listing.id}/boosten`}
-                            className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-sans font-bold py-2.5 px-3 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center transition-all hover:shadow-md"
-                        >
-                            <Rocket className="w-3.5 h-3.5 shrink-0 text-amber-100" />
-                            Hervorheben
-                        </Link>
+                        {listing.status === 'APPROVED' && (
+                            <Link
+                                href={`/inserate/${listing.slug || listing.id}/boosten`}
+                                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-sans font-bold py-2.5 px-3 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center transition-all hover:shadow-md"
+                            >
+                                <Rocket className="w-3.5 h-3.5 shrink-0 text-amber-100" />
+                                Hervorheben
+                            </Link>
+                        )}
                     </div>
                 </div>
             ) : (
@@ -1432,19 +1434,19 @@ export default function ListingDetailPage() {
                                         </div>
 
                                         {/* Content Area */}
-                                        <div className="p-4 flex flex-col flex-1 justify-between gap-4">
+                                        <div className="p-4 flex flex-col flex-1 justify-between">
                                             <div>
-                                                {/* Title */}
-                                                <h3 className="font-display text-sm font-semibold text-black group-hover:text-gold transition-colors duration-200 mb-2 line-clamp-2 leading-snug">
+                                                {/* Title (Trimmed to 1 line for equal card sizes) */}
+                                                <h3 className="font-display text-sm font-semibold text-black group-hover:text-gold transition-colors duration-200 mb-2 truncate" title={item.title}>
                                                     {item.title}
                                                 </h3>
 
-                                                {/* Features chips */}
-                                                <div className="flex flex-wrap gap-1.5 mb-2">
+                                                {/* Features chips (Fixed height row) */}
+                                                <div className="flex items-center gap-1.5 mb-2 h-6 overflow-hidden">
                                                     {(item.features || []).slice(0, 3).map((feat, idx) => (
                                                         <span
                                                             key={idx}
-                                                            className="text-[10px] text-charcoal/60 bg-sand px-2 py-1 rounded-md border border-forest/5 font-sans"
+                                                            className="text-[10px] text-charcoal/60 bg-sand px-2 py-1 rounded-md border border-forest/5 font-sans whitespace-nowrap shrink-0"
                                                         >
                                                             {feat}
                                                         </span>

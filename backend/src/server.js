@@ -65,14 +65,21 @@ const uploadsPath = path.resolve(process.cwd(), 'uploads');
 if (!fs.existsSync(uploadsPath)) {
   fs.mkdirSync(uploadsPath, { recursive: true });
 }
-app.use('/uploads', (req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  res.setHeader('Cache-Control', 'public, max-age=86400');
-  next();
-}, express.static(uploadsPath));
+
+const uploadsStaticMiddleware = [
+  (req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    next();
+  },
+  express.static(uploadsPath)
+];
+
+app.use('/uploads', uploadsStaticMiddleware);
+app.use('/api/uploads', uploadsStaticMiddleware);
 
 app.get('/', (req, res) => {
   res.send(`API Working on port ${PORT}`);

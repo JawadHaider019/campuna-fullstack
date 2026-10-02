@@ -187,6 +187,11 @@ export default function BoostListingPage() {
         if (e) e.preventDefault();
         if (!listing?.id) return;
 
+        if (listing.status !== 'APPROVED') {
+            toast.error('Nur freigegebene (aktive) Inserate können hervorgehoben werden.');
+            return;
+        }
+
         if (paymentMethod === 'CREDIT' && !hasEnoughCredits) {
             toast.error(`Nicht genügend Credits (${creditBalance} CC vorhanden, ${activePackage.costCC} CC benötigt).`);
             return;
@@ -248,6 +253,27 @@ export default function BoostListingPage() {
                     <h2 className="text-xl font-bold text-charcoal">Inserat nicht gefunden</h2>
                     <p className="text-xs text-charcoal/60">
                         Das angeforderte Inserat konnte nicht geladen werden oder existiert nicht.
+                    </p>
+                    <Link
+                        href="/mein-konto?tab=inserate"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-forest text-sand hover:bg-gold hover:text-forest transition-colors text-xs font-bold uppercase tracking-wider"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                        Zurück zu meinen Inseraten
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    if (listing.status !== 'APPROVED') {
+        return (
+            <div className="min-h-screen bg-[#faf8f3] pt-28 pb-16 px-4">
+                <div className="max-w-lg mx-auto bg-white rounded-3xl p-8 border border-amber-200 shadow-sm text-center space-y-4">
+                    <AlertCircle className="w-12 h-12 text-amber-500 mx-auto" />
+                    <h2 className="text-xl font-bold text-charcoal">Inserat nicht freigegeben</h2>
+                    <p className="text-xs text-charcoal/60 leading-relaxed">
+                        Nur freigegebene (aktive) Inserate können hervorgehoben werden. Dein Inserat hat derzeit den Status <strong className="text-forest uppercase">{listing.status}</strong>.
                     </p>
                     <Link
                         href="/mein-konto?tab=inserate"
