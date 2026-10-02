@@ -44,7 +44,7 @@ export function getSocket(token) {
 
     socket = io(SOCKET_URL, {
         auth: { token: activeToken },
-        transports: ['websocket', 'polling'],
+        transports: ['polling', 'websocket'],
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,

@@ -779,3 +779,5 @@ export const markConversationAsRead = async (req, res) => {
         return res.status(500).json({ success: false, error: 'Fehler beim Aktualisieren des Lesestatus.' });
     }
 };
+
+
