@@ -62,9 +62,23 @@ export default function WhyCampuna() {
                     <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-[1.15]">
                         Warum Campuna?
                     </h2>
-                    <p className="font-sans text-xs sm:text-sm md:text-base text-white/70 leading-relaxed font-light max-w-2xl mx-auto">
-                        Eine Plattform, die alle Seiten der Camping-Welt verbindet.
-                    </p>
+                    <div className="space-y-4 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed font-light">
+                        <p className="text-white/85">
+                            Camping findet heute an vielen verschiedenen Orten statt. Angebote hier, Tipps dort, Campingplätze wieder woanders.
+                        </p>
+
+                        <p className="text-gold font-semibold">
+                            Unsere Idee ist einfach: Wir wollen Camping an einem Ort zusammenbringen.
+                        </p>
+
+                        <p className="text-white/85">
+                            Das Fundament steht. Jetzt wächst Campuna mit jedem Camper, jedem Inserat, jedem Anbieter und jedem Campingplatz weiter.
+                        </p>
+
+                        <p className="text-gold font-bold text-base sm:text-lg tracking-wide pt-1">
+                            Campuna wächst mit euch.
+                        </p>
+                    </div>
                 </div>
 
                 {/* 2-Column Split Layout: USPs on Left, Interactive Video Showcase + Mission Card on Right */}
@@ -156,7 +170,7 @@ export default function WhyCampuna() {
                         {/* Dedicated Mission & Story Card */}
                         <div className="bg-white/5 border border-white/10 hover:border-gold/30 rounded-3xl p-5 sm:p-6 backdrop-blur-sm space-y-3">
                             <p className="font-sans text-xs sm:text-sm text-sand/90 font-light leading-relaxed">
-                                Camping findet heute an vielen verschiedenen Orten statt. Angebote hier, Tipps dort, Campingplätze woanders. Unsere Idee ist einfach: <span className="text-gold font-medium">Wir wollen Camping an einem Ort zusammenbringen.</span>
+                                Vom Wohnmobil-Kauf über praktisches Zubehör bis hin zu Ratgebern und Stellplätzen: <span className="text-gold font-medium">Campuna vereint die gesamte Camping-Community</span> auf einer modernen, transparenten Plattform – von Campern für Camper entwickelt.
                             </p>
                             <div className="pt-1 border-t border-white/10">
                                 <Link

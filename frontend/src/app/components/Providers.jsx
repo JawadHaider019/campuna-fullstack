@@ -2,13 +2,14 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
-import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Building2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAllProfiles } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/imageUrl';
 import AuthRequiredModal from './AuthRequiredModal';
+import PioneerBadge from './PioneerBadge';
 
 const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, router }) => {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
@@ -44,34 +45,42 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
     return (
         <div
             onClick={handleCardClick}
-            className="provider-card group relative flex-shrink-0 w-[360px] sm:w-[370px] md:w-[500px] lg:w-[550px] h-[150px] sm:h-[180px] md:h-[210px] lg:h-[240px] rounded-[24px] sm:rounded-[32px] overflow-hidden cursor-pointer shadow-md hover:shadow-lg transition-all duration-500 select-none border border-white/10 flex bg-gradient-to-br from-[#0c2e17] via-[#103d20] to-[#041a0b]"
+            className="provider-card group relative flex-shrink-0 w-[290px] sm:w-[320px] md:w-[340px] rounded-[28px] overflow-hidden cursor-pointer bg-white border-2 border-forest/10 hover:border-gold shadow-none hover:shadow-none hover:-translate-y-1.5 transition-all duration-300 select-none flex flex-col justify-between"
         >
-            {/* Background Image & Overlay */}
-            {coverUrl && (
-                <div className="absolute inset-0 z-0">
+            {/* Top Cover Image Area */}
+            <div className="relative h-[145px] sm:h-[160px] w-full bg-gradient-to-br from-forest via-[#133821] to-[#0a2213] overflow-hidden">
+                {coverUrl ? (
                     <img
                         src={coverUrl}
                         alt={partner.name}
-                        className="w-full h-full object-cover transition-transform duration-[2s] group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                     />
-                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/65 transition-colors duration-500" />
-                </div>
-            )}
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center opacity-20">
+                        <Building2 className="w-16 h-16 text-gold" />
+                    </div>
+                )}
 
-            {/* LEFT PANEL (35%) — Centered Circular Logo */}
-            <div className="relative z-10 flex items-center justify-center p-3 sm:p-4 shrink-0" style={{ width: '35%' }}>
-                <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none opacity-30">
-                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border border-white/20" />
-                    <div className="absolute w-36 h-36 sm:w-44 sm:h-44 rounded-full border border-white/10" />
-                </div>
+                {/* Subtle Image Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
-                <div className="relative z-10 w-20 h-20 sm:w-22 sm:h-22 md:w-24 md:h-24 lg:w-28 lg:h-28 rounded-full bg-white shadow-md border-2 border-white/10 overflow-hidden flex items-center justify-center transition-transform duration-500 group-hover:scale-105">
+                {/* Pioneer Badge on Cover */}
+                {partner.isPioneer && (
+                    <div className="absolute top-3 right-3 z-10 pointer-events-none">
+                        <PioneerBadge variant="forest" size="xs" text="Campuna Pioneer" />
+                    </div>
+                )}
+            </div>
+
+            {/* Overlapping Floating Circular Brand Avatar */}
+            <div className="relative px-5 -mt-8 sm:-mt-9 md:-mt-10 z-10 flex items-end">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full bg-gradient-to-b from-sand to-gold p-1 shadow-md border-1 border-gold/40 group-hover:border-gold group-hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden shrink-0">
                     {logoUrl ? (
                         <img
                             src={logoUrl}
                             alt={`${partner.name} Logo`}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover rounded-full"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                     ) : (
@@ -82,32 +91,39 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
                 </div>
             </div>
 
-            {/* RIGHT PANEL (65%) — Text Content */}
-            <div className="relative z-10 py-4 pr-3 sm:pr-4 pl-0 flex flex-col justify-center items-start text-left shrink-0" style={{ width: '65%' }}>
-                <div className="flex flex-col items-start text-left">
-                    <h3 className="font-display text-[18px] sm:text-[18px] md:text-xl lg:text-2xl font-extrabold text-white leading-tight tracking-tight group-hover:text-gold transition-colors duration-300">
+            {/* Card Body */}
+            <div className="px-5 pt-3 pb-5 flex flex-col justify-between flex-1 space-y-3">
+                <div className="space-y-1.5">
+                    {partner.providerCategory && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-gold block truncate">
+                            {partner.providerCategory}
+                        </span>
+                    )}
+
+                    <h3 className="font-display text-base sm:text-lg font-bold text-forest group-hover:text-gold transition-colors line-clamp-1 leading-snug">
                         {partner.name}
                     </h3>
-                    <p className="font-sans text-[10px] sm:text-xs md:text-sm text-white/75 leading-relaxed font-light mt-1 line-clamp-2 sm:line-clamp-3">
-                        {partner.description || 'Dein Partner für Camping Abenteuer.'}
+
+                    <p className="font-sans text-xs text-charcoal/70 leading-relaxed font-light line-clamp-2">
+                        {partner.description || 'Dein verifizierter Partner für Camping und Caravaning auf Campuna.'}
                     </p>
                 </div>
 
-                <div className="flex items-center justify-between mt-2 pt-2 w-full">
-                    <div className="inline-flex items-center space-x-1 bg-white/10 backdrop-blur-md px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-full text-white shadow-sm shrink-0">
-                        <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gold" />
-                        <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wide">
+                {/* Footer Action Row: Inserate on Left, CTA on Right */}
+                <div className="pt-3 border-t border-forest/10 flex items-center justify-between">
+                    <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-forest">
+                        <ShieldCheck className="w-4 h-4 text-gold shrink-0" />
+                        <span>
                             {partner.listingsCount === 1 ? '1 Inserat' : `${partner.listingsCount || 0} Inserate`}
                         </span>
                     </div>
 
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white text-forest flex items-center justify-center transform group-hover:translate-x-1 group-hover:bg-gold transition-all duration-300 shadow-md shrink-0">
-                        <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-forest text-sand group-hover:bg-gold group-hover:text-forest text-xs font-bold transition-all duration-300 shadow-sm">
+                        <span>Profil ansehen</span>
+                        <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
                     </div>
                 </div>
             </div>
-
-            <div className="absolute inset-0 border border-white/0 group-hover:border-white/20 rounded-[24px] sm:rounded-[32px] transition-all duration-500 pointer-events-none z-20" />
         </div>
     );
 });
@@ -277,8 +293,8 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                             Anbieter werden
                         </button>
                         <span className="text-charcoal/30">•</span>
-                        <button 
-                            onClick={() => router.push('/anbieter')} 
+                        <button
+                            onClick={() => router.push('/anbieter')}
                             className="group flex items-center space-x-1.5 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer"
                         >
                             <span className="pb-0.5 border-b border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
@@ -296,8 +312,8 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                     )}
 
                     {providersList.length > 0 && (
-                        <div 
-                            className={`relative overflow-x-hidden ${shouldSlide ? 'cursor-grab active:cursor-grabbing' : ''}`} 
+                        <div
+                            className={`relative overflow-x-hidden ${shouldSlide ? 'cursor-grab active:cursor-grabbing' : ''}`}
                             ref={rowRef}
                             onMouseEnter={() => { isHoveredRef.current = true; }}
                             onMouseLeave={() => { isHoveredRef.current = false; }}
@@ -314,9 +330,9 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                                 onMouseLeave={() => { isHoveredRef.current = false; }}
                                 onPointerEnter={() => { isHoveredRef.current = true; }}
                                 onPointerLeave={() => { isHoveredRef.current = false; }}
-                                className={shouldSlide 
-                                    ? "flex gap-4 w-max px-4 sm:px-16 md:px-32 py-4 sm:py-6" 
-                                    : "flex gap-4 justify-center w-full py-4 sm:py-6"
+                                className={shouldSlide
+                                    ? "flex gap-5 sm:gap-6 w-max px-4 sm:px-16 md:px-32 py-4 sm:py-6"
+                                    : "flex gap-5 sm:gap-6 justify-center w-full py-4 sm:py-6"
                                 }
                             >
                                 {providersList.map((partner, idx) => (

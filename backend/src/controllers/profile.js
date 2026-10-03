@@ -844,9 +844,9 @@ export const bookSpotlight = async (req, res) => {
  * GET /api/profile
  * Returns a public list of all active user profiles with their listing counts and spotlight eligibility.
  */
-export const getAllProfiles = async (req, res) => {
+export const getAllProfiles = async (req = {}, res) => {
     try {
-        const { category } = req.query;
+        const { category } = req?.query || {};
         let whereExtra = '';
         const params = [];
 
@@ -871,6 +871,7 @@ export const getAllProfiles = async (req, res) => {
                 COALESCE(cp.phone, '') as phone,
                 COALESCE(cp.company_address, '') as "companyAddress",
                 COALESCE(l_count.count, 0)::int as "listingsCount",
+                COALESCE((SELECT TRUE FROM user_achievements WHERE user_id = u.id AND badge_key = 'CAMPUNA_PIONEER' LIMIT 1), FALSE) as "isPioneer",
                 'Gewerblich' as type,
                 CASE 
                     WHEN cp.tier = 'BUSINESS' OR sub.id IS NOT NULL OR cp.is_strategic_partner = TRUE THEN TRUE

@@ -17,6 +17,25 @@ import BudgetCalculator from './BudgetCalculator';
 export default function ToolsFloatingModal() {
     const [isOpen, setIsOpen] = useState(false);
     const [activeTool, setActiveTool] = useState('payload');
+    const [showFloatingBtn, setShowFloatingBtn] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const heroEl = document.getElementById('hero');
+            if (heroEl) {
+                const rect = heroEl.getBoundingClientRect();
+                // Only show once scrolled past hero section
+                setShowFloatingBtn(rect.bottom < 100);
+            } else {
+                // If on a page without hero section, show after small scroll
+                setShowFloatingBtn(window.scrollY > 300);
+            }
+        };
+
+        handleScroll();
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     useEffect(() => {
         const handleOpenToolsModal = (e) => {
@@ -48,45 +67,85 @@ export default function ToolsFloatingModal() {
 
     return (
         <>
-            {/* Simple Rounded Floating Action Button with subtle contained glow */}
-            <div className="fixed right-6 bottom-22 sm:bottom-24 z-[80] flex items-center justify-center">
-                {/* Subtle contained glow — no overflow rings */}
-                <div className="absolute inset-0 rounded-full bg-forest/30 blur-lg pointer-events-none animate-pulse" />
-                <div className="absolute inset-0 rounded-full bg-forest/15 blur-xl pointer-events-none" />
+            {/* Simple Rounded Floating Action Button with silky-smooth floating and glowing waves */}
+            <AnimatePresence>
+                {showFloatingBtn && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.85, y: 16 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.85, y: 16 }}
+                        transition={{ type: "spring", damping: 24, stiffness: 260 }}
+                        className="fixed right-5 sm:right-7 bottom-20 sm:bottom-24 z-[80] flex items-center justify-center pointer-events-auto select-none"
+                    >
+                        {/* Dedicated Inner Floating Container for pure, smooth continuous bobbing */}
+                        <motion.div
+                            animate={{ y: [0, -5, 0] }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 3.8,
+                                ease: "easeInOut"
+                            }}
+                            className="relative flex items-center justify-center will-change-transform"
+                        >
+                            {/* Outer Slow Breathing Glow Halo (Smoothly expands big and small) */}
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.28, 1],
+                                    opacity: [0.25, 0.65, 0.25]
+                                }}
+                                transition={{
+                                    repeat: Infinity,
+                                    duration: 3.6,
+                                    ease: "easeInOut"
+                                }}
+                                className="absolute -inset-2.5 rounded-full bg-gold/40 blur-lg pointer-events-none will-change-transform"
+                            />
 
-                <motion.button
-                    type="button"
-                    onClick={() => setIsOpen(true)}
-                    animate={{ y: [0, -4, 0] }}
-                    transition={{
-                        repeat: Infinity,
-                        duration: 3,
-                        ease: "easeInOut"
-                    }}
-                    whileHover={{ scale: 1.08, y: -4 }}
-                    whileTap={{ scale: 0.94 }}
-                    className="relative w-12 h-12 sm:w-13 sm:h-13 rounded-full bg-forest text-sand hover:bg-gold hover:text-forest flex items-center justify-center transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.35)] border border-gold/60 hover:border-gold cursor-pointer group z-10"
-                    aria-label="Camping Rechner öffnen"
-                    title="Camping-Rechner: Jetzt berechnen"
-                >
-                    <Calculator className="w-5 h-5 sm:w-6 sm:h-6 text-gold group-hover:text-forest transition-colors" />
+                            {/* Inner Soft Pulsing Halo (Smoothly breathes in harmony) */}
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.15, 1],
+                                    opacity: [0.4, 0.8, 0.4]
+                                }}
+                                transition={{
+                                    repeat: Infinity,
+                                    duration: 3.6,
+                                    ease: "easeInOut"
+                                }}
+                                className="absolute -inset-1 rounded-full bg-emerald-400/30 blur-md pointer-events-none will-change-transform"
+                            />
 
-                    {/* High-Contrast Clear Tooltip Tag on the side */}
-                    <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 whitespace-nowrap select-none pointer-events-none">
-                        {/* Glow halo behind tooltip */}
-                        <div className="absolute inset-0 bg-gold/30 rounded-full blur-md -z-10" />
+                            <motion.button
+                                type="button"
+                                onClick={() => setIsOpen(true)}
+                                whileHover={{ scale: 1.08 }}
+                                whileTap={{ scale: 0.94 }}
+                                className="relative w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-forest via-[#1e3d2f] to-[#12281e] text-sand hover:from-gold hover:to-[#b89548] hover:text-forest flex items-center justify-center transition-all duration-300 shadow-[0_10px_30px_rgba(0,0,0,0.45),0_0_20px_rgba(200,169,107,0.3)] border-2 border-gold/75 hover:border-white cursor-pointer group z-10"
+                                aria-label="Camping Rechner öffnen"
+                                title="Camping-Rechner: Jetzt berechnen"
+                            >
+                                <Calculator className="w-6 h-6 text-gold group-hover:text-forest transition-all duration-300 group-hover:rotate-6" />
 
-                        <div className="relative px-3 py-1.5 rounded-full bg-forest text-sand text-[11px] font-bold tracking-wider uppercase shadow-[0_4px_20px_rgba(0,0,0,0.4)] border border-gold/70 group-hover:bg-gold group-hover:text-forest transition-all duration-300 flex items-center justify-center">
-                            <span className="font-sans font-extrabold text-white group-hover:text-forest tracking-wider drop-shadow-xs">
-                                Berechnen
-                            </span>
+                                {/* High-Contrast Clear Tooltip Tag on the side (desktop/tablet only) */}
+                                <div className="hidden sm:block absolute right-full mr-3.5 top-1/2 -translate-y-1/2 whitespace-nowrap select-none pointer-events-none">
+                                    {/* Glow halo behind tooltip */}
+                                    <div className="absolute inset-0 bg-gold/30 rounded-full blur-md -z-10" />
 
-                            {/* Arrow pointer */}
-                            <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-[1px] border-[5px] border-transparent border-l-forest group-hover:border-l-gold transition-colors" />
-                        </div>
-                    </div>
-                </motion.button>
-            </div>
+                                    <div className="relative px-3.5 py-1.5 rounded-full bg-forest/95 text-sand text-[11px] font-bold tracking-wider uppercase shadow-[0_6px_25px_rgba(0,0,0,0.45)] border border-gold/80 group-hover:bg-gold group-hover:text-forest transition-all duration-300 flex items-center justify-center backdrop-blur-sm">
+                                        <span className="font-sans font-extrabold text-white group-hover:text-forest tracking-wider drop-shadow-sm flex items-center gap-1.5">
+                                            <Sparkles className="w-3 h-3 text-gold group-hover:text-forest" />
+                                            Berechnen
+                                        </span>
+
+                                        {/* Arrow pointer */}
+                                        <span className="absolute left-full top-1/2 -translate-y-1/2 -ml-[1px] border-[5px] border-transparent border-l-forest group-hover:border-l-gold transition-colors" />
+                                    </div>
+                                </div>
+                            </motion.button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* High z-index Wide Modal Dialog */}
             <AnimatePresence>

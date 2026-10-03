@@ -99,7 +99,6 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
     { label: 'Über uns', path: '/uber-campuna' },
     { label: 'Zum Stöbern', id: 'exclusive-offers' },
     { label: 'Spotlight', id: 'campuna-spotlight', requiresData: true },
-    { label: 'Entdecke', id: 'tool' },
     { label: 'Ratgeber', id: 'journal' },
   ];
 
