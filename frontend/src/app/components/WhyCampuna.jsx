@@ -55,106 +55,121 @@ export default function WhyCampuna() {
 
             <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
                 {/* Section Header */}
-                <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-4">
+                <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 space-y-3">
                     <span className="font-sans text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.4em] text-gold block">
-                        Vertrauen & Vision
+                        Vertrauen & Vorteile
                     </span>
                     <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-[1.15]">
                         Warum Campuna?
                     </h2>
-                    <div className="space-y-2.5 font-sans text-[14px] sm:text-[16px] md:text-[18px] text-white/75 leading-relaxed font-light max-w-2xl mx-auto pt-1">
-                        <p>
-                            Camping findet heute an vielen verschiedenen Orten statt: Angebote hier, Tipps dort, Campingplätze wieder woanders.
-                        </p>
-                        <p className="text-white/90 font-normal">
-                            Unsere Idee ist einfach: <span className="text-gold font-semibold">Wir wollen Camping an einem Ort zusammenbringen.</span>
-                        </p>
-                        <p>
-                            Das Fundament steht. Jetzt wächst Campuna mit jedem Camper, jedem Inserat, jedem Anbieter und jedem Campingplatz weiter.
-                        </p>
-                        <p className="font-display font-bold text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white text-sm sm:text-base tracking-wide pt-1">
-                            Campuna wächst mit euch.
-                        </p>
-                    </div>
+                    <p className="font-sans text-xs sm:text-sm md:text-base text-white/70 leading-relaxed font-light max-w-2xl mx-auto">
+                        Eine Plattform, die alle Seiten der Camping-Welt verbindet.
+                    </p>
                 </div>
 
-                {/* Shared Wide Container for Video & Cards with Matching Width */}
-                <div className="max-w-5xl mx-auto space-y-8 sm:space-y-10">
-                    {/* Wide Video Showcase */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
-                        className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl border border-white/15 bg-black group cursor-pointer"
-                        onClick={() => setIsPlaying(true)}
-                    >
-                        {/* YouTube Thumbnail Background */}
-                        <img
-                            src="https://img.youtube.com/vi/7VLlgt1Rgr4/maxresdefault.jpg"
-                            alt="Campuna Vorstellungsvideo"
-                            loading="lazy"
-                            className="w-full h-full object-cover brightness-80 group-hover:scale-105 group-hover:brightness-95 transition-all duration-700 ease-out"
-                        />
+                {/* 2-Column Split Layout: USPs on Left, Interactive Video Showcase + Mission Card on Right */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
 
-                        {/* Gradient Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-forest/95 via-forest/40 to-black/30 pointer-events-none" />
+                    {/* Left Column (7 cols): Core Trust Pillars */}
+                    <div className="lg:col-span-7 flex flex-col justify-between space-y-4">
+                        <div className="space-y-4">
+                            {TRUST_PILLARS.map((pillar, index) => {
+                                const Icon = pillar.icon;
+                                return (
+                                    <motion.div
+                                        key={pillar.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: index * 0.1, duration: 0.5 }}
+                                        className="bg-white/5 border border-white/10 hover:border-gold/40 p-5 sm:p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 flex items-start gap-4 sm:gap-5 group backdrop-blur-sm"
+                                    >
+                                        <div className="p-3 sm:p-3.5 rounded-2xl bg-white/10 text-gold group-hover:bg-gold group-hover:text-forest transition-all duration-300 shrink-0 shadow-inner">
+                                            <Icon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                                                <h3 className="font-display text-base sm:text-lg font-bold text-white group-hover:text-gold transition-colors">
+                                                    {pillar.title}
+                                                </h3>
+                                                <span className="font-mono text-xs font-bold text-white/25 group-hover:text-gold/60 transition-colors">
+                                                    {pillar.id}
+                                                </span>
+                                            </div>
+                                            <p className="font-sans text-xs sm:text-sm text-white/75 leading-relaxed font-light">
+                                                {pillar.desc}
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
 
-                        {/* Play Button & Overlay Content */}
-                        <div className="absolute inset-0 flex flex-col justify-between p-6 sm:p-8 z-10">
-                            <div className="self-center my-auto">
-                                <motion.button
-                                    type="button"
-                                    aria-label="Campuna Video abspielen"
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white text-forest hover:bg-gold hover:text-forest flex items-center justify-center transition-all duration-300 shadow-2xl shadow-black/50 group/btn cursor-pointer"
-                                >
-                                    <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-current translate-x-0.5" />
-                                </motion.button>
+                    {/* Right Column (5 cols): Cinematic Video Card + Mission Statement Box */}
+                    <div className="lg:col-span-5 flex flex-col justify-between gap-4">
+                        {/* Video Showcase */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.96 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                            className="relative aspect-video lg:aspect-[16/10] rounded-3xl overflow-hidden shadow-2xl border border-white/15 bg-black group cursor-pointer"
+                            onClick={() => setIsPlaying(true)}
+                        >
+                            {/* YouTube Thumbnail Background */}
+                            <img
+                                src="https://img.youtube.com/vi/7VLlgt1Rgr4/maxresdefault.jpg"
+                                alt="Campuna Vorstellungsvideo"
+                                loading="lazy"
+                                className="w-full h-full object-cover brightness-80 group-hover:scale-105 group-hover:brightness-95 transition-all duration-700 ease-out"
+                            />
+
+                            {/* Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-forest/95 via-forest/40 to-black/30 pointer-events-none" />
+
+                            {/* Play Button & Overlay Content */}
+                            <div className="absolute inset-0 flex flex-col justify-between p-5 sm:p-6 z-10">
+
+
+                                <div className="self-center my-auto">
+                                    <motion.button
+                                        type="button"
+                                        aria-label="Campuna Video abspielen"
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white text-forest hover:bg-gold hover:text-forest flex items-center justify-center transition-all duration-300 shadow-2xl shadow-black/50 group/btn"
+                                    >
+                                        <Play className="w-6 h-6 fill-current translate-x-0.5" />
+                                    </motion.button>
+                                </div>
+
+                                <div className="text-left">
+                                    <p className="font-display font-bold text-white text-sm sm:text-base leading-snug">
+                                        Camping an einem Ort zusammenbringen.
+                                    </p>
+
+                                </div>
                             </div>
+                        </motion.div>
 
-                            <div className="text-center">
-                                <p className="font-display font-bold text-white text-sm sm:text-base tracking-wide leading-snug">
-                                    Camping an einem Ort zusammenbringen.
-                                </p>
+                        {/* Dedicated Mission & Story Card */}
+                        <div className="bg-white/5 border border-white/10 hover:border-gold/30 rounded-3xl p-5 sm:p-6 backdrop-blur-sm space-y-3">
+                            <p className="font-sans text-xs sm:text-sm text-sand/90 font-light leading-relaxed">
+                                Camping findet heute an vielen verschiedenen Orten statt. Angebote hier, Tipps dort, Campingplätze woanders. Unsere Idee ist einfach: <span className="text-gold font-medium">Wir wollen Camping an einem Ort zusammenbringen.</span>
+                            </p>
+                            <div className="pt-1 border-t border-white/10">
+                                <Link
+                                    href="/so-funktioniert-campuna"
+                                    className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-white hover:text-gold transition-colors group"
+                                >
+                                    <span>Mehr über unsere Mission erfahren</span>
+                                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform text-gold" />
+                                </Link>
                             </div>
                         </div>
-                    </motion.div>
-
-                    {/* 3 Trust Pillars in a Single Balanced Row matching video width */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-6 items-stretch">
-                        {TRUST_PILLARS.map((pillar, index) => {
-                            const Icon = pillar.icon;
-                            return (
-                                <motion.div
-                                    key={pillar.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: index * 0.1, duration: 0.5 }}
-                                    className="bg-white/5 border border-white/10 hover:border-gold/40 p-6 sm:p-7 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between group backdrop-blur-sm"
-                                >
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="p-3 sm:p-3.5 rounded-2xl bg-white/10 text-gold group-hover:bg-gold group-hover:text-forest transition-all duration-300 shrink-0 shadow-inner">
-                                                <Icon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110" />
-                                            </div>
-                                            <span className="font-mono text-xs font-bold text-white/35 group-hover:text-gold transition-colors px-2.5 py-1 rounded-full bg-white/5 border border-white/10">
-                                                {pillar.id}
-                                            </span>
-                                        </div>
-                                        <h3 className="font-display text-lg sm:text-xl font-bold text-white group-hover:text-gold transition-colors">
-                                            {pillar.title}
-                                        </h3>
-                                        <p className="font-sans text-xs sm:text-sm text-white/75 leading-relaxed font-light">
-                                            {pillar.desc}
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
                     </div>
+
                 </div>
             </div>
 
