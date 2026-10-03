@@ -186,11 +186,41 @@ export const fulfillSession = async (session) => {
                 });
             }
 
-            // Update company profile tier
-            await tx.orm.public.CompanyProfile
-                .where({ user_id: userId })
-                .update({ tier: planName })
-                .catch(() => {});
+            // Update company profile tier or convert PRIVATE user to COMMERCIAL
+            const userRec = await tx.orm.public.User.where({ id: userId }).first();
+            if (userRec && userRec.user_type === 'PRIVATE') {
+                await tx.orm.public.User.where({ id: userId }).update({
+                    user_type: 'COMMERCIAL',
+                });
+
+                const privateProf = await tx.orm.public.PrivateProfile.where({ user_id: userId }).first();
+                const compName = (billingDetails && billingDetails.company_name) ||
+                    (privateProf ? `${privateProf.first_name || ''} ${privateProf.last_name || ''}`.trim() : '') ||
+                    userRec.email?.split('@')[0];
+
+                const existingCompanyProf = await tx.orm.public.CompanyProfile.where({ user_id: userId }).first();
+                if (!existingCompanyProf) {
+                    await tx.orm.public.CompanyProfile.create({
+                        user_id: userId,
+                        company_name: compName,
+                        location: privateProf?.location || 'Deutschland',
+                        phone: privateProf?.phone || null,
+                        bio: privateProf?.bio || null,
+                        tier: 'BUSINESS',
+                        is_strategic_partner: false,
+                    });
+                } else {
+                    await tx.orm.public.CompanyProfile.where({ user_id: userId }).update({
+                        tier: 'BUSINESS',
+                        ...(compName ? { company_name: compName } : {}),
+                    });
+                }
+            } else {
+                await tx.orm.public.CompanyProfile
+                    .where({ user_id: userId })
+                    .update({ tier: planName })
+                    .catch(() => { });
+            }
         });
 
         return { success: true, type: 'SUBSCRIPTION', invoiceNumber };

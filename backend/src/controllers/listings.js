@@ -56,26 +56,30 @@ export const createListing = async (req, res) => {
             const userType = req.user.user_type || (await pool.query('SELECT user_type FROM users WHERE id = $1', [id])).rows[0]?.user_type || 'PRIVATE';
             
             if (userType !== 'COMMERCIAL') {
-                // Private user: internal limit is 10 active listings
+                // Private user: internal safeguard capped at 10 active listings (11th listing cannot be published)
                 const PRIVATE_LIMIT = 10;
                 if (activeCount >= PRIVATE_LIMIT) {
                     return res.status(403).json({
                         success: false,
-                        error: 'Veröffentlichung nicht möglich: Ungewöhnlich hohe Inseratsaktivität deutet auf eine gewerbliche Nutzung hin. Bitte erstelle ein gewerbliches Anbieterkonto oder wende dich an unseren Support.',
+                        error: 'Veröffentlichung nicht möglich: Das interne Limit für private Inserate wurde erreicht. Ungewöhnlich hohe Inseratsaktivität deutet auf eine gewerbliche Nutzung hin. Bitte erstelle ein gewerbliches Anbieterkonto oder wende dich an unseren Support.',
                         limit_reached: true,
                         account_type: 'PRIVATE'
                     });
                 }
             } else {
-                // Commercial user: check subscription limits (FREE: 10, BUSINESS: -1 / unlimited)
+                // Commercial user: check subscription limits (FREE: 3, BUSINESS: 25, additional upon request)
                 const features = await getUserFeatures(id);
-                const limit = features.listing_limit; // 10 for FREE, -1 for BUSINESS (unlimited)
+                const limit = features.listing_limit ?? (features.plan_name === 'BUSINESS' ? 25 : 3);
 
                 if (limit !== -1 && activeCount >= limit) {
+                    const isBiz = features.plan_name === 'BUSINESS';
                     return res.status(403).json({
                         success: false,
-                        error: `Du hast das Limit von ${limit} aktiven Inseraten im kostenlosen Firmentarif erreicht. Upgrade auf den Campuna Business Plan, um unbegrenzt Inserate zu veröffentlichen.`,
-                        upgrade_required: true,
+                        error: isBiz
+                            ? `Du hast dein Kontingent von ${limit} aktiven Inseraten im Business-Tarif erreicht. Weitere Inserate sind auf Anfrage möglich – bitte wende dich an unseren Support.`
+                            : `Du hast das Limit von ${limit} aktiven Inseraten im kostenlosen Firmentarif erreicht. Upgrade auf den Campuna Business Plan, um bis zu 25 Inserate zu veröffentlichen.`,
+                        upgrade_required: !isBiz,
+                        limit_reached: true,
                         current_plan: features.plan_name,
                         listing_limit: limit,
                     });

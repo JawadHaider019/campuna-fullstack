@@ -905,6 +905,9 @@ export default function MeinKontoPage() {
         setPendingAvatarFile(null);
         setPendingCoverFile(null);
         setIsEditing(true);
+        if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     };
 
     const handleCancel = () => {
@@ -1294,12 +1297,11 @@ export default function MeinKontoPage() {
 
     // Navigation Items
     const navItems = [
-        ...(isCommercial ? [
+        ...(isCommercial && subDetails.is_business ? [
             {
                 id: 'business_cockpit',
                 label: 'Business Cockpit',
                 icon: LayoutDashboard,
-                badge: !subDetails.is_business ? 'PRO' : null
             }
         ] : []),
         { id: 'dashboard', label: 'Mein Profil', icon: User },
@@ -1863,10 +1865,10 @@ export default function MeinKontoPage() {
                                         transition={{ duration: 0.3, delay: 0.05 }}
                                         className="bg-white rounded-2xl sm:rounded-3xl shadow-xs border border-beige overflow-hidden relative"
                                     >
-                                        {/* Cover Banner for Commercial Users */}
-                                        {isCommercial && (
+                                        {/* Cover Banner for Business Users Only */}
+                                        {isCommercial && subDetails.is_business && (
                                             <div className="relative h-44 sm:h-52 md:h-64 lg:h-72 bg-gradient-to-r from-[#004709] via-[#002204] to-[#040805] overflow-hidden group">
-                                                {(isEditing ? draft?.cover_image_url : profile?.cover_image_url) && subDetails.is_business ? (
+                                                {(isEditing ? draft?.cover_image_url : profile?.cover_image_url) ? (
                                                     <img
                                                         src={getImageUrl(isEditing ? draft?.cover_image_url : profile?.cover_image_url)}
                                                         alt="Cover"
@@ -1875,59 +1877,28 @@ export default function MeinKontoPage() {
                                                 ) : (
                                                     <div className="w-full h-full flex flex-col items-center justify-center text-white/20 relative">
                                                         <Compass className="w-24 h-24 stroke-[1]" />
-                                                        {!subDetails.is_business && (
-                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-                                                                <span className="text-[11px] font-semibold text-sand/80 bg-black/40 backdrop-blur-xs px-3 py-1 rounded-full border border-white/10">
-                                                                    Standard Campuna Banner
-                                                                </span>
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 )}
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
                                                 {isEditing && (
-                                                    subDetails.is_business ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => coverInputRef.current?.click()}
-                                                            className="absolute inset-0 bg-black/40 hover:bg-black/60 transition-colors flex flex-col items-center justify-center gap-1 text-white font-semibold text-xs cursor-pointer z-10"
-                                                        >
-                                                            <Camera className="w-5 h-5 animate-pulse text-gold" />
-                                                            <span>Hintergrundbild ändern</span>
-                                                            <span className="text-[9px] text-white/70">(Max. 5 MB)</span>
-                                                        </button>
-                                                    ) : (
-                                                        <div
-                                                            className="absolute inset-0 bg-black/70 backdrop-blur-xs transition-colors flex flex-col items-center justify-center gap-2 text-white p-4 text-center z-10"
-                                                        >
-                                                            <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold border border-gold/40">
-                                                                <Crown className="w-4 h-4 text-gold" />
-                                                            </div>
-                                                            <div className="space-y-0.5 max-w-sm">
-                                                                <p className="font-bold text-xs text-sand">Individuelles Schaufenster-Cover</p>
-                                                                <p className="text-[11px] text-sand/80 leading-tight">
-                                                                    Exklusiv im <strong className="text-gold font-bold">Business-Tarif (29 €/Monat)</strong> für professionelles Branding.
-                                                                </p>
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => router.push('/abo')}
-                                                                className="mt-1 inline-flex items-center gap-1.5 bg-gold hover:bg-gold-light text-forest font-black text-[11px] uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md transition-all hover:scale-105 cursor-pointer"
-                                                            >
-                                                                <Sparkles className="w-3.5 h-3.5 text-forest" />
-                                                                <span>Jetzt auf Business upgraden</span>
-                                                            </button>
-                                                        </div>
-                                                    )
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => coverInputRef.current?.click()}
+                                                        className="absolute inset-0 bg-black/40 hover:bg-black/60 transition-colors flex flex-col items-center justify-center gap-1 text-white font-semibold text-xs cursor-pointer z-10"
+                                                    >
+                                                        <Camera className="w-5 h-5 animate-pulse text-gold" />
+                                                        <span>Hintergrundbild ändern</span>
+                                                        <span className="text-[9px] text-white/70">(Max. 5 MB)</span>
+                                                    </button>
                                                 )}
 
                                                 <div className="absolute top-4 right-4 z-20 flex items-center gap-2 flex-wrap">
                                                     <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gold text-forest shadow-sm flex items-center gap-1.5">
                                                         <Building2 className="w-3.5 h-3.5" /> Gewerblich
                                                     </span>
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-sm ${subDetails.is_business ? 'bg-forest text-sand border border-gold/30' : 'bg-white text-charcoal'}`}>
-                                                        {subDetails.is_business ? 'Business' : 'Free'}
+                                                    <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider shadow-sm bg-forest text-sand border border-gold/30">
+                                                        Business
                                                     </span>
                                                 </div>
                                             </div>
@@ -2105,9 +2076,6 @@ export default function MeinKontoPage() {
                                                                 <span className="flex items-center gap-1.5">
                                                                     <Mail className="w-3.5 h-3.5 text-gold-dark shrink-0" />
                                                                     <span className="truncate max-w-[200px] sm:max-w-none">{user?.email}</span>
-                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-100 text-emerald-800 shrink-0">
-                                                                        <Check className="w-2.5 h-2.5" /> Verifiziert
-                                                                    </span>
                                                                 </span>
                                                                 {profile?.phone && (
                                                                     <span className="flex items-center gap-1.5">
@@ -2436,74 +2404,98 @@ export default function MeinKontoPage() {
                                                 </div>
                                             )}
 
-                                            {/* Feedback & Wishes Quick Card */}
-                                            <div className="bg-gradient-to-br from-[#faf8f3] via-white to-sand/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-gold/30 hover:border-gold transition-all w-full flex flex-col justify-between group">
-                                                <div>
-                                                    <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                        <div className="flex items-center gap-2.5">
-                                                            <div className="w-9 h-9 rounded-xl bg-gold/20 flex items-center justify-center text-forest group-hover:scale-105 transition-transform">
-                                                                <MessageSquareHeart className="w-4 h-4 text-forest" />
+                                            {/* Action Cards Row: Feedback & Profile Quick Actions */}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 w-full items-stretch">
+                                                {/* Feedback & Wishes Quick Card */}
+                                                <div className="bg-gradient-to-br from-[#faf8f3] via-white to-sand/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-gold/30 hover:border-gold transition-all w-full flex flex-col justify-between group">
+                                                    <div>
+                                                        <div className="flex items-center justify-between pb-3 border-b border-beige">
+                                                            <div className="flex items-center gap-2.5">
+                                                                <div className="w-9 h-9 rounded-xl bg-gold/20 flex items-center justify-center text-forest group-hover:scale-105 transition-transform">
+                                                                    <MessageSquareHeart className="w-4 h-4 text-forest" />
+                                                                </div>
+                                                                <div>
+                                                                    <h3 className="font-bold text-charcoal text-sm flex items-center gap-1.5">
+                                                                        Feedback & Wünsche
+                                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-gold/30 text-forest">Direkt</span>
+                                                                    </h3>
+                                                                    <p className="text-[11px] text-charcoal/50 font-medium">Direkt an die Plattformleitung</p>
+                                                                </div>
                                                             </div>
-                                                            <div>
-                                                                <h3 className="font-bold text-charcoal text-sm flex items-center gap-1.5">
-                                                                    Feedback & Wünsche
-                                                                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-gold/30 text-forest">Direkt</span>
-                                                                </h3>
-                                                                <p className="text-[11px] text-charcoal/50 font-medium">Direkt an die Plattformleitung</p>
-                                                            </div>
+                                                        </div>
+
+                                                        <div className="pt-3">
+                                                            <p className="text-xs text-charcoal/70 leading-relaxed">
+                                                                Ideen für neue Funktionen, Wünsche oder Kritik? Teile uns dein Feedback mit – wir werten jeden Beitrag persönlich aus.
+                                                            </p>
                                                         </div>
                                                     </div>
 
                                                     <div className="pt-3">
-                                                        <p className="text-xs text-charcoal/70 leading-relaxed">
-                                                            Ideen für neue Funktionen, Wünsche oder Kritik? Teile uns dein Feedback mit – wir werten jeden Beitrag persönlich aus.
-                                                        </p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setActiveTab('feedback')}
+                                                            className="w-full py-3 px-4 rounded-xl bg-forest hover:bg-[#004d0a] text-sand text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
+                                                        >
+                                                            <Send className="w-3.5 h-3.5 text-gold" />
+                                                            <span>Feedback einreichen</span>
+                                                        </button>
                                                     </div>
                                                 </div>
 
-                                                <div className="pt-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setActiveTab('feedback')}
-                                                        className="w-full py-3 px-4 rounded-xl bg-forest hover:bg-[#004d0a] text-sand text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95"
-                                                    >
-                                                        <Send className="w-3.5 h-3.5 text-gold" />
-                                                        <span>Feedback einreichen</span>
-                                                    </button>
-                                                </div>
-                                            </div>
+                                                {/* Profile & Personal Data Quick Action */}
+                                                <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-forest/30 transition-all w-full flex flex-col justify-between">
+                                                    <div>
+                                                        <div className="flex items-center justify-between pb-3 border-b border-beige">
+                                                            <div className="flex items-center gap-2.5">
+                                                                <div className="w-9 h-9 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
+                                                                    <User className="w-4 h-4" />
+                                                                </div>
+                                                                <div>
+                                                                    <h3 className="font-bold text-charcoal text-sm">Profil & Stammdaten</h3>
+                                                                    <p className="text-[11px] text-charcoal/50 font-medium">Kontaktdaten & Darstellung anpassen</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
 
-                                            {/* Security & Password Quick Action */}
-                                            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs border border-beige space-y-4 hover:border-forest/30 transition-all w-full flex flex-col justify-between">
-                                                <div>
-                                                    <div className="flex items-center justify-between pb-3 border-b border-beige">
-                                                        <div className="flex items-center gap-2.5">
-                                                            <div className="w-9 h-9 rounded-xl bg-forest/10 flex items-center justify-center text-forest">
-                                                                <Shield className="w-4 h-4" />
-                                                            </div>
-                                                            <div>
-                                                                <h3 className="font-bold text-charcoal text-sm">Sicherheit & Sitzung</h3>
-                                                                <p className="text-[11px] text-charcoal/50 font-medium">Zugangsdaten und Kontosicherheit verwalten</p>
-                                                            </div>
+                                                        <div className="pt-3">
+                                                            <p className="text-xs text-charcoal/60 leading-relaxed">
+                                                                Aktualisiere deine persönlichen Daten, Profilbilder, Kontaktmöglichkeiten und deinen Standort.
+                                                            </p>
                                                         </div>
                                                     </div>
 
                                                     <div className="pt-3">
-                                                        <p className="text-xs text-charcoal/60 leading-relaxed">
-                                                            Passe dein Passwort an oder melde dich sicher von allen Geräten ab.
-                                                        </p>
+                                                        {!isEditing ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleEdit}
+                                                                className="w-full py-3 px-4 rounded-xl bg-forest hover:bg-[#004d0a] text-sand text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm hover:shadow-md group active:scale-95"
+                                                            >
+                                                                <Edit3 className="w-3.5 h-3.5 text-gold group-hover:scale-110 transition-transform" />
+                                                                <span>Profil bearbeiten</span>
+                                                            </button>
+                                                        ) : (
+                                                            <div className="flex items-center gap-2 w-full">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleCancel}
+                                                                    className="flex-1 bg-[#faf8f3] hover:bg-sand border border-beige text-charcoal/70 font-bold text-xs uppercase tracking-wider py-3 px-3 rounded-xl transition-all cursor-pointer active:scale-95 text-center"
+                                                                >
+                                                                    Abbrechen
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleSave}
+                                                                    disabled={saving}
+                                                                    className="flex-1 bg-forest hover:bg-[#004d0a] text-sand font-black text-xs uppercase tracking-wider py-3 px-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 active:scale-95"
+                                                                >
+                                                                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin text-gold" /> : <Save className="w-3.5 h-3.5 text-gold" />}
+                                                                    <span>{saving ? 'Speichern...' : 'Profil aktualisieren'}</span>
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </div>
-
-                                                <div className="pt-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={handleLogout}
-                                                        className="w-full py-3 px-4 rounded-xl border border-beige hover:border-rose-300 bg-[#faf8f3] hover:bg-rose-50 text-xs font-bold text-charcoal/80 hover:text-rose-600 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
-                                                    >
-                                                        <LogOut className="w-3.5 h-3.5 text-rose-500" />
-                                                        <span>Sicher abmelden</span>
-                                                    </button>
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -3490,55 +3482,112 @@ export default function MeinKontoPage() {
                             initial={{ scale: 0.95, y: 20 }}
                             animate={{ scale: 1, y: 0 }}
                             exit={{ scale: 0.95, y: 20 }}
-                            className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-beige p-6 space-y-5 text-center"
+                            className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-beige p-6 sm:p-7 space-y-5 text-left max-h-[90vh] overflow-y-auto"
                         >
-                            <div className="w-14 h-14 rounded-full bg-amber-500/15 text-amber-700 flex items-center justify-center mx-auto">
-                                <AlertTriangle className="w-7 h-7" />
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-gold/30 text-forest flex items-center justify-center shrink-0 border border-gold/40">
+                                    <Sparkles className="w-6 h-6 text-gold-dark" />
+                                </div>
+                                <div>
+                                    <h3 className="font-display font-black text-forest text-lg sm:text-xl">
+                                        {!isCommercial
+                                            ? 'Privates Inserate-Limit erreicht'
+                                            : (!subDetails.is_business
+                                                ? 'Kostenloses Limit erreicht (3 Inserate)'
+                                                : 'Kontingent erreicht (25 Inserate)')}
+                                    </h3>
+                                    <p className="text-xs text-charcoal/60 font-medium">
+                                        {!isCommercial
+                                            ? 'Maximal 10 aktive Inserate im privaten Mitgliederkonto'
+                                            : (!subDetails.is_business
+                                                ? 'Firmen-Basistarif (Free)'
+                                                : 'Business-Tarif (25 Inserate)')}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="font-black text-charcoal text-lg">
-                                    {isCommercial
-                                        ? 'Inserate-Limit erreicht'
-                                        : 'Veröffentlichung nicht möglich'}
-                                </h3>
-                                <p className="text-xs text-charcoal/70 leading-relaxed mt-1">
-                                    {isCommercial
-                                        ? (!subDetails.is_business
-                                            ? 'Du hast das Inserate-Limit im kostenlosen Basistarif erreicht. Mit dem Campuna Business Plan erhältst du maximale Reichweite und professionelle Händler-Tools!'
-                                            : 'Du hast dein aktives Inserate-Kontingent erreicht.')
-                                        : 'Ungewöhnlich hohe Inseratsaktivität deutet auf eine gewerbliche Nutzung hin. Wenn du gewerblich Inserate aufgeben möchtest, erstelle bitte ein gewerbliches Anbieterkonto oder wende dich an unseren Support.'}
-                                </p>
-                            </div>
-                            <div className="flex gap-2">
-                                {isCommercial && !subDetails.is_business ? (
+
+                            <p className="text-xs sm:text-sm text-charcoal/80 leading-relaxed font-sans">
+                                {!isCommercial ? (
+                                    <span>
+                                        Als privates Mitglied kannst du bis zu <strong>10 Inserate gleichzeitig</strong> kostenlos schalten.
+                                        Um mehr Inserate zu veröffentlichen oder gewerblich aufzutreten, wechsle jetzt direkt zum <strong>Campuna Business Plan</strong> – dein Konto wird automatisch umgestellt und du erhältst sofortigen Zugriff auf alle professionellen Händler-Funktionen!
+                                    </span>
+                                ) : !subDetails.is_business ? (
+                                    <span>
+                                        Im kostenlosen Firmentarif sind <strong>3 aktive Inserate</strong> inklusive.
+                                        Erweitere deine Reichweite mit dem <strong>Campuna Business Plan</strong> für bis zu 25 Inserate und maximale Sichtbarkeit.
+                                    </span>
+                                ) : (
+                                    <span>
+                                        Du hast dein volles Kontingent von <strong>25 aktiven Inseraten</strong> ausgeschöpft. Zusätzliche Inserate sind flexibel auf Anfrage verfügbar.
+                                    </span>
+                                )}
+                            </p>
+
+                            {/* Business Features Highlight Box */}
+                            {(!isCommercial || !subDetails.is_business) && (
+                                <div className="bg-[#fcfaf7] border border-gold/30 rounded-2xl p-4 sm:p-5 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[11px] font-black uppercase tracking-wider text-forest">
+                                            Campuna Business Vorteile:
+                                        </span>
+                                        <span className="text-xs font-black text-forest bg-gold/20 px-2.5 py-0.5 rounded-full border border-gold/40">
+                                            29 € / Monat
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-charcoal/80">
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
+                                            <span><strong>Bis zu 25 Inserate</strong> (erweiterbar)</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
+                                            <span><strong>Schaufenster-Cover</strong> & Logo</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
+                                            <span><strong>Direktlinks</strong> (Website, Tel, Socials)</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
+                                            <span><strong>Anbieter-Verzeichnis</strong> Eintrag</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
+                                            <span><strong>Live-Analytics</strong> & Klick-Statistiken</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
+                                            <span><strong>1.000 CC Bonus</strong> (10 € Guthaben)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
+                                {(!isCommercial || !subDetails.is_business) ? (
                                     <button
                                         type="button"
                                         onClick={() => { setLimitModalOpen(false); router.push('/abo/kasse'); }}
-                                        className="flex-1 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-gold/25 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                        className="flex-1 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest py-3.5 px-5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-gold/25 cursor-pointer hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center gap-2"
                                     >
-                                        Auf Business Upgraden
-                                    </button>
-                                ) : !isCommercial ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => { setLimitModalOpen(false); router.push('/registrieren?type=commercial'); }}
-                                        className="flex-1 bg-forest hover:bg-[#004d0a] text-sand py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
-                                    >
-                                        Gewerbekonto erstellen
+                                        <Sparkles className="w-4 h-4 text-forest" />
+                                        <span>Jetzt auf Business upgraden (29 €/Mt.)</span>
                                     </button>
                                 ) : (
                                     <button
                                         type="button"
                                         onClick={() => { setLimitModalOpen(false); setActiveTab('inserate'); }}
-                                        className="flex-1 bg-forest hover:bg-[#004d0a] text-sand py-3 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
+                                        className="flex-1 bg-forest hover:bg-[#004d0a] text-sand py-3.5 px-5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all shadow-md cursor-pointer flex items-center justify-center gap-2"
                                     >
-                                        Inserate verwalten
+                                        <Rocket className="w-4 h-4 text-gold" />
+                                        <span>Inserate verwalten</span>
                                     </button>
                                 )}
                                 <button
                                     type="button"
                                     onClick={() => setLimitModalOpen(false)}
-                                    className="px-4 bg-[#faf8f3] text-charcoal rounded-2xl text-xs font-bold uppercase cursor-pointer border border-beige"
+                                    className="px-5 py-3 bg-[#faf8f3] hover:bg-beige/40 text-charcoal rounded-2xl text-xs font-bold uppercase cursor-pointer border border-beige transition-colors text-center"
                                 >
                                     Schließen
                                 </button>

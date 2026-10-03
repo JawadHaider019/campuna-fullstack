@@ -57,18 +57,19 @@ export const getUserSubscription = async (userId) => {
 export const getUserFeatures = async (userId) => {
     const { subscription, plan } = await getUserSubscription(userId);
     const user = await db.orm.public.User.where({ id: userId }).first().catch(() => null);
+    const isPrivate = user?.user_type === 'PRIVATE';
     const isReferred = !!user?.referred_by_code;
 
-    const planName = plan?.name || 'FREE';
+    const planName = plan?.name || (isPrivate ? 'PRIVATE' : 'FREE');
     const isBusiness = planName === 'BUSINESS';
-    const listingLimit = isBusiness ? -1 : (plan?.listing_limit ?? 10);
+    const listingLimit = isBusiness ? (plan?.listing_limit ?? 25) : (isPrivate ? 10 : (plan?.listing_limit ?? 3));
     const descLimit = isBusiness ? 1000 : (plan?.description_limit ?? 500);
 
     if (!plan) {
-        // Hard fallback — plan table not seeded yet
+        // Hard fallback
         return {
-            plan_name: 'FREE',
-            listing_limit: 10,
+            plan_name: isPrivate ? 'PRIVATE' : 'FREE',
+            listing_limit: isPrivate ? 10 : 3,
             has_cover_image: false,
             has_spotlight: false,
             has_statistics: false,
@@ -77,20 +78,22 @@ export const getUserFeatures = async (userId) => {
             is_referred: isReferred,
             subscription_active: false,
             expires_at: null,
+            is_business: false,
         };
     }
 
     return {
-        plan_name: plan.name,
+        plan_name: isPrivate && !subscription ? 'PRIVATE' : plan.name,
         listing_limit: listingLimit,
-        has_cover_image: plan.has_cover_image,
-        has_spotlight: plan.has_spotlight,
-        has_statistics: plan.has_statistics,
-        has_csv_import: plan.has_csv_import,
+        has_cover_image: isBusiness ? plan.has_cover_image : false,
+        has_spotlight: isBusiness ? plan.has_spotlight : false,
+        has_statistics: isBusiness ? plan.has_statistics : false,
+        has_csv_import: isBusiness ? plan.has_csv_import : false,
         description_limit: descLimit,
         is_referred: isReferred,
         subscription_active: !!subscription,
         expires_at: subscription?.expires_at ?? null,
+        is_business: isBusiness,
     };
 };
 
@@ -315,11 +318,43 @@ export const subscribe = async (req, res) => {
                 });
             }
 
-            // 6. Update company profile tier (for backward compat with CompanyProfile.tier field)
-            await tx.orm.public.CompanyProfile
-                .where({ user_id: userId })
-                .update({ tier: planNameUpper })
-                .catch(() => { }); // Private users have no company profile — ignore
+            // 6. Convert PRIVATE user to COMMERCIAL on BUSINESS subscription & create/update company profile
+            if (planNameUpper === 'BUSINESS') {
+                const userRec = await tx.orm.public.User.where({ id: userId }).first();
+                if (userRec && userRec.user_type === 'PRIVATE') {
+                    await tx.orm.public.User.where({ id: userId }).update({
+                        user_type: 'COMMERCIAL',
+                    });
+
+                    const privateProf = await tx.orm.public.PrivateProfile.where({ user_id: userId }).first();
+                    const compName = billing_details.company_name ||
+                        (privateProf ? `${privateProf.first_name || ''} ${privateProf.last_name || ''}`.trim() : '') ||
+                        userRec.email.split('@')[0];
+
+                    const existingCompanyProf = await tx.orm.public.CompanyProfile.where({ user_id: userId }).first();
+                    if (!existingCompanyProf) {
+                        await tx.orm.public.CompanyProfile.create({
+                            user_id: userId,
+                            company_name: compName,
+                            location: privateProf?.location || 'Deutschland',
+                            phone: privateProf?.phone || null,
+                            bio: privateProf?.bio || null,
+                            tier: 'BUSINESS',
+                            is_strategic_partner: false,
+                        });
+                    } else {
+                        await tx.orm.public.CompanyProfile.where({ user_id: userId }).update({
+                            tier: 'BUSINESS',
+                            ...(compName ? { company_name: compName } : {}),
+                        });
+                    }
+                } else {
+                    await tx.orm.public.CompanyProfile
+                        .where({ user_id: userId })
+                        .update({ tier: planNameUpper })
+                        .catch(() => { });
+                }
+            }
 
             // 7. Calculate new credit balance
             const allTxs = await tx.orm.public.CreditTransaction

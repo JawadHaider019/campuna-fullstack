@@ -720,8 +720,8 @@ export default function ProviderDetails() {
                 <ScrollSectionWrapper delay={0.05}>
                     <section className="bg-white rounded-3xl overflow-hidden border border-forest/10 shadow-lg mb-10 will-change-transform">
 
-                        {/* Cover - Only for Commercial Users */}
-                        {provider.type !== 'Privat' && (
+                        {/* Cover - Only for Commercial Business Users */}
+                        {provider.type !== 'Privat' && provider.isBusiness && (
                             <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-gradient-to-br from-[#0c2e17] via-[#103d20] to-[#041a0b] flex items-center justify-center">
                                 {coverSrc ? (
                                     <img

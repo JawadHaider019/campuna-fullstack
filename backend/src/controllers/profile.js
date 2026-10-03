@@ -120,7 +120,9 @@ export const getMyProfile = async (req, res) => {
             is_referred: !!user?.referred_by_code,
         };
 
-        if (user_type === 'COMMERCIAL') {
+        const effectiveUserType = (user?.user_type || req.user?.user_type || user_type || 'PRIVATE').toUpperCase();
+
+        if (effectiveUserType === 'COMMERCIAL') {
             const rawCpRes = await pool.query('SELECT * FROM company_profiles WHERE user_id = $1', [id]);
             let profile = rawCpRes.rows[0];
 

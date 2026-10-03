@@ -16,7 +16,7 @@ import { toast } from 'react-hot-toast';
 import {
     Check, X, Zap, Star, FileText,
     BarChart2, Loader2, Crown, ArrowRight,
-    AlertTriangle, ChevronDown, Shield, Sparkles, Mail
+    AlertTriangle, ChevronDown, Shield, Sparkles, Mail, Tag
 } from 'lucide-react';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import ScrollSectionWrapper from '@/app/components/ScrollSectionWrapper';
@@ -24,6 +24,7 @@ import ScrollSectionWrapper from '@/app/components/ScrollSectionWrapper';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FEATURE_ROWS = [
+    { key: 'listing_limit', label: 'Aktive Inserate inklusive', icon: Tag, freeValue: 'Bis zu 3 Inserate', bizValue: 'Bis zu 25 Inserate (weitere auf Anfrage)' },
     { key: 'has_statistics', label: 'Performance-Analytics & Telemetrie', icon: BarChart2, freeValue: 'Basis-Statistiken', bizValue: 'Vollständige Live-Analytics & CTR' },
     { key: 'description_limit', label: 'Beschreibungslänge', icon: FileText, freeValue: '500 Zeichen', bizValue: '1.000 Zeichen' },
     { key: 'has_cover_image', label: 'Individuelles Firmen-Cover & Logo', icon: Shield, freeValue: false, bizValue: true },
@@ -55,7 +56,7 @@ const FeatureCheck = React.memo(function FeatureCheck({ value, format }) {
             ? <span className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-forest/10 mx-auto shrink-0"><Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-forest" /></span>
             : <span className="flex items-center justify-center w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-charcoal/5 mx-auto shrink-0"><X className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-charcoal/25" /></span>;
     }
-    return <span className="text-xs sm:text-sm font-semibold text-charcoal font-sans text-center leading-snug whitespace-nowrap px-1">{format ? format(value) : value}</span>;
+    return <span className="text-[11px] sm:text-xs md:text-sm font-semibold text-charcoal font-sans text-center leading-tight sm:leading-snug break-words px-0.5">{format ? format(value) : value}</span>;
 });
 
 // ─── Main Page Component ───────────────────────────────────────────────────────
@@ -387,7 +388,7 @@ export default function AboPage() {
 
                                     <ul className="space-y-3 mb-8">
                                         {[
-                                            'Kostenlose Inserate aufgeben',
+                                            'Bis zu 3 aktive Inserate gleichzeitig',
                                             'Basis-Statistiken (Aufrufe & Merkliste)',
                                             'Firmenprofil (500 Zeichen)',
                                             'Credits mit Empfehlungen (500-1.000 CC)',
@@ -434,6 +435,7 @@ export default function AboPage() {
 
                                     <ul className="space-y-3 mb-8 relative">
                                         {[
+                                            'Bis zu 25 aktive Inserate inklusive (weitere auf Anfrage)',
                                             'Maximale Sichtbarkeit für deine Inserate',
                                             'Echtzeit Performance-Analytics & Live-Telemetrie',
                                             'Professionelles Firmen-Cover & Logo',
@@ -491,32 +493,32 @@ export default function AboPage() {
                                 const freeVal = freeValue !== undefined ? freeValue : (freePlan ? freePlan[key] : undefined);
                                 const bizVal = bizValue !== undefined ? bizValue : (businessPlan ? businessPlan[key] : undefined);
                                 return (
-                                    <div key={key} className="p-4 space-y-2.5">
-                                        <div className="flex items-center gap-2">
+                                    <div key={key} className="p-3.5 sm:p-4 space-y-2.5">
+                                        <div className="flex items-center gap-2 min-w-0">
                                             <div className="w-7 h-7 rounded-lg bg-forest/5 flex items-center justify-center text-forest shrink-0">
                                                 <Icon className="w-3.5 h-3.5" />
                                             </div>
-                                            <span className="font-bold text-xs sm:text-sm text-charcoal font-sans">{label}</span>
+                                            <span className="font-bold text-xs sm:text-sm text-charcoal font-sans truncate">{label}</span>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             {/* Free Box */}
-                                            <div className="bg-sand/30 rounded-xl p-2.5 flex flex-col items-center justify-center text-center border border-beige/40">
-                                                <span className="text-[9px] font-bold uppercase tracking-wider text-charcoal/50 mb-0.5 font-sans">
+                                            <div className="bg-sand/30 rounded-xl p-2 sm:p-2.5 flex flex-col items-center justify-center text-center border border-beige/40 min-w-0">
+                                                <span className="text-[9px] font-bold uppercase tracking-wider text-charcoal/50 mb-0.5 font-sans shrink-0">
                                                     Free
                                                 </span>
-                                                <div className="text-xs font-semibold text-charcoal font-sans min-h-[22px] flex items-center justify-center">
+                                                <div className="text-[11px] sm:text-xs font-semibold text-charcoal font-sans min-h-[22px] flex items-center justify-center w-full">
                                                     {freeVal !== undefined && <FeatureCheck value={freeVal} format={format} />}
                                                 </div>
                                             </div>
                                             {/* Business Box */}
-                                            <div className="bg-forest/[0.04] rounded-xl p-2.5 flex flex-col items-center justify-center text-center border border-forest/20">
-                                                <div className="flex items-center gap-1 mb-0.5">
+                                            <div className="bg-forest/[0.04] rounded-xl p-2 sm:p-2.5 flex flex-col items-center justify-center text-center border border-forest/20 min-w-0">
+                                                <div className="flex items-center gap-1 mb-0.5 shrink-0">
                                                     <span className="text-[9px] font-bold uppercase tracking-wider text-forest font-sans">
                                                         Business
                                                     </span>
-                                                    <Sparkles className="w-2.5 h-2.5 text-gold" />
+                                                    <Sparkles className="w-2.5 h-2.5 text-gold shrink-0" />
                                                 </div>
-                                                <div className="text-xs font-bold text-forest font-sans min-h-[22px] flex items-center justify-center">
+                                                <div className="text-[11px] sm:text-xs font-bold text-forest font-sans min-h-[22px] flex items-center justify-center w-full">
                                                     {bizVal !== undefined && <FeatureCheck value={bizVal} format={format} />}
                                                 </div>
                                             </div>

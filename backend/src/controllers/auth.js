@@ -67,7 +67,12 @@ const generateReferralCode = () =>
  * Issue Access Token (30 days for admin, 7 days for users) + Refresh Token (30 days)
  */
 const generateTokens = (user) => {
-    const payload = { id: user.id, email: user.email, role: user.role };
+    const payload = {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        user_type: user.user_type || 'PRIVATE'
+    };
     const expiresIn = user.role === 'ADMIN' ? '30d' : (process.env.JWT_EXPIRES_IN || '7d');
     const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn });
     const refreshToken = jwt.sign({ id: user.id }, JWT_SECRET + '_refresh', { expiresIn: '30d' });

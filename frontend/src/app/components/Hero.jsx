@@ -68,16 +68,24 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                 <div className="hidden lg:block h-4" />
 
                 {/* Central Content Column */}
-                <div className="text-center max-w-4xl mx-auto my-auto pt-6 pb-4">
-                    {/* Luxury Large Headline with Entrance Reveal */}
+                <div className="text-center max-w-6xl w-full mx-auto my-auto pt-6 pb-4">
+                    {/* Luxury Hero Headline: 2 lines on Desktop/Laptop, 3 lines on Mobile/Tablet */}
                     <motion.h1 
                         initial={{ opacity: 0, y: 25 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-                        className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-white mb-5 leading-tight sm:leading-snug"
+                        className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-[30px] xl:text-[38px] 2xl:text-[44px] font-bold tracking-tight text-white mb-5 leading-tight sm:leading-snug w-full mx-auto"
                     >
-                        <span className="block">Dein Camping-Marktplatz:</span>
-                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1.5 sm:mt-2">
+                        <span className="block lg:whitespace-nowrap">Dein Camping-Marktplatz:</span>
+                        
+                        {/* Mobile & Tablet: Clean 2 additional lines -> 3 lines total */}
+                        <span className="block lg:hidden text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1.5 sm:mt-2">
+                            <span className="block">Wir bringen Camping</span>
+                            <span className="block">an einem Ort zusammen.</span>
+                        </span>
+
+                        {/* Laptop & Desktop: Exactly 1 single line with lg:whitespace-nowrap -> 2 lines total */}
+                        <span className="hidden lg:block text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-2 lg:whitespace-nowrap">
                             Wir bringen Camping an einem Ort zusammen.
                         </span>
                     </motion.h1>

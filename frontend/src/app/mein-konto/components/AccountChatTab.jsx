@@ -177,6 +177,13 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
 
     // ── 3. Load Conversations ───────────────────────────────────────────
     const loadConversations = useCallback(async (showLoading = false) => {
+        const { isLoggedIn, accessToken } = useAuthStore.getState();
+        if (!isLoggedIn || !accessToken) {
+            setIsLoadingList(false);
+            setRefreshing(false);
+            return;
+        }
+
         if (showLoading) setIsLoadingList(true);
         try {
             const res = await getConversations();

@@ -434,6 +434,7 @@ export default function CheckoutBillingPage() {
                             {/* Features list */}
                             <ul className="space-y-2 py-4 pb-5 border-b border-beige/60 text-xs font-sans text-charcoal/75">
                                 {[
+                                    'Bis zu 25 Inserate inklusive (weitere auf Anfrage)',
                                     'Maximale Sichtbarkeit für alle deine Inserate',
                                     'Echtzeit Performance-Analytics & Cockpit-Telemetrie',
                                     'Professionelles Firmen-Cover & Logo',

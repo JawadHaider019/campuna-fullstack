@@ -216,7 +216,7 @@ export default function AccountSubscriptionTab({
                             <ul className="space-y-2.5 pt-3 border-t border-beige text-xs text-charcoal/80 font-sans">
                                 <li className="flex items-center gap-2.5">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                                    <span><strong>Kostenlose Inserate</strong> aufgeben</span>
+                                    <span><strong>Bis zu 3 aktive Inserate</strong> gleichzeitig</span>
                                 </li>
                                 <li className="flex items-center gap-2.5">
                                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -301,6 +301,10 @@ export default function AccountSubscriptionTab({
                             </div>
 
                             <ul className={`space-y-2.5 pt-3 border-t text-xs font-sans ${isBusiness ? 'border-white/15 text-sand/90' : 'border-beige text-charcoal/80'}`}>
+                                <li className="flex items-center gap-2.5">
+                                    <CheckCircle2 className={`w-4 h-4 shrink-0 ${isBusiness ? 'text-gold' : 'text-emerald-600'}`} />
+                                    <span><strong>Bis zu 25 aktive Inserate</strong> (weitere auf Anfrage)</span>
+                                </li>
                                 <li className="flex items-center gap-2.5">
                                     <CheckCircle2 className={`w-4 h-4 shrink-0 ${isBusiness ? 'text-gold' : 'text-emerald-600'}`} />
                                     <span><strong>Maximale Reichweite</strong> für alle deine Inserate</span>
