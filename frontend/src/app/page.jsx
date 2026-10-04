@@ -17,7 +17,28 @@ const organizationSchema = {
   "name": "Campuna",
   "url": "https://campuna.de/",
   "logo": "https://campuna.de/assets/logo/campuna-logo.png",
-  "description": "Campuna ist der Camping-Marktplatz für Deutschland: Wohnmobile, Wohnwagen, Zelte, Zubehör, Stellplätze, Tiny Houses und Camping-Services kaufen und verkaufen.",
+  "description": "Campuna ist Deutschlands Marktplatz für die ganze Camping-Welt: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung, Camping-Services und gewerbliche Anbieter. Kaufen, verkaufen und entdecken an einem Ort.",
+  "slogan": "Wir bringen Camping an einem Ort zusammen.",
+  "areaServed": {
+    "@type": "Country",
+    "name": "Deutschland"
+  },
+  "knowsAbout": [
+    "Wohnmobile",
+    "Wohnwagen",
+    "Camper",
+    "Camping-Zubehör",
+    "Zelte",
+    "Dachzelte",
+    "Stellplätze",
+    "Campingplätze",
+    "Tiny Houses",
+    "Mobilheime",
+    "Boote",
+    "Wassersport",
+    "Vermietung von Campingfahrzeugen",
+    "Camping-Services"
+  ],
   "email": "info@campuna.de",
   "address": {
     "@type": "PostalAddress",
@@ -63,7 +84,7 @@ const faqSchema = {
       "name": "Was ist Campuna?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Campuna ist ein Camping-Marktplatz aus Deutschland, der Angebote, Anbieter und Wissen rund ums Camping an einem Ort bündelt. Du findest hier Wohnmobile, Wohnwagen, Zelte, Zubehör, Stellplätze, Tiny Houses und Camping-Services, von privat und vom Händler. Betrieben wird die Plattform von Campern aus Erfurt."
+        "text": "Campuna ist der Camping-Marktplatz für Deutschland und bündelt die ganze Camping-Welt an einem Ort: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung und Camping-Services. Du kaufst, verkaufst und entdeckst hier Angebote von privat und von gewerblichen Anbietern. Betrieben wird die Plattform von Campern aus Erfurt."
       }
     },
     {

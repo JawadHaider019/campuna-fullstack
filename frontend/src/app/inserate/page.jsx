@@ -1561,16 +1561,22 @@ function ListingsContent() {
                                     ))}
                                 </div>
 
-                                {/* Load More Button */}
+                                {/* Load More Button & Crawler-Safe Pagination Fallback */}
                                 {sortedListings.length > visibleCount && (
-                                    <div className="flex items-center justify-center mt-12">
+                                    <div className="flex flex-col items-center justify-center mt-12 gap-2">
                                         <button
                                             type="button"
                                             onClick={() => setVisibleCount(prev => prev + 12)}
                                             className="bg-forest text-white text-xs font-semibold uppercase tracking-wider py-4 px-10 rounded-full border border-forest/10 shadow-md hover:bg-gold hover:text-forest hover:border-gold hover:shadow-lg active:scale-95 transition-all duration-300 flex items-center gap-2 cursor-pointer font-sans"
                                         >
-                                            Mehr Angebote laden
+                                            Weitere Angebote laden
                                         </button>
+                                        <p className="text-xs text-charcoal/50 font-light">
+                                            Oder blättern:{' '}
+                                            <a href="/inserate?seite=2" className="text-forest hover:text-gold underline font-medium">
+                                                Seite 2 ansehen
+                                            </a>
+                                        </p>
                                     </div>
                                 )}
                             </>

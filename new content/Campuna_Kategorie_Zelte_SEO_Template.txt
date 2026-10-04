@@ -1,0 +1,927 @@
+﻿
+
+I N T E L I T U N E
+
+CAMPUNA
+
+Category Page SEO Template: Zelte & Dachzelte
+
+https://campuna.de/kategorie/zelte-und-dachzelte
+
+Field
+
+Value
+
+Page
+
+Category PLP Zelte & Dachzelte
+
+Positioning
+
+Campuna is Germany&apos;s marketplace for the complete camping ecosystem. This page owns the tents pillar (11% of keyword demand) and links to vehicles, gear and pitches.
+
+Content language
+
+German (de-DE), du-form, no em/en dashes in body copy
+
+Primary keywords
+
+dachzelt (33,100) · zelt kaufen (5,400) · familienzelt (4,400) · vorzelt (3,600) · dachzelt gebraucht (880, KD 17)
+
+Sources
+
+Live Bubble page campuna.de/category/zelte-and-dachzelte · testing.campuna.de/kategorie/zelte-and-dachzelte · Ubersuggest DE (03.10.2026) · master keyword sheet
+
+Template
+
+Same category template as Wohnmobile & Camper (/kategorie/fahrzeuge)
+
+Companion files
+
+campuna-kategorie-zelte-template.html · preview_kategorie_zelte.png
+
+Prepared
+
+Intelitune, 03.10.2026
+
+Instructions in English. Highlighted blocks are final German website copy: copy 1:1, do not translate or rephrase.
+
+
+0. Structure analysis
+
+Live page today (Bubble, to be replaced)
+
+Hero with "Zurück zur Startseite", 7 listing cards, a 3-line text box, "Beliebte Bereiche" and the old footer. No breadcrumb, no subcategories, no count, no FAQ, no schema. The grid shows a SOLD listing ("Verkauft - Ganzjahres - Vorzelt"), three cards without a photo, and prices as "10500,00 €".
+
+Testing build (new site)
+
+Already follows the category template: hero, breadcrumb, 5 chips (Dachzelte, Wurfzelte, Familienzelte, Kuppelzelte, Tunnelzelte), count, grid, SEO text card, FAQ with 2 questions, other categories, footer. Added in this template:
+
+A. Sort dropdown + hidden H2
+
+Hidden H2 "Aktuelle Angebote: Zelte und Dachzelte" above the grid, so card H3s never follow the H1 directly.
+
+B. Pagination fallback
+
+Real <a href="?seite=2"> under the grid, rendered only when total > page size.
+
+C. Beliebte Suchen
+
+10 chips: Dachzelt gebraucht, Hartschalendachzelt, Dachzelt für 4 Personen, Dachzelt-Anhänger, Vorzelt für Wohnwagen, Aufblasbares Vorzelt, Busvorzelt, Hauszelt, Thule, Isabella. Show a chip only when its page is live.
+
+D. SEO text
+
+From 3 plain lines to ~420 words with 5 real H3s, 15 internal links and brand entities (iKamper, Thule, Autohome/Maggiolina, Vickywood, Qeedo, Isabella, Westfield, Berger, DWT, Reimo).
+
+E. Trust strip
+
+Same as all category pages.
+
+F. Ratgeber teaser
+
+3 guides from the Ausrüstung & Zelte hub, incl. the existing post "Dachzelt kaufen Tipps".
+
+G. Sell CTA band
+
+Kostenlos inserieren + So funktioniert&apos;s.
+
+H. FAQ 2 → 5
+
+Kept Dachzelt question (answer corrected), wrote the missing Hartschale answer, added Vorzelt-Umlaufmaß, gebraucht lohnt sich, verkaufen.
+
+I. Chips Vorzelte + Busvorzelte
+
+Users already list awnings in this category (Westfield, Berger). Vorzelt 3,600 + vorzelt wohnwagen 6,600, busvorzelt 1,000 (KD 14). See section 6 for the decision.
+
+Bugs to fix before launch
+
+#
+
+Issue
+
+Fix
+
+Priority
+
+1
+
+Title "Zelte & Dachzelte kaufen & verkaufen | Campuna | Campuna"
+
+Store title without brand; system appends it
+
+High
+
+2
+
+Server HTML: "0 Inserate in dieser Kategorie", cards load via JS
+
+Grid + count server-side (same fix as all categories)
+
+Critical
+
+3
+
+FAQ answer 2 (Hartschale vs Klappdachzelt) not in the HTML
+
+All answers in the DOM
+
+High
+
+4
+
+No JSON-LD
+
+3 blocks from section 5
+
+High
+
+5
+
+Chips without hrefs
+
+Real <a href> to /kategorie/zelte-und-dachzelte/{typ}
+
+High
+
+6
+
+"Fragen & Antworten zu Zelte & Dachzelte"
+
+Dative field: "zu Zelten und Dachzelten"
+
+Medium
+
+7
+
+Live: sold listing still in the grid
+
+Listing status "verkauft" hides the card; never rely on sellers renaming titles
+
+High
+
+8
+
+Live: cards without photo; prices "10500,00 €"
+
+Placeholder image + German price format "10.500 €" (no ",00" for whole euros)
+
+Medium
+
+9
+
+Hero intro on testing = meta description word for word
+
+Use the new intro in 2.1 (unique text)
+
+Low
+
+10
+
+Slug zelte-and-dachzelte (English "and")
+
+zelte-und-dachzelte + 301 (section 6)
+
+Medium
+
+
+1. Meta title + description (copy-paste)
+
+Title 54 chars, description 148 chars. The title leads with Dachzelte (33,100/mo, the biggest term in this category) and adds Vorzelte. If the client keeps Vorzelte in Camping-Zubehör (section 6), use the alternative title.
+
+<title>Dachzelte, Zelte & Vorzelte gebraucht kaufen | Campuna</title>
+
+<meta name="description" content="Dachzelte, Familienzelte, Vorzelte und Busvorzelte gebraucht und neu, von privat und vom Händler aus ganz Deutschland. Jetzt finden oder inserieren.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/zelte-und-dachzelte">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:title" content="Dachzelte, Zelte & Vorzelte gebraucht kaufen | Campuna">
+
+<meta property="og:description" content="Dachzelte, Familienzelte, Vorzelte und Busvorzelte gebraucht und neu, von privat und vom Händler aus ganz Deutschland.">
+
+<meta property="og:url" content="https://campuna.de/kategorie/zelte-und-dachzelte">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-zelte.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+CMS title field (system appends " | Campuna"):
+
+Dachzelte, Zelte & Vorzelte gebraucht kaufen
+
+Alternative title if Vorzelte stay in Camping-Zubehör (44 chars incl. brand):
+
+Dachzelte & Zelte gebraucht kaufen | Campuna
+
+H1 (one, from the testing build):
+
+Zelte und Dachzelte kaufen und verkaufen
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero
+
+Eyebrow: KATEGORIE • ZELTE & DACHZELTE
+
+H1: Zelte und Dachzelte kaufen und verkaufen
+
+Intro: Dachzelte, Familienzelte, Vorzelte und Busvorzelte gebraucht und neu von privaten und gewerblichen Anbietern in ganz Deutschland. Jetzt dein Zelt finden oder kostenlos inserieren auf Campuna.
+
+
+Hero photo as <img> with fetchpriority="high" + preload. Alt: "Dachzelt auf einem Geländewagen und Zelte auf einer Bergwiese".
+
+2.2 Breadcrumb
+
+Startseite › Inserate › Zelte & Dachzelte
+
+2.3 Subcategory chips
+
+Chip
+
+URL
+
+Search demand (DE/mo)
+
+Alle (Anzahl)
+
+current page, no link
+
+category heads
+
+Dachzelte
+
+/kategorie/zelte-und-dachzelte/dachzelte
+
+dachzelt 33,100 · dachzelt kaufen 1,300 · gebraucht 880
+
+Vorzelte (NEW)
+
+/kategorie/zelte-und-dachzelte/vorzelte
+
+vorzelt 3,600 · vorzelt wohnwagen 6,600
+
+Busvorzelte (NEW)
+
+/kategorie/zelte-und-dachzelte/busvorzelte
+
+busvorzelt 1,000 (KD 14)
+
+Familienzelte
+
+/kategorie/zelte-und-dachzelte/familienzelte
+
+familienzelt 4,400 · hauszelt 1,600
+
+Tunnelzelte
+
+/kategorie/zelte-und-dachzelte/tunnelzelte
+
+tunnelzelt
+
+Kuppelzelte
+
+/kategorie/zelte-und-dachzelte/kuppelzelte
+
+kuppelzelt
+
+Wurfzelte
+
+/kategorie/zelte-und-dachzelte/wurfzelte
+
+wurfzelt 8,100 (KD 64, shop-dominated)
+
+
+Chip order follows search demand. Wurfzelte stays (high volume) but last: shops dominate that SERP.
+
+2.4 Results header, grid, pagination
+
+Hidden H2: Aktuelle Angebote: Zelte und Dachzelte
+
+Count: X Inserate in dieser Kategorie  ·  Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend
+
+Button: Weitere Angebote laden  ·  Fallback: Oder blättern: Seite 2 ansehen
+
+
+Card label for price: "Preis" (Zelte are not vehicles, "Kaufpreis" not needed). Badges Hervorgehoben / Privat / Gewerblich. Sold listings never render.
+
+2.5 Beliebte Suchen
+
+Kicker: BELIEBTE SUCHEN  ·  H2: Beliebt bei Zelten und Dachzelten
+
+Chip
+
+URL
+
+Keyword · vol · KD
+
+Dachzelt gebraucht
+
+/dachzelte
+
+dachzelt gebraucht · 880 · 17
+
+Hartschalendachzelt
+
+/hartschalendachzelte
+
+hartschalen dachzelt · 1,900 · 34
+
+Dachzelt für 4 Personen
+
+/dachzelt-4-personen
+
+dachzelt 4 personen · 1,600 · 13
+
+Dachzelt-Anhänger
+
+/dachzelt-anhaenger
+
+dachzelt anhänger · 1,300 · 7
+
+Vorzelt für Wohnwagen
+
+/vorzelte
+
+vorzelt wohnwagen · 6,600 · 19
+
+Aufblasbares Vorzelt
+
+/aufblasbare-vorzelte
+
+vorzelt aufblasbar cluster · ~10,000 · 14–19
+
+Busvorzelt
+
+/busvorzelte
+
+busvorzelt · 1,000 · 14
+
+Hauszelt
+
+/hauszelte
+
+hauszelt · 1,600 · 21
+
+Thule Dachzelt
+
+/thule
+
+brand page
+
+Isabella Vorzelt
+
+/isabella
+
+brand page
+
+
+All URLs relative to /kategorie/zelte-und-dachzelte. Phase-2 pages: show a chip only when its page is live.
+
+2.6 SEO text card (final German copy)
+
+Inside the cream card below the grid. Real H2/H3 headings. Links as in the HTML file (15).
+
+H2: Zelte und Dachzelte auf Campuna kaufen und verkaufen
+
+Campuna ist dein Camping-Marktplatz für Dachzelte, Vorzelte, Familienzelte und alle anderen Zelte. Hier findest du gebrauchte und neue Zelte aus ganz Deutschland, von privat und vom Fachhändler.
+
+Ein gutes Zelt hält viele Jahre, wird aber oft nur an ein paar Wochenenden im Jahr genutzt. Darum lohnt sich der Gebrauchtkauf besonders: Viele Zelte auf Campuna sind neuwertig und deutlich günstiger als im Handel. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du den passenden Dachträger und Campingmöbel, einen freien Stellplatz oder gleich einen Campervan mit dazu.
+
+H3: Dachzelte: Hartschale oder Klappdachzelt?
+
+Ein Dachzelt macht aus deinem Auto, Van oder Anhänger in wenigen Minuten einen Schlafplatz. Hartschalendachzelte öffnen sich per Gasdruckfeder fast von allein, sind windstabil und aerodynamisch. Klappdachzelte aus Stoff sind meist günstiger, bieten mehr Liegefläche und oft einen Anbau. Bekannte Marken sind iKamper, Thule, Autohome mit der Maggiolina, Vickywood und Qeedo. Vor dem Kauf zählt vor allem die zulässige dynamische Dachlast deines Fahrzeugs.
+
+H3: Vorzelte und Busvorzelte
+
+Ein Vorzelt erweitert deinen Wohnwagen um einen geschützten Wohnraum. Klassische Vorzelte mit Gestänge kaufst du nach dem Umlaufmaß, aufblasbare Vorzelte mit Luftschläuchen stehen in wenigen Minuten. Für Campervans und Kastenwagen gibt es Busvorzelte, die frei stehen und beim Wegfahren einfach abgekoppelt werden. Marken wie Isabella, Westfield, Berger, DWT und Reimo findest du hier gebraucht und neu.
+
+H3: Familienzelte, Tunnelzelte und Wurfzelte
+
+Für den Urlaub auf dem Campingplatz sind Familienzelte und Hauszelte mit Stehhöhe und mehreren Schlafkabinen beliebt. Tunnelzelte sind leicht und stabil im Wind, Kuppelzelte stehen frei und sind schnell versetzt. Wurfzelte sind in Sekunden aufgebaut und ideal für Festivals oder ein spontanes Wochenende. Achte auf die Wassersäule: Für den Campingurlaub empfehlen sich beim Außenzelt meist 3.000 mm oder mehr.
+
+H3: Gebraucht kaufen: Darauf solltest du achten
+
+Lass dir das Zelt aufgebaut zeigen oder frag nach Fotos vom aufgebauten Zustand. Prüfe Nähte, Reißverschlüsse und Gestänge und achte auf Stockflecken oder muffigen Geruch, denn beides deutet auf eine feucht eingelagerte Plane hin. Bei Dachzelten zählen außerdem Matratze, Leiter und Montageschienen. Frag nach Rechnung und Zubehör und hol große Zelte am besten persönlich ab. Mehr Tipps findest du im Ratgeber Dachzelt kaufen und auf der Seite Sicher handeln.
+
+H3: Zelt oder Dachzelt verkaufen
+
+Dein Zelt liegt nur noch im Keller oder dein Dachzelt passt nicht aufs neue Auto? Auf Campuna inserierst du privat kostenlos, ohne Provision. Lade Fotos vom aufgebauten Zelt hoch, nenne Maße, Personenzahl und Zustand und lege deinen Preis fest. Interessierte Camper melden sich direkt bei dir. Jetzt kostenlos inserieren.
+
+2.7 Trust strip, Ratgeber, sell band
+
+✓ Direkter Kontakt zwischen Käufer und Verkäufer  ·  ✓ Private Inserate kostenlos, ohne Provision  ·  ✓ Tipps für sicheres Handeln: Sicher handeln lesen
+
+Kicker: RATGEBER  ·  H2: Wissen rund um Zelte und Dachzelte  ·  1) Dachzelt kaufen: Worauf du achten solltest  ·  2) Hartschale oder Klappdachzelt: Welches Dachzelt passt zu dir?  ·  3) Vorzelt aufblasbar oder mit Gestänge: Was ist besser?
+
+Kicker: VERKAUFEN  ·  H2: Du willst dein Zelt oder Dachzelt verkaufen?  ·  Inseriere privat kostenlos und ohne Provision. Camper aus ganz Deutschland melden sich direkt bei dir.  ·  Buttons: Kostenlos inserieren · So funktioniert&apos;s
+
+
+Guide 1 = existing post /post/dachzelt-kaufen-tipps: migrate to /ratgeber/dachzelt-kaufen-tipps with a 301.
+
+2.8 FAQ (visible text = schema text)
+
+Kicker: HÄUFIG GESTELLTE FRAGEN  ·  H2: Fragen & Antworten zu Zelten und Dachzelten
+
+Subline: Wichtige Informationen und Tipps zu Zelten und Dachzelten, kurz beantwortet.
+
+Q1: Passt ein Dachzelt auf jedes Auto?
+
+Nicht auf jedes. Dein Fahrzeug braucht einen passenden Dachträger, und das Dachzelt darf die zulässige dynamische Dachlast nicht überschreiten. Sie liegt meist zwischen 50 und 100 kg und steht in der Betriebsanleitung deines Fahrzeugs. Achte auch auf die Traglast des Dachträgers. Im Stand ist die Belastbarkeit deutlich höher, deshalb kannst du im aufgebauten Zelt schlafen.
+
+Q2: Was ist der Unterschied zwischen Hartschale und Klappdachzelt?
+
+Ein Hartschalendachzelt hat eine feste Schale aus Kunststoff oder Aluminium und öffnet sich meist per Gasdruckfeder in wenigen Sekunden. Es ist windstabil und aerodynamisch, aber teurer. Ein Klappdachzelt aus Stoff wird zur Seite aufgeklappt, bietet mehr Liegefläche und oft einen Anbau, braucht aber etwas länger für den Auf- und Abbau.
+
+Q3: Welches Vorzelt passt zu meinem Wohnwagen?
+
+Entscheidend ist das Umlaufmaß: die Länge der Kederschiene vom Boden über das Dach bis wieder zum Boden. Miss sie an deinem Wohnwagen nach und vergleiche sie mit der Größenangabe des Vorzelts. Bei Busvorzelten für Campervans zählt stattdessen die Anschlusshöhe am Fahrzeug.
+
+Q4: Lohnt sich ein gebrauchtes Zelt?
+
+Oft sogar sehr. Viele Zelte werden nur wenige Wochen im Jahr genutzt und sind entsprechend gut erhalten. Gebraucht sparst du je nach Modell einen großen Teil des Neupreises. Wichtig ist, dass Plane, Nähte und Gestänge intakt sind und das Zelt trocken gelagert wurde.
+
+Q5: Wie verkaufe ich mein Zelt oder Dachzelt auf Campuna?
+
+Erstelle ein kostenloses Konto, wähle die Kategorie Zelte & Dachzelte und den passenden Zelttyp und lade Fotos vom aufgebauten Zelt hoch. Nenne Marke, Maße, Personenzahl und Zustand und lege deinen Preis fest. Private Inserate sind kostenlos, ohne Provision. Große Zelte werden meist abgeholt, kleinere kannst du auch versenden.
+
+
+Q1 changed vs testing: the old answer started with "Ja" and said the roof carries "problemlos mehrere Personen". Not every car can take a roof tent, so the answer now names the conditions (Dachträger, dynamic roof load in the owner&apos;s manual, carrier load).
+
+2.9 Weitere Kategorien + footer
+
+Same as all category pages: 8 cards (current excluded, Wohnmobile & Camper first), subline "Von Fahrzeugen über Ausrüstung und Stellplätze bis zu Vermietung und Services: neun Kategorien, ein Marktplatz.", footer intro with the 03.10.2026 positioning.
+
+
+3. Keyword map
+
+Ubersuggest DE, 03.10.2026. Strong seasonality: dachzelt peaks at 49,500 in July/August, familienzelt at 8,100 in July. Publish and index before March.
+
+Keyword
+
+Vol/mo · KD
+
+Placement
+
+dachzelt
+
+33,100 · 36
+
+Title (first word), H3, chip, SEO text
+
+wurfzelt
+
+8,100 · 64
+
+Chip + SEO text only (shop SERP)
+
+vorzelt wohnwagen / vorzelt
+
+6,600 · 19 / 3,600 · 15
+
+Title, chip, H3 Vorzelte, FAQ Q3
+
+zelt kaufen
+
+5,400 · 41
+
+H1 (Zelte ... kaufen), lead
+
+familienzelt / hauszelt
+
+4,400 · 29 / 1,600 · 21
+
+Chip, H3, Beliebte Suchen
+
+hartschalen dachzelt
+
+1,900 · 34
+
+H3 + FAQ Q2 + chip
+
+dachzelt 4 personen / dachzelt anhänger
+
+1,600 · 13 / 1,300 · 7
+
+Beliebte Suchen (quick wins)
+
+dachzelt kaufen
+
+1,300 · 38
+
+Title, SEO text
+
+busvorzelt
+
+1,000 · 14
+
+Chip, H3, Beliebte Suchen
+
+dachzelt gebraucht
+
+880 · 17
+
+Title (gebraucht kaufen), chip
+
+zelt gebraucht / vorzelt gebraucht
+
+260 · 14 / 170 · 19
+
+Title, FAQ Q4
+
+
+4. Category page rules (same for all 9 categories)
+
+
+Grid, count, SEO text and every FAQ answer server-rendered.
+
+
+Canonical = clean category URL; sort/filter params canonicalise to it; ?seite=2+ self-canonical with "Seite 2" in the title.
+
+
+Chips and Beliebte Suchen = real <a href> links to live pages only.
+
+
+One H1; hidden H2 above the grid; card titles and FAQ questions H3; no headings in header or footer.
+
+
+BreadcrumbList + CollectionPage/ItemList + FAQPage. No Product schema. FAQ schema text = visible text.
+
+
+Sold, test and draft listings never render. Empty category stays indexable with message, CTA and SEO text.
+
+
+German labels and German price format. Copy in du-form without em/en dashes.
+
+
+5. Schema markup (copy-paste JSON-LD)
+
+Extracted 1:1 from the HTML. ItemList items = listings rendered on the page.
+
+5.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Zelte & Dachzelte",
+
+      "item": "https://campuna.de/kategorie/zelte-und-dachzelte"
+
+    }
+
+  ]
+
+}
+
+5.2 CollectionPage + ItemList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorie/zelte-und-dachzelte#collection",
+
+  "url": "https://campuna.de/kategorie/zelte-und-dachzelte",
+
+  "name": "Zelte und Dachzelte kaufen und verkaufen",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 6,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "Dachzelt Qeedo Freedom Slim M Outdoor",
+
+        "url": "https://campuna.de/inserat/dachzelt-qeedo-freedom-slim-m"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Roof Space 2, innovatives Premium-Dachzelt",
+
+        "url": "https://campuna.de/inserat/roof-space-2-premium-dachzelt"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Berger Touring Busvorzelt für Bus, Qek oder kleine Kastenwagen",
+
+        "url": "https://campuna.de/inserat/berger-touring-busvorzelt"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Vorzelt Westfield Pluto 2.0 XL Gr. 9 mit Zubehör",
+
+        "url": "https://campuna.de/inserat/westfield-pluto-2-xl-vorzelt"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 5,
+
+        "name": "Anhänger mit Dachzelt Juskys, Minicamper neu",
+
+        "url": "https://campuna.de/inserat/anhaenger-mit-dachzelt-juskys"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 6,
+
+        "name": "Großes Hauszelt",
+
+        "url": "https://campuna.de/inserat/grosses-hauszelt"
+
+      }
+
+    ]
+
+  }
+
+}
+
+5.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorie/zelte-und-dachzelte#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Passt ein Dachzelt auf jedes Auto?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Nicht auf jedes. Dein Fahrzeug braucht einen passenden Dachträger, und das Dachzelt darf die zulässige dynamische Dachlast nicht überschreiten. Sie liegt meist zwischen 50 und 100 kg und steht in der Betriebsanleitung deines Fahrzeugs. Achte auch auf die Traglast des Dachträgers. Im Stand ist die Belastbarkeit deutlich höher, deshalb kannst du im aufgebauten Zelt schlafen."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was ist der Unterschied zwischen Hartschale und Klappdachzelt?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ein Hartschalendachzelt hat eine feste Schale aus Kunststoff oder Aluminium und öffnet sich meist per Gasdruckfeder in wenigen Sekunden. Es ist windstabil und aerodynamisch, aber teurer. Ein Klappdachzelt aus Stoff wird zur Seite aufgeklappt, bietet mehr Liegefläche und oft einen Anbau, braucht aber etwas länger für den Auf- und Abbau."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welches Vorzelt passt zu meinem Wohnwagen?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Entscheidend ist das Umlaufmaß: die Länge der Kederschiene vom Boden über das Dach bis wieder zum Boden. Miss sie an deinem Wohnwagen nach und vergleiche sie mit der Größenangabe des Vorzelts. Bei Busvorzelten für Campervans zählt stattdessen die Anschlusshöhe am Fahrzeug."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Lohnt sich ein gebrauchtes Zelt?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Oft sogar sehr. Viele Zelte werden nur wenige Wochen im Jahr genutzt und sind entsprechend gut erhalten. Gebraucht sparst du je nach Modell einen großen Teil des Neupreises. Wichtig ist, dass Plane, Nähte und Gestänge intakt sind und das Zelt trocken gelagert wurde."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wie verkaufe ich mein Zelt oder Dachzelt auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Erstelle ein kostenloses Konto, wähle die Kategorie Zelte & Dachzelte und den passenden Zelttyp und lade Fotos vom aufgebauten Zelt hoch. Nenne Marke, Maße, Personenzahl und Zustand und lege deinen Preis fest. Private Inserate sind kostenlos, ohne Provision. Große Zelte werden meist abgeholt, kleinere kannst du auch versenden."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+6. Decisions for the client
+
+6.1 Where do Vorzelte live? (decide once)
+
+Today Vorzelte appear in two places: the earlier Camping-Zubehör template had a "Vorzelte & Markisen" chip, while sellers on the live site list awnings under Zelte & Dachzelte. Two category pages competing for "vorzelt" would split rankings. Pick one home.
+
+Recommendation: Zelte & Dachzelte. Sellers already choose it, searchers treat a Vorzelt as a tent, and the category then owns both big tent clusters (Dachzelt + Vorzelt). Camping-Zubehör keeps "Markisen" and links to the Vorzelte page with one sentence.
+
+
+If the client prefers Zubehör: remove the Vorzelte and Busvorzelte chips and Beliebte-Suchen chips here, use the alternative title (section 1), and keep one cross-link sentence in the SEO text.
+
+6.2 Slug
+
+Old (Bubble)
+
+Testing
+
+Recommended
+
+/category/zelte-and-dachzelte
+
+/kategorie/zelte-and-dachzelte
+
+/kategorie/zelte-und-dachzelte
+
+
+301 both old URLs to the recommended one. Sub-URLs: /kategorie/zelte-und-dachzelte/{typ} and /kategorie/zelte-und-dachzelte/{marke}.
+
+
+7. CMS fields for this category
+
+Field
+
+Value
+
+meta_title (without brand)
+
+Dachzelte, Zelte & Vorzelte gebraucht kaufen
+
+meta_description
+
+Dachzelte, Familienzelte, Vorzelte und Busvorzelte gebraucht und neu, von privat und vom Händler aus ganz Deutschland. Jetzt finden oder inserieren.
+
+eyebrow
+
+Kategorie • Zelte & Dachzelte
+
+h1
+
+Zelte und Dachzelte kaufen und verkaufen
+
+hero_intro
+
+Dachzelte, Familienzelte, Vorzelte und Busvorzelte gebraucht und neu von privaten und gewerblichen Anbietern in ganz Deutschland. Jetzt dein Zelt finden oder kostenlos inserieren auf Campuna.
+
+label_dative
+
+Zelten und Dachzelten
+
+popular_title
+
+Beliebt bei Zelten und Dachzelten
+
+price_label
+
+Preis
+
+seo_text / faq / popular_searches
+
+Sections 2.6 / 2.8 / 2.5
+
+guide_tag
+
+Zelte
+
+sell_headline / sell_target
+
+Du willst dein Zelt oder Dachzelt verkaufen? / /inserat-erstellen
+
+
+8. Pre-launch checklist
+
+
+Title 54, description 148, one H1, no skipped heading levels.
+
+
+View source shows cards, real count, SEO text and all 5 FAQ answers.
+
+
+Rich Results Test: 3 valid blocks; FAQ text identical to visible text.
+
+
+No sold listing in the grid; German price format; no card without image.
+
+
+Chips link to live 200 pages; 301 from /category/zelte-and-dachzelte.
+
+
+Vorzelt decision made and applied in both Zelte and Zubehör.
+
+Verified in the template: title 54, description 148, 1 H1, 0 heading skips, 0 dashes, 3 valid JSON-LD blocks, FAQ match 5/5, SEO text 417 words.
+
+

@@ -1,0 +1,810 @@
+﻿
+
+I N T E L I T U N E
+
+CAMPUNA
+
+Category Page SEO Template: Tiny Houses
+
+https://campuna.de/kategorie/tiny-houses
+
+Field
+
+Value
+
+Page
+
+Category PLP Tiny Houses (incl. Mobilheime, Bauwagen)
+
+Positioning
+
+Campuna is Germany&apos;s marketplace for the complete camping ecosystem. This page owns the tiny houses and Mobilheim pillar, linked to Dauercamping and services.
+
+Content language
+
+German (de-DE), du-form, no em/en dashes in body copy
+
+Primary keywords
+
+tiny house kaufen (33,100, KD 18) · mobilheim kaufen (8,100, KD 33) · tiny house auf rädern (1,900, KD 18) · tiny house kosten (1,900, KD 27)
+
+Sources
+
+Live Bubble page (3 listings) · testing.campuna.de/kategorie/tiny-houses · Ubersuggest DE (03.10.2026) · wohneigentum.nrw · tiny-house-helden.de · verti.de
+
+Companion files
+
+campuna-kategorie-tiny-houses-template.html · preview_kategorie_tiny_houses.png
+
+Prepared
+
+Intelitune, 03.10.2026
+
+Instructions in English. Highlighted blocks are final German website copy: copy 1:1, do not translate or rephrase.
+
+
+0. Strategy and structure analysis
+
+The biggest opportunity on the site
+
+"tiny house kaufen" has 33,100 searches per month at KD 18, flat all year (no season). No other keyword on campuna.de combines this volume with this difficulty. Add "mobilheim kaufen" (8,100, KD 33), "tiny house auf rädern" (1,900, KD 18) and "tiny house kosten" (1,900, KD 27). The live category has only 3 listings from one manufacturer in Gelnhausen. Recommendation for the client: actively onboard Tiny House manufacturers and Mobilheim dealers as commercial providers. Inventory is the bottleneck, not demand.
+
+Changes vs the testing build
+
+A. Title
+
+"Tiny Houses & Mobilheime kaufen" becomes "Tiny House kaufen: neu, gebraucht & Mobilheime". The singular "tiny house kaufen" is the search form (33,100); the plural is not searched that way.
+
+B. Chip "Tiny Houses auf Rädern"
+
+1,900/mo, KD 18. Testing chips Mobilheime, Tiny Houses, Bauwagen stay.
+
+C. Hero intro
+
+Testing promises "minimalistisches Dauerwohnen". Permanent living needs a Baugenehmigung and is generally not allowed on campsites, so the promise is removed; the legal facts are answered in the FAQ.
+
+D. FAQ 1 → 5
+
+Testing Q kept with a sharper answer. New: Baugenehmigung, Kosten, road rules for Tiny Houses auf Rädern, Tiny House vs Mobilheim. All facts sourced.
+
+E. Standard additions
+
+Sort, hidden H2, pagination fallback, Beliebte Suchen (9), SEO text ~360 words with 5 H3s, trust strip, Ratgeber, sell band with "Für Hersteller".
+
+Bugs to fix before launch
+
+#
+
+Issue
+
+Fix
+
+Priority
+
+1
+
+Title "Tiny Houses & Mobilheime kaufen | Campuna | Campuna"
+
+New title, stored without brand
+
+High
+
+2
+
+Server HTML "Alle (0)" / "0 Inserate"; cards via JS
+
+Grid + count server-side
+
+Critical
+
+3
+
+Only 1 FAQ; no JSON-LD
+
+5 FAQs in DOM + 3 schema blocks
+
+High
+
+4
+
+Chips without hrefs
+
+Real <a href> to /kategorie/tiny-houses/{typ}
+
+High
+
+5
+
+Live: prices "52000,00 €"
+
+German format "52.000 €"
+
+Medium
+
+6
+
+Mobilheime listed under Stellplätze (e.g. Imbrock, 65,000 €)
+
+Move to Tiny Houses › Mobilheime
+
+Medium
+
+
+1. Meta title + description (copy-paste)
+
+Title 56 chars, description 151 chars. Slug "tiny-houses" stays.
+
+<title>Tiny House kaufen: neu, gebraucht & Mobilheime | Campuna</title>
+
+<meta name="description" content="Tiny Houses neu und gebraucht, auf Rädern oder fest gebaut, dazu Mobilheime für Campingplatz und Ferienpark. Angebote aus ganz Deutschland vergleichen.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/tiny-houses">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:title" content="Tiny House kaufen: neu, gebraucht & Mobilheime | Campuna">
+
+<meta property="og:description" content="Tiny Houses neu und gebraucht, auf Rädern oder fest gebaut, dazu Mobilheime für Campingplatz und Ferienpark.">
+
+<meta property="og:url" content="https://campuna.de/kategorie/tiny-houses">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-tiny-houses.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+CMS title field (system appends " | Campuna"):
+
+Tiny House kaufen: neu, gebraucht & Mobilheime
+
+H1 (from testing, unchanged):
+
+Tiny Houses und Mobilheime kaufen und verkaufen
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero
+
+Eyebrow: KATEGORIE • TINY HOUSES
+
+H1: Tiny Houses und Mobilheime kaufen und verkaufen
+
+Intro: Tiny Houses neu und gebraucht, auf Rädern oder fest gebaut, dazu Mobilheime, Chalets und Bauwagen von privaten und gewerblichen Anbietern in ganz Deutschland. Finde dein kleines Zuhause oder inseriere kostenlos auf Campuna.
+
+
+Hero <img> alt: "Tiny House aus Holz auf Rädern in einer Wiese".
+
+2.2 Breadcrumb
+
+Startseite › Inserate › Tiny Houses
+
+2.3 Subcategory chips
+
+Chip
+
+URL (under /kategorie/tiny-houses)
+
+Search demand (DE/mo)
+
+Alle (Anzahl)
+
+current page
+
+tiny house kaufen 33,100 · KD 18
+
+Tiny Houses
+
+/tiny-houses
+
+tiny house 90,500 · KD 34
+
+Tiny Houses auf Rädern (NEW)
+
+/tiny-houses-auf-raedern
+
+tiny house auf rädern 1,900 · KD 18
+
+Mobilheime
+
+/mobilheime
+
+mobilheim kaufen 8,100 · KD 33
+
+Bauwagen
+
+/bauwagen
+
+bauwagen kaufen
+
+2.4 Results header, grid, pagination
+
+Hidden H2: Aktuelle Angebote: Tiny Houses und Mobilheime
+
+Count: X Inserate in dieser Kategorie  ·  Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend  ·  Button: Weitere Angebote laden  ·  Fallback: Oder blättern: Seite 2 ansehen
+
+
+Card label "Kaufpreis". Pills: condition + type; "Ganzjährig bewohnbar" or "Winterfest" only when the listing has that attribute (add as listing fields: they feed the feature pages in 2.5).
+
+2.5 Beliebte Suchen
+
+Kicker: BELIEBTE SUCHEN  ·  H2: Beliebt bei Tiny Houses und Mobilheimen
+
+Chip
+
+URL
+
+Keyword · vol · KD
+
+Tiny House auf Rädern
+
+/tiny-houses-auf-raedern
+
+tiny house auf rädern · 1,900 · 18
+
+Tiny House gebraucht
+
+/gebraucht
+
+tiny house gebraucht kaufen · 1,000 · 17 (master) / gebraucht 260 · 20
+
+Tiny House ganzjährig bewohnbar
+
+/ganzjaehrig-bewohnbar
+
+tiny house ganzjährig bewohnbar kaufen · 1,900 · 25 (master)
+
+Tiny House mit Grundstück
+
+/mit-grundstueck
+
+tiny house kaufen mit grundstück · 1,000 · 15 (master)
+
+Mobilheim kaufen
+
+/mobilheime
+
+mobilheim kaufen · 8,100 · 33
+
+Mobilheim gebraucht
+
+/mobilheime-gebraucht
+
+mobilheim gebraucht · 880 · 26 (+ gebraucht kaufen 2,400 · 13 master)
+
+Mobilheim auf dem Campingplatz
+
+/mobilheim-campingplatz
+
+mobilheim auf campingplatz kaufen · 880 · 33
+
+Mobilheim winterfest
+
+/mobilheim-winterfest
+
+mobilheim winterfest · 590 · 9 (master)
+
+Bauwagen
+
+/bauwagen
+
+bauwagen kaufen
+
+
+Feature pages (ganzjährig bewohnbar, mit Grundstück, winterfest) need listing attributes and inventory. Show a chip only when the page is live.
+
+2.6 SEO text card (final German copy)
+
+H2: Tiny Houses und Mobilheime auf Campuna
+
+Campuna ist dein Camping-Marktplatz für Tiny Houses, Mobilheime und Bauwagen. Hier findest du neue und gebrauchte Modelle aus ganz Deutschland, von privat und direkt vom Hersteller.
+
+Kleiner wohnen, näher an der Natur sein oder einen festen Rückzugsort am Wochenende haben: Tiny Houses und Mobilheime erfüllen viele Wünsche. Auf Campuna bieten Hersteller, Händler und Privatleute ihre Häuser direkt an. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du den passenden Dauercampingplatz, Ausstattung oder Transport gleich mit.
+
+H3: Tiny House kaufen: auf Rädern oder fest gebaut
+
+Ein Tiny House auf Rädern steht auf einem Trailer und lässt sich umsetzen, ein fest gebautes Modell bleibt dauerhaft an seinem Standort. Beliebt sind Holzbauweisen aus Lärche oder Fichte, gute Dämmung für das ganze Jahr und clevere Grundrisse mit Schlafebene. Achte im Inserat auf Wohnfläche, Gewicht, Dämmung, Heizung und Anschlüsse für Wasser und Strom.
+
+H3: Was kostet ein Tiny House?
+
+Ein Tiny House kostet in der Regel zwischen 20.000 und 100.000 Euro, je nach Größe, Bauweise und Ausstattung. Dazu kommen Grundstück oder Stellplatz, Erschließung, Transport und Genehmigung. Gebrauchte Tiny Houses und gebrauchte Mobilheime sind oft deutlich günstiger. Auf Campuna vergleichst du neue und gebrauchte Angebote direkt.
+
+H3: Baugenehmigung und Standort
+
+Wer dauerhaft in einem Tiny House wohnen will, braucht in der Regel eine Baugenehmigung, auch für ein Modell auf Rädern. Das Grundstück muss erschlossen sein und der Bebauungsplan muss die Nutzung erlauben. Für Dauerwohnen gelten zusätzlich Anforderungen an Dämmung und Heizung. Kläre den Standort deshalb vor dem Kauf mit dem Bauamt deiner Gemeinde.
+
+H3: Mobilheime auf Campingplatz und Ferienpark
+
+Mobilheime sind größer als die meisten Tiny Houses und stehen meist auf einem Campingplatz oder in einem Ferienpark. Viele Inserate auf Campuna verbinden das Mobilheim mit einem festen Platz. Kläre vor dem Kauf mit dem Betreiber, ob du den Platz übernehmen darfst. Ein Erstwohnsitz ist auf Campingplätzen in Deutschland in der Regel nicht erlaubt.
+
+H3: Tiny House oder Mobilheim verkaufen
+
+Du willst dein Tiny House oder Mobilheim verkaufen? Auf Campuna inserierst du privat kostenlos, ohne Provision. Zeig Fotos von innen und außen und nenne Wohnfläche, Baujahr, Dämmung und Standort. Hersteller und Händler präsentieren ihre Modelle mit einem eigenen Anbieterprofil. Jetzt kostenlos inserieren.
+
+
+Fact basis (checked 03.10.2026): price range 20,000 to 100,000 € (verti.de, updated 29.01.2025); Baugenehmigung also for Tiny Houses on wheels when used for living, Erschließung + Bebauungsplan, energy rules for permanent living (wohneigentum.nrw); no Erstwohnsitz on campsites as a rule (BVCD).
+
+2.7 Trust strip, Ratgeber, sell band
+
+✓ Direkter Kontakt zu Herstellern und Privatverkäufern  ·  ✓ Private Inserate kostenlos, ohne Provision  ·  ✓ Tipps für sicheres Handeln: Sicher handeln lesen
+
+Kicker: RATGEBER  ·  H2: Wissen rund um Tiny Houses und Mobilheime  ·  1) Tiny House kaufen: Kosten, Baugenehmigung und Standort  ·  2) Tiny House oder Mobilheim: Was passt zu dir?  ·  3) Mobilheim auf dem Campingplatz kaufen: Das musst du wissen
+
+Kicker: VERKAUFEN  ·  H2: Du willst dein Tiny House oder Mobilheim verkaufen?  ·  Private Inserate sind kostenlos und ohne Provision. Hersteller und Händler präsentieren ihre Modelle mit einem Anbieterprofil.  ·  Buttons: Kostenlos inserieren · Für Hersteller (/abo)
+
+
+Guide 1 targets "tiny house kosten" (1,900) and "tiny house baugenehmigung" (480, KD 10): high priority in the Tiny House & Mobilheim hub of the 60-blog plan.
+
+2.8 FAQ (visible text = schema text)
+
+Kicker: HÄUFIG GESTELLTE FRAGEN  ·  H2: Fragen & Antworten zu Tiny Houses und Mobilheimen
+
+Subline: Wichtige Informationen zu Kosten, Genehmigung und Transport, kurz beantwortet.
+
+Q1: Sind die angebotenen Tiny Houses ganzjährig bewohnbar?
+
+Viele Modelle sind winterfest gedämmt und haben eine Heizung, aber nicht alle. Achte im Inserat auf Angaben zu Dämmung, Heizung und frostsicheren Wasserleitungen. Ob du dauerhaft darin wohnen darfst, hängt außerdem vom Standort und der Baugenehmigung ab.
+
+Q2: Brauche ich für ein Tiny House eine Baugenehmigung?
+
+In den meisten Fällen ja. Sobald ein Tiny House dauerhaft an einem Ort steht und zum Wohnen genutzt wird, gilt es baurechtlich als Gebäude, auch wenn es Räder hat. Das Grundstück muss erschlossen sein und der Bebauungsplan muss die Nutzung erlauben. Frag vor dem Kauf beim Bauamt deiner Gemeinde nach.
+
+Q3: Was kostet ein Tiny House?
+
+In der Regel zwischen 20.000 und 100.000 Euro, je nach Größe, Bauweise und Ausstattung. Dazu kommen Grundstück oder Stellplatz, Erschließung, Transport und Genehmigung. Gebrauchte Tiny Houses und Mobilheime sind oft deutlich günstiger, auf Campuna vergleichst du neue und gebrauchte Modelle direkt.
+
+Q4: Darf ein Tiny House auf Rädern auf die Straße?
+
+Ja, wenn es als Anhänger zugelassen ist und die Grenzen einhält: höchstens 2,55 Meter breit und 4 Meter hoch. Bis 3,5 Tonnen Gesamtgewicht reicht für das Gespann meist der Führerschein Klasse BE. Schwerere Modelle brauchen die Klasse C1E oder werden von einer Spedition transportiert.
+
+Q5: Was ist der Unterschied zwischen Tiny House und Mobilheim?
+
+Ein Tiny House ist meist kleiner, oft auf einem Trailer gebaut und für ein eigenes Grundstück gedacht. Ein Mobilheim ist größer und breiter, wird per Tieflader geliefert und steht meist auf einem Campingplatz oder in einem Ferienpark. Dort dient es in der Regel der Freizeit und nicht als Erstwohnsitz.
+
+
+Q4 fact basis: road-legal limits 2.55 m width, 4 m height, 3.5 t total with BE licence, heavier needs C1E (tiny-house-helden.de). Q1 changed vs testing: "Details zur Baugenehmigung findest du in der jeweiligen Anzeige" pushed a legal question to sellers; the new answer gives the rule.
+
+2.9 Weitere Kategorien + footer
+
+Same as all category pages (8 cards, Wohnmobile & Camper first; footer intro with the 03.10.2026 positioning).
+
+
+3. Keyword map
+
+Ubersuggest DE 03.10.2026 + master sheet. Demand is flat across the year.
+
+Keyword
+
+Vol/mo · KD
+
+Placement
+
+tiny house
+
+90,500 · 34
+
+H1, chips, SEO text (informational head)
+
+tiny house kaufen
+
+33,100 · 18
+
+Title (exact, first), H3, FAQ
+
+mobilheim kaufen
+
+8,100 · 33
+
+Title, H1, chip, H3
+
+tiny house auf rädern
+
+1,900 · 18
+
+Chip, H3, FAQ Q4
+
+tiny house kosten
+
+1,900 · 27
+
+H3, FAQ Q3
+
+tiny house ganzjährig bewohnbar kaufen (master)
+
+1,900 · 25
+
+FAQ Q1, Beliebte Suchen
+
+mobilheim gebraucht / gebraucht kaufen (master)
+
+880 · 26 / 2,400 · 13
+
+Beliebte Suchen, H3
+
+mobilheim auf campingplatz kaufen
+
+880 · 33
+
+H3, Beliebte Suchen
+
+tiny house baugenehmigung
+
+480 · 10
+
+H3, FAQ Q2
+
+tiny house gebraucht
+
+260 · 20
+
+Title (gebraucht), Beliebte Suchen
+
+
+4. Category page rules (same for all 9 categories)
+
+
+Grid, count, SEO text and every FAQ answer server-rendered.
+
+
+Canonical = clean category URL; sort/filter params canonicalise to it; ?seite=2+ self-canonical with "Seite 2" in the title.
+
+
+Chips and Beliebte Suchen = real <a href> links to live pages only.
+
+
+One H1; hidden H2 above the grid; card titles and FAQ questions H3; no headings in header or footer.
+
+
+BreadcrumbList + CollectionPage/ItemList + FAQPage. No Product schema. FAQ schema text = visible text.
+
+
+Sold, test and draft listings never render. Empty category stays indexable with message, CTA and SEO text.
+
+
+German labels and German price format. Copy in du-form without em/en dashes.
+
+
+5. Schema markup (copy-paste JSON-LD)
+
+Extracted 1:1 from the HTML. ItemList items = listings rendered on the page. Manufacturers get LocalBusiness on /anbieter/{name}.
+
+5.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Tiny Houses",
+
+      "item": "https://campuna.de/kategorie/tiny-houses"
+
+    }
+
+  ]
+
+}
+
+5.2 CollectionPage + ItemList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorie/tiny-houses#collection",
+
+  "url": "https://campuna.de/kategorie/tiny-houses",
+
+  "name": "Tiny Houses und Mobilheime kaufen und verkaufen",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 4,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "Tiny House: flexibel, modern und vielseitig",
+
+        "url": "https://campuna.de/inserat/tiny-house-flexibel-modern-vielseitig"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Tiny House: hochwertig, modern und ganzjährig bewohnbar",
+
+        "url": "https://campuna.de/inserat/tiny-house-hochwertig-ganzjaehrig"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Tiny House für 4 bis 6 Personen aus Lärche und Fichte",
+
+        "url": "https://campuna.de/inserat/tiny-house-4-6-personen-laerche-fichte"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Mobilheim auf dem Campingplatz Imbrock",
+
+        "url": "https://campuna.de/inserat/mobilheim-campingplatz-imbrock"
+
+      }
+
+    ]
+
+  }
+
+}
+
+5.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorie/tiny-houses#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Sind die angebotenen Tiny Houses ganzjährig bewohnbar?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Viele Modelle sind winterfest gedämmt und haben eine Heizung, aber nicht alle. Achte im Inserat auf Angaben zu Dämmung, Heizung und frostsicheren Wasserleitungen. Ob du dauerhaft darin wohnen darfst, hängt außerdem vom Standort und der Baugenehmigung ab."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Brauche ich für ein Tiny House eine Baugenehmigung?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "In den meisten Fällen ja. Sobald ein Tiny House dauerhaft an einem Ort steht und zum Wohnen genutzt wird, gilt es baurechtlich als Gebäude, auch wenn es Räder hat. Das Grundstück muss erschlossen sein und der Bebauungsplan muss die Nutzung erlauben. Frag vor dem Kauf beim Bauamt deiner Gemeinde nach."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was kostet ein Tiny House?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "In der Regel zwischen 20.000 und 100.000 Euro, je nach Größe, Bauweise und Ausstattung. Dazu kommen Grundstück oder Stellplatz, Erschließung, Transport und Genehmigung. Gebrauchte Tiny Houses und Mobilheime sind oft deutlich günstiger, auf Campuna vergleichst du neue und gebrauchte Modelle direkt."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Darf ein Tiny House auf Rädern auf die Straße?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ja, wenn es als Anhänger zugelassen ist und die Grenzen einhält: höchstens 2,55 Meter breit und 4 Meter hoch. Bis 3,5 Tonnen Gesamtgewicht reicht für das Gespann meist der Führerschein Klasse BE. Schwerere Modelle brauchen die Klasse C1E oder werden von einer Spedition transportiert."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was ist der Unterschied zwischen Tiny House und Mobilheim?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ein Tiny House ist meist kleiner, oft auf einem Trailer gebaut und für ein eigenes Grundstück gedacht. Ein Mobilheim ist größer und breiter, wird per Tieflader geliefert und steht meist auf einem Campingplatz oder in einem Ferienpark. Dort dient es in der Regel der Freizeit und nicht als Erstwohnsitz."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+6. URL, category fit and growth
+
+Old (Bubble)
+
+Testing
+
+Recommended
+
+/category/tiny-houses
+
+/kategorie/tiny-houses
+
+keep /kategorie/tiny-houses
+
+
+301 the old Bubble URL. Sub-URLs /kategorie/tiny-houses/{typ}.
+
+
+Mobilheime currently listed in Stellplätze & Campingplätze move here; the Stellplätze page links to /kategorie/tiny-houses/mobilheime.
+
+
+Growth lever: onboard Tiny House manufacturers and Mobilheim dealers (provider profiles + several models each). With 33,100 searches per month and KD 18, inventory decides how fast this page converts traffic.
+
+
+7. CMS fields for this category
+
+Field
+
+Value
+
+meta_title (without brand)
+
+Tiny House kaufen: neu, gebraucht & Mobilheime
+
+meta_description
+
+Tiny Houses neu und gebraucht, auf Rädern oder fest gebaut, dazu Mobilheime für Campingplatz und Ferienpark. Angebote aus ganz Deutschland vergleichen.
+
+eyebrow
+
+Kategorie • Tiny Houses
+
+h1
+
+Tiny Houses und Mobilheime kaufen und verkaufen
+
+hero_intro
+
+Tiny Houses neu und gebraucht, auf Rädern oder fest gebaut, dazu Mobilheime, Chalets und Bauwagen von privaten und gewerblichen Anbietern in ganz Deutschland. Finde dein kleines Zuhause oder inseriere kostenlos auf Campuna.
+
+label_dative
+
+Tiny Houses und Mobilheimen
+
+popular_title
+
+Beliebt bei Tiny Houses und Mobilheimen
+
+price_label
+
+Kaufpreis
+
+listing attributes (new)
+
+ganzjährig bewohnbar · winterfest · auf Rädern · mit Grundstück · mit Stellplatz
+
+seo_text / faq / popular_searches
+
+Sections 2.6 / 2.8 / 2.5
+
+guide_tag
+
+Tiny House
+
+sell_headline / sell_target
+
+Du willst dein Tiny House oder Mobilheim verkaufen? / /inserat-erstellen + /abo
+
+
+8. Pre-launch checklist
+
+
+Title 56, description 151, one H1, no skipped heading levels.
+
+
+View source shows cards, real count, SEO text and all 5 FAQ answers.
+
+
+Rich Results Test: 3 valid blocks; FAQ text identical to visible text.
+
+
+Mobilheime moved from Stellplätze; German price format.
+
+
+Listing attributes for feature pages available in the listing form.
+
+
+Legal and price facts re-checked before launch.
+
+Verified in the template: title 56, description 151, 1 H1, 0 heading skips, 0 dashes, 3 valid JSON-LD blocks, FAQ match 5/5, SEO text 362 words.
+
+

@@ -1,0 +1,894 @@
+﻿
+
+I N T E L I T U N E
+
+CAMPUNA
+
+Category Page SEO Template: Boote & Wassersport
+
+https://campuna.de/kategorie/boote-wassersport
+
+Field
+
+Value
+
+Page
+
+Category PLP Boote & Wassersport
+
+Positioning
+
+Campuna is Germany&apos;s marketplace for the complete camping ecosystem; boats, docks and water sports are part of it (buy and sell focus).
+
+Content language
+
+German (de-DE), du-form, no em/en dashes in body copy
+
+Target keywords
+
+boot kaufen (18,100, KD 39, peak 40,500 in Aug) · boot gebraucht kaufen (5,400, KD 42) · motorboot gebraucht (2,400, KD 34) · bootssteg (1,600, KD 20) · bootsanhänger (1,300, KD 26)
+
+Quick wins
+
+bootssteg (KD 20) · schwimmsteg kaufen (140, KD 9) · kajak gebraucht (590, KD 13) · sup board gebraucht (480, KD 19)
+
+Sources
+
+Live Bubble page (5 listings) · testing.campuna.de/kategorie/boote-wassersport · Ubersuggest DE (03.10.2026) · master keyword sheet · bussgeldkatalog.org (license-free limits) · DVGW G 608 providers · Untere Wasserbehörde Oder-Spree (dock permits)
+
+Companion files
+
+campuna-kategorie-boote-template.html · preview_kategorie_boote.png
+
+Prepared
+
+Intelitune, 03.10.2026
+
+Instructions in English. Highlighted blocks are final German website copy: copy 1:1, do not translate or rephrase.
+
+
+0. Strategy and structure analysis
+
+How this page fits the strategy
+
+Boats are a buy-and-sell category with a strong head term and clear seasonality. Inventory today is small and skewed: 3 of 5 listings are docks from one provider in Teltow, plus 1 motorboat and 1 inflatable. The page is built for both: the head term for growth, the dock terms for quick wins that match current stock.
+
+
+"boot kaufen" 18,100/mo (KD 39) peaks at 40,500 in August. Publish and fill inventory before spring so the page has history when demand rises.
+
+
+Docks: "bootssteg" 1,600 (KD 20, peak 2,900 Jul/Aug), "schwimmsteg kaufen" 140 (KD 9). Matches 3 live listings. New chip "Bootsstege & Schwimmstege", own H3 and FAQ.
+
+
+"motorboot gebraucht" 2,400 and "boot gebraucht kaufen" 5,400 go to the motorboat chip, the first H3 and Beliebte Suchen.
+
+
+Long tails with low KD: kajak gebraucht (590, KD 13), sup board gebraucht (480, KD 19), bootsanhänger gebraucht (390, KD 23).
+
+
+Cross-ecosystem: Stellplätze (pitches by the water), Zubehör, Wohnmobile (tow vehicle), Camping-Services (Gasprüfung for boats, G 608).
+
+
+Supply: onboard boat dealers and dock builders via /abo. One provider holding 60% of the grid is a thin signal for Google and users.
+
+Changes vs the testing build
+
+A. Title and H1
+
+Title "Boote & Wassersport kaufen & verkaufen" becomes "Boot kaufen: Motorboote, Schlauchboote & Stege" (head term first). H1 "Boote und Wassersport kaufen und verkaufen" becomes "Boote, Stege und Wassersport kaufen und verkaufen".
+
+B. Chips
+
+Testing 6 stay (Motorboote, Segelboote, Schlauchboote, Kajaks & SUPs, Wassersportausrüstung, Zubehör & Sonstiges). NEW: "Bootsstege & Schwimmstege" and "Bootsanhänger".
+
+C. Pills
+
+Boat type + condition in German ("Wie neu", "Neu", "Gut"). Optional attribute pill "Führerscheinfrei" for boats up to 15 PS.
+
+D. Price format
+
+Live "21900,00 €" becomes "21.900 €". price_type: Kaufpreis (private), Preis or Festpreis (commercial).
+
+E. Standard additions
+
+Sort, hidden H2, pagination fallback, Beliebte Suchen (8), SEO text with 5 H3s, trust strip, Ratgeber, sell band, FAQ 1 → 5.
+
+Bugs to fix before launch
+
+#
+
+Issue
+
+Fix
+
+Priority
+
+1
+
+Title "Boote & Wassersport kaufen & verkaufen | Campuna | Campuna"
+
+New title, stored without brand
+
+High
+
+2
+
+Server HTML "0 Inserate"; cards via JS
+
+Grid + count server-side
+
+Critical
+
+3
+
+Only 1 FAQ; no JSON-LD; chips without hrefs
+
+5 FAQs in DOM, 3 schema blocks, real <a href> chips
+
+High
+
+4
+
+Price "21900,00 €"
+
+Format "21.900 €"
+
+Medium
+
+5
+
+"Fragen & Antworten zu Boote & Wassersport" (grammar)
+
+Dative label: "zu Booten und Wassersport"
+
+Medium
+
+6
+
+Testing FAQ 1 has no exceptions (Rhein, Bodensee, lakes without combustion engines)
+
+Replaced by FAQ 1 with the exceptions
+
+Low
+
+7
+
+3 of 5 listings from one provider
+
+Onboard more dealers; optional: max 2 cards per provider in the first row
+
+Low
+
+
+1. Meta title + description (copy-paste)
+
+Title 56 chars, description 145 chars. Slug "boote-wassersport" stays.
+
+<title>Boot kaufen: Motorboote, Schlauchboote & Stege | Campuna</title>
+
+<meta name="description" content="Gebrauchte und neue Boote kaufen und verkaufen: Motorboote, Schlauchboote, Kajaks, SUPs, Bootsstege und Bootsanhänger von privat und vom Händler.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/boote-wassersport">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:title" content="Boot kaufen: Motorboote, Schlauchboote & Stege | Campuna">
+
+<meta property="og:description" content="Motorboote, Schlauchboote, Kajaks, SUPs und Bootsstege von privat und vom Händler kaufen oder dein Boot kostenlos verkaufen.">
+
+<meta property="og:url" content="https://campuna.de/kategorie/boote-wassersport">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-boote.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+CMS title field (system appends " | Campuna"):
+
+Boot kaufen: Motorboote, Schlauchboote & Stege
+
+H1:
+
+Boote, Stege und Wassersport kaufen und verkaufen
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero
+
+Eyebrow: KATEGORIE • BOOTE & WASSERSPORT
+
+H1: Boote, Stege und Wassersport kaufen und verkaufen
+
+Intro: Motorboote, Segelboote, Schlauchboote, Kajaks und SUPs von privat und vom Händler, dazu Bootsstege, Bootsanhänger und Zubehör für deine Zeit am Wasser. Ob Angelboot für den See oder Badesteg für dein Ufergrundstück: Hier findest du dein nächstes Boot oder verkaufst deins kostenlos.
+
+
+Hero <img> alt: "Motorboot an einem Schwimmsteg auf einem See".
+
+2.2 Breadcrumb
+
+Startseite › Inserate › Boote & Wassersport
+
+2.3 Subcategory chips
+
+Chip
+
+URL (under /kategorie/boote-wassersport)
+
+Search demand (DE/mo)
+
+Alle (Anzahl)
+
+current page
+
+category
+
+Motorboote
+
+/motorboote
+
+motorboot gebraucht 2,400 · KD 34
+
+Segelboote
+
+/segelboote
+
+long tail
+
+Schlauchboote
+
+/schlauchboote
+
+schlauchboot gebraucht 590 · KD 36
+
+Kajaks & SUPs
+
+/kajaks-sups
+
+kajak gebraucht 590 · KD 13; sup board gebraucht 480 · KD 19
+
+Bootsstege & Schwimmstege (NEW)
+
+/bootsstege
+
+bootssteg 1,600 · KD 20
+
+Bootsanhänger (NEW)
+
+/bootsanhaenger
+
+bootsanhänger 1,300 · KD 26
+
+Wassersportausrüstung
+
+/wassersportausruestung
+
+long tail
+
+Zubehör & Sonstiges
+
+/zubehoer
+
+long tail
+
+2.4 Results header, grid, pagination
+
+Hidden H2: Aktuelle Angebote: Boote, Stege und Wassersport
+
+Count: X Inserate in dieser Kategorie  ·  Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend  ·  Button: Weitere Angebote laden  ·  Fallback: Oder blättern: Seite 2 ansehen
+
+2.5 Beliebte Suchen
+
+Kicker: BELIEBTE SUCHEN  ·  H2: Beliebt bei Booten und Wassersport
+
+Chip
+
+URL
+
+Keyword · vol · KD
+
+Boot gebraucht kaufen
+
+/gebraucht
+
+boot gebraucht kaufen · 5,400 · 42
+
+Motorboot gebraucht
+
+/motorboote
+
+motorboot gebraucht · 2,400 · 34
+
+Führerscheinfreie Boote
+
+/fuehrerscheinfrei
+
+führerscheinfreies boot kaufen · 40 (topic interest, FAQ 1)
+
+Bootssteg kaufen
+
+/bootsstege
+
+bootssteg · 1,600 · 20
+
+Schwimmsteg kaufen
+
+/bootsstege/schwimmsteg
+
+schwimmsteg kaufen · 140 · 9
+
+Bootsanhänger gebraucht
+
+/bootsanhaenger
+
+bootsanhänger gebraucht · 390 · 23
+
+Schlauchboot mit Motor
+
+/schlauchboote
+
+motor schlauchboot gebraucht · 590 · 36
+
+Kajak und SUP gebraucht
+
+/kajaks-sups
+
+kajak gebraucht · 590 · 13
+
+
+Show a chip only when its page is live; otherwise hide it.
+
+2.6 SEO text card (final German copy)
+
+H2: Boote und Wassersport auf Campuna
+
+Campuna ist dein Marktplatz für die ganze Camping-Welt, und dazu gehört auch das Wasser. Hier kaufst und verkaufst du Boote, Bootsstege und Wassersportausrüstung von privat und vom Händler aus ganz Deutschland.
+
+Viele Camper haben ein Schlauchboot, ein Kajak oder ein SUP im Gepäck, andere suchen ein Motorboot für den Urlaub am See oder einen Badesteg für das eigene Ufergrundstück. Auf Campuna findest du alles an einem Ort, dazu den passenden Stellplatz am Wasser, Camping-Zubehör und das Wohnmobil als Zugfahrzeug.
+
+H3: Boot gebraucht kaufen: Motorboot, Segelboot oder Schlauchboot
+
+Ein gebrauchtes Motorboot ist der Klassiker für Seen und Flüsse, ein Segelboot ist ideal für alle, die es ruhiger mögen. Schlauchboote sind leicht, passen zusammengelegt in den Kofferraum und fahren schon mit einem kleinen Außenborder. Vergleiche Baujahr, Motorleistung, Länge und Ausstattung direkt in den Inseraten und schreib Verkäufern ohne Umweg.
+
+H3: Führerscheinfreie Boote
+
+Für Boote mit Muskelkraft und Motorboote bis 15 PS brauchst du auf den meisten deutschen Gewässern keinen Sportbootführerschein. Auf dem Rhein und dem Bodensee gelten strengere Grenzen, und manche Seen erlauben gar keine Verbrennungsmotoren. Willst du ein führerscheinfreies Boot kaufen, prüfe vorher die Regeln deines Reviers.
+
+H3: Bootsstege und Schwimmstege
+
+Ein Bootssteg macht dein Ufergrundstück erst richtig nutzbar, als Anleger für dein Boot oder als Badesteg. Schwimmstege aus Modulen lassen sich in Länge und Breite flexibel zusammenstellen und heben und senken sich mit dem Wasserstand. Kläre vor dem Kauf die Genehmigung mit der Unteren Wasserbehörde und frag den Anbieter nach Tragfähigkeit und Verankerung.
+
+H3: Kajaks, SUPs und Wassersportausrüstung
+
+Kajaks und SUP-Boards sind der einfachste Weg aufs Wasser und passen auf jeden Campingtrip. Dazu findest du Wassersportausrüstung wie Schwimmwesten, Paddel und Neoprenanzüge. Gebrauchte Boards und Kajaks sind oft kaum genutzt und deutlich günstiger als neu.
+
+H3: Darauf solltest du beim Bootskauf achten
+
+Prüfe den Rumpf auf Risse und Osmose, lass dir Motorstunden und Wartungsnachweise zeigen und mach eine Probefahrt. Hat das Boot eine Gasanlage, verlangen viele Häfen eine gültige Gasprüfung nach G 608. Für den Transport brauchst du einen passenden Bootsanhänger und je nach Gewicht des Gespanns den Führerschein BE oder die Schlüsselzahl B96. Mehr Tipps findest du auf der Seite Sicher handeln.
+
+2.7 Trust strip, Ratgeber, sell band
+
+✓ Direkter Kontakt zwischen Käufer und Verkäufer  ·  ✓ Private Inserate kostenlos, ohne Provision  ·  ✓ Tipps für sicheres Handeln: Sicher handeln lesen
+
+Kicker: RATGEBER  ·  H2: Wissen rund um Boote und Wassersport  ·  1) Führerscheinfreie Boote: Was ist wo erlaubt?  ·  2) Gebrauchtes Boot kaufen: Die Checkliste  ·  3) Bootssteg am eigenen Ufer: Genehmigung, Maße und Material
+
+Kicker: VERKAUFEN  ·  H2: Du willst dein Boot verkaufen?  ·  Private Inserate sind kostenlos und ohne Provision. Bootshändler, Stegbauer und Hersteller präsentieren ihr Angebot mit einem Anbieterprofil.  ·  Buttons: Kostenlos inserieren · Für Händler & Hersteller (/abo)
+
+
+None of the 3 guides exists yet. Show only live guides; until then fill the slots with live Kaufberatung posts. Suggested for the blog plan: guide 1 (license-free boats) and guide 3 (dock permits) match the strongest topics on this page.
+
+2.8 FAQ (visible text = schema text)
+
+Kicker: HÄUFIG GESTELLTE FRAGEN  ·  H2: Fragen & Antworten zu Booten und Wassersport
+
+Subline: Wichtige Informationen zu Führerschein, Gasprüfung, Stegen und Bootskauf, kurz beantwortet.
+
+Q1: Welche Boote darf ich ohne Führerschein fahren?
+
+Ohne Sportbootführerschein darfst du auf den meisten deutschen Gewässern Boote mit Muskelkraft fahren, also Kajaks, Ruderboote und SUPs, dazu Motorboote mit höchstens 11,03 kW Motorleistung, das sind 15 PS. Auf dem Rhein und dem Bodensee gelten strengere Grenzen, und manche Seen verbieten Verbrennungsmotoren ganz. Prüfe deshalb vor dem Kauf die Regeln deines Reviers.
+
+Q2: Brauche ich für mein Boot eine Gasprüfung?
+
+Wenn du eine Gasanlage an Bord hast, etwa für Kocher oder Heizung, verlangen viele Häfen, Liegeplatzordnungen und Versicherungen eine gültige Gasprüfung nach DVGW-Arbeitsblatt G 608. Üblich ist eine Prüfung alle zwei Jahre durch einen Sachkundigen. Prüfer für Boote findest du auf Campuna in der Kategorie Camping-Services.
+
+Q3: Brauche ich eine Genehmigung für einen Bootssteg?
+
+In der Regel ja. Stege, Anlegepfähle und andere Anlagen am oder im Gewässer muss meist die Untere Wasserbehörde genehmigen, an Bundeswasserstraßen zusätzlich das Wasserstraßen- und Schifffahrtsamt. Kläre den Antrag, bevor du einen Bootssteg oder Schwimmsteg kaufst, und frag den Anbieter nach Maßen, Tragfähigkeit und Verankerung.
+
+Q4: Worauf sollte ich beim Kauf eines gebrauchten Boots achten?
+
+Prüfe den Rumpf auf Risse, Osmose und Reparaturstellen und lass dir Motorstunden und Wartungsnachweise zeigen. Wichtig sind außerdem Kaufvertrag, Eigentumsnachweis und CE-Kennzeichnung, bei einer Gasanlage auch die Gasprüfung. Mach eine Probefahrt, und bei größeren Booten lohnt sich ein Gutachten.
+
+Q5: Wie verkaufe ich mein Boot auf Campuna?
+
+Erstelle kostenlos ein Inserat mit guten Fotos, Baujahr, Motorleistung, Maßen und Zustand. Gib an, ob ein Trailer oder Zubehör dabei ist und ob das Boot führerscheinfrei ist. Private Inserate sind ohne Provision, Händler, Stegbauer und Hersteller präsentieren ihr Angebot mit einem Anbieterprofil.
+
+
+Q1 fact basis: license-free = muscle power, or engine up to 11.03 kW (15 PS) on most inland and coastal waters; stricter on the Rhein (5 PS) and Bodensee (Bodenseeschifferpatent from 6 PS). The answer names the exceptions without numbers so it stays correct if local rules change.
+
+
+Q2: DVGW G 608 is the inspection standard for LPG systems on boats; harbours, mooring rules and insurers commonly require it, interval 2 years. Worded as "verlangen viele", not as a general legal duty. Links to the Services chip /kategorie/dienstleistungen/gaspruefung-boot.
+
+
+Q3: docks and mooring posts need a permit from the Untere Wasserbehörde; on federal waterways also from the Wasserstraßen- und Schifffahrtsamt (e.g. Landkreis Oder-Spree guidance). Rules vary by state, hence "in der Regel" and "meist".
+
+2.9 Weitere Kategorien + footer
+
+Same as all category pages (8 cards without Boote, Wohnmobile & Camper first; footer intro with the 03.10.2026 positioning).
+
+
+3. Keyword map
+
+Ubersuggest DE 03.10.2026, plus master keyword sheet. Strong summer seasonality on all boat and dock terms.
+
+Keyword
+
+Vol/mo · KD
+
+Placement
+
+boot kaufen
+
+18,100 · 39 (peak 40,500 Aug)
+
+Title (first), H1 area, SEO H3 1
+
+boot gebraucht kaufen (master)
+
+5,400 · 42
+
+H3 1, Beliebte Suchen
+
+motorboot gebraucht
+
+2,400 · 34
+
+Chip, H3 1 link, Beliebte Suchen
+
+motor boot gebraucht kaufen (master)
+
+2,400 · 40
+
+H3 1
+
+bootssteg
+
+1,600 · 20 (peak 2,900)
+
+Title (Stege), H1, chip, H3 3, FAQ 3
+
+bootsanhänger (master)
+
+1,300 · 26
+
+Chip, H3 5, Beliebte Suchen
+
+schlauchboot gebraucht
+
+590 · 36
+
+Title, chip, H3 1
+
+motor schlauchboot gebraucht (master)
+
+590 · 36
+
+Beliebte Suchen
+
+kajak gebraucht / kaufen (master)
+
+590 · 13 / 590 · 16
+
+Chip, H3 4, Beliebte Suchen
+
+sup board gebraucht
+
+480 · 19
+
+Chip, H3 4
+
+bootsanhänger gebraucht (master)
+
+390 · 23
+
+Beliebte Suchen
+
+schwimmsteg kaufen
+
+140 · 9
+
+H3 3, Beliebte Suchen
+
+führerscheinfreies boot kaufen
+
+40
+
+H3 2, FAQ 1, Ratgeber 1
+
+
+4. Category page rules (same for all 9 categories)
+
+
+Grid, count, SEO text and every FAQ answer server-rendered.
+
+
+Canonical = clean category URL; sort/filter params canonicalise to it; ?seite=2+ self-canonical with "Seite 2" in the title.
+
+
+Chips and Beliebte Suchen = real <a href> links to live pages only.
+
+
+One H1; hidden H2 above the grid; card titles and FAQ questions H3; no headings in header or footer.
+
+
+BreadcrumbList + CollectionPage/ItemList + FAQPage. No Product schema. FAQ schema text = visible text.
+
+
+Sold, test and draft listings never render. Empty category stays indexable with message, CTA and SEO text.
+
+
+German labels; no emoji in titles or URLs; copy in du-form without em/en dashes.
+
+
+5. Schema markup (copy-paste JSON-LD)
+
+Extracted 1:1 from the HTML. ItemList items = listings rendered on the page. Dealers and dock builders get LocalBusiness on /anbieter/{name}.
+
+5.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Boote & Wassersport",
+
+      "item": "https://campuna.de/kategorie/boote-wassersport"
+
+    }
+
+  ]
+
+}
+
+5.2 CollectionPage + ItemList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorie/boote-wassersport#collection",
+
+  "url": "https://campuna.de/kategorie/boote-wassersport",
+
+  "name": "Boote, Stege und Wassersport kaufen und verkaufen",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 5,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "Bootssteg Bootsanleger 3 x 6 m Schwimmsteg",
+
+        "url": "https://campuna.de/inserat/bootssteg-bootsanleger-3x6-schwimmsteg"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Ranieri Voyager 17 (Bj. 2019) Bodensee",
+
+        "url": "https://campuna.de/inserat/ranieri-voyager-17-bodensee"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Schlauchboot stabil, sehr gepflegt mit 2 PS AB",
+
+        "url": "https://campuna.de/inserat/schlauchboot-2-ps-aussenborder"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Schwimmsteg Badesteg ECO 2 x 5 m",
+
+        "url": "https://campuna.de/inserat/schwimmsteg-badesteg-eco-2x5"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 5,
+
+        "name": "Schwimmsteg Badesteg ECO 1/2 x 4 m",
+
+        "url": "https://campuna.de/inserat/schwimmsteg-badesteg-eco-4m"
+
+      }
+
+    ]
+
+  }
+
+}
+
+5.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorie/boote-wassersport#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welche Boote darf ich ohne Führerschein fahren?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ohne Sportbootführerschein darfst du auf den meisten deutschen Gewässern Boote mit Muskelkraft fahren, also Kajaks, Ruderboote und SUPs, dazu Motorboote mit höchstens 11,03 kW Motorleistung, das sind 15 PS. Auf dem Rhein und dem Bodensee gelten strengere Grenzen, und manche Seen verbieten Verbrennungsmotoren ganz. Prüfe deshalb vor dem Kauf die Regeln deines Reviers."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Brauche ich für mein Boot eine Gasprüfung?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Wenn du eine Gasanlage an Bord hast, etwa für Kocher oder Heizung, verlangen viele Häfen, Liegeplatzordnungen und Versicherungen eine gültige Gasprüfung nach DVGW-Arbeitsblatt G 608. Üblich ist eine Prüfung alle zwei Jahre durch einen Sachkundigen. Prüfer für Boote findest du auf Campuna in der Kategorie Camping-Services."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Brauche ich eine Genehmigung für einen Bootssteg?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "In der Regel ja. Stege, Anlegepfähle und andere Anlagen am oder im Gewässer muss meist die Untere Wasserbehörde genehmigen, an Bundeswasserstraßen zusätzlich das Wasserstraßen- und Schifffahrtsamt. Kläre den Antrag, bevor du einen Bootssteg oder Schwimmsteg kaufst, und frag den Anbieter nach Maßen, Tragfähigkeit und Verankerung."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Worauf sollte ich beim Kauf eines gebrauchten Boots achten?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Prüfe den Rumpf auf Risse, Osmose und Reparaturstellen und lass dir Motorstunden und Wartungsnachweise zeigen. Wichtig sind außerdem Kaufvertrag, Eigentumsnachweis und CE-Kennzeichnung, bei einer Gasanlage auch die Gasprüfung. Mach eine Probefahrt, und bei größeren Booten lohnt sich ein Gutachten."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wie verkaufe ich mein Boot auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Erstelle kostenlos ein Inserat mit guten Fotos, Baujahr, Motorleistung, Maßen und Zustand. Gib an, ob ein Trailer oder Zubehör dabei ist und ob das Boot führerscheinfrei ist. Private Inserate sind ohne Provision, Händler, Stegbauer und Hersteller präsentieren ihr Angebot mit einem Anbieterprofil."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+6. URL and category fit
+
+Old (Bubble)
+
+Testing
+
+Recommended
+
+/category/boote-wassersport
+
+/kategorie/boote-wassersport
+
+keep /kategorie/boote-wassersport
+
+
+301 the old Bubble URL. Sub-URLs /kategorie/boote-wassersport/{typ}.
+
+
+Docks (Bootssteg, Schwimmsteg, Badesteg) belong here, not in Zubehör. Boat trailers belong here (chip Bootsanhänger), not in Wohnmobile & Camper.
+
+
+Gasprüfung für Boote (G 608) stays a service in Camping-Services; this page links to it.
+
+
+7. CMS fields for this category
+
+Field
+
+Value
+
+meta_title (without brand)
+
+Boot kaufen: Motorboote, Schlauchboote & Stege
+
+meta_description
+
+Gebrauchte und neue Boote kaufen und verkaufen: Motorboote, Schlauchboote, Kajaks, SUPs, Bootsstege und Bootsanhänger von privat und vom Händler.
+
+eyebrow
+
+Kategorie • Boote & Wassersport
+
+h1
+
+Boote, Stege und Wassersport kaufen und verkaufen
+
+hero_intro
+
+Motorboote, Segelboote, Schlauchboote, Kajaks und SUPs von privat und vom Händler, dazu Bootsstege, Bootsanhänger und Zubehör für deine Zeit am Wasser. Ob Angelboot für den See oder Badesteg für dein Ufergrundstück: Hier findest du dein nächstes Boot oder verkaufst deins kostenlos.
+
+label_dative (FAQ heading)
+
+zu Booten und Wassersport
+
+popular_title
+
+Beliebt bei Booten und Wassersport
+
+price_label
+
+from price_type (Kaufpreis / Preis / Festpreis)
+
+pill_source
+
+boat type + condition (German)
+
+seo_text / faq / popular_searches
+
+Sections 2.6 / 2.8 / 2.5
+
+guide_tag
+
+Wassersport
+
+sell_headline / sell_target
+
+Du willst dein Boot verkaufen? / /inserat-erstellen + /abo
+
+
+Recommended listing attributes for boats: boat_type, year, length_m, engine_kw (PS shown), license_free (bool, auto true if engine ≤ 11.03 kW or none), trailer_included (bool), gas_system (bool) + G 608 date. For docks: length_m, width_m, material, load_capacity.
+
+
+8. Pre-launch checklist
+
+
+Title 56, description 145, one H1, no skipped heading levels.
+
+
+View source shows cards, real count, SEO text and all 5 FAQ answers.
+
+
+Rich Results Test: 3 valid blocks; FAQ text identical to visible text.
+
+
+Price format "21.900 €"; German pills; no "Like new".
+
+
+Chips Bootsstege & Schwimmstege and Bootsanhänger live with real hrefs.
+
+
+Only live guides shown in the Ratgeber slots.
+
+
+Inventory push before spring (season peak Jul/Aug).
+
+Verified in the template: title 56, description 145, 1 H1, 0 heading skips, 0 dashes, 3 valid JSON-LD blocks, FAQ match 5/5, SEO text 356 words, 5 H3s, 14 links.
+
+

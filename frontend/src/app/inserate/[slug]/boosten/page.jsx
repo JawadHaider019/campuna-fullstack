@@ -396,7 +396,7 @@ export default function BoostListingPage() {
                         </h1>
 
                         <p className="text-xs sm:text-sm text-sand/80 leading-relaxed font-light">
-                            Hervorgehobene Inserate werden in der Campuna-Suche und in passenden Kategorien ganz oben ausgespielt und stechen durch das goldene Hervorgehoben-Badge sofort ins Auge.
+                            Hervorgehobene Inserate erhalten eine bevorzugte Sichtbarkeit in der Campuna-Suche sowie passenden Kategorien und stechen durch das markante Hervorgehoben-Badge sofort ins Auge.
                         </p>
                     </div>
                 </div>

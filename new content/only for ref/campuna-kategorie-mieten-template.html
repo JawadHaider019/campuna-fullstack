@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- ============================================================
+  CAMPUNA CATEGORY PAGE: MIETEN & VERMIETEN (/kategorie/mieten-vermieten)
+  FOR DEVELOPER | Prepared by Intelitune | 03.10.2026
+  Content = FINAL GERMAN. Comments/instructions = ENGLISH.
+  Same template as the other category pages.
+
+  SOURCES CHECKED 03.10.2026: live Bubble page (8 listings), testing build
+  testing.campuna.de/kategorie/mieten-vermieten, Ubersuggest DE.
+
+  STRATEGY NOTE: Campuna's SEO investment in this phase is buy and sell.
+  Rentals are part of the ecosystem positioning and stay a live, indexable
+  category, but the big rental heads (wohnmobil mieten 90,500, camper mieten
+  40,500) are owned by rental platforms with far stronger domains. This page
+  is built SEO-clean and aims at the winnable niche: Wohnwagen rental
+  (wohnwagen mieten 33,100, KD 25; 4 of 8 live listings are caravans) and
+  "privat" long tails (wohnmobil mieten privat 1,900, KD 14). It also bridges
+  renters to buying (FAQ 5, SEO H3). Rental blog content stays parked until
+  the client activates rentals (10,771 archived rental keywords).
+
+  CHANGED / ADDED vs testing build:
+    A) Title "Mieten & Vermieten: Camper & mehr" -> "Wohnwagen & Wohnmobil mieten
+       oder vermieten"; H1 "Mieten und Vermieten auf Campuna" -> "Wohnwagen und
+       Wohnmobile mieten und vermieten"
+    B) Chips: "Wohnwagen mieten" first, + "Camper mieten"; testing chips stay
+    C) PRICE TYPE: "Preis pro Tag" / "Preis pro Nacht" / "Preis pro Woche".
+       Live shows "Preis 79,00 €" with no unit.
+    D) Pills = vehicle type, not condition ("Like new" on a rental is meaningless)
+    E) Standard additions: sort, hidden H2, pagination fallback, Beliebte Suchen,
+       SEO text (5 H3s), trust strip, Ratgeber, sell band, FAQ 1 -> 5
+  BUGS: double brand in title, "0 Inserate" in server HTML, only 1 FAQ, no
+  JSON-LD, chips without hrefs, emoji "✨" in a live listing title (also in the
+  old URL), dative "zu Mieten & Vermieten" (use "zur Miete und Vermietung").
+  RECEIVES from Camping-Services: Camper Bus Vivaro, 9 Sitzer Bus, Carado T-447.
+============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- SEO: Title 53 chars, Description 144 chars.
+     DEV: store the title WITHOUT " | Campuna" if the system appends the brand. -->
+<title>Wohnwagen &amp; Wohnmobil mieten oder vermieten | Campuna</title>
+<meta name="description" content="Wohnwagen, Wohnmobile und Camper von privat und von Vermietstationen mieten oder dein eigenes Fahrzeug vermieten. Angebote aus ganz Deutschland.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/mieten-vermieten">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="de" href="https://campuna.de/kategorie/mieten-vermieten">
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/kategorie/mieten-vermieten">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Campuna">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Wohnwagen &amp; Wohnmobil mieten oder vermieten | Campuna">
+<meta property="og:description" content="Wohnwagen, Wohnmobile und Camper von privat und von Vermietstationen mieten oder dein eigenes Fahrzeug vermieten.">
+<meta property="og:url" content="https://campuna.de/kategorie/mieten-vermieten">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-mieten.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- ============ SCHEMA 1: BreadcrumbList ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+    { "@type": "ListItem", "position": 2, "name": "Inserate", "item": "https://campuna.de/inserate" },
+    { "@type": "ListItem", "position": 3, "name": "Mieten & Vermieten", "item": "https://campuna.de/kategorie/mieten-vermieten" }
+  ]
+}
+</script>
+
+<!-- ============ SCHEMA 2: CollectionPage + ItemList (dynamic) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://campuna.de/kategorie/mieten-vermieten#collection",
+  "url": "https://campuna.de/kategorie/mieten-vermieten",
+  "name": "Wohnwagen und Wohnmobile mieten und vermieten",
+  "inLanguage": "de-DE",
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+  "about": { "@id": "https://campuna.de/#organization" },
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": 8,
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Hymer Eriba Rockabilly Wohnwagen Vermietung", "url": "https://campuna.de/inserat/hymer-eriba-rockabilly-vermietung" },
+      { "@type": "ListItem", "position": 2, "name": "Fendt Bianco Wohnwagen Vermietung", "url": "https://campuna.de/inserat/fendt-bianco-wohnwagen-vermietung" },
+      { "@type": "ListItem", "position": 3, "name": "Hobby 545 KMF Wohnwagenvermietung", "url": "https://campuna.de/inserat/hobby-545-kmf-wohnwagenvermietung" },
+      { "@type": "ListItem", "position": 4, "name": "Kleox Festival Wohnwagen", "url": "https://campuna.de/inserat/kleox-festival-wohnwagen" },
+      { "@type": "ListItem", "position": 5, "name": "Camper mieten in Oberbayern", "url": "https://campuna.de/inserat/camper-mieten-oberbayern" },
+      { "@type": "ListItem", "position": 6, "name": "Chausson 640 Titanium Wohnmobil mieten", "url": "https://campuna.de/inserat/chausson-640-titanium-mieten" },
+      { "@type": "ListItem", "position": 7, "name": "Wohnmobil Camper mieten", "url": "https://campuna.de/inserat/wohnmobil-camper-mieten-recke" },
+      { "@type": "ListItem", "position": 8, "name": "Idyllischer Stellplatz auf Rügen an der Ostsee", "url": "https://campuna.de/inserat/idyllischer-stellplatz-ruegen-ostsee" }
+    ]
+  }
+}
+</script>
+
+<!-- ============ SCHEMA 3: FAQPage (matches visible FAQ word for word) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://campuna.de/kategorie/mieten-vermieten#faq",
+  "mainEntity": [
+    { "@type": "Question", "name": "Was ist bei der Fahrzeugmiete wichtig?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Achte auf Freikilometer, Höhe der Kaution, Versicherung und Selbstbeteiligung sowie auf die mitgelieferte Ausstattung wie Kabeltrommel, Auffahrkeile und Campingmöbel. Lass dir bei der Übergabe alles zeigen und haltet vorhandene Schäden gemeinsam in einem Übergabeprotokoll fest." } },
+    { "@type": "Question", "name": "Welchen Führerschein brauche ich für einen Mietwohnwagen?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Das hängt vom Gewicht des Gespanns ab. Mit Klasse B darfst du einen Anhänger bis 750 kg ziehen oder ein Gespann bis 3,5 Tonnen Gesamtmasse fahren. Mit der Schlüsselzahl B96 sind bis 4,25 Tonnen erlaubt, mit Klasse BE Anhänger bis 3,5 Tonnen. Für Wohnmobile bis 3,5 Tonnen reicht Klasse B." } },
+    { "@type": "Question", "name": "Kann ich mein Wohnmobil privat vermieten?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Ja, auf Campuna inserierst du dein Wohnmobil oder deinen Wohnwagen kostenlos. Kläre vorher mit deiner Versicherung, ob die Vermietung an Selbstfahrer abgedeckt ist, denn normale Policen schließen das oft aus. Nutze einen schriftlichen Mietvertrag mit Kaution und Übergabeprotokoll. Mieteinnahmen musst du in der Steuererklärung angeben." } },
+    { "@type": "Question", "name": "Was kostet es, einen Wohnwagen zu mieten?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Der Preis hängt von Größe, Ausstattung und Saison ab und wird meist pro Tag oder pro Nacht berechnet. Kleine Wohnwagen sind günstiger als große Familienwohnwagen, Wohnmobile kosten meist deutlich mehr. Dazu kommen oft Kaution, Endreinigung und Gasflasche. Auf Campuna siehst du den Preis direkt in jedem Inserat." } },
+    { "@type": "Question", "name": "Wohnwagen mieten oder kaufen: Was lohnt sich?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Wer nur ein- oder zweimal im Jahr unterwegs ist, fährt mit der Miete oft günstiger. Wer regelmäßig campt, spart mit einem eigenen Wohnwagen auf Dauer Mietkosten und ist flexibler. Gebrauchte Wohnwagen und Wohnmobile findest du auf Campuna in der Kategorie Wohnmobile & Camper." } }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ============ PREVIEW CSS: mirrors the testing build design ============ */
+:root{
+  --green-900:#0F2E14; --green-800:#14451C; --green-700:#1B6B23; --green-600:#2E7D32;
+  --gold:#C9A24B; --hl:#F2C230; --cream:#F7F3EA; --cream-2:#FBF9F4; --line:#ECE5D6;
+  --ink:#16220F; --muted:#6B7464;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Poppins',Arial,sans-serif;color:var(--ink);background:var(--cream-2);line-height:1.6;font-size:15px}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px}
+.wide{max-width:1320px;margin:0 auto;padding:0 28px}
+.kicker{display:block;font-size:.62rem;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;font-weight:700;font-size:.78rem;padding:12px 22px}
+.btn-green{background:var(--green-700);color:#fff}
+.btn-gold{background:var(--hl);color:#3a2d00}
+.btn-ghost{border:1.5px solid rgba(255,255,255,.75);color:#fff}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* header */
+header{background:#fff;border-bottom:1px solid #f0ece2;position:sticky;top:0;z-index:50}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;max-width:1440px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.15rem;color:var(--green-900)}
+.logo .mark{width:28px;height:28px;border-radius:8px;background:var(--green-900);color:#b9e07a;font-size:.7rem;display:flex;align-items:center;justify-content:center}
+.logo small{display:block;font-size:.42rem;letter-spacing:.14em;color:var(--green-900);font-weight:700;margin-top:-4px}
+.nav ul{display:flex;gap:30px;list-style:none;font-size:.78rem;font-weight:600;color:var(--green-700)}
+.nav .btn{padding:9px 18px;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
+
+/* hero (photo) */
+.hero{margin:14px 28px 0;border-radius:40px;overflow:hidden;position:relative;min-height:330px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;
+  background:linear-gradient(180deg,rgba(10,22,10,.45),rgba(10,22,10,.55)),
+  linear-gradient(180deg,#9fb7c9 0%,#7d9a6a 38%,#56703f 60%,#3d5530 100%)}
+/* PLACEHOLDER-IMG: alpine campsite photo (<img>, object-fit:cover, behind overlay)
+   alt="Wohnmobile und Wohnwagen auf einem Campingplatz in den Bergen" */
+.hero .in{max-width:640px;padding:46px 20px}
+.hero .kicker{color:var(--gold);margin-bottom:8px}
+.hero h1{font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.12;font-weight:800;letter-spacing:-.02em}
+.hero p{font-size:.84rem;color:#eef3ea;margin-top:14px}
+
+/* breadcrumb + chips */
+.crumbs{font-size:.68rem;color:var(--muted);margin:20px 0 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.crumbs a:hover{color:var(--green-700)}
+.crumbs strong{color:var(--ink)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;list-style:none}
+.chips a{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:.68rem;font-weight:600;color:var(--ink)}
+.chips a.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+
+/* results */
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:26px 0 14px;flex-wrap:wrap}
+.res-head .count{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.sort{border:1px solid var(--line);border-radius:10px;padding:7px 12px;font:inherit;font-size:.7rem;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:#fff;border:1px solid #f1ece1;border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(20,40,20,.05)}
+.card.hl{border:1.5px solid #f0d27a;background:#FFFCF2}
+.card .ph{height:118px;position:relative;background:linear-gradient(135deg,#d9c2a0,#a9876b)}
+.card .ph.b{background:linear-gradient(135deg,#2c4a64,#c9a77a)}
+.card .ph.c{background:linear-gradient(135deg,#3f6a3f,#9fc0a6)}
+/* PLACEHOLDER-IMG per card: real listing photo, alt = listing title,
+   loading="lazy", width/height set, aspect-ratio 4/3 */
+.badge{position:absolute;top:9px;left:9px;font-size:.5rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--green-900);color:#d6f0a8}
+.badge.h{background:var(--hl);color:#3a2d00}
+.fav{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.62rem;color:var(--green-700)}
+.loc{position:absolute;bottom:8px;right:8px;font-size:.5rem;background:rgba(20,25,18,.72);color:#fff;border-radius:999px;padding:3px 8px}
+.card .body{padding:10px 12px 12px}
+.card h3{font-size:.76rem;line-height:1.3;font-weight:800;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 8px}
+.pills span{font-size:.5rem;background:var(--cream);border-radius:5px;padding:2px 7px;color:#7a7462}
+.pl{font-size:.48rem;letter-spacing:.12em;text-transform:uppercase;color:#a7a28f}
+.pr{display:flex;justify-content:space-between;align-items:center}
+.price{font-weight:800;color:var(--green-700);font-size:.95rem}
+.det{font-size:.6rem;font-weight:700;color:var(--green-700)}
+.more{text-align:center;margin:22px 0 4px}
+.pag{text-align:center;font-size:.68rem;color:var(--muted);margin-top:8px}
+.pag a{color:var(--green-700);font-weight:700}
+
+/* popular searches */
+.pop{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:34px}
+.pop h2{font-size:1rem;font-weight:800;color:var(--green-800);margin-top:4px}
+.pop ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pop a{display:inline-block;background:var(--cream);border-radius:999px;padding:6px 12px;font-size:.66rem;font-weight:600;color:var(--green-800)}
+
+/* SEO text card (design) */
+.seo{background:var(--cream);border:1px solid var(--line);border-radius:22px;padding:30px 30px 26px;margin-top:30px}
+.seo h2{font-size:1.15rem;font-weight:800;color:var(--green-700);letter-spacing:-.01em}
+.seo .lead{font-size:.74rem;font-weight:700;color:var(--green-700);margin:8px 0 10px}
+.seo h3{font-size:.84rem;font-weight:800;color:var(--green-800);margin:16px 0 4px}
+.seo p{font-size:.72rem;color:#5b6155;margin-bottom:6px}
+.seo a{color:var(--green-700);font-weight:600}
+
+/* trust strip */
+.trust{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;border:1px dashed #e0d7c2;border-radius:14px;padding:12px 16px;margin-top:18px;font-size:.68rem}
+.trust b{color:var(--green-700)}
+
+/* guides */
+.guides{margin-top:44px}
+.guides h2,.faq h2,.more-cats h2{font-weight:800;color:var(--green-700);letter-spacing:-.02em}
+.guides h2{font-size:1.3rem;margin-top:4px}
+.g-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.g-card{background:#fff;border:1px solid #f1ece1;border-radius:14px;padding:16px}
+.g-card .t{font-size:.52rem;font-weight:800;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.g-card h3{font-size:.78rem;font-weight:800;line-height:1.35;margin:6px 0}
+.g-card span{font-size:.6rem;color:var(--muted)}
+
+/* sell band */
+.sell{background:linear-gradient(120deg,var(--green-900),var(--green-700));border-radius:22px;color:#fff;padding:28px 30px;margin-top:40px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.sell h2{font-size:1.25rem;font-weight:800;margin-top:4px}
+.sell p{font-size:.74rem;color:#cfe3cb;margin-top:4px;max-width:440px}
+.sell .acts{display:flex;gap:10px;flex-wrap:wrap}
+
+/* FAQ (design) */
+.faq{text-align:center;margin-top:64px}
+.faq h2{font-size:clamp(1.6rem,3vw,2.15rem);line-height:1.1;margin-top:8px}
+.faq .sub{font-size:.72rem;color:var(--muted);margin:8px 0 22px}
+.faq .list{max-width:580px;margin:0 auto;text-align:left}
+.faq details{background:#fff;border:1px solid #efe9dc;border-radius:12px;margin-bottom:10px;padding:16px 16px}
+.faq details[open]{border-color:#e9cf96}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary h3{font-size:.78rem;font-weight:800;color:var(--green-700)}
+.faq summary::after{content:"⌄";width:20px;height:20px;border-radius:50%;background:var(--cream);color:var(--green-700);font-size:.7rem;display:flex;align-items:center;justify-content:center;flex:none}
+.faq details[open] summary::after{content:"⌃"}
+.faq details p{font-size:.68rem;color:#646b5d;margin-top:12px;padding-left:10px}
+
+/* other categories (design) */
+.more-cats{text-align:center;margin-top:64px;padding-bottom:56px}
+.more-cats h2{font-size:clamp(1.6rem,3vw,2.15rem);margin-top:8px}
+.more-cats .sub{font-size:.76rem;color:var(--muted);max-width:420px;margin:8px auto 22px}
+.mc-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;max-width:1000px;margin:0 auto;padding:0 20px}
+.mc-grid a{background:#fff;border:1px solid #ece6d8;border-radius:10px;padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:.56rem;font-weight:700;color:var(--ink);text-align:center}
+.mc-grid .ic{width:26px;height:26px;border-radius:8px;background:#EAF3E6;color:var(--green-700);display:flex;align-items:center;justify-content:center}
+.mc-grid svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+
+/* footer (design) */
+footer{background:linear-gradient(180deg,#f6f1e6,#efe7d6);padding:42px 0 18px;font-size:.66rem;color:#5d6457;border-top:1px solid #ece4d3}
+.f-intro{background:#fff;border:1px solid #eee6d6;border-radius:14px;padding:14px 18px;text-align:center;font-size:.64rem;max-width:860px;margin:0 auto}
+.f-intro strong{color:var(--green-700)}
+.f-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:24px;max-width:860px;margin:30px auto 0}
+.f-grid .ft{font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:var(--green-700);font-weight:800;margin-bottom:10px}
+.f-grid ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.f-grid a:hover{color:var(--green-700)}
+.f-bottom{max-width:860px;margin:30px auto 0;border-top:1px solid #e4dccb;padding-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:.56rem}
+.soc{display:flex;gap:8px}
+.soc a{width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid #e1d8c5;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--green-700)}
+.calc-fab{position:fixed;right:22px;bottom:22px;display:flex;align-items:center;gap:8px;z-index:40}
+.calc-fab span{background:var(--green-900);color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.06em;padding:6px 10px;border-radius:999px}
+.calc-fab i{width:38px;height:38px;border-radius:50%;background:var(--green-700);color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal;box-shadow:0 6px 14px rgba(0,0,0,.2)}
+
+@media(max-width:860px){.grid{grid-template-columns:repeat(2,1fr)}.g-grid{grid-template-columns:1fr}.mc-grid{grid-template-columns:repeat(4,1fr)}.f-grid{grid-template-columns:1fr 1fr}.nav ul{display:none}.hero{margin:10px 12px 0;border-radius:26px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.mc-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER (shared component, as on testing build) ============ -->
+<!-- DEV: keep the live hrefs of the shared header. Labels as in the design. -->
+<header>
+  <div class="nav">
+    <a class="logo" href="/" aria-label="Campuna Startseite"><span class="mark" aria-hidden="true">A/</span><span>campuna<small>DEIN CAMPING-MARKTPLATZ</small></span></a>
+    <ul>
+      <li><a href="/">Startseite</a></li>
+      <li><a href="/kategorien">Kategorien</a></li>
+      <li><a href="/ueber-campuna">Über uns</a></li>
+      <li><a href="/inserate">Zum Stöbern</a></li>
+      <li><a href="/anbieter">Entdecke</a></li>
+      <li><a href="/ratgeber">Ratgeber</a></li>
+    </ul>
+    <a class="btn btn-green" href="/login">👤 Einloggen</a>
+  </div>
+</header>
+
+<main>
+
+<!-- PLACEHOLDER-IMG: hero photo, alt="Gemieteter Wohnwagen mit Vorzelt auf einem Campingplatz" -->
+<section class="hero" aria-labelledby="kat-h1">
+  <div class="in">
+    <span class="kicker">Kategorie • Mieten &amp; Vermieten</span>
+    <h1 id="kat-h1">Wohnwagen und Wohnmobile mieten und vermieten</h1>
+    <p>Wohnwagen, Wohnmobile und Campervans von privaten Vermietern und Vermietstationen in ganz Deutschland, dazu Camping-Zubehör zum Mieten. Finde dein Fahrzeug für den nächsten Urlaub oder vermiete deins kostenlos auf Campuna.</p>
+  </div>
+</section>
+
+<div class="wrap">
+
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">⌂ Startseite</a> › <a href="/inserate">Inserate</a> › <strong>Mieten &amp; Vermieten</strong>
+  </nav>
+
+  <!-- ============ CHIPS (testing 3, Wohnwagen first, + Camper mieten) ============ -->
+  <ul class="chips" aria-label="Unterkategorien">
+    <li><a class="on" aria-current="page">Alle (8)</a></li>
+    <li><a href="/kategorie/mieten-vermieten/wohnwagen-mieten">Wohnwagen mieten</a></li>
+    <li><a href="/kategorie/mieten-vermieten/wohnmobil-mieten">Wohnmobil mieten</a></li>
+    <li><a href="/kategorie/mieten-vermieten/camper-mieten">Camper mieten</a></li>
+    <li><a href="/kategorie/mieten-vermieten/zubehoer-mieten">Zubehör mieten</a></li>
+  </ul>
+
+  <h2 class="sr-only">Aktuelle Angebote: Wohnwagen und Wohnmobile zur Miete</h2>
+  <div class="res-head">
+    <span class="count">8 Inserate in dieser Kategorie</span>
+    <label class="sr-only" for="sort">Sortierung</label>
+    <select id="sort" class="sort">
+      <option>Neueste zuerst</option>
+      <option>Preis aufsteigend</option>
+      <option>Preis absteigend</option>
+    </select>
+  </div>
+
+  <!-- DEV: SSR grid. Price label from price_type ("Preis pro Tag", "Preis pro Nacht", "Preis pro Woche").
+       Pills = vehicle type. No emoji in titles or URLs (strip on save). -->
+  <div class="grid">
+    <article class="card hl"><a href="/inserat/hymer-eriba-rockabilly-vermietung">
+      <div class="ph "><span class="badge h">★ Hervorgehoben</span><span class="fav">♡</span><span class="loc">Erfurt</span></div>
+      <div class="body"><h3>Hymer Eriba Rockabilly Wohnwagen Vermietung</h3>
+        <div class="pills"><span>Wohnwagen</span></div>
+        <p class="pl">Preis pro Tag</p><div class="pr"><span class="price">69 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/fendt-bianco-wohnwagen-vermietung">
+      <div class="ph b"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Erfurt</span></div>
+      <div class="body"><h3>Fendt Bianco Wohnwagen Vermietung</h3>
+        <div class="pills"><span>Wohnwagen</span></div>
+        <p class="pl">Preis pro Tag</p><div class="pr"><span class="price">79 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/hobby-545-kmf-wohnwagenvermietung">
+      <div class="ph c"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Erfurt</span></div>
+      <div class="body"><h3>Hobby 545 KMF Wohnwagenvermietung</h3>
+        <div class="pills"><span>Wohnwagen</span></div>
+        <p class="pl">Preis pro Tag</p><div class="pr"><span class="price">79 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/kleox-festival-wohnwagen">
+      <div class="ph b"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Erfurt</span></div>
+      <div class="body"><h3>Kleox Festival Wohnwagen</h3>
+        <div class="pills"><span>Mini-Wohnwagen</span></div>
+        <p class="pl">Preis pro Tag</p><div class="pr"><span class="price">29 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/camper-mieten-oberbayern">
+      <div class="ph "><span class="badge">Privat</span><span class="fav">♡</span><span class="loc">Rosenheim</span></div>
+      <div class="body"><h3>Camper mieten in Oberbayern</h3>
+        <div class="pills"><span>Campervan</span></div>
+        <p class="pl">Preis pro Tag</p><div class="pr"><span class="price">89 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/chausson-640-titanium-mieten">
+      <div class="ph c"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Löhne</span></div>
+      <div class="body"><h3>Chausson 640 Titanium Wohnmobil mieten</h3>
+        <div class="pills"><span>Wohnmobil</span></div>
+        <p class="pl">Preis pro Tag</p><div class="pr"><span class="price">120 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/wohnmobil-camper-mieten-recke">
+      <div class="ph b"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Recke</span></div>
+      <div class="body"><h3>Wohnmobil Camper mieten</h3>
+        <div class="pills"><span>Wohnmobil</span></div>
+        <p class="pl">Preis pro Tag</p><div class="pr"><span class="price">120 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/idyllischer-stellplatz-ruegen-ostsee">
+      <div class="ph "><span class="badge">Privat</span><span class="fav">♡</span><span class="loc">Garz, Rügen</span></div>
+      <div class="body"><h3>Idyllischer Stellplatz auf Rügen an der Ostsee</h3>
+        <div class="pills"><span>Stellplatz mit Wohnwagen</span></div>
+        <p class="pl">Preis pro Nacht</p><div class="pr"><span class="price">25 €</span><span class="det">Details →</span></div></div></a></article>
+  </div>
+
+  <div class="more"><a class="btn btn-green" href="/kategorie/mieten-vermieten?seite=2">Weitere Angebote laden</a></div>
+  <p class="pag">Oder blättern: <a href="/kategorie/mieten-vermieten?seite=2">Seite 2 ansehen →</a></p>
+
+  <!-- ============ BELIEBTE SUCHEN (show a chip only when its page is live) ============ -->
+  <section class="pop" aria-labelledby="pop-h">
+    <span class="kicker">Beliebte Suchen</span>
+    <h2 id="pop-h">Beliebt bei Miete und Vermietung</h2>
+    <ul>
+      <li><a href="/kategorie/mieten-vermieten/wohnwagen-mieten">Wohnwagen mieten</a></li>
+      <li><a href="/kategorie/mieten-vermieten/wohnwagen-mieten-privat">Wohnwagen privat mieten</a></li>
+      <li><a href="/kategorie/mieten-vermieten/wohnwagen-campingplatz">Wohnwagen am Campingplatz mieten</a></li>
+      <li><a href="/kategorie/mieten-vermieten/wohnmobil-mieten-privat">Wohnmobil privat mieten</a></li>
+      <li><a href="/kategorie/mieten-vermieten/camper-mieten">Camper mieten</a></li>
+      <li><a href="/kategorie/mieten-vermieten/zubehoer-mieten">Zubehör mieten</a></li>
+      <li><a href="/kategorie/mieten-vermieten/wohnwagen-vermieten">Wohnwagen vermieten</a></li>
+      <li><a href="/kategorie/mieten-vermieten/wohnmobil-vermieten">Wohnmobil vermieten</a></li>
+    </ul>
+  </section>
+
+  <!-- ============ SEO TEXT CARD (5 real H3s) ============ -->
+  <section class="seo" aria-labelledby="seo-h">
+    <h2 id="seo-h">Wohnwagen und Wohnmobile auf Campuna mieten</h2>
+    <p class="lead">Campuna ist dein Camping-Marktplatz, auch für die Miete. Hier findest du Wohnwagen, Wohnmobile und Campervans von privaten Vermietern und Vermietstationen aus ganz Deutschland.</p>
+    <p>Mieten ist der einfachste Weg, Camping auszuprobieren oder den Urlaub flexibel zu planen. Du kontaktierst Vermieter direkt und klärst Termin, Übergabe und Ausstattung persönlich. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du den passenden <a href="/kategorie/campingplaetze-stellplaetze">Stellplatz</a>, <a href="/kategorie/ausruestung-und-zubehoer">Zubehör</a> und später vielleicht dein eigenes <a href="/kategorie/fahrzeuge">Wohnmobil</a> gleich mit.</p>
+
+    <h3>Wohnwagen mieten: von privat oder von der Vermietstation</h3>
+    <p>Ein <a href="/kategorie/mieten-vermieten/wohnwagen-mieten">Mietwohnwagen</a> ist oft die günstigste Art, mit Familie oder Freunden zu campen. Vom kleinen Mini-Wohnwagen für das Festival bis zum Familienwohnwagen mit Etagenbetten ist alles dabei. Manche Vermieter stellen den <a href="/kategorie/mieten-vermieten/wohnwagen-campingplatz">Wohnwagen direkt auf einem Campingplatz</a> bereit, dann brauchst du nicht einmal ein Zugfahrzeug.</p>
+
+    <h3>Wohnmobil und Campervan mieten</h3>
+    <p>Mit einem <a href="/kategorie/mieten-vermieten/wohnmobil-mieten">Wohnmobil</a> oder <a href="/kategorie/mieten-vermieten/camper-mieten">Campervan</a> bist du ohne Gespann unterwegs und flexibel bei der Route. Private Vermieter bieten oft persönliche Übergaben und gut ausgestattete Fahrzeuge, Vermietstationen haben mehr Auswahl und feste Abläufe.</p>
+
+    <h3>Darauf solltest du bei der Miete achten</h3>
+    <p>Prüfe Freikilometer, Kaution, Versicherung und Selbstbeteiligung und lass dir die Ausstattung bei der Übergabe zeigen. Für einen Wohnwagen brauchst du ein passendes Zugfahrzeug mit Anhängerkupplung und je nach Gewicht des Gespanns den Führerschein BE oder die Schlüsselzahl B96. Haltet Schäden in einem Übergabeprotokoll fest. Mehr Tipps findest du auf der Seite <a href="/sicher-handeln">Sicher handeln</a>.</p>
+
+    <h3>Wohnmobil oder Wohnwagen vermieten</h3>
+    <p>Dein Fahrzeug steht die meiste Zeit des Jahres? Auf Campuna kannst du es <a href="/kategorie/mieten-vermieten/wohnmobil-vermieten">privat vermieten</a> und kostenlos inserieren. Kläre vorher die Versicherung für Selbstfahrervermietung, nutze einen schriftlichen Mietvertrag mit Kaution und gib die Einnahmen in der Steuererklärung an. Vermietstationen präsentieren ihre Flotte mit einem eigenen <a href="/abo">Anbieterprofil</a>.</p>
+
+    <h3>Mieten oder kaufen?</h3>
+    <p>Wer öfter als ein paar Wochen im Jahr campt, fährt mit einem eigenen Fahrzeug oft günstiger. Gebrauchte <a href="/kategorie/fahrzeuge/wohnwagen">Wohnwagen</a> und <a href="/kategorie/fahrzeuge">Wohnmobile</a> findest du auf Campuna direkt von privat und vom Händler. Den Vergleich findest du im Ratgeber <a href="/ratgeber/wohnwagen-mieten-oder-kaufen">Wohnwagen mieten oder kaufen</a>.</p>
+  </section>
+
+  <div class="trust">
+    <span>✓ <b>Direkter Kontakt</b> zu privaten Vermietern und Vermietstationen</span>
+    <span>✓ <b>Private Inserate kostenlos</b>, ohne Provision</span>
+    <span>✓ <b>Tipps für sicheres Handeln:</b> <a href="/sicher-handeln" style="color:var(--green-700);font-weight:700">Sicher handeln lesen</a></span>
+  </div>
+
+  <!-- DEV: show only live guides. Guide 1 exists today (old /post/wohnwagen-mieten-oder-kaufen). -->
+  <section class="guides" aria-labelledby="guides-h">
+    <span class="kicker">Ratgeber</span>
+    <h2 id="guides-h">Wissen rund um Miete und Vermietung</h2>
+    <div class="g-grid">
+      <a class="g-card" href="/ratgeber/wohnwagen-mieten-oder-kaufen"><span class="t">Vergleich</span><h3>Wohnwagen mieten oder kaufen: Was lohnt sich?</h3><span>Kaufberatung · 6 Min.</span></a>
+      <a class="g-card" href="/ratgeber/fuehrerschein-wohnwagen"><span class="t">Praxis</span><h3>Wohnwagen ziehen: Welcher Führerschein für welches Gespann?</h3><span>Camping-Praxis &amp; Technik · 5 Min.</span></a>
+      <a class="g-card" href="/ratgeber/wohnmobil-privat-vermieten"><span class="t">Vermieten</span><h3>Wohnmobil privat vermieten: Versicherung, Vertrag und Steuern</h3><span>Verkaufen &amp; Wert · 7 Min.</span></a>
+    </div>
+  </section>
+
+  <section class="sell" aria-labelledby="sell-h">
+    <div>
+      <span class="kicker" style="color:var(--hl)">Vermieten</span>
+      <h2 id="sell-h">Du willst dein Wohnmobil oder deinen Wohnwagen vermieten?</h2>
+      <p>Private Inserate sind kostenlos und ohne Provision. Vermietstationen präsentieren ihre Flotte mit einem Anbieterprofil.</p>
+    </div>
+    <div class="acts">
+      <a class="btn btn-gold" href="/inserat-erstellen">Kostenlos inserieren →</a>
+      <a class="btn btn-ghost" href="/abo">Für Vermietstationen</a>
+    </div>
+  </section>
+
+</div>
+
+<section class="faq" aria-labelledby="faq-h">
+  <div class="wrap">
+    <span class="kicker">Häufig gestellte Fragen</span>
+    <h2 id="faq-h">Fragen &amp; Antworten zur Miete und Vermietung</h2>
+    <p class="sub">Wichtige Informationen zu Miete, Führerschein und Vermietung, kurz beantwortet.</p>
+    <div class="list">
+      <details open>
+        <summary><h3>Was ist bei der Fahrzeugmiete wichtig?</h3></summary>
+        <p>Achte auf Freikilometer, Höhe der Kaution, Versicherung und Selbstbeteiligung sowie auf die mitgelieferte Ausstattung wie Kabeltrommel, Auffahrkeile und Campingmöbel. Lass dir bei der Übergabe alles zeigen und haltet vorhandene Schäden gemeinsam in einem Übergabeprotokoll fest.</p>
+      </details>
+      <details>
+        <summary><h3>Welchen Führerschein brauche ich für einen Mietwohnwagen?</h3></summary>
+        <p>Das hängt vom Gewicht des Gespanns ab. Mit Klasse B darfst du einen Anhänger bis 750 kg ziehen oder ein Gespann bis 3,5 Tonnen Gesamtmasse fahren. Mit der Schlüsselzahl B96 sind bis 4,25 Tonnen erlaubt, mit Klasse BE Anhänger bis 3,5 Tonnen. Für Wohnmobile bis 3,5 Tonnen reicht Klasse B.</p>
+      </details>
+      <details>
+        <summary><h3>Kann ich mein Wohnmobil privat vermieten?</h3></summary>
+        <p>Ja, auf Campuna inserierst du dein Wohnmobil oder deinen Wohnwagen kostenlos. Kläre vorher mit deiner Versicherung, ob die Vermietung an Selbstfahrer abgedeckt ist, denn normale Policen schließen das oft aus. Nutze einen schriftlichen Mietvertrag mit Kaution und Übergabeprotokoll. Mieteinnahmen musst du in der Steuererklärung angeben.</p>
+      </details>
+      <details>
+        <summary><h3>Was kostet es, einen Wohnwagen zu mieten?</h3></summary>
+        <p>Der Preis hängt von Größe, Ausstattung und Saison ab und wird meist pro Tag oder pro Nacht berechnet. Kleine Wohnwagen sind günstiger als große Familienwohnwagen, Wohnmobile kosten meist deutlich mehr. Dazu kommen oft Kaution, Endreinigung und Gasflasche. Auf Campuna siehst du den Preis direkt in jedem Inserat.</p>
+      </details>
+      <details>
+        <summary><h3>Wohnwagen mieten oder kaufen: Was lohnt sich?</h3></summary>
+        <p>Wer nur ein- oder zweimal im Jahr unterwegs ist, fährt mit der Miete oft günstiger. Wer regelmäßig campt, spart mit einem eigenen Wohnwagen auf Dauer Mietkosten und ist flexibler. Gebrauchte Wohnwagen und Wohnmobile findest du auf Campuna in der Kategorie Wohnmobile &amp; Camper.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="more-cats" aria-labelledby="mc-h">
+  <span class="kicker">Entdecken</span>
+  <h2 id="mc-h">Weitere Kategorien entdecken</h2>
+  <p class="sub">Von Fahrzeugen über Ausrüstung und Stellplätze bis zu Vermietung und Services: neun Kategorien, ein Marktplatz.</p>
+  <div class="mc-grid">
+    <a href="/kategorie/fahrzeuge"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 16V8h13l4 4v4M3 16h2m4 0h6m4 0h2"/></svg></span>Wohnmobile &amp; Camper</a>
+    <a href="/kategorie/ausruestung-und-zubehoer"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 8h12v12H6zM9 8V6a3 3 0 0 1 6 0v2"/></svg></span>Camping-Zubehör</a>
+    <a href="/kategorie/zelte-und-dachzelte"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 4 3 20h18L12 4zm0 7v9"/></svg></span>Zelte &amp; Dachzelte</a>
+    <a href="/kategorie/fahrraeder-traeger"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm12 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 14l4-7h5l3 7"/></svg></span>Fahrräder &amp; Träger</a>
+    <a href="/kategorie/campingplaetze-stellplaetze"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 1 0-14 0c0 6 7 11 7 11z"/></svg></span>Stellplätze &amp; Campingplätze</a>
+    <a href="/kategorie/dienstleistungen"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 7a4 4 0 1 0-5.7 3.6L4 15v4h4l4.4-4.3A4 4 0 0 0 14 7z"/></svg></span>Camping-Services</a>
+    <a href="/kategorie/tiny-houses"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7M6 10v9h12v-9"/></svg></span>Tiny Houses</a>
+    <a href="/kategorie/boote-wassersport"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 17h16l-2 3H6l-2-3zm8-13v10M12 6l6 8H6l6-8z"/></svg></span>Boote &amp; Wassersport</a>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER (design; intro line = new positioning 03.10.2026) ============ -->
+<!-- DEV: column titles are NOT headings (use <p class="ft">). Categories: Wohnmobile & Camper first. -->
+<footer>
+  <div class="wide">
+    <p class="f-intro"><strong>Campuna, dein Camping-Marktplatz.</strong> Campuna ist Deutschlands Marktplatz für die ganze Camping-Welt: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung, Camping-Services und gewerbliche Anbieter. Kaufen, verkaufen und entdecken an einem Ort.</p>
+    <nav class="f-grid" aria-label="Footer Navigation">
+      <div>
+        <a class="logo" href="/"><span class="mark" aria-hidden="true">A/</span><span>campuna<small>DEIN CAMPING-MARKTPLATZ</small></span></a>
+        <p style="margin-top:10px">Von Campern für Camper. Der spezialisierte Marktplatz für die deutschsprachige Camping-Community.</p>
+        <p style="margin-top:10px">Campuna · Erfurt, Thüringen, Deutschland<br>E-Mail: <a href="mailto:info@campuna.de" style="text-decoration:underline">info@campuna.de</a></p>
+      </div>
+      <div><p class="ft">Navigation</p>
+        <ul>
+          <li><a href="/">Startseite</a></li>
+          <li><a href="/inserate">Alle Angebote</a></li>
+          <li><a href="/anbieter">Anbieter</a></li>
+          <li><a href="/abo">Campuna Business</a></li>
+          <li><a href="/ueber-campuna">Über uns</a></li>
+          <li><a href="/so-funktioniert-campuna">So funktioniert's</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Kategorien</p>
+        <ul>
+          <li><a href="/kategorie/fahrzeuge">Wohnmobile &amp; Camper</a></li>
+          <li><a href="/kategorie/ausruestung-und-zubehoer">Camping-Zubehör</a></li>
+          <li><a href="/kategorie/zelte-und-dachzelte">Zelte &amp; Dachzelte</a></li>
+          <li><a href="/kategorie/fahrraeder-traeger">Fahrräder &amp; Träger</a></li>
+          <li><a href="/kategorie/campingplaetze-stellplaetze">Stellplätze &amp; Campingplätze</a></li>
+          <li><a href="/kategorie/dienstleistungen">Camping-Services</a></li>
+          <li><a href="/kategorie/tiny-houses">Tiny Houses</a></li>
+          <li><a href="/kategorie/mieten-vermieten">Mieten &amp; Vermieten</a></li>
+          <li><a href="/kategorie/boote-wassersport">Boote &amp; Wassersport</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Support &amp; Tools</p>
+        <ul>
+          <li><a href="/faq-hilfe">Hilfe &amp; FAQ</a></li>
+          <li><a href="/zuladungsrechner">Zuladungsrechner</a></li>
+          <li><a href="/reisekostenrechner">Reisebudget-Rechner</a></li>
+          <li><a href="/kontakt">Kontakt &amp; Feedback</a></li>
+          <li><a href="/sicher-handeln">Sicher handeln</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Rechtliches</p>
+        <ul>
+          <li><a href="/agb">AGB</a></li>
+          <li><a href="/nutzungsbedingungen">Nutzungsbedingungen</a></li>
+          <li><a href="/datenschutz">Datenschutz</a></li>
+          <li><a href="/impressum">Impressum</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="f-bottom">
+      <span>© 2026 Campuna®. Alle Rechte vorbehalten.</span>
+      <span class="soc"><a href="#" aria-label="Instagram">IG</a><a href="#" aria-label="TikTok">TT</a><a href="#" aria-label="YouTube">YT</a><a href="#" aria-label="Facebook">FB</a></span>
+    </div>
+  </div>
+</footer>
+
+<!-- Floating calculator button (design). DEV: real link to the calculator page. -->
+<a class="calc-fab" href="/zuladungsrechner" aria-label="Zuladungsrechner öffnen"><span>BERECHNEN</span><i aria-hidden="true">▦</i></a>
+
+</body>
+</html>

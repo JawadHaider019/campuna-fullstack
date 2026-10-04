@@ -7,19 +7,23 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://campuna.de';
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Campuna | Dein Camping-Marktplatz zum Kaufen und Verkaufen",
+    default: "Campuna | Camping-Marktplatz: Kaufen, Verkaufen, Entdecken",
     template: "%s | Campuna"
   },
-  description: "Wohnmobile, Wohnwagen, Zelte, Zubehör und Stellplätze an einem Ort. Kaufe und verkaufe Camping-Angebote in ganz Deutschland. Privat kostenlos inserieren.",
+  description: "Wohnmobile, Wohnwagen, Zubehör, Zelte, Stellplätze, Tiny Houses, Boote, Vermietung und Services: die ganze Camping-Welt an einem Ort. Privat kostenlos.",
   keywords: [
     "camping marktplatz",
     "camping kaufen",
     "camping verkaufen",
     "wohnmobile",
     "wohnwagen",
+    "camping zubehör",
     "zelte",
-    "zubehör",
     "stellplätze",
+    "campingplätze",
+    "tiny houses",
+    "boote",
+    "camping services",
     "kostenlos inserieren"
   ],
   authors: [{ name: "Campuna" }],
@@ -47,8 +51,8 @@ export const metadata = {
     locale: "de_DE",
     url: siteUrl,
     siteName: "Campuna",
-    title: "Campuna | Dein Camping-Marktplatz zum Kaufen und Verkaufen",
-    description: "Wohnmobile, Wohnwagen, Zelte, Zubehör und Stellplätze an einem Ort. Kaufe und verkaufe Camping-Angebote in ganz Deutschland.",
+    title: "Campuna | Camping-Marktplatz: Kaufen, Verkaufen, Entdecken",
+    description: "Die ganze Camping-Welt an einem Ort: Wohnmobile, Wohnwagen, Zubehör, Zelte, Stellplätze, Tiny Houses, Boote, Vermietung und Camping-Services.",
     images: [
       {
         url: "/assets/og/campuna-og-startseite.jpg",
@@ -57,12 +61,11 @@ export const metadata = {
         alt: "Campuna Camping Marktplatz",
       },
     ],
-
   },
   twitter: {
     card: "summary_large_image",
-    title: "Campuna | Dein Camping-Marktplatz zum Kaufen und Verkaufen",
-    description: "Wohnmobile, Wohnwagen, Zelte, Zubehör und Stellplätze an einem Ort. Kaufe und verkaufe Camping-Angebote in ganz Deutschland.",
+    title: "Campuna | Camping-Marktplatz: Kaufen, Verkaufen, Entdecken",
+    description: "Die ganze Camping-Welt an einem Ort: Wohnmobile, Wohnwagen, Zubehör, Zelte, Stellplätze, Tiny Houses, Boote, Vermietung und Camping-Services.",
     images: ["/assets/og/campuna-og-startseite.jpg"],
   },
   icons: {

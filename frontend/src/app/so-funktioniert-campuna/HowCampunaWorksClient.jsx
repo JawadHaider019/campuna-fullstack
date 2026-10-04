@@ -58,18 +58,18 @@ const STEPS = [
 const BOOST_FEATURES = [
     {
         icon: TrendingUp,
-        title: 'Höhere Platzierung',
-        desc: 'Dein Inserat erscheint ganz oben in den Suchergebnissen und Kategorien für maximale Relevanz.',
+        title: 'Prominentere Platzierung',
+        desc: 'Dein Inserat erhält bevorzugte Sichtbarkeit in passenden Kategorien und Suchergebnissen.',
     },
     {
         icon: Eye,
-        title: 'Bis zu 5x mehr Aufrufe',
-        desc: 'Mehr interessierte Camper sehen dein Angebot direkt auf den ersten Blick ohne langes Suchen.',
+        title: 'Zusätzliche Sichtbarkeit',
+        desc: 'Mehr interessierte Camper entdecken dein Angebot durch hervorgehobene Platzierung auf den ersten Blick.',
     },
     {
         icon: Sparkles,
-        title: 'Goldenes Hervorgehoben-Badge',
-        desc: 'Ein optischer Blickfang hebt dein Angebot sofort von Standard-Inseraten ab und schafft Vertrauen.',
+        title: 'Optische Hervorhebung',
+        desc: 'Ein markantes Hervorgehoben-Badge hebt dein Angebot sofort ab und sorgt für maximale Aufmerksamkeit.',
     },
 ];
 
@@ -254,7 +254,7 @@ export default function HowCampunaWorksClient() {
                                 Wie funktioniert das Inserat-Boosten?
                             </h2>
                             <p className="font-sans text-xs sm:text-sm md:text-base text-charcoal/70 leading-relaxed font-light">
-                                Möchtest du deine Campingausrüstung oder dein Fahrzeug besonders schnell verkaufen? Mit der Boost-Funktion platzierst du dein Inserat ganz oben im Marktplatz.
+                                Möchtest du deine Campingausrüstung oder dein Fahrzeug besonders effektiv präsentieren? Mit der Boost-Funktion sicherst du deinem Inserat eine prominentere Platzierung und optische Hervorhebung im Marktplatz.
                             </p>
                         </div>
 

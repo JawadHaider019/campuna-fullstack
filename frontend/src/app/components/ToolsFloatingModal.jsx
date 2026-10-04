@@ -124,7 +124,7 @@ export default function ToolsFloatingModal() {
                                 aria-label="Camping Rechner öffnen"
                                 title="Camping-Rechner: Jetzt berechnen"
                             >
-                                <Calculator className="w-6 h-6 text-gold group-hover:text-forest transition-all duration-300 group-hover:rotate-6" />
+                                <Calculator className="w-6 h-6 text-gold group-hover:text-white transition-all duration-300 group-hover:rotate-6" />
 
                                 {/* High-Contrast Clear Tooltip Tag on the side (desktop/tablet only) */}
                                 <div className="hidden sm:block absolute right-full mr-3.5 top-1/2 -translate-y-1/2 whitespace-nowrap select-none pointer-events-none">

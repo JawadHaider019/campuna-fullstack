@@ -174,7 +174,7 @@ export default function WhyCampuna() {
                             </p>
                             <div className="pt-1 border-t border-white/10">
                                 <Link
-                                    href="/so-funktioniert-campuna"
+                                    href="/uber-campuna"
                                     className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-white hover:text-gold transition-colors group"
                                 >
                                     <span>Mehr über unsere Mission erfahren</span>

@@ -1,0 +1,768 @@
+﻿
+
+Competitor Deep-Dive Report — Campuna
+
+5 German camping-marketplace competitors · keywords, structures, topics, categories, gaps
+
+Field
+
+Detail
+
+Prepared for
+
+Campuna: Germany's marketplace for the complete camping ecosystem (custom rebuild)
+
+Positioning
+
+Campuna is Germany's marketplace for the complete camping ecosystem: motorhomes, caravans and campers, camping gear and accessories, tents and roof tents, pitches and campsites, tiny houses, boats, rentals, camping services and professional providers. Buy, sell and discover in one place.
+
+Prepared by
+
+Intelitune
+
+Date
+
+2 September 2026 · positioning updated 3 October 2026
+
+Competitors
+
+campertrader.de · caraworld.de · vanboerse.de · womo-gebraucht.com · caravanmarkt.info (+ second.place profiled)
+
+Data
+
+Ubersuggest DE ranking keywords & top pages (Sep 2026), live site crawls, Campuna 50,145-kw master sheet
+
+Companion file
+
+Campuna_Competitor_Keyword_Gap.xlsx — full keyword-gap data
+
+Scope note
+
+SEO investment in this phase targets buy and sell intents across the whole ecosystem. Rentals stay a live Campuna category; rental keywords are archived for a later phase, not deleted. National targeting only (no location pages).
+
+
+1. Executive Summary
+
+Positioning baseline: Campuna is Germany's marketplace for the complete camping ecosystem: motorhomes, caravans and campers, camping gear and accessories, tents and roof tents, pitches and campsites, tiny houses, boats, rentals, camping services and professional providers. Every finding in this report is read against this full-ecosystem positioning, not against any single category. The keyword research mirrors it: of 1.89M monthly searches in the master sheet, vehicles account for 38%, pitches and campsites 27%, accessories 13%, tents 11% and tiny houses 6%, with services, bikes and carriers, boats and sell-side terms making up the rest.
+
+No competitor covers Campuna’s full range. Each one wins exactly one slice of the market with one repeatable page pattern: campertrader wins campervan/minicamper with type-PLPs plus a value-guide and tools; caraworld wins vehicles at scale with brand, model, price-band and Aufbauart PLPs; vanboerse wins the self-built-van niche from a single page; womo-gebraucht survives on the "von privat" angle; caravanmarkt owns dealer and service directory queries. Campuna’s opportunity is to combine these proven patterns on one domain: type PLPs + brand PLPs + price-band PLPs + a Wert/verkaufen money page + a service-provider directory, inside the only marketplace built for the complete camping ecosystem (vehicles, gear, tents, pitches and campsites, tiny houses, boats, rentals, services and professional providers).
+
+Keyword-gap result: of 151 top competitor rankings analysed, 91 are CONTENT GAPS not yet in Campuna’s master plan (mostly brand+model and campervan-synonym terms), 34 are already in the plan and now SERP-proven, 14 are navigational noise. The single biggest addition: a Wohnwagen brand-page set and a Campervan/Campingbus synonym cluster.
+
+
+2. Competitor Profiles (50x deep)
+
+
+2.1 campertrader.de — the model to copy
+
+Metric
+
+Value
+
+Authority / size
+
+DA 21 · 1,903 keywords · 6k–31k visits/mo · 377 backlinks · 151 ref. domains
+
+Positioning
+
+Specialised camping marketplace vs. Kleinanzeigen — "no monthly fees, no hidden costs"
+
+Monetisation
+
+Success fee 3% of sale (min €150, max €2,000) on private vehicle sales; free Flohmarkt; dealer subscriptions + analytics
+
+Business model: Two-sided marketplace: private + dealers. Vehicles (campervans, motorhomes, minicampers), a free camping flea market (gear), and a service directory (workshops, gas inspectors, shops).
+
+Site structure / URL architecture:
+
+•    /gebraucht-kaufen/{campervan|mini-camper|wohnmobil}/ — type PLPs carry almost all commercial rankings
+
+•    /blog/{slug} — buying guides, finance, tech, legal; authors named (E-E-A-T); 2026-dated content
+
+•    /tools/kabelrechner — calculator ranking for 2k+ vol of electric queries; KFZ-Steuer-Rechner as second tool
+
+•    /page/{dealer-name} — dealer profile pages catching brand-name queries
+
+•    App + Suchaufträge (saved-search alerts) + buyer voucher (€80) as conversion hooks
+
+Top ranking keywords (pos · volume/mo):
+
+Keyword
+
+Pos
+
+Vol
+
+Ranking URL
+
+campervan gebraucht
+
+1
+
+3,600
+
+/gebraucht-kaufen/campervan/
+
+minicamper kaufen
+
+1
+
+1,000
+
+/gebraucht-kaufen/mini-camper/
+
+campervan kaufen
+
+4
+
+6,600
+
+/gebraucht-kaufen/campervan/
+
+minicamper
+
+8
+
+6,600
+
+/blog/minicamper-kaufberatung
+
+kleine camper
+
+2
+
+1,300
+
+/blog/minicamper-kaufberatung
+
+kabelquerschnitt rechner 12v
+
+2
+
+1,000
+
+/tools/kabelrechner/
+
+was ist mein wohnmobil wert
+
+2
+
+90 (CPC €6+)
+
+/blog/wohnmobil-wert-guide-2026
+
+wohnmobile gebraucht kaufen von privat
+
+8
+
+2,900
+
+/gebraucht-kaufen/wohnmobil/
+
+Content & topics: Blog covers buying guides (Minicamper 2026, Wohnmobile für Einsteiger, unter 20.000 €), finance & tax (Finanzierung, KFZ-Steuer-Rechner), technical (Standheizung Gas vs. Diesel, Starlink vs. LTE, Kabelquerschnitt), legal (Wildcampen 2026), maintenance, lifestyle. Named authors (Sandra, Dominik, Tobias…). Partners: ARD, Charivari, CamperVans Magazine.
+
+Strengths:
+
+•    PLP-per-type + supporting blog cluster = ranks #1 on both commercial and informational SERPs
+
+•    Tools are link magnets and rank themselves (Kabelrechner, Steuerrechner)
+
+•    Wohnmobil-Wert guide catches €5–8 CPC valuation queries — feeds the sell-side funnel
+
+•    Success-fee model = zero listing friction
+
+Weaknesses:
+
+•    Weak on Wohnwagen (caravans) — barely ranks
+
+•    No brand pages (Hymer/Knaus…) — loses that whole layer to caraworld
+
+•    No price-band PLPs — only a blog post
+
+•    Gear "Flohmarkt" has no SEO surface at all
+
+What Campuna takes from this competitor:
+
+•    Copy: /gebraucht-kaufen/{type} PLP pattern with intro copy + FAQ below the grid
+
+•    Copy: Wert-Rechner/guide as the top of the verkaufen funnel
+
+•    Copy: named authors + dated guides
+
+•    Beat: add brand pages, price-band PLPs and Wohnwagen depth they lack
+
+
+2.2 caraworld.de — the programmatic benchmark
+
+Metric
+
+Value
+
+Authority / size
+
+DA 32 · 28,626 keywords · 42k–250k visits/mo · 262k backlinks · 3,867 ref. domains
+
+Positioning
+
+Germany’s classifieds portal for Wohnmobile & Wohnwagen (dealer-fed, CIVD-linked)
+
+Monetisation
+
+Dealer listing packages
+
+Business model: Dealer-dominated marketplace with ~30k+ live vehicle listings; consumer content layer under /informieren.
+
+Site structure / URL architecture:
+
+•    /wohnmobile and /wohnwagen — the two master PLPs (H1 + copy + FAQ) rank top-10 for 74k-vol heads
+
+•    /{kategorie}/{brand} — e.g. /wohnmobile/dethleffs — dozens of brand PLPs, each 200–400 visits/mo
+
+•    /{kategorie}/{brand}/{model} — model-level PLPs (eriba touring, knaus südwind, morelo palace, chausson 640)
+
+•    /wohnmobile/preis-15000-25000 etc. — price-band PLPs; the 15–25k page alone ≈1,900 visits/mo
+
+•    /wohnmobile/{bundesland} — regional PLPs (Bayern 700+ visits/mo) — pattern Campuna is skipping by decision
+
+•    /wohnmobile/aufbauart/{campervan|alkoven|teilintegriert} — build-type PLPs
+
+•    /haendler/{name} + /informieren/hersteller/{brand} — dealer + manufacturer info pages
+
+Top ranking keywords (pos · volume/mo):
+
+Keyword
+
+Pos
+
+Vol
+
+Ranking URL
+
+wohnmobile gebraucht kaufen
+
+8
+
+74,000
+
+/ (homepage)
+
+kleines wohnmobil kaufen
+
+1
+
+1,300
+
+/wohnmobile/preis-15000-25000
+
+dethleffs wohnmobil gebraucht
+
+1
+
+880
+
+/wohnmobile/dethleffs
+
+gebrauchte knaus wohnmobile
+
+1
+
+1,000
+
+/wohnmobile/knaus
+
+gebrauchte wohnwagen
+
+4
+
+8,100
+
+/ (homepage)
+
+was kostet ein wohnmobile
+
+2
+
+1,000
+
+/wohnmobile (FAQ block)
+
+wohnmobil bis 20000 euro
+
+1
+
+210
+
+/wohnmobile/preis-15000-25000
+
+eriba touring gebraucht
+
+2
+
+1,600
+
+/wohnwagen/hymer-eriba/touring
+
+Content & topics: Almost no blog — rankings come from listing-data PLPs with template copy + FAQ. Hersteller-Übersicht page catches "wohnwagen marken" (880). Cost questions ("was kostet ein wohnmobil", 1,000+330 vol) answered directly on the category PLP — an AEO play on a commercial page.
+
+Strengths:
+
+•    Template PLP factory: one template × every brand/model/price/region = 28k keywords
+
+•    Inventory scale makes every PLP self-updating
+
+•    Massive authority (3.9k ref. domains) from dealer ecosystem
+
+Weaknesses:
+
+•    Zero content brand — no guides, no community, no tools
+
+•    Weak on campervan-culture terms (vanboerse/campertrader beat it)
+
+•    No private-seller angle
+
+•    Only vehicles — no gear, pitches, services
+
+What Campuna takes from this competitor:
+
+•    Copy: brand PLPs, model PLPs, price-band PLPs, Aufbauart PLPs — all validated by their traffic
+
+•    Copy: answer "was kostet…" questions directly on PLPs (AEO block)
+
+•    Beat: they have no editorial layer — Campuna’s guides + tools + community fill it
+
+
+2.3 vanboerse.de — proof that a DA-7 niche site can win
+
+Metric
+
+Value
+
+Authority / size
+
+DA 7 · 518 keywords · 2.6k–8.5k visits/mo · 193 backlinks · 83 ref. domains
+
+Positioning
+
+"Der Marktplatz für Campervans & Wohnmobile" — self-built/converted vans, kostenlos inserieren
+
+Monetisation
+
+Free listings (upsells minimal)
+
+Business model: Niche P2P board for ausgebaute/converted vans. Nearly all rankings sit on the HOMEPAGE — no architecture.
+
+Site structure / URL architecture:
+
+•    Single-page SEO: homepage ranks #1 for ~20 buying variants (camping van kaufen, ausgebauter van kaufen, camper bus kaufen…)
+
+•    No category pages, no brand pages, no content — pure exact-theme homepage
+
+•    Also holds "campervan verkaufen" #1 (CPC €13.45) and "camper zu verkaufen" #3 (CPC €10.83)
+
+Top ranking keywords (pos · volume/mo):
+
+Keyword
+
+Pos
+
+Vol
+
+Ranking URL
+
+camping van kaufen
+
+1
+
+720
+
+/
+
+camper van kaufen gebraucht
+
+1
+
+720
+
+/
+
+camper bus kaufen
+
+1
+
+590
+
+/
+
+ausgebauter van kaufen
+
+1
+
+480
+
+/
+
+van kaufen
+
+3
+
+2,400
+
+/
+
+campervan kaufen
+
+6
+
+6,600
+
+/
+
+campervan verkaufen
+
+1
+
+90 (CPC €13.45)
+
+/
+
+camping kastenwagen gebraucht
+
+8
+
+1,600
+
+/
+
+Content & topics: No content marketing. The lesson is lexical: the "ausgebaut/umgebaut/selbst ausgebaut/Campingbus/camper bus/van" synonym field is a distinct cluster with its own demand — nobody serves it with a proper PLP + guide.
+
+Strengths:
+
+•    Proves low authority is enough when the page-theme match is exact
+
+•    Owns the self-built-van language nobody else targets
+
+•    Sell-side terms with €10–13 CPC held by a free-listing pitch
+
+Weaknesses:
+
+•    One page carries everything — fragile, capped
+
+•    No structure to expand
+
+•    No trust/content layer
+
+What Campuna takes from this competitor:
+
+•    Campuna /wohnmobile/campervan PLP must include the full synonym field (Campingbus, camper bus, ausgebauter van, umgebauter van, selbst ausgebaut)
+
+•    A dedicated "Camper verkaufen — kostenlos inserieren" block wins their €13-CPC sell terms at DA 6
+
+
+2.4 womo-gebraucht.com — the "von privat" angle
+
+Metric
+
+Value
+
+Authority / size
+
+DA 15 · 221 keywords · 0.3k–3.5k visits/mo · 465 backlinks · 95 ref. domains
+
+Positioning
+
+"NUR für private Anbieter" — no dealers, no commission, no tracking, DACH coverage
+
+Monetisation
+
+€9.90 per listing / 180 days / 20 photos + video
+
+Business model: Private-only WordPress classifieds (ACADP plugin). Categories: Alkoven, Campingbus, Integriert, Kastenwagen, Teilintegriert, Wohnwagen, 15+ brands, 13 Zubehör subcategories. Standorte (DACH) nav.
+
+Site structure / URL architecture:
+
+•    Homepage carries nearly all rankings; listing pages (/acadp_listings/{slug}) occasionally rank for model terms
+
+•    Type + brand category taxonomy exists but is too thin to rank
+
+•    Privacy/no-tracking as trust USP; PStTG/DAC-7-free claim targets private-seller fears
+
+Top ranking keywords (pos · volume/mo):
+
+Keyword
+
+Pos
+
+Vol
+
+Ranking URL
+
+wohnmobile verkaufen privat
+
+4
+
+590 (CPC €9.88)
+
+/
+
+wohnmobile gebraucht von privat
+
+5
+
+1,300
+
+/
+
+wohnmobile gebraucht kaufen von privat
+
+13
+
+2,900
+
+/
+
+wohnmobil notverkauf
+
+16
+
+90
+
+/
+
+gebrauchte wohnmobile teilintegriert von privat
+
+13
+
+140
+
+/
+
+winterfeste wohnmobile gebraucht kaufen
+
+18
+
+50
+
+/
+
+Content & topics: No content layer. The insight is intent language: "von privat", "Notverkauf", "winterfest", "für Frauen", "teilintegriert von privat" — qualifier long-tails a bigger marketplace can absorb with filter pages and copy blocks.
+
+Strengths:
+
+•    Clear anti-dealer positioning resonates with private sellers
+
+•    DAC7/PStTG anxiety used as a conversion argument
+
+Weaknesses:
+
+•    €9.90 paywall caps supply
+
+•    DA 15 but almost no page architecture — rankings stuck at pos 10–20
+
+•    No content, no tools
+
+What Campuna takes from this competitor:
+
+•    Campuna’s free private listings + dealer packages beats their model outright — say it on the verkaufen page
+
+•    Add "von privat" copy/filters to gebraucht PLPs; add a Notverkauf/quick-sale angle to the sell funnel
+
+•    Address DAC7/PStTG questions in FAQ — real private-seller concern with zero good answers in the SERP
+
+
+2.5 caravanmarkt.info — the directory layer
+
+Metric
+
+Value
+
+Authority / size
+
+DA 20 · 10,000 keywords · ~10k visits/mo · 1.44M backlinks (sitewide widgets) · 665 ref. domains
+
+Positioning
+
+Germany-wide Wohnmobil/Wohnwagen dealer & service directory
+
+Monetisation
+
+Dealer profiles / leads
+
+Business model: Pure directory: dealers, brand representations, service partners, repair — sliced by Bundesland and brand.
+
+Site structure / URL architecture:
+
+•    /wohnwagenhaendler/{bundesland} — regional dealer indexes ranking for "händler in der nähe" queries
+
+•    /wohnmobilhaendler/{dealer-name} — thousands of dealer profiles catching brand-name searches (Südsee Caravan 3.6k, Camping Krings 3.6k…)
+
+•    /{bundesland}/reparatur-wohnwagen and /servicepartner-{brand} (Dometic, Truma) + /markenvertretung-{brand} (Bürstner…)
+
+Top ranking keywords (pos · volume/mo):
+
+Keyword
+
+Pos
+
+Vol
+
+Ranking URL
+
+wohnmobilhändler in der nähe
+
+11
+
+4,400
+
+/wohnwagenhaendler/hessen
+
+wohnwagen händler
+
+14
+
+1,600
+
+/wohnwagenhaendler/deutschland
+
+wohnwagen reparatur
+
+23
+
+1,000 (CPC €1.61)
+
+/bw/reparatur-wohnwagen
+
+dometic partner
+
+2
+
+320
+
+/servicepartner-dometic
+
+bürstner vertragswerkstatt in der nähe
+
+6
+
+110
+
+/markenvertretung-buerstner
+
+rheinrad wohnmobile ankauf und verkauf
+
+1
+
+50
+
+/wohnmobilhaendler/rheinrad
+
+Content & topics: No editorial content — the directory IS the content. Entity pages (dealer profiles) compound: every German dealer name search is a landing opportunity.
+
+Strengths:
+
+•    Provider-profile pattern scales to thousands of entity pages
+
+•    Service-partner × brand pages catch high-intent repair/service queries
+
+Weaknesses:
+
+•    Positions mostly 10–25 — thin profiles, beatable
+
+•    Directory-only: no transactions, no listings
+
+•    Ugly legacy platform
+
+What Campuna takes from this competitor:
+
+•    Campuna’s Camping Services category should become a PROVIDER DIRECTORY: /services/{gaspruefung|werkstatt|aufbereitung} index pages + /anbieter/{name} profile pages (Campuna already has providers like Mobile Gasprüfung listings)
+
+•    Provider profiles double as the backlink loop ("Auf Campuna gelistet" badge)
+
+
+2.6 second.place (client-named reference)
+
+Invite-only used camping & outdoor marketplace (Wohnmobile, Wohnwagen, Zubehör, Ausrüstung). Free for private; Bronze/Silver/Gold dealer packages; two-sided reviews; radius search. SEO footprint ≈ zero (DA 3, 2 keywords, ~0 visits — ranks only for "proverda" via a dealer page and "restposten camping" pos 44). Verdict: same model as Campuna but invisible — not a threat; a warning that community features alone don’t create search demand. Their /haendler/{name} profile pages are the one pattern worth noting — consistent with the caravanmarkt takeaway.
+
+
+3. Cross-Competitor Patterns
+
+Table stakes — every serious player has them (Campuna must match):
+
+•    Type-level PLPs with real copy (H1, intro, FAQ) on top of the listing grid — campertrader & caraworld both rank with these
+
+•    Free or low-friction private listing flow, stated loudly on the page
+
+•    Entity pages for sellers/dealers/providers that catch name searches
+
+Structural gaps across ALL five (Campuna wins here):
+
+•    Nobody combines vehicles, gear, tents, pitches and campsites, rentals, services, professional providers, tiny houses and boats on one domain. Campuna's full-ecosystem positioning is unique and is the core differentiator
+
+•    Nobody has FAQPage/AEO-structured answers except caraworld’s cost block — the AI-answer space is open
+
+•    No competitor has a modern Wert-Rechner + Ankauf funnel (campertrader has a guide only) — the €10–15-CPC sell cluster is weakly defended
+
+•    Wohnwagen brand/model coverage is caraworld-only — a second player fits
+
+•    Zubehör/Zelte/Dachzelt commerce SEO is owned by shops & Kleinanzeigen, not by any marketplace. Campuna's Zubehör and Zelte categories can take this slice as two pillars of the wider ecosystem
+
+
+4. Keyword Gap Summary
+
+151 top competitor rankings analysed against Campuna’s 50,145-keyword master sheet (full data in Campuna_Competitor_Keyword_Gap.xlsx):
+
+Status
+
+Count
+
+Action
+
+CONTENT GAP — not in master plan
+
+91
+
+Add to master sheet & page map (brand/model pages, campervan synonyms, qualifier long-tails)
+
+Covered in master — SERP-proven
+
+34
+
+Prioritise these page builds — a low-DA competitor already ranks
+
+Navigational / other-brand
+
+14
+
+Ignore (dealer & competitor brand names)
+
+Biggest gap clusters to add:
+
+•    Wohnwagen brand pages: knaus/dethleffs/weinsberg/eriba wohnwagen (+ model pages Südwind, Touring) — ~30k combined vol, KD 16–36
+
+•    Wohnmobil brand pages beyond top-4: bürstner, eura mobil, chausson, pilote, forster, phoenix, morelo, lmc, ahorn — ~45k combined vol
+
+•    Campervan synonym field: campingbus(se) gebraucht, camper bus, van kaufen, ausgebauter/umgebauter van, micro camper — ~18k vol, KD 15–29
+
+•    Wert/valuation cluster: was ist mein wohnmobil wert, wertermittlung, schwacke liste kostenlos, bewertung — low vol but €4–8 CPC, feeds /wohnmobil-verkaufen
+
+•    Qualifier long-tails: von privat, notverkauf, winterfest, für 2 personen, für einsteiger, für frauen — filter pages + guide angles
+
+•    Cost/AEO on PLPs: was kostet ein wohnmobil (1,000), wie viel kostet ein wohnmobil (390), wohnmobil kosten (880) — answer directly on /wohnmobile
+
+
+5. Action Plan (feeds the SOP)
+
+•    Extend master sheet with the 91 gap keywords (done in the gap file — merge on next revision) and map each to its target page
+
+•    Page-build order from competitor proof: 0) all 9 category PLPs + /kategorien hub, so every pillar of the ecosystem has a rankable page from day one, 1) /wohnmobile + /wohnwagen master PLPs, 2) /wohnmobile/campervan (full synonym set), /minicamper, /kastenwagen, 3) price-band PLPs, 4) top-10 brand PLPs per category, 5) /wohnmobil-verkaufen + Wert-Rechner, 6) services directory + provider profiles
+
+•    For each page, run SOP Step 3 with the competitor URLs named in this report as the SERP set
+
+•    AEO: FAQ blocks on every PLP answering the was-kostet / welche-marke / worauf-achten questions — no competitor structures these
+
+•    Authority: provider-profile badge loop (caravanmarkt pattern) + data-PR (Wert-Index) — route to DA 20+ inside 12 months
+
+ 
+
+
+
+

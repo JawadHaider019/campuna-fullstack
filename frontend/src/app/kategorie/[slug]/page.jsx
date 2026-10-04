@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MapPin, Eye, Search, ChevronDown } from 'lucide-react';
+import { Heart, MapPin, Eye, Search, ChevronDown, CheckCircle2, ArrowRight, Tag, Sparkles } from 'lucide-react';
+import Link from 'next/link';
 import { CATEGORIES } from '@/data';
+import { CATEGORY_SEO_DATA } from '@/data/categorySeoData';
 import { getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import CategoriesSection from '@/app/components/CategoriesSection';
@@ -405,10 +407,11 @@ export default function CategoryPage() {
     const slug = params?.slug ? decodeURIComponent(params.slug) : '';
     const categoryName = SLUG_TO_CATEGORY[slug] || '';
 
+    const seoData = CATEGORY_SEO_DATA[slug] || Object.values(CATEGORY_SEO_DATA).find(c => c.name === categoryName) || {};
     const categoryInfo = CATEGORIES.find(c => c.name === categoryName || c.slug === slug) || {};
 
-    const heroTitle = categoryInfo.heroTitle || categoryName || 'Alle Angebote';
-    const heroSubtitle = categoryInfo.heroSubtitle || '';
+    const heroTitle = seoData.heroTitle || categoryInfo.heroTitle || categoryName || 'Alle Angebote';
+    const heroSubtitle = seoData.heroSubtitle || categoryInfo.heroSubtitle || '';
 
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -417,13 +420,15 @@ export default function CategoryPage() {
     const [selectedSubcategory, setSelectedSubcategory] = useState('');
     const [openFaqId, setOpenFaqId] = useState('cat_faq_0');
 
-    const subcategories = categoryName ? (CATEGORY_SUBCATEGORIES[categoryName] || []) : [];
+    const subcategories = seoData.subcategories || (categoryName ? (CATEGORY_SUBCATEGORIES[categoryName] || []) : []);
+    const popularSearches = seoData.popularSearches || [];
 
     // Reset pagination and search when category changes
     useEffect(() => {
         setVisibleCount(20);
         setSearchKeyword('');
         setSelectedSubcategory('');
+        setOpenFaqId('cat_faq_0');
     }, [slug]);
 
     useEffect(() => {
@@ -772,6 +777,61 @@ export default function CategoryPage() {
                     </section>
                 </ScrollSectionWrapper>
 
+                {/* ── Popular Searches Strip (AEO Cross-links) ── */}
+                {popularSearches.length > 0 && (
+                    <ScrollSectionWrapper delay={0.05}>
+                        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                            <div className="bg-sand/30 border border-forest/10 rounded-3xl p-6 sm:p-8 space-y-4">
+                                <div className="space-y-1">
+                                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
+                                        BELIEBTE SUCHEN
+                                    </span>
+                                    <h3 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-forest">
+                                        Wonach Camper in {categoryName || 'diesem Bereich'} suchen
+                                    </h3>
+                                </div>
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                    {popularSearches.map((search, idx) => (
+                                        <Link
+                                            key={idx}
+                                            href={search.href}
+                                            className="bg-white border border-forest/10 hover:border-gold hover:text-forest text-charcoal px-3.5 py-1.5 rounded-full text-xs font-sans font-medium transition-all shadow-xs hover:shadow-sm"
+                                        >
+                                            {search.label}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    </ScrollSectionWrapper>
+                )}
+
+                {/* ── Trust & Safety Strip ── */}
+                <ScrollSectionWrapper delay={0.05}>
+                    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                        <div className="bg-forest text-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-md border border-forest/10">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center sm:text-left text-xs font-sans">
+                                <div className="flex items-center justify-center sm:justify-start gap-2.5">
+                                    <CheckCircle2 className="w-4 h-4 text-gold shrink-0" />
+                                    <span>Geprüfte Angebote aus <strong>ganz Deutschland</strong></span>
+                                </div>
+                                <div className="flex items-center justify-center sm:justify-start gap-2.5">
+                                    <CheckCircle2 className="w-4 h-4 text-gold shrink-0" />
+                                    <span>Private Inserate <strong>kostenlos & ohne Provision</strong></span>
+                                </div>
+                                <div className="flex items-center justify-center sm:justify-start gap-2.5">
+                                    <CheckCircle2 className="w-4 h-4 text-gold shrink-0" />
+                                    <span><strong>Direkter Kontakt</strong> mit Käufer & Verkäufer</span>
+                                </div>
+                                <div className="flex items-center justify-center sm:justify-start gap-2.5">
+                                    <CheckCircle2 className="w-4 h-4 text-gold shrink-0" />
+                                    <span>Praktische Tipps unter <Link href="/sicher-handeln" className="underline text-gold hover:text-white ml-1">Sicher handeln</Link></span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </ScrollSectionWrapper>
+
                 {/* ── Category Description / SEO Section ── */}
                 {categoryInfo.seoHeading && categoryInfo.seoParagraphs && categoryInfo.seoParagraphs.length > 0 && (
                     <ScrollSectionWrapper delay={0.05}>
@@ -791,6 +851,45 @@ export default function CategoryPage() {
                         </section>
                     </ScrollSectionWrapper>
                 )}
+
+                {/* ── Seller CTA Banner ── */}
+                <ScrollSectionWrapper delay={0.05}>
+                    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <div className="relative rounded-[32px] sm:rounded-[40px] overflow-hidden bg-gradient-to-br from-forest via-forest to-[#143d29] px-8 py-12 sm:px-12 sm:py-16 lg:px-16 lg:py-16 shadow-xl border border-white/5 group">
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-gold/10 rounded-full blur-3xl pointer-events-none" />
+                            <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-black/40 rounded-full blur-3xl pointer-events-none" />
+
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+                                <div className="lg:col-span-8 space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
+                                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
+                                        KOSTENLOS INSERIEREN
+                                    </span>
+                                    <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+                                        {categoryName ? `${categoryName} verkaufen?` : 'Jetzt Camping-Angebot einstellen'}
+                                    </h2>
+                                    <p className="font-sans text-sm sm:text-base text-sand/85 font-light leading-relaxed max-w-xl pb-2">
+                                        Erstelle in wenigen Minuten dein Inserat und erreiche tausende interessierte Camper in ganz Deutschland. Privat dauerhaft kostenlos.
+                                    </p>
+                                    <Link
+                                        href="/registrieren"
+                                        className="relative w-full max-w-[300px] sm:w-[300px] bg-gradient-to-r from-gold to-beige hover:brightness-110 text-forest font-sans font-bold py-4 px-6 rounded-full transition-all duration-300 flex items-center justify-center text-[10px] sm:text-[12px] uppercase tracking-wider shadow-lg active:scale-95 mx-auto lg:mx-0 cursor-pointer"
+                                    >
+                                        <span>Jetzt kostenlos inserieren</span>
+                                        <ArrowRight className="w-4 h-4 absolute right-5 shrink-0" />
+                                    </Link>
+                                </div>
+                                <div className="relative lg:col-span-4 hidden lg:block items-center justify-center lg:justify-end">
+                                    <div className="absolute top-0 -right-20 flex items-center justify-center text-gold/20 transform -rotate-12 group-hover:text-gold/30 transition-colors duration-700 pointer-events-none">
+                                        <Tag className="w-48 h-48 sm:w-64 sm:h-64 stroke-[1.2]" />
+                                    </div>
+                                    <div className="absolute -bottom-10 -right-10 flex items-center justify-center text-gold/15 transform rotate-12 group-hover:text-gold/25 transition-colors duration-700 pointer-events-none">
+                                        <Sparkles className="w-28 h-28 sm:w-36 sm:h-36 stroke-[1.2]" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </ScrollSectionWrapper>
 
                 {/* ── Category FAQ Section (AEO & Search Intent) ── */}
                 {faqs.length > 0 && (

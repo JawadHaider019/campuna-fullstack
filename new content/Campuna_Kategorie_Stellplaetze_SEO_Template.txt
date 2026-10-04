@@ -1,0 +1,918 @@
+﻿
+
+I N T E L I T U N E
+
+CAMPUNA
+
+Category Page SEO Template: Stellplätze & Campingplätze
+
+https://campuna.de/kategorie/campingplaetze-stellplaetze
+
+Field
+
+Value
+
+Page
+
+Category PLP Stellplätze & Campingplätze
+
+Positioning
+
+Campuna is Germany&apos;s marketplace for the complete camping ecosystem. This page owns the pitches pillar (27% of keyword demand); its buy/sell core is the Dauercamping market.
+
+Content language
+
+German (de-DE), du-form, no em/en dashes in body copy
+
+Primary keywords
+
+dauercampingplatz (3,600, KD 21) · dauerstellplatz wohnwagen (1,000, KD 15) · mobilheim auf campingplatz kaufen (880) · wohnwagen mit stellplatz kaufen (590, KD 21)
+
+Sources
+
+Live Bubble page (19 listings) · testing.campuna.de/kategorie/campingplätze-stellplätze · Ubersuggest DE (03.10.2026) · BVCD Dauercamping data · master keyword sheet
+
+Companion files
+
+campuna-kategorie-stellplaetze-template.html · preview_kategorie_stellplaetze.png
+
+Prepared
+
+Intelitune, 03.10.2026
+
+Instructions in English. Highlighted blocks are final German website copy: copy 1:1, do not translate or rephrase.
+
+
+0. Strategy and structure analysis
+
+What this category really is
+
+Of the 19 live listings, 14 are Dauercampingplätze or Parzellen offered WITH a caravan for takeover (Ablöse 4,500 to 22,000 €). Only 4 are places to stay per night (10 to 37 €), one is a Mobilheim. So the buy/sell core of this category is the Dauercamping market, which is also the winnable keyword set. The head terms "campingplatz" and "wohnmobil stellplatz" are local and navigational (Google Maps, park4night, ADAC, camping.info). Without city pages (strategy decision) Campuna covers them with feature pages, not head-on.
+
+Changes vs the testing build
+
+A. H1
+
+"Stellplätze und Campingplätze finden und anbieten" becomes "Dauercampingplätze und Stellplätze finden und anbieten" (main target in the H1).
+
+B. Chip "Dauercampingplätze"
+
+Added first: matches 14 of 19 listings and the best keyword (dauercampingplatz 3,600, KD 21). Testing chips Stellplätze, Campingplätze, Private Stellplätze stay.
+
+C. Price type field (data model)
+
+Live shows "10,00 €" (per night) and "22000,00 €" (takeover) with the same label "Preis". Add a price_type per listing: Ablöse · Kaufpreis · Preis pro Nacht · Pacht pro Saison · Pacht pro Jahr. The card label shows it.
+
+D. Card pills = place type
+
+Live shows condition pills ("Wie neu", "Gut", even English "Like new") on pitches. Replace with type pills: Dauercampingplatz · Dauerstellplatz · Stellplatz · Privater Stellplatz · Campingplatz, plus "mit Wohnwagen" when a caravan is included.
+
+E. Standard additions
+
+Sort, hidden H2, pagination fallback, Beliebte Suchen (8), SEO text ~370 words with 5 H3s and BVCD cost data, trust strip, Ratgeber, sell band, FAQ 1 → 5.
+
+Bugs to fix before launch
+
+#
+
+Issue
+
+Fix
+
+Priority
+
+1
+
+Title "Stellplätze & Campingplätze finden | Campuna | Campuna"
+
+New title, stored without brand
+
+High
+
+2
+
+Server HTML "Alle (0)" / "0 Inserate"; cards via JS
+
+Grid + count server-side
+
+Critical
+
+3
+
+Canonical with umlauts (campingpl%C3%A4tze-stellpl%C3%A4tze)
+
+Slug campingplaetze-stellplaetze + 301
+
+High
+
+4
+
+No JSON-LD; chips without hrefs
+
+Section 5 schema; real <a href> chips
+
+High
+
+5
+
+Live: sold listing "Verkauft - Wohnwagen und Premium Vorbau"
+
+Status "verkauft" hides the card
+
+High
+
+6
+
+Same "Preis" label for 10 € per night and 22.000 € Ablöse
+
+price_type field (C)
+
+High
+
+7
+
+Condition pills on pitches, English "Like new"
+
+Type pills (D); German labels only
+
+Medium
+
+8
+
+"Fragen & Antworten zu Stellplätze & Campingplätze"
+
+Dative: "zu Stellplätzen und Campingplätzen"
+
+Medium
+
+9
+
+FAQ answer "unkompliziert" for private pitches ignores permits
+
+Corrected answer (Q4) with Bauamt hint
+
+Medium
+
+
+1. Meta title + description (copy-paste)
+
+Title 59 chars, description 148 chars.
+
+<title>Dauercampingplatz & Stellplatz finden oder kaufen | Campuna</title>
+
+<meta name="description" content="Dauercampingplätze mit Wohnwagen, Parzellen und Stellplätze für Wohnmobil und Wohnwagen in ganz Deutschland, privat und vom Betreiber. Jetzt finden.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/campingplaetze-stellplaetze">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:title" content="Dauercampingplatz & Stellplatz finden oder kaufen | Campuna">
+
+<meta property="og:description" content="Dauercampingplätze mit Wohnwagen, Parzellen und Stellplätze für Wohnmobil und Wohnwagen in ganz Deutschland.">
+
+<meta property="og:url" content="https://campuna.de/kategorie/campingplaetze-stellplaetze">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-stellplaetze.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+CMS title field (system appends " | Campuna"):
+
+Dauercampingplatz & Stellplatz finden oder kaufen
+
+H1:
+
+Dauercampingplätze und Stellplätze finden und anbieten
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero
+
+Eyebrow: KATEGORIE • STELLPLÄTZE & CAMPINGPLÄTZE
+
+H1: Dauercampingplätze und Stellplätze finden und anbieten
+
+Intro: Dauercampingplätze mit Wohnwagen zur Übernahme, Saisonplätze, Campingplätze und private Stellplätze für Wohnmobil und Wohnwagen in ganz Deutschland. Finde deinen Platz oder biete ihn kostenlos auf Campuna an.
+
+
+Hero <img> alt: "Dauercampingplatz mit Wohnwagen und Vorzelt an einem See".
+
+2.2 Breadcrumb
+
+Startseite › Inserate › Stellplätze & Campingplätze
+
+2.3 Subcategory chips
+
+Chip
+
+URL
+
+Search demand (DE/mo)
+
+Alle (Anzahl)
+
+current page
+
+category heads
+
+Dauercampingplätze (NEW, first)
+
+/kategorie/campingplaetze-stellplaetze/dauercampingplaetze
+
+dauercampingplatz 3,600 · KD 21
+
+Stellplätze
+
+…/stellplaetze
+
+stellplatz wohnmobil 8,100 · KD 51 (local)
+
+Campingplätze
+
+…/campingplaetze
+
+campingplatz (local, Maps-dominated)
+
+Private Stellplätze
+
+…/private-stellplaetze
+
+private stellplätze wohnmobil
+
+2.4 Results header, grid, pagination
+
+Hidden H2: Aktuelle Angebote: Dauercampingplätze und Stellplätze
+
+Count: X Inserate in dieser Kategorie  ·  Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend  ·  Button: Weitere Angebote laden  ·  Fallback: Oder blättern: Seite 2 ansehen
+
+price_type
+
+Card label (German)
+
+Example
+
+takeover incl. caravan
+
+Ablöse
+
+Dauercampingplatz Imbrock · 13.000 €
+
+sale
+
+Kaufpreis
+
+Parzelle mit Eigentum (rare)
+
+per night
+
+Preis pro Nacht
+
+Krippnerhof · 10 €
+
+per season
+
+Pacht pro Saison
+
+Saisonplatz
+
+per year
+
+Pacht pro Jahr
+
+Dauerstellplatz ohne Wohnwagen
+
+2.5 Beliebte Suchen
+
+Kicker: BELIEBTE SUCHEN  ·  H2: Beliebt bei Stellplätzen und Campingplätzen
+
+Chip
+
+URL
+
+Keyword · vol · KD
+
+Dauercampingplatz mit Wohnwagen
+
+…/dauercampingplaetze
+
+dauercampingplatz · 3,600 · 21 (+ mit wohnwagen kaufen 140)
+
+Wohnwagen mit Stellplatz
+
+…/wohnwagen-mit-stellplatz
+
+wohnwagen mit stellplatz kaufen · 590 · 21 + dauerstellplatz wohnwagen · 1,000 · 15
+
+Mobilheim auf dem Campingplatz
+
+/kategorie/tiny-houses/mobilheime (cross-category)
+
+mobilheim auf campingplatz kaufen · 880 · 33
+
+Wohnmobil-Stellplatz
+
+…/stellplaetze
+
+stellplatz wohnmobil · 8,100 · 51
+
+Private Stellplätze
+
+…/private-stellplaetze
+
+long tail
+
+Kostenlose Stellplätze
+
+…/kostenlose-stellplaetze
+
+wohnmobil stellplätze kostenlos · 720 · 12
+
+Campingplatz mit Schwimmbad
+
+…/campingplatz-mit-schwimmbad
+
+campingplatz mit schwimmbad · 1,900 · 17 (+ mit pool 1,600 · 16)
+
+5-Sterne-Campingplätze
+
+…/5-sterne-campingplaetze
+
+5 sterne campingplatz deutschland · 720 · 12
+
+
+Feature pages (Schwimmbad, 5 Sterne, kostenlos) need real inventory and a filter field on listings. Show a chip only when the page is live and has listings.
+
+2.6 SEO text card (final German copy)
+
+H2: Dauercampingplätze, Stellplätze und Campingplätze auf Campuna
+
+Campuna ist dein Camping-Marktplatz für Dauercampingplätze, Stellplätze und Campingplätze. Hier findest du Parzellen mit Wohnwagen zur Übernahme, Saisonplätze und Stellplätze für Wohnmobil und Wohnwagen aus ganz Deutschland.
+
+Ob fester Platz für jedes Wochenende oder Stellplatz für eine Nacht unterwegs: Auf Campuna bieten Dauercamper, private Gastgeber und Campingplatzbetreiber ihre Plätze direkt an. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du den passenden Wohnwagen, ein Vorzelt oder ein Mobilheim gleich mit.
+
+H3: Dauercampingplatz übernehmen: Wohnwagen und Parzelle
+
+Die meisten Dauercampingplätze auf Campuna werden mit Wohnwagen, Vorzelt und Einrichtung angeboten. Du zahlst dem bisherigen Dauercamper eine Ablöse und kannst oft sofort einziehen, statt alles neu aufzubauen. Den Platz selbst pachtest du beim Betreiber des Campingplatzes. Beliebt sind Plätze an Nordsee und Ostsee, an Seen und in der Lüneburger Heide.
+
+H3: Was kostet ein Dauercampingplatz?
+
+Laut Bundesverband der Campingwirtschaft liegt die Jahrespacht meist zwischen 1.000 und 1.500 Euro, auf einfachen Plätzen ab etwa 500 Euro und in Top-Lagen bei bis zu 4.500 Euro und mehr. Dazu kommen Strom, Wasser und Müll. Insgesamt rechnen viele Dauercamper mit rund 1.500 bis 3.000 Euro im Jahr, plus der einmaligen Ablöse für Wohnwagen und Ausstattung.
+
+H3: Stellplätze für Wohnmobil und Wohnwagen
+
+Für kurze Aufenthalte findest du hier Stellplätze auf Campingplätzen, bei Landwirten und bei privaten Gastgebern. Achte auf Strom, Frischwasser und Entsorgung für Grauwasser und Toilette und darauf, ob der Platz für die Länge deines Fahrzeugs passt. Viele private Stellplätze sind ruhiger als klassische Campingplätze und kosten oft nur wenige Euro pro Nacht.
+
+H3: Darauf solltest du bei der Übernahme achten
+
+Sprich vor dem Kauf mit dem Betreiber: Er entscheidet, ob du den Platz übernehmen darfst. Lass dir Jahrespacht, Nebenkosten, Kündigungsfristen und Platzordnung schriftlich geben. Prüfe den Wohnwagen auf Feuchtigkeit und frag nach einer gültigen Gasprüfung. Wichtig: Einen Erstwohnsitz darfst du auf einem Campingplatz in Deutschland in der Regel nicht anmelden. Weitere Tipps findest du auf der Seite Sicher handeln.
+
+H3: Platz anbieten oder Dauercampingplatz verkaufen
+
+Du gibst deinen Dauerplatz auf oder hast ein Grundstück für Wohnmobile? Auf Campuna inserierst du privat kostenlos, ohne Provision. Zeig Fotos von Platz, Wohnwagen und Umgebung und nenne Ablöse, Pacht und Ausstattung. Campingplatzbetreiber präsentieren ihren Platz mit einem eigenen Anbieterprofil. Jetzt kostenlos inserieren.
+
+
+Source for the cost figures: Bundesverband der Campingwirtschaft in Deutschland (BVCD), bvcd.org, "Dauercamping". Erstwohnsitz statement also from BVCD. Re-check yearly.
+
+2.7 Trust strip, Ratgeber, sell band
+
+✓ Direkter Kontakt zu Dauercampern, Gastgebern und Betreibern  ·  ✓ Private Inserate kostenlos, ohne Provision  ·  ✓ Tipps für sicheres Handeln: Sicher handeln lesen
+
+Kicker: RATGEBER  ·  H2: Wissen rund um Dauercamping und Stellplätze  ·  1) Dauercamping: Kosten, Pacht und Ablöse im Überblick  ·  2) Dauercampingplatz übernehmen: Die Checkliste  ·  3) Campingplatz finden: So klappt die Suche
+
+Kicker: ANBIETEN  ·  H2: Du willst deinen Dauerplatz verkaufen oder einen Stellplatz anbieten?  ·  Private Inserate sind kostenlos und ohne Provision. Campingplatzbetreiber präsentieren ihren Platz mit einem Anbieterprofil.  ·  Buttons: Kostenlos inserieren · Für Betreiber (/abo)
+
+
+Guide 3 = existing post /post/campingplatz-finden-tipps → 301 to /ratgeber/campingplatz-finden-tipps. Guides 1 and 2: hub Stellplatz & Campingplatz in the 60-blog plan (high priority: they answer the AEO questions of this page).
+
+2.8 FAQ (visible text = schema text)
+
+Kicker: HÄUFIG GESTELLTE FRAGEN  ·  H2: Fragen & Antworten zu Stellplätzen und Campingplätzen
+
+Subline: Wichtige Informationen und Tipps zu Dauercamping, Stellplätzen und Campingplätzen, kurz beantwortet.
+
+Q1: Was ist ein Dauercampingplatz?
+
+Ein Dauercampingplatz ist eine Parzelle auf einem Campingplatz, die du für eine ganze Saison oder ein ganzes Jahr pachtest. Dein Wohnwagen oder Mobilheim bleibt dort stehen, oft mit Vorzelt, Terrasse und eigenem Strom- und Wasseranschluss. Viele Dauercamper nutzen ihren Platz als Rückzugsort für Wochenenden und Ferien.
+
+Q2: Was kostet ein Dauercampingplatz?
+
+Laut Bundesverband der Campingwirtschaft (BVCD) liegt die Jahrespacht meist zwischen 1.000 und 1.500 Euro, auf einfachen Plätzen ab etwa 500 Euro und in Top-Lagen bei 1.500 bis 4.500 Euro und mehr. Strom, Wasser und Müll kommen meist dazu, insgesamt rechnen viele Dauercamper mit rund 1.500 bis 3.000 Euro im Jahr. Übernimmst du einen Platz mit Wohnwagen, zahlst du zusätzlich eine Ablöse an den bisherigen Dauercamper.
+
+Q3: Wie funktioniert die Übernahme eines Dauerstellplatzes mit Wohnwagen?
+
+Du kaufst in der Regel den Wohnwagen samt Vorzelt und Ausstattung vom bisherigen Dauercamper. Den Stellplatz selbst pachtest du neu beim Betreiber des Campingplatzes. Kläre deshalb vor dem Kauf, ob der Betreiber den Pachtvertrag mit dir abschließt, und lass dir Pacht, Nebenkosten und Platzordnung schriftlich geben.
+
+Q4: Kann ich ein privates Grundstück als Stellplatz anbieten?
+
+Ja, private Gastgeber und Landwirte können Stellplätze für Wohnmobile und Camper kostenlos auf Campuna inserieren. Ob du dafür eine Genehmigung brauchst, hängt von Bundesland, Gemeinde und Umfang ab. Frag am besten vorher beim Bauamt deiner Gemeinde nach, bevor du regelmäßig Gäste aufnimmst.
+
+Q5: Wie verkaufe ich meinen Dauercampingplatz auf Campuna?
+
+Erstelle ein kostenloses Konto, wähle die Kategorie Stellplätze & Campingplätze und lade Fotos von Wohnwagen, Vorzelt und Parzelle hoch. Nenne Campingplatz, Region, Ablöse, Jahrespacht und Nebenkosten. Kläre vorab mit dem Betreiber, ob ein Nachfolger übernehmen darf. Private Inserate sind kostenlos, ohne Provision.
+
+
+Q4 changed vs testing: the old answer promised "unkompliziert". Whether private pitches need a permit depends on Bundesland, municipality and scale, so the answer now points to the Bauamt.
+
+2.9 Weitere Kategorien + footer
+
+Same as all category pages (8 cards, Wohnmobile & Camper first; footer intro with the 03.10.2026 positioning).
+
+
+3. Keyword map
+
+Ubersuggest DE 03.10.2026 + master sheet (Semrush). Ubersuggest shows grouped values for local heads (campingplatz 1.83M, wohnmobil stellplatz 368k): these include "in der nähe" and city variants and are not targetable by a national marketplace page. Use the Semrush heads below for planning.
+
+Keyword
+
+Vol/mo · KD
+
+Placement
+
+campingplatz (Semrush)
+
+49,500 · 71
+
+H2 SEO text, chip; not a ranking target
+
+stellplatz wohnmobil / wohnmobil stellplatz (Semrush)
+
+8,100 · 51 / 4,400 · 28
+
+Chip, H3, Beliebte Suchen
+
+dauercampingplatz
+
+3,600 · 21
+
+Title, H1, chip, H3, FAQ Q1
+
+campingplatz mit schwimmbad / mit pool
+
+1,900 · 17 / 1,600 · 16
+
+Beliebte Suchen (feature page)
+
+dauerstellplatz wohnwagen
+
+1,000 · 15
+
+FAQ Q3, Beliebte Suchen
+
+mobilheim auf campingplatz kaufen
+
+880 · 33
+
+Cross-link to Tiny Houses
+
+wohnmobil stellplätze kostenlos
+
+720 · 12
+
+Beliebte Suchen
+
+5 sterne campingplatz deutschland
+
+720 · 12
+
+Beliebte Suchen
+
+wohnwagen mit stellplatz kaufen
+
+590 · 21
+
+Beliebte Suchen, SEO text
+
+was kostet ein dauercampingplatz / dauercampingplatz kosten
+
+210 · 12 / 170 · 19
+
+H3 + FAQ Q2 (BVCD numbers)
+
+dauercampingplatz mit wohnwagen kaufen
+
+140 · 39
+
+Beliebte Suchen, H3
+
+
+Season: dauercampingplatz peaks at 5,400 in July/August; decisions for the next season are made in autumn and winter, so inventory and content should be live by January.
+
+
+4. Category page rules (same for all 9 categories)
+
+
+Grid, count, SEO text and every FAQ answer server-rendered.
+
+
+Canonical = clean category URL; sort/filter params canonicalise to it; ?seite=2+ self-canonical with "Seite 2" in the title.
+
+
+Chips and Beliebte Suchen = real <a href> links to live pages only.
+
+
+One H1; hidden H2 above the grid; card titles and FAQ questions H3; no headings in header or footer.
+
+
+BreadcrumbList + CollectionPage/ItemList + FAQPage. No Product schema. FAQ schema text = visible text.
+
+
+Sold, test and draft listings never render. Empty category stays indexable with message, CTA and SEO text.
+
+
+German labels and German price format. Copy in du-form without em/en dashes.
+
+
+5. Schema markup (copy-paste JSON-LD)
+
+Extracted 1:1 from the HTML. ItemList items = listings rendered on the page. Campsite operators with a profile get their own schema (LocalBusiness / Campground) on /anbieter/{name}, not here.
+
+5.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Stellplätze & Campingplätze",
+
+      "item": "https://campuna.de/kategorie/campingplaetze-stellplaetze"
+
+    }
+
+  ]
+
+}
+
+5.2 CollectionPage + ItemList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorie/campingplaetze-stellplaetze#collection",
+
+  "url": "https://campuna.de/kategorie/campingplaetze-stellplaetze",
+
+  "name": "Dauercampingplätze und Stellplätze finden und anbieten",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 8,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "Dauercampingplatz Imbrock bei Soltau",
+
+        "url": "https://campuna.de/inserat/dauercampingplatz-imbrock-soltau"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Dauercampingplatz Dorum Neufeld Nordsee",
+
+        "url": "https://campuna.de/inserat/dauercampingplatz-dorum-neufeld-nordsee"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Krippnerhof",
+
+        "url": "https://campuna.de/inserat/krippnerhof-stellplatz"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Dauercampingplatz Sand am Main direkt am Wasser",
+
+        "url": "https://campuna.de/inserat/dauercampingplatz-sand-am-main"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 5,
+
+        "name": "Stellplatz Kriegsfeld",
+
+        "url": "https://campuna.de/inserat/stellplatz-kriegsfeld"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 6,
+
+        "name": "Wohnwagen und Stellplatz",
+
+        "url": "https://campuna.de/inserat/wohnwagen-und-stellplatz-wilhelmsdorf"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 7,
+
+        "name": "Camping am Sternsee",
+
+        "url": "https://campuna.de/inserat/camping-am-sternsee"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 8,
+
+        "name": "Tausch oder Verkauf: Parzelle auf Dauercampingplatz bei Lübeck",
+
+        "url": "https://campuna.de/inserat/parzelle-dauercampingplatz-luebeck"
+
+      }
+
+    ]
+
+  }
+
+}
+
+5.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorie/campingplaetze-stellplaetze#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was ist ein Dauercampingplatz?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ein Dauercampingplatz ist eine Parzelle auf einem Campingplatz, die du für eine ganze Saison oder ein ganzes Jahr pachtest. Dein Wohnwagen oder Mobilheim bleibt dort stehen, oft mit Vorzelt, Terrasse und eigenem Strom- und Wasseranschluss. Viele Dauercamper nutzen ihren Platz als Rückzugsort für Wochenenden und Ferien."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was kostet ein Dauercampingplatz?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Laut Bundesverband der Campingwirtschaft (BVCD) liegt die Jahrespacht meist zwischen 1.000 und 1.500 Euro, auf einfachen Plätzen ab etwa 500 Euro und in Top-Lagen bei 1.500 bis 4.500 Euro und mehr. Strom, Wasser und Müll kommen meist dazu, insgesamt rechnen viele Dauercamper mit rund 1.500 bis 3.000 Euro im Jahr. Übernimmst du einen Platz mit Wohnwagen, zahlst du zusätzlich eine Ablöse an den bisherigen Dauercamper."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wie funktioniert die Übernahme eines Dauerstellplatzes mit Wohnwagen?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Du kaufst in der Regel den Wohnwagen samt Vorzelt und Ausstattung vom bisherigen Dauercamper. Den Stellplatz selbst pachtest du neu beim Betreiber des Campingplatzes. Kläre deshalb vor dem Kauf, ob der Betreiber den Pachtvertrag mit dir abschließt, und lass dir Pacht, Nebenkosten und Platzordnung schriftlich geben."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Kann ich ein privates Grundstück als Stellplatz anbieten?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ja, private Gastgeber und Landwirte können Stellplätze für Wohnmobile und Camper kostenlos auf Campuna inserieren. Ob du dafür eine Genehmigung brauchst, hängt von Bundesland, Gemeinde und Umfang ab. Frag am besten vorher beim Bauamt deiner Gemeinde nach, bevor du regelmäßig Gäste aufnimmst."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wie verkaufe ich meinen Dauercampingplatz auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Erstelle ein kostenloses Konto, wähle die Kategorie Stellplätze & Campingplätze und lade Fotos von Wohnwagen, Vorzelt und Parzelle hoch. Nenne Campingplatz, Region, Ablöse, Jahrespacht und Nebenkosten. Kläre vorab mit dem Betreiber, ob ein Nachfolger übernehmen darf. Private Inserate sind kostenlos, ohne Provision."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+6. URL, slug and category fit
+
+Old (Bubble)
+
+Testing
+
+Recommended
+
+/category/campingplätze-stellplätze
+
+/kategorie/campingplätze-stellplätze (canonical with %C3%A4)
+
+/kategorie/campingplaetze-stellplaetze
+
+
+301 both old URLs to the recommended one. Sub-URLs /kategorie/campingplaetze-stellplaetze/{typ}.
+
+
+Mobilheime (e.g. "Mobilheim Campingplatz Imbrock", 65,000 €) belong to Tiny Houses → /kategorie/tiny-houses/mobilheime. This page links there.
+
+
+Campsite operators (e.g. Krippnerhof, Camping am Sternsee) should get /anbieter/{name} profile pages with Campground schema. "Krippnerhof" was the only real Google ranking of the old site (position 16): keep that URL alive with a 301 to the new profile or listing.
+
+
+7. CMS fields for this category
+
+Field
+
+Value
+
+meta_title (without brand)
+
+Dauercampingplatz & Stellplatz finden oder kaufen
+
+meta_description
+
+Dauercampingplätze mit Wohnwagen, Parzellen und Stellplätze für Wohnmobil und Wohnwagen in ganz Deutschland, privat und vom Betreiber. Jetzt finden.
+
+eyebrow
+
+Kategorie • Stellplätze & Campingplätze
+
+h1
+
+Dauercampingplätze und Stellplätze finden und anbieten
+
+hero_intro
+
+Dauercampingplätze mit Wohnwagen zur Übernahme, Saisonplätze, Campingplätze und private Stellplätze für Wohnmobil und Wohnwagen in ganz Deutschland. Finde deinen Platz oder biete ihn kostenlos auf Campuna an.
+
+label_dative
+
+Stellplätzen und Campingplätzen
+
+popular_title
+
+Beliebt bei Stellplätzen und Campingplätzen
+
+price_label
+
+from listing price_type (Ablöse / Kaufpreis / Preis pro Nacht / Pacht pro Saison / Pacht pro Jahr)
+
+pill_source
+
+listing place_type (+ "mit Wohnwagen"), not condition
+
+seo_text / faq / popular_searches
+
+Sections 2.6 / 2.8 / 2.5
+
+guide_tag
+
+Dauercamping
+
+sell_headline / sell_target
+
+Du willst deinen Dauerplatz verkaufen oder einen Stellplatz anbieten? / /inserat-erstellen + /abo
+
+
+8. Pre-launch checklist
+
+
+Title 59, description 148, one H1, no skipped heading levels.
+
+
+View source shows cards, real count, SEO text and all 5 FAQ answers.
+
+
+Rich Results Test: 3 valid blocks; FAQ text identical to visible text.
+
+
+Every card shows the correct price label (Ablöse vs pro Nacht) and type pills; no condition pills; no English labels.
+
+
+No sold listing in the grid; canonical without umlauts; 301 from /category/campingplätze-stellplätze.
+
+
+BVCD figures re-checked before launch.
+
+Verified in the template: title 59, description 148, 1 H1, 0 heading skips, 0 dashes, 3 valid JSON-LD blocks, FAQ match 5/5, SEO text 371 words.
+
+

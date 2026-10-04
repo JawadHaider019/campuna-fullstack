@@ -93,21 +93,27 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
     pathname?.startsWith('/konto') || 
     pathname?.startsWith('/de/konto');
 
-  const baseNavLinks = [
-    { label: 'Startseite', id: 'top' },
+  const desktopNavLinks = [
+    { label: 'Angebote', path: '/inserate' },
     { label: 'Kategorien', path: '/kategorien' },
+    { label: 'Anbieter', path: '/anbieter' },
+    { label: 'Spotlight', id: 'campuna-spotlight' },
+    { label: 'Ratgeber', path: '/blog' },
     { label: 'Über uns', path: '/uber-campuna' },
-    { label: 'Zum Stöbern', id: 'exclusive-offers' },
-    { label: 'Spotlight', id: 'campuna-spotlight', requiresData: true },
-    { label: 'Ratgeber', id: 'journal' },
   ];
 
-  const navLinks = baseNavLinks.filter(link => {
-    if (link.requiresData && link.id === 'campuna-spotlight') {
-      return hasSpotlight;
-    }
-    return true;
-  });
+  const mobileNavLinks = [
+    { label: 'Angebote', path: '/inserate' },
+    { label: 'Kategorien', path: '/kategorien' },
+    { label: 'Anbieter', path: '/anbieter' },
+    { label: 'Spotlight', id: 'campuna-spotlight' },
+    { label: 'Ratgeber', path: '/blog' },
+    { label: 'Tools & Rechner', id: 'tool' },
+    { label: 'Über uns', path: '/uber-campuna' },
+    { label: 'So funktioniert’s', path: '/so-funktioniert-campuna' },
+  ];
+
+  const navLinks = desktopNavLinks;
 
 
   const scrollToSection = (id, behavior = 'smooth') => {
@@ -433,9 +439,9 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                 }}
                 className="px-6 py-6 flex flex-col space-y-4"
               >
-                {navLinks.map((link) => {
+                {mobileNavLinks.map((link) => {
                   const isActive = link.path
-                    ? (pathname === link.path || (link.path === '/uber_campuna' && (pathname === '/about' || pathname === '/about_us')))
+                    ? (pathname === link.path || (link.path === '/uber-campuna' && (pathname === '/about' || pathname === '/about_us')))
                     : (isHomepage && activeSection === link.id);
                   return (
                     <motion.button

@@ -1,0 +1,840 @@
+﻿
+
+I N T E L I T U N E
+
+CAMPUNA
+
+Category Page SEO Template: Fahrräder & Träger
+
+https://campuna.de/kategorie/fahrraeder-traeger
+
+Field
+
+Value
+
+Page
+
+Category PLP Fahrräder & Träger
+
+Positioning
+
+Campuna is Germany&apos;s marketplace for the complete camping ecosystem. This page owns bikes and carriers for campers and links to vehicles, gear and pitches.
+
+Content language
+
+German (de-DE), du-form, no em/en dashes in body copy
+
+Primary keywords
+
+fahrradträger wohnmobil (2,400, KD 16) · fahrradträger wohnwagen (1,300, KD 23) · heckbox anhängerkupplung (4,400, KD 22) · fahrradträger anhängerkupplung (27,100, KD 38)
+
+Sources
+
+Live Bubble page · testing.campuna.de/kategorie/fahrräder-träger · Ubersuggest DE (03.10.2026) · master keyword sheet
+
+Template
+
+Same category template as Wohnmobile & Camper and Zelte & Dachzelte
+
+Companion files
+
+campuna-kategorie-fahrraeder-template.html · preview_kategorie_fahrraeder.png
+
+Prepared
+
+Intelitune, 03.10.2026
+
+Instructions in English. Highlighted blocks are final German website copy: copy 1:1, do not translate or rephrase.
+
+
+0. Structure analysis
+
+Live page today (Bubble, to be replaced)
+
+H1 "Fahrräder & Fahrradträger für Camping kaufen & verkaufen", 5 listings (2 without photo), a 3-line text box, "Beliebte Bereiche", old footer. No breadcrumb, chips, FAQ or schema. Prices shown as "3300,00 €".
+
+Testing build (new site)
+
+Hero, breadcrumb, 4 chips (Fahrradträger, E-Bikes, Mountainbikes, Falträder), count, grid, SEO card with 2 sentences, FAQ with 1 question, other categories, footer. Changes and additions:
+
+A. H1 sharpened
+
+"Fahrräder und Träger kaufen und verkaufen" becomes "Fahrräder und Fahrradträger kaufen und verkaufen". "Träger" alone is vague; "Fahrradträger" is what people search. Nav label "Fahrräder & Träger" stays.
+
+B. Chips
+
+Added "Heckboxen": two live listings are tow-bar boxes (Thule Arcos, Hapro Boxer) and "heckbox anhängerkupplung" has 4,400 searches/mo. Renamed "Falträder" to "Klappräder": klapprad 14,800/mo vs faltrad 5,400/mo.
+
+C. Sort, hidden H2, pagination fallback
+
+Same as all category pages.
+
+D. Beliebte Suchen
+
+9 deep links: Fahrradträger Wohnmobil / Wohnwagen / Anhängerkupplung / gebraucht, Heckbox, E-Bike gebraucht, Klapprad, Thule, Fiamma.
+
+E. SEO text
+
+From 2 sentences to ~400 words with 5 real H3s, 12 internal links (incl. Zuladungsrechner) and entities (Thule, Fiamma, Atera, Uebler, Hercules, Brompton, Tern, Stützlast, drittes Kennzeichen).
+
+F. Trust strip, Ratgeber, sell band
+
+Same pattern; Ratgeber links the existing post "Wohnmobil richtig beladen".
+
+G. FAQ 1 → 5
+
+Kept the E-Bike question (answer refined), added Wohnmobil carrier, Deichselträger, gebraucht lohnt sich, verkaufen.
+
+Bugs to fix before launch
+
+#
+
+Issue
+
+Fix
+
+Priority
+
+1
+
+Title "Fahrräder & Träger kaufen & verkaufen | Campuna | Campuna"
+
+Store title without brand; use the new title (section 1)
+
+High
+
+2
+
+Server HTML: "Alle (0)" and "0 Inserate"; cards via JS
+
+Grid + count server-side
+
+Critical
+
+3
+
+Canonical with umlauts: /kategorie/fahrr%C3%A4der-tr%C3%A4ger
+
+Slug fahrraeder-traeger + 301 (section 6)
+
+High
+
+4
+
+No JSON-LD
+
+3 blocks from section 5
+
+High
+
+5
+
+Chips without hrefs
+
+Real <a href> to /kategorie/fahrraeder-traeger/{typ}
+
+High
+
+6
+
+"Fragen & Antworten zu Fahrräder & Träger"
+
+Dative field: "zu Fahrrädern und Fahrradträgern"
+
+Medium
+
+7
+
+Live: prices "3300,00 €", cards without photo
+
+German format "3.300 €"; placeholder image
+
+Medium
+
+
+1. Meta title + description (copy-paste)
+
+Title 56 chars, description 153 chars. The title targets the two winnable camping-specific heads (fahrradträger wohnmobil KD 16, fahrradträger wohnwagen KD 23) instead of the generic "Fahrräder & Träger".
+
+<title>Fahrradträger für Wohnmobil & Wohnwagen kaufen | Campuna</title>
+
+<meta name="description" content="Fahrradträger für Wohnmobil, Wohnwagen und Anhängerkupplung, Heckboxen und E-Bikes, gebraucht und neu aus ganz Deutschland. Jetzt finden oder inserieren.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/fahrraeder-traeger">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:title" content="Fahrradträger für Wohnmobil & Wohnwagen kaufen | Campuna">
+
+<meta property="og:description" content="Fahrradträger für Wohnmobil, Wohnwagen und Anhängerkupplung, Heckboxen und E-Bikes, gebraucht und neu aus ganz Deutschland.">
+
+<meta property="og:url" content="https://campuna.de/kategorie/fahrraeder-traeger">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-fahrraeder.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+CMS title field (system appends " | Campuna"):
+
+Fahrradträger für Wohnmobil & Wohnwagen kaufen
+
+H1:
+
+Fahrräder und Fahrradträger kaufen und verkaufen
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero
+
+Eyebrow: KATEGORIE • FAHRRÄDER & TRÄGER
+
+H1: Fahrräder und Fahrradträger kaufen und verkaufen
+
+Intro: Fahrradträger für Wohnmobil, Wohnwagen und Anhängerkupplung, Heckboxen, E-Bikes und Klappräder von privaten und gewerblichen Anbietern in ganz Deutschland. Jetzt entdecken oder kostenlos inserieren auf Campuna.
+
+
+Hero <img> alt: "Wohnmobil mit Fahrradträger und zwei E-Bikes auf einem Campingplatz". fetchpriority="high" + preload.
+
+2.2 Breadcrumb
+
+Startseite › Inserate › Fahrräder & Träger
+
+2.3 Subcategory chips
+
+Chip
+
+URL
+
+Search demand (DE/mo)
+
+Alle (Anzahl)
+
+current page
+
+category heads
+
+Fahrradträger
+
+/kategorie/fahrraeder-traeger/fahrradtraeger
+
+fahrradträger wohnmobil 2,400 · wohnwagen 1,300 · gebraucht 590
+
+Heckboxen (NEW)
+
+/kategorie/fahrraeder-traeger/heckboxen
+
+heckbox anhängerkupplung 4,400 (KD 22)
+
+E-Bikes
+
+/kategorie/fahrraeder-traeger/e-bikes
+
+e-bike gebraucht 33,100 (KD 58)
+
+Klappräder (was Falträder)
+
+/kategorie/fahrraeder-traeger/klappraeder
+
+klapprad 14,800 · faltrad 5,400
+
+Mountainbikes
+
+/kategorie/fahrraeder-traeger/mountainbikes
+
+mountainbike gebraucht
+
+2.4 Results header, grid, pagination
+
+Hidden H2: Aktuelle Angebote: Fahrräder und Fahrradträger
+
+Count: X Inserate in dieser Kategorie  ·  Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend  ·  Button: Weitere Angebote laden  ·  Fallback: Oder blättern: Seite 2 ansehen
+
+2.5 Beliebte Suchen
+
+Kicker: BELIEBTE SUCHEN  ·  H2: Beliebt bei Fahrrädern und Fahrradträgern
+
+Chip
+
+URL (under /kategorie/fahrraeder-traeger)
+
+Keyword · vol · KD
+
+Fahrradträger Wohnmobil
+
+/fahrradtraeger-wohnmobil
+
+fahrradträger wohnmobil · 2,400 · 16 (+ heckträger wohnmobil 590 · 14)
+
+Fahrradträger Wohnwagen
+
+/fahrradtraeger-wohnwagen
+
+fahrradträger wohnwagen · 1,300 · 23 (+ deichsel 720 · 18, deichselträger 210 · 13)
+
+Fahrradträger Anhängerkupplung
+
+/kupplungstraeger
+
+fahrradträger anhängerkupplung · 27,100 · 38
+
+Fahrradträger gebraucht
+
+/fahrradtraeger
+
+fahrradträger gebraucht · 590 · 19
+
+Heckbox für die Anhängerkupplung
+
+/heckboxen
+
+heckbox anhängerkupplung · 4,400 · 22
+
+E-Bike gebraucht
+
+/e-bikes
+
+e-bike gebraucht · 33,100 · 58
+
+Klapprad und Klapp-E-Bike
+
+/klappraeder
+
+klapprad · 14,800 · 37
+
+Thule Fahrradträger
+
+/thule
+
+brand page
+
+Fiamma Carry-Bike
+
+/fiamma
+
+brand page
+
+
+Show a chip only when its page is live. Realistic first targets: Wohnmobil and Wohnwagen carrier pages (KD 13 to 23). E-Bike and Anhängerkupplung heads are long-term (KD 38 to 58, shops and Kleinanzeigen dominate).
+
+2.6 SEO text card (final German copy)
+
+H2: Fahrräder und Fahrradträger für Camper
+
+Campuna ist dein Camping-Marktplatz für Fahrradträger, Heckboxen und Fahrräder rund ums Camping. Hier findest du gebrauchte und neue Träger und Räder aus ganz Deutschland, von privat und vom Fachhändler.
+
+Mit dem Rad den Campingplatz verlassen, zum Bäcker fahren oder die Gegend erkunden: Für viele Camper gehört das Fahrrad einfach dazu. Auf Campuna findest du den passenden Träger, eine Heckbox für mehr Stauraum und das richtige Rad dazu. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du das passende Wohnmobil, weiteres Camping-Zubehör oder einen Stellplatz gleich mit.
+
+H3: Fahrradträger für Wohnmobil, Wohnwagen und Anhängerkupplung
+
+Beim Wohnmobil sitzt der Heckträger meist an der Rückwand, beim Kastenwagen an den Hecktüren. Für den Wohnwagen gibt es Deichselträger, die vorne auf der Deichsel zwei Räder aufnehmen. Ein Kupplungsträger wird auf die Anhängerkupplung gesteckt und eignet sich besonders für schwere E-Bikes. Er braucht eine eigene Beleuchtung und ein drittes Kennzeichen. Bekannte Hersteller sind Thule, Fiamma, Atera und Uebler.
+
+H3: E-Bikes und Klappräder für Camper
+
+E-Bikes machen auch längere Ausflüge vom Stellplatz entspannt. Klappräder und Klapp-E-Bikes passen zusammengefaltet in den Stauraum oder die Heckgarage und brauchen keinen Träger. Beliebt sind Modelle von Hercules, Brompton und Tern. Achte bei E-Bikes auf Akkukapazität, Ladezyklen und das Gewicht, wenn das Rad auf den Träger soll.
+
+H3: Heckboxen: mehr Stauraum an der Anhängerkupplung
+
+Eine Heckbox sitzt auf einem Träger an der Anhängerkupplung und schafft Platz für Gepäck, Campingstühle oder Grill. Viele Systeme wie die Thule Arcos oder die Hapro Boxer lassen sich abklappen, damit die Heckklappe frei bleibt. Auch hier gilt: Box, Träger und Ladung zusammen dürfen die Stützlast nicht überschreiten. Mit dem Zuladungsrechner prüfst du, wie viel dein Fahrzeug noch tragen darf.
+
+H3: Gebraucht kaufen: Darauf solltest du achten
+
+Prüfe bei Trägern Rahmen, Schienen und Spanngurte auf Risse und Rost und lass dir zeigen, dass alle Schlösser und Schlüssel vorhanden sind. Bei Kupplungsträgern gehört ein Test der Beleuchtung dazu. Frag nach Montageanleitung und Adaptern für dein Fahrzeug. Bei E-Bikes zählen Akkuzustand, Rechnung und eine Probefahrt. Tipps für die Übergabe findest du auf der Seite Sicher handeln.
+
+H3: Fahrradträger oder E-Bike verkaufen
+
+Dein Träger passt nicht ans neue Fahrzeug oder das Rad steht nur noch im Keller? Auf Campuna inserierst du privat kostenlos, ohne Provision. Fotografiere alle Teile, nenne Traglast, Modell und Zustand und lege deinen Preis fest. Interessierte Camper melden sich direkt bei dir. Jetzt kostenlos inserieren.
+
+
+Fact basis: a carrier that covers lights or plate needs its own lighting and a third number plate (Wiederholungskennzeichen) in Germany; carrier + load must stay within the tow bar&apos;s Stützlast.
+
+2.7 Trust strip, Ratgeber, sell band
+
+✓ Direkter Kontakt zwischen Käufer und Verkäufer  ·  ✓ Private Inserate kostenlos, ohne Provision  ·  ✓ Tipps für sicheres Handeln: Sicher handeln lesen
+
+Kicker: RATGEBER  ·  H2: Wissen rund um Fahrräder und Fahrradträger  ·  1) Fahrradträger fürs Wohnmobil: Heck, Deichsel oder Kupplung?  ·  2) E-Bike im Wohnmobil transportieren: Gewicht, Stützlast, Sicherheit  ·  3) Wohnmobil richtig beladen: Zuladung einfach berechnen
+
+Kicker: VERKAUFEN  ·  H2: Du willst deinen Fahrradträger oder dein E-Bike verkaufen?  ·  Inseriere privat kostenlos und ohne Provision. Camper aus ganz Deutschland melden sich direkt bei dir.  ·  Buttons: Kostenlos inserieren · So funktioniert&apos;s
+
+
+Guide 3 = existing post /post/wohnmobil-richtig-beladen-zuladung-berechnen: 301 to /ratgeber/wohnmobil-richtig-beladen. Guides 1 and 2 belong to the 60-blog plan (hub Camping-Praxis & Technik).
+
+2.8 FAQ (visible text = schema text)
+
+Kicker: HÄUFIG GESTELLTE FRAGEN  ·  H2: Fragen & Antworten zu Fahrrädern und Fahrradträgern
+
+Subline: Wichtige Informationen und Tipps zu Fahrrädern und Fahrradträgern, kurz beantwortet.
+
+Q1: Sind Fahrradträger für schwere E-Bikes geeignet?
+
+Ja, wenn der Träger dafür ausgelegt ist. Viele E-Bike-Träger für die Anhängerkupplung tragen 50 bis 60 kg. Entscheidend ist die Stützlast deiner Anhängerkupplung: Träger und Räder zusammen dürfen sie nicht überschreiten. Nimm die Akkus für die Fahrt am besten ab, das spart Gewicht.
+
+Q2: Welcher Fahrradträger passt an mein Wohnmobil?
+
+Am häufigsten sind Heckträger, die an der Rückwand des Wohnmobils montiert werden, etwa von Thule oder Fiamma. Für Kastenwagen gibt es Träger für die Hecktüren. Wer schwere E-Bikes transportiert, nutzt oft einen Träger für die Anhängerkupplung, weil die Räder dort tiefer hängen. Prüfe in jedem Fall die Traglast des Trägers und die zulässige Hinterachslast.
+
+Q3: Was ist ein Deichselträger?
+
+Ein Deichselträger wird vorne auf der Deichsel deines Wohnwagens montiert und nimmt meist zwei Fahrräder auf. Träger und Räder erhöhen dabei die Stützlast. Halte deshalb die zulässige Stützlast von Zugfahrzeug und Wohnwagen ein und passe die Beladung im Wohnwagen entsprechend an.
+
+Q4: Lohnt sich ein gebrauchter Fahrradträger?
+
+Ja, wenn alle Teile vorhanden sind. Fahrradträger halten viele Jahre, und gute Modelle kosten neu oft mehrere hundert Euro. Prüfe Rahmen, Schienen, Spanngurte, Schlösser und Schlüssel und bei Kupplungsträgern die Beleuchtung. Frag nach der Montageanleitung und nach passenden Adaptern für dein Fahrzeug.
+
+Q5: Wie verkaufe ich meinen Fahrradträger oder mein E-Bike auf Campuna?
+
+Erstelle ein kostenloses Konto, wähle die Kategorie Fahrräder & Träger und lade Fotos von allen Teilen hoch. Nenne Marke, Modell, Traglast oder Rahmengröße, Zustand und mitgeliefertes Zubehör und lege deinen Preis fest. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir.
+
+
+Q1 changed vs testing: "tragen bis zu 60 kg" became "tragen 50 bis 60 kg" plus the Stützlast rule and the tip to remove the batteries.
+
+2.9 Weitere Kategorien + footer
+
+Same as all category pages (8 cards, Wohnmobile & Camper first; footer intro with the 03.10.2026 positioning).
+
+
+3. Keyword map
+
+Ubersuggest DE, 03.10.2026. Season: March to August (fahrradträger anhängerkupplung 40,500 in March and May).
+
+Keyword
+
+Vol/mo · KD
+
+Placement
+
+e-bike gebraucht
+
+33,100 · 58
+
+Chip E-Bikes, Beliebte Suchen, H3 (long-term)
+
+fahrradträger anhängerkupplung
+
+27,100 · 38
+
+Description, H3, FAQ Q1, Beliebte Suchen
+
+klapprad / faltrad
+
+14,800 · 37 / 5,400 · 34
+
+Chip Klappräder, H3, hero
+
+heckbox anhängerkupplung
+
+4,400 · 22
+
+Chip Heckboxen, H3, description
+
+fahrradträger wohnmobil
+
+2,400 · 16
+
+Title, H3, FAQ Q2, Beliebte Suchen
+
+fahrradträger wohnwagen (+ deichsel)
+
+1,300 · 23 (720 · 18)
+
+Title, H3, FAQ Q3
+
+fahrradträger gebraucht
+
+590 · 19
+
+Beliebte Suchen, FAQ Q4
+
+heckträger wohnmobil
+
+590 · 14
+
+H3 (Heckträger)
+
+deichselträger wohnwagen
+
+210 · 13
+
+H3, FAQ Q3
+
+e-bike träger wohnmobil
+
+70 · 44
+
+FAQ Q1 (no own page)
+
+
+4. Category page rules (same for all 9 categories)
+
+
+Grid, count, SEO text and every FAQ answer server-rendered.
+
+
+Canonical = clean category URL; sort/filter params canonicalise to it; ?seite=2+ self-canonical with "Seite 2" in the title.
+
+
+Chips and Beliebte Suchen = real <a href> links to live pages only.
+
+
+One H1; hidden H2 above the grid; card titles and FAQ questions H3; no headings in header or footer.
+
+
+BreadcrumbList + CollectionPage/ItemList + FAQPage. No Product schema. FAQ schema text = visible text.
+
+
+Sold, test and draft listings never render. Empty category stays indexable with message, CTA and SEO text.
+
+
+German labels and German price format. Copy in du-form without em/en dashes.
+
+
+5. Schema markup (copy-paste JSON-LD)
+
+Extracted 1:1 from the HTML. ItemList items = listings rendered on the page.
+
+5.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Fahrräder & Träger",
+
+      "item": "https://campuna.de/kategorie/fahrraeder-traeger"
+
+    }
+
+  ]
+
+}
+
+5.2 CollectionPage + ItemList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorie/fahrraeder-traeger#collection",
+
+  "url": "https://campuna.de/kategorie/fahrraeder-traeger",
+
+  "name": "Fahrräder und Fahrradträger kaufen und verkaufen",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 5,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "Thule Fahrradträger Deichsel Wohnwagen",
+
+        "url": "https://campuna.de/inserat/thule-fahrradtraeger-deichsel-wohnwagen"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Klapp-E-Bikes Hercules Rob Fold F7, 2 Stück",
+
+        "url": "https://campuna.de/inserat/hercules-rob-fold-f7-klapp-e-bikes"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Thule Arcos XL Heckbox All-in-One für VW",
+
+        "url": "https://campuna.de/inserat/thule-arcos-xl-heckbox-vw"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Fahrradträger für E-Bike oder herkömmliche Fahrräder",
+
+        "url": "https://campuna.de/inserat/fahrradtraeger-e-bike"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 5,
+
+        "name": "Hapro Boxer L Heckbox All-in-One für VW",
+
+        "url": "https://campuna.de/inserat/hapro-boxer-l-heckbox-vw"
+
+      }
+
+    ]
+
+  }
+
+}
+
+5.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorie/fahrraeder-traeger#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Sind Fahrradträger für schwere E-Bikes geeignet?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ja, wenn der Träger dafür ausgelegt ist. Viele E-Bike-Träger für die Anhängerkupplung tragen 50 bis 60 kg. Entscheidend ist die Stützlast deiner Anhängerkupplung: Träger und Räder zusammen dürfen sie nicht überschreiten. Nimm die Akkus für die Fahrt am besten ab, das spart Gewicht."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welcher Fahrradträger passt an mein Wohnmobil?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Am häufigsten sind Heckträger, die an der Rückwand des Wohnmobils montiert werden, etwa von Thule oder Fiamma. Für Kastenwagen gibt es Träger für die Hecktüren. Wer schwere E-Bikes transportiert, nutzt oft einen Träger für die Anhängerkupplung, weil die Räder dort tiefer hängen. Prüfe in jedem Fall die Traglast des Trägers und die zulässige Hinterachslast."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was ist ein Deichselträger?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ein Deichselträger wird vorne auf der Deichsel deines Wohnwagens montiert und nimmt meist zwei Fahrräder auf. Träger und Räder erhöhen dabei die Stützlast. Halte deshalb die zulässige Stützlast von Zugfahrzeug und Wohnwagen ein und passe die Beladung im Wohnwagen entsprechend an."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Lohnt sich ein gebrauchter Fahrradträger?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ja, wenn alle Teile vorhanden sind. Fahrradträger halten viele Jahre, und gute Modelle kosten neu oft mehrere hundert Euro. Prüfe Rahmen, Schienen, Spanngurte, Schlösser und Schlüssel und bei Kupplungsträgern die Beleuchtung. Frag nach der Montageanleitung und nach passenden Adaptern für dein Fahrzeug."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wie verkaufe ich meinen Fahrradträger oder mein E-Bike auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Erstelle ein kostenloses Konto, wähle die Kategorie Fahrräder & Träger und lade Fotos von allen Teilen hoch. Nenne Marke, Modell, Traglast oder Rahmengröße, Zustand und mitgeliefertes Zubehör und lege deinen Preis fest. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+6. URL, slug and category fit
+
+Old (Bubble)
+
+Testing
+
+Recommended
+
+/category/fahrräder-träger
+
+/kategorie/fahrräder-träger (canonical shows %C3%A4)
+
+/kategorie/fahrraeder-traeger
+
+
+301 both old URLs to the recommended one. Sub-URLs: /kategorie/fahrraeder-traeger/{typ} and /kategorie/fahrraeder-traeger/{marke}.
+
+
+Category fit: Fahrradträger and Heckboxen live here, not in Camping-Zubehör. The master keyword sheet mapped the fahrradträger cluster to /zubehoer/fahrradtraeger; that mapping now points to /kategorie/fahrraeder-traeger/fahrradtraeger. Zubehör links here with one sentence.
+
+
+7. CMS fields for this category
+
+Field
+
+Value
+
+meta_title (without brand)
+
+Fahrradträger für Wohnmobil & Wohnwagen kaufen
+
+meta_description
+
+Fahrradträger für Wohnmobil, Wohnwagen und Anhängerkupplung, Heckboxen und E-Bikes, gebraucht und neu aus ganz Deutschland. Jetzt finden oder inserieren.
+
+eyebrow
+
+Kategorie • Fahrräder & Träger
+
+h1
+
+Fahrräder und Fahrradträger kaufen und verkaufen
+
+hero_intro
+
+Fahrradträger für Wohnmobil, Wohnwagen und Anhängerkupplung, Heckboxen, E-Bikes und Klappräder von privaten und gewerblichen Anbietern in ganz Deutschland. Jetzt entdecken oder kostenlos inserieren auf Campuna.
+
+label_dative
+
+Fahrrädern und Fahrradträgern
+
+popular_title
+
+Beliebt bei Fahrrädern und Fahrradträgern
+
+price_label
+
+Preis
+
+seo_text / faq / popular_searches
+
+Sections 2.6 / 2.8 / 2.5
+
+guide_tag
+
+Fahrrad
+
+sell_headline / sell_target
+
+Du willst deinen Fahrradträger oder dein E-Bike verkaufen? / /inserat-erstellen
+
+
+8. Pre-launch checklist
+
+
+Title 56, description 153, one H1, no skipped heading levels.
+
+
+View source shows cards, real count, SEO text and all 5 FAQ answers.
+
+
+Rich Results Test: 3 valid blocks; FAQ text identical to visible text.
+
+
+Canonical without umlauts; 301 from /category/fahrräder-träger and the testing slug.
+
+
+Chips link to live 200 pages; Heckboxen chip present; "Klappräder" label.
+
+
+German price format; placeholder for cards without photo.
+
+Verified in the template: title 56, description 153, 1 H1, 0 heading skips, 0 dashes, 3 valid JSON-LD blocks, FAQ match 5/5, SEO text 394 words.
+
+

@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- ============================================================
+  CAMPUNA CATEGORY PAGE: WOHNMOBILE & CAMPER (/kategorie/fahrzeuge)
+  FOR DEVELOPER | Prepared by Intelitune | 03.10.2026
+  Content = FINAL GERMAN. Comments/instructions = ENGLISH.
+  Built on the category master template + the live testing build
+  (testing.campuna.de/kategorie/fahrzeuge, checked 03.10.2026).
+
+  STRUCTURE ANALYSIS vs the testing build:
+  Already there (keep): photo hero with eyebrow + H1 + intro, breadcrumb,
+  subcategory chips, count, listing grid, SEO text card, FAQ (3), other
+  categories, footer.
+  SECTIONS ADDED:
+    A) Sort dropdown next to the count
+    B) Crawlable pagination fallback under the grid (?seite=2)
+    C) Beliebte Suchen: price-band, brand and type deep links
+    D) SEO text expanded from ~120 words to ~450 words with 5 real H3s
+    E) Trust strip
+    F) Ratgeber teaser (3 guides)
+    G) Sell CTA band (Wohnmobil verkaufen)
+    H) FAQ from 3 to 5 questions (price + driving licence) + FAQPage schema
+    I) Campervan chip (listings already use "Campervan" as subcategory)
+  BUGS FOUND ON TESTING (fix before launch):
+    1. <title> renders "... | Campuna | Campuna": brand suffix added twice.
+    2. Server HTML says "0 Inserate in dieser Kategorie", listings load by JS
+       afterwards. Crawlers see an empty category. Grid + count must be SSR.
+    3. FAQ answers 2 and 3 are not in the HTML until clicked. All answers
+       must be in the DOM (accordion only hides them visually).
+    4. No JSON-LD on the page. Add the 3 blocks below.
+    5. Badge "BUSINESS" is English. German site: "Gewerblich".
+    6. Grammar: "zu Wohnmobile & Camper" must be dative: "zu Wohnmobilen und
+       Campern". Needs a per-category dative label field (see docx).
+    7. Card titles cut with "...": full title must be in the HTML, shorten
+       with CSS line-clamp only.
+    8. Labels "Camping Zubehör" / "Camping Services" need the hyphen:
+       "Camping-Zubehör" / "Camping-Services".
+    9. Footer column titles are H3. Use <p>/<strong>, not headings.
+  POSITIONING (03.10.2026): Campuna = marketplace for the complete camping
+  ecosystem. Footer intro updated. Wohnmobile & Camper leads category lists.
+============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- SEO: Title 57 chars, Description 151 chars.
+     DEV: store the title WITHOUT " | Campuna" if the system appends the brand. -->
+<title>Wohnmobile, Camper &amp; Wohnwagen gebraucht kaufen | Campuna</title>
+<meta name="description" content="Gebrauchte und neue Wohnmobile, Campervans, Kastenwagen und Wohnwagen von privat und vom Händler aus ganz Deutschland. Jetzt finden oder inserieren.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/fahrzeuge">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="de" href="https://campuna.de/kategorie/fahrzeuge">
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/kategorie/fahrzeuge">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Campuna">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Wohnmobile, Camper &amp; Wohnwagen gebraucht kaufen | Campuna">
+<meta property="og:description" content="Gebrauchte und neue Wohnmobile, Campervans, Kastenwagen und Wohnwagen von privat und vom Händler aus ganz Deutschland.">
+<meta property="og:url" content="https://campuna.de/kategorie/fahrzeuge">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-wohnmobile.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- PERFORMANCE: hero photo is the LCP element. Use <img> (not CSS background),
+     AVIF/WebP, srcset, fetchpriority="high", and preload it: -->
+<!-- <link rel="preload" as="image" href="/assets/kategorien/wohnmobile-hero.avif" fetchpriority="high"> -->
+
+<!-- ============ SCHEMA 1: BreadcrumbList ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+    { "@type": "ListItem", "position": 2, "name": "Inserate", "item": "https://campuna.de/inserate" },
+    { "@type": "ListItem", "position": 3, "name": "Wohnmobile & Camper", "item": "https://campuna.de/kategorie/fahrzeuge" }
+  ]
+}
+</script>
+
+<!-- ============ SCHEMA 2: CollectionPage + ItemList (dynamic) ============ -->
+<!-- DEV: itemListElement = the listings rendered on this page (server-side),
+     numberOfItems = real total in this category. No Product schema on category pages. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://campuna.de/kategorie/fahrzeuge#collection",
+  "url": "https://campuna.de/kategorie/fahrzeuge",
+  "name": "Wohnmobile und Camper kaufen und verkaufen",
+  "inLanguage": "de-DE",
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+  "about": { "@id": "https://campuna.de/#organization" },
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": 5,
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "VW Grand California 680 Automatik", "url": "https://campuna.de/inserat/vw-grand-california-680-automatik" },
+      { "@type": "ListItem", "position": 2, "name": "Knaus Boxstar 600 Street Campervan, 160 PS", "url": "https://campuna.de/inserat/knaus-boxstar-600-street-campervan" },
+      { "@type": "ListItem", "position": 3, "name": "VW T6.1 California Ocean 4Motion DSG", "url": "https://campuna.de/inserat/vw-t6-1-california-ocean-4motion-dsg" },
+      { "@type": "ListItem", "position": 4, "name": "Hymer B-Klasse MasterLine I 780 Mercedes", "url": "https://campuna.de/inserat/hymer-b-klasse-masterline-i-780" },
+      { "@type": "ListItem", "position": 5, "name": "Pössl 2Win Plus Citroën Jumper 140 PS", "url": "https://campuna.de/inserat/poessl-2win-plus-citroen-jumper-140ps" }
+    ]
+  }
+}
+</script>
+
+<!-- ============ SCHEMA 3: FAQPage (matches visible FAQ word for word) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://campuna.de/kategorie/fahrzeuge#faq",
+  "mainEntity": [
+    { "@type": "Question", "name": "Worauf sollte ich beim Kauf eines gebrauchten Wohnmobils achten?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Achte auf Dichtigkeit (Feuchtigkeitsmessung), Rost am Unterboden, Scheckheftpflege, eine gültige Gasprüfung und das Verhältnis zwischen Leergewicht und zulässigem Gesamtgewicht (3,5-Tonnen-Grenze). Mach außerdem immer eine Probefahrt und halte den Kauf in einem schriftlichen Kaufvertrag fest." } },
+    { "@type": "Question", "name": "Welche Wohnmobil-Typen finde ich auf Campuna?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Auf Campuna findest du Kastenwagen und Campervans, Alkoven, teilintegrierte und vollintegrierte Wohnmobile sowie Wohnwagen und sonstige Fahrzeuge wie Wohnkabinen. Alle Typen gibt es gebraucht und neu, von privaten Verkäufern und von Händlern aus ganz Deutschland. Über die Unterkategorien grenzt du die Auswahl mit einem Klick ein." } },
+    { "@type": "Question", "name": "Wie verkaufe ich mein Wohnmobil auf Campuna?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Erstelle ein kostenloses Konto, wähle die Kategorie Wohnmobile & Camper und den passenden Typ und lade aussagekräftige Fotos hoch. Beschreibe Zustand, Ausstattung und Kilometerstand und lege deinen Preis fest. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir, die Übergabe vereinbart ihr persönlich." } },
+    { "@type": "Question", "name": "Was kostet ein gebrauchtes Wohnmobil?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Das hängt vor allem von Typ, Alter, Kilometerstand und Ausstattung ab. Ältere Kastenwagen und Alkoven gibt es oft schon im unteren fünfstelligen Bereich, junge Teilintegrierte und Vollintegrierte kosten ein Vielfaches davon. Auf Campuna filterst du nach Preis und vergleichst Angebote direkt." } },
+    { "@type": "Question", "name": "Welchen Führerschein brauche ich für ein Wohnmobil?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Mit dem Führerschein Klasse B darfst du Wohnmobile bis 3,5 Tonnen zulässiger Gesamtmasse fahren. Für schwerere Fahrzeuge bis 7,5 Tonnen brauchst du die Klasse C1. Wer seinen Führerschein vor 1999 gemacht hat, darf mit der alten Klasse 3 in der Regel bis 7,5 Tonnen fahren. Eine EU-Reform hebt die Grenze für Wohnmobile mit Klasse B künftig auf 4,25 Tonnen an, in Deutschland gilt das aber noch nicht." } }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- DEV: Poppins = preview font. Use the live brand font (self-hosted woff2 + preload). -->
+
+<style>
+/* ============ PREVIEW CSS: mirrors the testing build design ============ */
+:root{
+  --green-900:#0F2E14; --green-800:#14451C; --green-700:#1B6B23; --green-600:#2E7D32;
+  --gold:#C9A24B; --hl:#F2C230; --cream:#F7F3EA; --cream-2:#FBF9F4; --line:#ECE5D6;
+  --ink:#16220F; --muted:#6B7464;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Poppins',Arial,sans-serif;color:var(--ink);background:var(--cream-2);line-height:1.6;font-size:15px}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px}
+.wide{max-width:1320px;margin:0 auto;padding:0 28px}
+.kicker{display:block;font-size:.62rem;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;font-weight:700;font-size:.78rem;padding:12px 22px}
+.btn-green{background:var(--green-700);color:#fff}
+.btn-gold{background:var(--hl);color:#3a2d00}
+.btn-ghost{border:1.5px solid rgba(255,255,255,.75);color:#fff}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* header */
+header{background:#fff;border-bottom:1px solid #f0ece2;position:sticky;top:0;z-index:50}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;max-width:1440px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.15rem;color:var(--green-900)}
+.logo .mark{width:28px;height:28px;border-radius:8px;background:var(--green-900);color:#b9e07a;font-size:.7rem;display:flex;align-items:center;justify-content:center}
+.logo small{display:block;font-size:.42rem;letter-spacing:.14em;color:var(--green-900);font-weight:700;margin-top:-4px}
+.nav ul{display:flex;gap:30px;list-style:none;font-size:.78rem;font-weight:600;color:var(--green-700)}
+.nav .btn{padding:9px 18px;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
+
+/* hero (photo) */
+.hero{margin:14px 28px 0;border-radius:40px;overflow:hidden;position:relative;min-height:330px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;
+  background:linear-gradient(180deg,rgba(10,22,10,.45),rgba(10,22,10,.55)),
+  linear-gradient(180deg,#9fb7c9 0%,#7d9a6a 38%,#56703f 60%,#3d5530 100%)}
+/* PLACEHOLDER-IMG: alpine campsite photo (<img>, object-fit:cover, behind overlay)
+   alt="Wohnmobile und Wohnwagen auf einem Campingplatz in den Bergen" */
+.hero .in{max-width:640px;padding:46px 20px}
+.hero .kicker{color:var(--gold);margin-bottom:8px}
+.hero h1{font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.12;font-weight:800;letter-spacing:-.02em}
+.hero p{font-size:.84rem;color:#eef3ea;margin-top:14px}
+
+/* breadcrumb + chips */
+.crumbs{font-size:.68rem;color:var(--muted);margin:20px 0 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.crumbs a:hover{color:var(--green-700)}
+.crumbs strong{color:var(--ink)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;list-style:none}
+.chips a{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:.68rem;font-weight:600;color:var(--ink)}
+.chips a.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+
+/* results */
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:26px 0 14px;flex-wrap:wrap}
+.res-head .count{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.sort{border:1px solid var(--line);border-radius:10px;padding:7px 12px;font:inherit;font-size:.7rem;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:#fff;border:1px solid #f1ece1;border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(20,40,20,.05)}
+.card.hl{border:1.5px solid #f0d27a;background:#FFFCF2}
+.card .ph{height:118px;position:relative;background:linear-gradient(135deg,#d9c2a0,#a9876b)}
+.card .ph.b{background:linear-gradient(135deg,#2c4a64,#c9a77a)}
+.card .ph.c{background:linear-gradient(135deg,#3f6a3f,#9fc0a6)}
+/* PLACEHOLDER-IMG per card: real listing photo, alt = listing title,
+   loading="lazy", width/height set, aspect-ratio 4/3 */
+.badge{position:absolute;top:9px;left:9px;font-size:.5rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--green-900);color:#d6f0a8}
+.badge.h{background:var(--hl);color:#3a2d00}
+.fav{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.62rem;color:var(--green-700)}
+.loc{position:absolute;bottom:8px;right:8px;font-size:.5rem;background:rgba(20,25,18,.72);color:#fff;border-radius:999px;padding:3px 8px}
+.card .body{padding:10px 12px 12px}
+.card h3{font-size:.76rem;line-height:1.3;font-weight:800;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 8px}
+.pills span{font-size:.5rem;background:var(--cream);border-radius:5px;padding:2px 7px;color:#7a7462}
+.pl{font-size:.48rem;letter-spacing:.12em;text-transform:uppercase;color:#a7a28f}
+.pr{display:flex;justify-content:space-between;align-items:center}
+.price{font-weight:800;color:var(--green-700);font-size:.95rem}
+.det{font-size:.6rem;font-weight:700;color:var(--green-700)}
+.more{text-align:center;margin:22px 0 4px}
+.pag{text-align:center;font-size:.68rem;color:var(--muted);margin-top:8px}
+.pag a{color:var(--green-700);font-weight:700}
+
+/* popular searches */
+.pop{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:34px}
+.pop h2{font-size:1rem;font-weight:800;color:var(--green-800);margin-top:4px}
+.pop ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pop a{display:inline-block;background:var(--cream);border-radius:999px;padding:6px 12px;font-size:.66rem;font-weight:600;color:var(--green-800)}
+
+/* SEO text card (design) */
+.seo{background:var(--cream);border:1px solid var(--line);border-radius:22px;padding:30px 30px 26px;margin-top:30px}
+.seo h2{font-size:1.15rem;font-weight:800;color:var(--green-700);letter-spacing:-.01em}
+.seo .lead{font-size:.74rem;font-weight:700;color:var(--green-700);margin:8px 0 10px}
+.seo h3{font-size:.84rem;font-weight:800;color:var(--green-800);margin:16px 0 4px}
+.seo p{font-size:.72rem;color:#5b6155;margin-bottom:6px}
+.seo a{color:var(--green-700);font-weight:600}
+
+/* trust strip */
+.trust{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;border:1px dashed #e0d7c2;border-radius:14px;padding:12px 16px;margin-top:18px;font-size:.68rem}
+.trust b{color:var(--green-700)}
+
+/* guides */
+.guides{margin-top:44px}
+.guides h2,.faq h2,.more-cats h2{font-weight:800;color:var(--green-700);letter-spacing:-.02em}
+.guides h2{font-size:1.3rem;margin-top:4px}
+.g-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.g-card{background:#fff;border:1px solid #f1ece1;border-radius:14px;padding:16px}
+.g-card .t{font-size:.52rem;font-weight:800;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.g-card h3{font-size:.78rem;font-weight:800;line-height:1.35;margin:6px 0}
+.g-card span{font-size:.6rem;color:var(--muted)}
+
+/* sell band */
+.sell{background:linear-gradient(120deg,var(--green-900),var(--green-700));border-radius:22px;color:#fff;padding:28px 30px;margin-top:40px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.sell h2{font-size:1.25rem;font-weight:800;margin-top:4px}
+.sell p{font-size:.74rem;color:#cfe3cb;margin-top:4px;max-width:440px}
+.sell .acts{display:flex;gap:10px;flex-wrap:wrap}
+
+/* FAQ (design) */
+.faq{text-align:center;margin-top:64px}
+.faq h2{font-size:clamp(1.6rem,3vw,2.15rem);line-height:1.1;margin-top:8px}
+.faq .sub{font-size:.72rem;color:var(--muted);margin:8px 0 22px}
+.faq .list{max-width:580px;margin:0 auto;text-align:left}
+.faq details{background:#fff;border:1px solid #efe9dc;border-radius:12px;margin-bottom:10px;padding:16px 16px}
+.faq details[open]{border-color:#e9cf96}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary h3{font-size:.78rem;font-weight:800;color:var(--green-700)}
+.faq summary::after{content:"⌄";width:20px;height:20px;border-radius:50%;background:var(--cream);color:var(--green-700);font-size:.7rem;display:flex;align-items:center;justify-content:center;flex:none}
+.faq details[open] summary::after{content:"⌃"}
+.faq details p{font-size:.68rem;color:#646b5d;margin-top:12px;padding-left:10px}
+
+/* other categories (design) */
+.more-cats{text-align:center;margin-top:64px;padding-bottom:56px}
+.more-cats h2{font-size:clamp(1.6rem,3vw,2.15rem);margin-top:8px}
+.more-cats .sub{font-size:.76rem;color:var(--muted);max-width:420px;margin:8px auto 22px}
+.mc-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;max-width:1000px;margin:0 auto;padding:0 20px}
+.mc-grid a{background:#fff;border:1px solid #ece6d8;border-radius:10px;padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:.56rem;font-weight:700;color:var(--ink);text-align:center}
+.mc-grid .ic{width:26px;height:26px;border-radius:8px;background:#EAF3E6;color:var(--green-700);display:flex;align-items:center;justify-content:center}
+.mc-grid svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+
+/* footer (design) */
+footer{background:linear-gradient(180deg,#f6f1e6,#efe7d6);padding:42px 0 18px;font-size:.66rem;color:#5d6457;border-top:1px solid #ece4d3}
+.f-intro{background:#fff;border:1px solid #eee6d6;border-radius:14px;padding:14px 18px;text-align:center;font-size:.64rem;max-width:860px;margin:0 auto}
+.f-intro strong{color:var(--green-700)}
+.f-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:24px;max-width:860px;margin:30px auto 0}
+.f-grid .ft{font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:var(--green-700);font-weight:800;margin-bottom:10px}
+.f-grid ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.f-grid a:hover{color:var(--green-700)}
+.f-bottom{max-width:860px;margin:30px auto 0;border-top:1px solid #e4dccb;padding-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:.56rem}
+.soc{display:flex;gap:8px}
+.soc a{width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid #e1d8c5;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--green-700)}
+.calc-fab{position:fixed;right:22px;bottom:22px;display:flex;align-items:center;gap:8px;z-index:40}
+.calc-fab span{background:var(--green-900);color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.06em;padding:6px 10px;border-radius:999px}
+.calc-fab i{width:38px;height:38px;border-radius:50%;background:var(--green-700);color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal;box-shadow:0 6px 14px rgba(0,0,0,.2)}
+
+@media(max-width:860px){.grid{grid-template-columns:repeat(2,1fr)}.g-grid{grid-template-columns:1fr}.mc-grid{grid-template-columns:repeat(4,1fr)}.f-grid{grid-template-columns:1fr 1fr}.nav ul{display:none}.hero{margin:10px 12px 0;border-radius:26px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.mc-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER (shared component, as on testing build) ============ -->
+<!-- DEV: keep the live hrefs of the shared header. Labels as in the design. -->
+<header>
+  <div class="nav">
+    <a class="logo" href="/" aria-label="Campuna Startseite"><span class="mark" aria-hidden="true">A/</span><span>campuna<small>DEIN CAMPING-MARKTPLATZ</small></span></a>
+    <ul>
+      <li><a href="/">Startseite</a></li>
+      <li><a href="/kategorien">Kategorien</a></li>
+      <li><a href="/ueber-campuna">Über uns</a></li>
+      <li><a href="/inserate">Zum Stöbern</a></li>
+      <li><a href="/anbieter">Entdecke</a></li>
+      <li><a href="/ratgeber">Ratgeber</a></li>
+    </ul>
+    <a class="btn btn-green" href="/login">👤 Einloggen</a>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ HERO (design) ============ -->
+<!-- SEO: the only H1. Intro stays under 80 words (above-the-grid rule). -->
+<section class="hero" aria-labelledby="kat-h1">
+  <div class="in">
+    <span class="kicker">Kategorie • Wohnmobile &amp; Camper</span>
+    <h1 id="kat-h1">Wohnmobile und Camper kaufen und verkaufen</h1>
+    <p>Gebrauchte und neue Wohnmobile, Campervans, Kastenwagen und Wohnwagen von privaten und gewerblichen Anbietern in ganz Deutschland. Jetzt entdecken oder kostenlos inserieren auf Campuna.</p>
+  </div>
+</section>
+
+<div class="wrap">
+
+  <!-- ============ BREADCRUMB (design, matches BreadcrumbList schema) ============ -->
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">⌂ Startseite</a> › <a href="/inserate">Inserate</a> › <strong>Wohnmobile &amp; Camper</strong>
+  </nav>
+
+  <!-- ============ SUBCATEGORY CHIPS (design + ADDED Campervan) ============ -->
+  <!-- DEV: REAL <a href> links to subcategory pages, never JS-only filter buttons.
+       Pattern: /kategorie/fahrzeuge/{typ}. Active chip = current page, no self-link. -->
+  <ul class="chips" aria-label="Unterkategorien">
+    <li><a class="on" aria-current="page">Alle (5)</a></li>
+    <li><a href="/kategorie/fahrzeuge/campervan">Campervan</a></li>
+    <li><a href="/kategorie/fahrzeuge/kastenwagen">Kastenwagen</a></li>
+    <li><a href="/kategorie/fahrzeuge/alkoven">Alkoven</a></li>
+    <li><a href="/kategorie/fahrzeuge/teilintegriert">Teilintegriert</a></li>
+    <li><a href="/kategorie/fahrzeuge/vollintegriert">Vollintegriert</a></li>
+    <li><a href="/kategorie/fahrzeuge/wohnwagen">Wohnwagen</a></li>
+    <li><a href="/kategorie/fahrzeuge/sonstige-fahrzeuge">Sonstige Fahrzeuge</a></li>
+  </ul>
+
+  <!-- ============ RESULTS HEADER: count (design) + ADDED sort (A) ============ -->
+  <!-- DEV: count rendered SERVER-SIDE and always equal to the real total.
+       Sort = ?sortierung=... and canonicalises to /kategorie/fahrzeuge. -->
+  <h2 class="sr-only">Aktuelle Angebote: Wohnmobile und Camper</h2>
+  <!-- DEV: visually hidden H2 so the card H3s never follow the H1 directly (no skipped level). -->
+  <div class="res-head">
+    <span class="count">5 Inserate in dieser Kategorie</span>
+    <label class="sr-only" for="sort">Sortierung</label>
+    <select id="sort" class="sort">
+      <option>Neueste zuerst</option>
+      <option>Preis aufsteigend</option>
+      <option>Preis absteigend</option>
+    </select>
+  </div>
+
+  <!-- ============ LISTING GRID (design, SSR) ============ -->
+  <!-- DEV: render server-side. Card title = H3 with the FULL title (clamp via CSS).
+       Badge labels German: Hervorgehoben / Privat / Gewerblich. Never render test or sold listings. -->
+  <div class="grid">
+    <article class="card hl"><a href="/inserat/vw-grand-california-680-automatik">
+      <div class="ph"><span class="badge h">★ Hervorgehoben</span><span class="fav">♡</span><span class="loc">München, Bayern</span></div>
+      <div class="body"><h3>VW Grand California 680 Automatik</h3>
+        <div class="pills"><span>Sehr gut</span><span>Kastenwagen</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">79.900 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/knaus-boxstar-600-street-campervan">
+      <div class="ph"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">München, Bayern</span></div>
+      <div class="body"><h3>Knaus Boxstar 600 Street Campervan, 160 PS</h3>
+        <div class="pills"><span>Gebraucht</span><span>Kastenwagen</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">54.900 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/vw-t6-1-california-ocean-4motion-dsg">
+      <div class="ph b"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">München, Bayern</span></div>
+      <div class="body"><h3>VW T6.1 California Ocean 4Motion DSG</h3>
+        <div class="pills"><span>Gebraucht</span><span>Campervan</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">68.500 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/hymer-b-klasse-masterline-i-780">
+      <div class="ph c"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">München, Bayern</span></div>
+      <div class="body"><h3>Hymer B-Klasse MasterLine I 780 Mercedes</h3>
+        <div class="pills"><span>Gebraucht</span><span>Vollintegriert</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">119.000 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/poessl-2win-plus-citroen-jumper-140ps">
+      <div class="ph c"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Kempten, Bayern</span></div>
+      <div class="body"><h3>Pössl 2Win Plus Citroën Jumper 140 PS</h3>
+        <div class="pills"><span>Gebraucht</span><span>Kastenwagen</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">49.900 €</span><span class="det">Details →</span></div></div></a></article>
+  </div>
+
+  <!-- ============ ADDED (B): pagination fallback ============ -->
+  <!-- DEV: render only when total > page size. Button may load via JS, but the
+       <a href="?seite=2"> must exist in the HTML. Page 2+ = self-canonical + "Seite 2" in title. -->
+  <div class="more"><a class="btn btn-green" href="/kategorie/fahrzeuge?seite=2">Weitere Angebote laden</a></div>
+  <p class="pag">Oder blättern: <a href="/kategorie/fahrzeuge?seite=2">Seite 2 ansehen →</a></p>
+
+  <!-- ============ ADDED (C): BELIEBTE SUCHEN ============ -->
+  <!-- DEV: phase-2 pages (price bands, brands). Show a chip ONLY when its page is live.
+       Patterns: /kategorie/fahrzeuge/bis-{preis}-euro and /kategorie/fahrzeuge/{marke}. -->
+  <section class="pop" aria-labelledby="pop-h">
+    <span class="kicker">Beliebte Suchen</span>
+    <h2 id="pop-h">Beliebt bei Wohnmobilen und Campern</h2>
+    <ul>
+      <li><a href="/kategorie/fahrzeuge/bis-15000-euro">Wohnmobil bis 15.000 €</a></li>
+      <li><a href="/kategorie/fahrzeuge/bis-20000-euro">Wohnmobil bis 20.000 €</a></li>
+      <li><a href="/kategorie/fahrzeuge/bis-25000-euro">Wohnmobil bis 25.000 €</a></li>
+      <li><a href="/kategorie/fahrzeuge/bis-30000-euro">Wohnmobil bis 30.000 €</a></li>
+      <li><a href="/kategorie/fahrzeuge/kastenwagen">Kastenwagen gebraucht</a></li>
+      <li><a href="/kategorie/fahrzeuge/campervan">Campervan gebraucht</a></li>
+      <li><a href="/kategorie/fahrzeuge/wohnwagen">Wohnwagen gebraucht</a></li>
+      <li><a href="/kategorie/fahrzeuge/hymer">Hymer gebraucht</a></li>
+      <li><a href="/kategorie/fahrzeuge/knaus">Knaus gebraucht</a></li>
+      <li><a href="/kategorie/fahrzeuge/dethleffs">Dethleffs gebraucht</a></li>
+    </ul>
+  </section>
+
+  <!-- ============ SEO TEXT CARD (design, EXPANDED (D): ~450 words, 5 real H3s) ============ -->
+  <!-- DEV: server-rendered, below the grid. Labels in the testing build are plain text:
+       they must become H3 headings as below. -->
+  <section class="seo" aria-labelledby="seo-h">
+    <h2 id="seo-h">Wohnmobile und Camper auf Campuna kaufen und verkaufen</h2>
+    <p class="lead">Campuna ist dein Camping-Marktplatz für Wohnmobile, Campervans, Kastenwagen und Wohnwagen. Hier findest du gebrauchte und neue Fahrzeuge aus ganz Deutschland, von privat und vom Fachhändler.</p>
+    <p>Ein Wohnmobil kauft man nicht jeden Tag. Deshalb siehst du bei jedem Inserat die wichtigsten Daten auf einen Blick: Preis, Zustand, Typ und Standort. Du kontaktierst Verkäufer direkt, ohne Umweg und ohne Provision. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du passendes <a href="/kategorie/ausruestung-und-zubehoer">Camping-Zubehör</a>, freie <a href="/kategorie/campingplaetze-stellplaetze">Stellplätze</a> und <a href="/kategorie/dienstleistungen">Werkstätten</a> gleich mit.</p>
+
+    <h3>Welche Wohnmobil-Typen gibt es?</h3>
+    <p><a href="/kategorie/fahrzeuge/kastenwagen">Kastenwagen</a> und <a href="/kategorie/fahrzeuge/campervan">Campervans</a> sind wendig im Alltag und flexibel auf Reisen. Beliebt sind ausgebaute Vans von VW, Ford und Mercedes-Benz sowie Kastenwagen von Pössl, Knaus und Westfalia. <a href="/kategorie/fahrzeuge/alkoven">Alkoven</a> bieten mit dem Bett über dem Fahrerhaus viel Platz für Familien. <a href="/kategorie/fahrzeuge/teilintegriert">Teilintegrierte</a> und <a href="/kategorie/fahrzeuge/vollintegriert">vollintegrierte Wohnmobile</a> bringen maximalen Raumkomfort für lange Reisen, etwa von Hymer, Dethleffs, Bürstner, Carado und Weinsberg. <a href="/kategorie/fahrzeuge/wohnwagen">Wohnwagen</a> sind die klassische Wahl für jedes Zugfahrzeug, vom kompakten Reisewohnwagen bis zum Familiencaravan mit Etagenbetten oder Rundsitzgruppe.</p>
+
+    <h3>Was kostet ein gebrauchtes Wohnmobil?</h3>
+    <p>Der Preis hängt vor allem von Typ, Alter, Kilometerstand und Ausstattung ab. Ältere Kastenwagen und Alkoven findest du oft schon im unteren fünfstelligen Bereich, junge Teilintegrierte und Vollintegrierte kosten ein Vielfaches davon. Mit dem Preisfilter grenzt du dein Budget ein, zum Beispiel auf <a href="/kategorie/fahrzeuge/bis-20000-euro">Wohnmobile bis 20.000 Euro</a> oder <a href="/kategorie/fahrzeuge/bis-30000-euro">bis 30.000 Euro</a>. Rechne beim Vergleich auch laufende Kosten wie Versicherung, Steuer und Wartung mit ein.</p>
+
+    <h3>Von privat oder vom Händler kaufen?</h3>
+    <p>Bei privaten Verkäufern bekommst du oft einen günstigeren Preis und erfährst viel über die Geschichte des Fahrzeugs. Händler bieten dafür meist eine Gewährleistung, eine geprüfte Übergabe und manchmal eine Finanzierung. Auf Campuna erkennst du am Hinweis Privat oder Gewerblich sofort, mit wem du es zu tun hast, und vergleichst beide Angebote direkt.</p>
+
+    <h3>Gebraucht kaufen: Darauf solltest du achten</h3>
+    <p>Prüfe zuerst die Dichtigkeit: Eine Feuchtigkeitsmessung zeigt versteckte Wasserschäden im Aufbau. Wirf einen Blick auf Rost am Unterboden und frag nach dem Scheckheft und einer gültigen Gasprüfung. Wichtig ist auch das Verhältnis von Leergewicht und zulässigem Gesamtgewicht, denn mit dem Führerschein Klasse B darfst du Fahrzeuge bis 3,5 Tonnen fahren. Mach immer eine Probefahrt und halte den Kauf in einem schriftlichen Kaufvertrag fest. Die komplette <a href="/ratgeber/wohnmobil-gebraucht-kaufen-checkliste">Checkliste für den Gebrauchtkauf</a> findest du im Ratgeber, Tipps für die Übergabe auf der Seite <a href="/sicher-handeln">Sicher handeln</a>.</p>
+
+    <h3>Wohnmobil privat verkaufen</h3>
+    <p>Du willst dein Wohnmobil oder deinen Wohnwagen verkaufen? Auf Campuna inserierst du privat kostenlos, ohne Provision und ohne versteckte Kosten. Lade Fotos hoch, beschreibe Zustand und Ausstattung und lege deinen Preis fest. Interessierte Camper melden sich direkt bei dir. Wie du einen realistischen Preis findest, erklärt der Ratgeber <a href="/ratgeber/was-ist-mein-wohnmobil-wert">Was ist mein Wohnmobil wert?</a>. Alles zum Ablauf findest du unter <a href="/wohnmobil-verkaufen">Wohnmobil verkaufen</a>.</p>
+  </section>
+
+  <!-- ============ ADDED (E): TRUST STRIP ============ -->
+  <div class="trust">
+    <span>✓ <b>Direkter Kontakt</b> zwischen Käufer und Verkäufer</span>
+    <span>✓ <b>Private Inserate kostenlos</b>, ohne Provision</span>
+    <span>✓ <b>Tipps für sicheres Handeln:</b> <a href="/sicher-handeln" style="color:var(--green-700);font-weight:700">Sicher handeln lesen</a></span>
+  </div>
+
+  <!-- ============ ADDED (F): RATGEBER TEASER ============ -->
+  <!-- DEV: 3 newest guides tagged "Wohnmobil" from the blog, dynamic. Titles = H3. -->
+  <section class="guides" aria-labelledby="guides-h">
+    <span class="kicker">Ratgeber</span>
+    <h2 id="guides-h">Wissen rund um Wohnmobile</h2>
+    <div class="g-grid">
+      <a class="g-card" href="/ratgeber/wohnmobil-gebraucht-kaufen-checkliste"><span class="t">Kaufberatung</span><h3>Gebrauchtes Wohnmobil kaufen: Die komplette Checkliste</h3><span>Kaufberatung · 8 Min.</span></a>
+      <a class="g-card" href="/ratgeber/wohnmobil-typen-vergleich"><span class="t">Vergleich</span><h3>Kastenwagen, Alkoven oder Teilintegriert: Welcher Typ passt zu dir?</h3><span>Kaufberatung · 7 Min.</span></a>
+      <a class="g-card" href="/ratgeber/was-ist-mein-wohnmobil-wert"><span class="t">Verkaufen &amp; Wert</span><h3>Was ist mein Wohnmobil wert? So ermittelst du den Preis</h3><span>Verkaufen &amp; Wert · 6 Min.</span></a>
+    </div>
+  </section>
+
+  <!-- ============ ADDED (G): SELL CTA BAND ============ -->
+  <!-- DEV: /wohnmobil-verkaufen = planned money page. Until it is live, show only the first button. -->
+  <section class="sell" aria-labelledby="sell-h">
+    <div>
+      <span class="kicker" style="color:var(--hl)">Verkaufen</span>
+      <h2 id="sell-h">Du willst dein Wohnmobil verkaufen?</h2>
+      <p>Inseriere privat kostenlos und ohne Provision. Interessierte Camper aus ganz Deutschland melden sich direkt bei dir.</p>
+    </div>
+    <div class="acts">
+      <a class="btn btn-gold" href="/inserat-erstellen">Kostenlos inserieren →</a>
+      <a class="btn btn-ghost" href="/wohnmobil-verkaufen">So verkaufst du dein Wohnmobil</a>
+    </div>
+  </section>
+
+</div><!-- /wrap -->
+
+<!-- ============ FAQ (design, 3 to 5 questions (H), matches FAQPage schema) ============ -->
+<!-- DEV: ALL answers in the HTML. <details>/<summary> is fine. First item open.
+     Heading uses the DATIVE form: "zu Wohnmobilen und Campern" (see docx field list). -->
+<section class="faq" aria-labelledby="faq-h">
+  <div class="wrap">
+    <span class="kicker">Häufig gestellte Fragen</span>
+    <h2 id="faq-h">Fragen &amp; Antworten zu Wohnmobilen und Campern</h2>
+    <p class="sub">Wichtige Informationen und Tipps zu Wohnmobilen und Campern, kurz beantwortet.</p>
+    <div class="list">
+      <details open>
+        <summary><h3>Worauf sollte ich beim Kauf eines gebrauchten Wohnmobils achten?</h3></summary>
+        <p>Achte auf Dichtigkeit (Feuchtigkeitsmessung), Rost am Unterboden, Scheckheftpflege, eine gültige Gasprüfung und das Verhältnis zwischen Leergewicht und zulässigem Gesamtgewicht (3,5-Tonnen-Grenze). Mach außerdem immer eine Probefahrt und halte den Kauf in einem schriftlichen Kaufvertrag fest.</p>
+      </details>
+      <details>
+        <summary><h3>Welche Wohnmobil-Typen finde ich auf Campuna?</h3></summary>
+        <p>Auf Campuna findest du Kastenwagen und Campervans, Alkoven, teilintegrierte und vollintegrierte Wohnmobile sowie Wohnwagen und sonstige Fahrzeuge wie Wohnkabinen. Alle Typen gibt es gebraucht und neu, von privaten Verkäufern und von Händlern aus ganz Deutschland. Über die Unterkategorien grenzt du die Auswahl mit einem Klick ein.</p>
+      </details>
+      <details>
+        <summary><h3>Wie verkaufe ich mein Wohnmobil auf Campuna?</h3></summary>
+        <p>Erstelle ein kostenloses Konto, wähle die Kategorie Wohnmobile &amp; Camper und den passenden Typ und lade aussagekräftige Fotos hoch. Beschreibe Zustand, Ausstattung und Kilometerstand und lege deinen Preis fest. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir, die Übergabe vereinbart ihr persönlich.</p>
+      </details>
+      <details>
+        <summary><h3>Was kostet ein gebrauchtes Wohnmobil?</h3></summary>
+        <p>Das hängt vor allem von Typ, Alter, Kilometerstand und Ausstattung ab. Ältere Kastenwagen und Alkoven gibt es oft schon im unteren fünfstelligen Bereich, junge Teilintegrierte und Vollintegrierte kosten ein Vielfaches davon. Auf Campuna filterst du nach Preis und vergleichst Angebote direkt.</p>
+      </details>
+      <details>
+        <summary><h3>Welchen Führerschein brauche ich für ein Wohnmobil?</h3></summary>
+        <p>Mit dem Führerschein Klasse B darfst du Wohnmobile bis 3,5 Tonnen zulässiger Gesamtmasse fahren. Für schwerere Fahrzeuge bis 7,5 Tonnen brauchst du die Klasse C1. Wer seinen Führerschein vor 1999 gemacht hat, darf mit der alten Klasse 3 in der Regel bis 7,5 Tonnen fahren. Eine EU-Reform hebt die Grenze für Wohnmobile mit Klasse B künftig auf 4,25 Tonnen an, in Deutschland gilt das aber noch nicht.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WEITERE KATEGORIEN (design, current category excluded) ============ -->
+<!-- DEV: labels with hyphen. Slugs = recommended ASCII slugs (see docx section 6). -->
+<section class="more-cats" aria-labelledby="mc-h">
+  <span class="kicker">Entdecken</span>
+  <h2 id="mc-h">Weitere Kategorien entdecken</h2>
+  <p class="sub">Von Fahrzeugen über Ausrüstung und Stellplätze bis zu Vermietung und Services: neun Kategorien, ein Marktplatz.</p>
+  <div class="mc-grid">
+    <a href="/kategorie/ausruestung-und-zubehoer"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 8h12v12H6zM9 8V6a3 3 0 0 1 6 0v2"/></svg></span>Camping-Zubehör</a>
+    <a href="/kategorie/zelte-und-dachzelte"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 4 3 20h18L12 4zm0 7v9"/></svg></span>Zelte &amp; Dachzelte</a>
+    <a href="/kategorie/fahrraeder-traeger"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm12 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 14l4-7h5l3 7"/></svg></span>Fahrräder &amp; Träger</a>
+    <a href="/kategorie/campingplaetze-stellplaetze"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 1 0-14 0c0 6 7 11 7 11z"/></svg></span>Stellplätze &amp; Campingplätze</a>
+    <a href="/kategorie/dienstleistungen"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 7a4 4 0 1 0-5.7 3.6L4 15v4h4l4.4-4.3A4 4 0 0 0 14 7z"/></svg></span>Camping-Services</a>
+    <a href="/kategorie/tiny-houses"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7M6 10v9h12v-9"/></svg></span>Tiny Houses</a>
+    <a href="/kategorie/mieten-vermieten"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 8a4 4 0 1 1 4 4l-8 8H6v-4l8-8z"/></svg></span>Mieten &amp; Vermieten</a>
+    <a href="/kategorie/boote-wassersport"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 17h16l-2 3H6l-2-3zm8-13v10M12 6l6 8H6l6-8z"/></svg></span>Boote &amp; Wassersport</a>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER (design; intro line = new positioning 03.10.2026) ============ -->
+<!-- DEV: column titles are NOT headings (use <p class="ft">). Categories: Wohnmobile & Camper first. -->
+<footer>
+  <div class="wide">
+    <p class="f-intro"><strong>Campuna, dein Camping-Marktplatz.</strong> Campuna ist Deutschlands Marktplatz für die ganze Camping-Welt: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung, Camping-Services und gewerbliche Anbieter. Kaufen, verkaufen und entdecken an einem Ort.</p>
+    <nav class="f-grid" aria-label="Footer Navigation">
+      <div>
+        <a class="logo" href="/"><span class="mark" aria-hidden="true">A/</span><span>campuna<small>DEIN CAMPING-MARKTPLATZ</small></span></a>
+        <p style="margin-top:10px">Von Campern für Camper. Der spezialisierte Marktplatz für die deutschsprachige Camping-Community.</p>
+        <p style="margin-top:10px">Campuna · Erfurt, Thüringen, Deutschland<br>E-Mail: <a href="mailto:info@campuna.de" style="text-decoration:underline">info@campuna.de</a></p>
+      </div>
+      <div><p class="ft">Navigation</p>
+        <ul>
+          <li><a href="/">Startseite</a></li>
+          <li><a href="/inserate">Alle Angebote</a></li>
+          <li><a href="/anbieter">Anbieter</a></li>
+          <li><a href="/abo">Campuna Business</a></li>
+          <li><a href="/ueber-campuna">Über uns</a></li>
+          <li><a href="/so-funktioniert-campuna">So funktioniert's</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Kategorien</p>
+        <ul>
+          <li><a href="/kategorie/fahrzeuge">Wohnmobile &amp; Camper</a></li>
+          <li><a href="/kategorie/ausruestung-und-zubehoer">Camping-Zubehör</a></li>
+          <li><a href="/kategorie/zelte-und-dachzelte">Zelte &amp; Dachzelte</a></li>
+          <li><a href="/kategorie/fahrraeder-traeger">Fahrräder &amp; Träger</a></li>
+          <li><a href="/kategorie/campingplaetze-stellplaetze">Stellplätze &amp; Campingplätze</a></li>
+          <li><a href="/kategorie/dienstleistungen">Camping-Services</a></li>
+          <li><a href="/kategorie/tiny-houses">Tiny Houses</a></li>
+          <li><a href="/kategorie/mieten-vermieten">Mieten &amp; Vermieten</a></li>
+          <li><a href="/kategorie/boote-wassersport">Boote &amp; Wassersport</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Support &amp; Tools</p>
+        <ul>
+          <li><a href="/faq-hilfe">Hilfe &amp; FAQ</a></li>
+          <li><a href="/zuladungsrechner">Zuladungsrechner</a></li>
+          <li><a href="/reisekostenrechner">Reisebudget-Rechner</a></li>
+          <li><a href="/kontakt">Kontakt &amp; Feedback</a></li>
+          <li><a href="/sicher-handeln">Sicher handeln</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Rechtliches</p>
+        <ul>
+          <li><a href="/agb">AGB</a></li>
+          <li><a href="/nutzungsbedingungen">Nutzungsbedingungen</a></li>
+          <li><a href="/datenschutz">Datenschutz</a></li>
+          <li><a href="/impressum">Impressum</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="f-bottom">
+      <span>© 2026 Campuna®. Alle Rechte vorbehalten.</span>
+      <span class="soc"><a href="#" aria-label="Instagram">IG</a><a href="#" aria-label="TikTok">TT</a><a href="#" aria-label="YouTube">YT</a><a href="#" aria-label="Facebook">FB</a></span>
+    </div>
+  </div>
+</footer>
+
+<!-- Floating calculator button (design). DEV: real link to the calculator page. -->
+<a class="calc-fab" href="/zuladungsrechner" aria-label="Zuladungsrechner öffnen"><span>BERECHNEN</span><i aria-hidden="true">▦</i></a>
+
+</body>
+</html>

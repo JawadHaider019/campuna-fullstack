@@ -94,7 +94,7 @@ const FAQ_SECTIONS = [
             {
                 id: 'sicherheit-2',
                 question: 'Wie funktioniert das Inserat-Boosten?',
-                answer: 'Mit einem Boost platzierst du dein Inserat ganz oben in Suchergebnissen und Kategorien. Dadurch erhält dein Inserat ein goldenes Badge und bis zu 5-mal mehr Klicks.'
+                answer: 'Mit einem Boost erhält dein Inserat eine bevorzugte Sichtbarkeit und prominentere Platzierung in relevanten Kategorien und Suchergebnissen sowie ein optisches Hervorgehoben-Badge.'
             },
             {
                 id: 'sicherheit-3',

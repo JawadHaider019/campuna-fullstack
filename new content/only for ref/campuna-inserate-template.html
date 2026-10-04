@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- ============================================================
+  CAMPUNA ALL LISTINGS PAGE (/inserate) | SEO TEMPLATE FOR DEVELOPER
+  Prepared by Intelitune | 26.09.2026
+  Content = FINAL GERMAN. Comments/instructions = ENGLISH.
+
+  STRUCTURE ANALYSIS vs the approved design:
+  Design already has: hero band + breadcrumb + filter sidebar + grid + load more
+  + SEO text card + category row + footer. GOOD base.
+  SECTIONS ADDED by this template (were missing, needed for 100% SEO):
+    A) Popular searches link block (internal links to category/price-band PLPs)
+    B) FAQ section (4 questions) + FAQPage schema  -> AEO/AI answers
+    C) Trust strip (Sicher handeln)
+    D) Crawlable pagination fallback under the load-more button
+    E) Expanded SEO text block (was 3 thin lines, now ~420 words with H3s + links)
+  REMOVED: the "test" listing card visible in the mockup. Test listings must
+  NEVER be rendered in production (old Bubble site had this exact problem).
+
+  CRITICAL PLP SEO RULES (implement exactly):
+  1. SSR everything. Filters/sort work via URL parameters, content server-rendered.
+  2. Canonical of /inserate?anything = https://campuna.de/inserate (parameters
+     like price, sort, provider are NOT indexable variants).
+  3. EXCEPTION: the category filter must NOT be a query parameter. Category
+     filtering links to the real category PLPs (/wohnmobile, /zelte, ...) so
+     link equity flows there. The "Filter by category" row below does this.
+  4. Pagination: "Weitere Angebote laden" may load via JS, BUT a real
+     <a href="/inserate?seite=2"> must exist in the HTML (crawler path).
+     Page 2+ : canonical to itself, title suffix "Seite 2", noindex NOT set.
+  5. No Product schema on this overview page (only on listing detail pages).
+     Use CollectionPage + ItemList (dynamic) + BreadcrumbList + FAQPage.
+  6. Listing card images: alt = listing title, loading="lazy", width/height.
+  7. One H1. Card titles are H3. Section headings H2.
+============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- SEO: Title 47 chars, Description 143 chars -->
+<title>Camping-Inserate aus ganz Deutschland | Campuna</title>
+<meta name="description" content="Aktuelle Camping-Inserate für Wohnmobile, Wohnwagen, Zubehör, Stellplätze, Services und mehr. Angebote von privat und vom Händler, täglich neu.">
+
+<link rel="canonical" href="https://campuna.de/inserate">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="de" href="https://campuna.de/inserate">
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/inserate">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Campuna">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Camping-Inserate aus ganz Deutschland | Campuna">
+<meta property="og:description" content="Aktuelle Camping-Inserate für Wohnmobile, Wohnwagen, Zubehör, Stellplätze, Services und mehr. Von privat und vom Händler.">
+<meta property="og:url" content="https://campuna.de/inserate">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-inserate.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- ============ SCHEMA 1: BreadcrumbList ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+    { "@type": "ListItem", "position": 2, "name": "Inserate", "item": "https://campuna.de/inserate" }
+  ]
+}
+</script>
+
+<!-- ============ SCHEMA 2: CollectionPage + ItemList ============ -->
+<!-- DEV: generate the itemListElement DYNAMICALLY from the listings actually
+     rendered on page 1 (position = card order, url = listing detail URL).
+     The 3 items below are examples of the exact shape. Do NOT add Product
+     schema here; Product/Vehicle+Offer belongs on the listing detail page. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://campuna.de/inserate#collection",
+  "url": "https://campuna.de/inserate",
+  "name": "Camping-Inserate aus ganz Deutschland",
+  "inLanguage": "de-DE",
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+  "about": { "@id": "https://campuna.de/#organization" },
+  "mainEntity": {
+    "@type": "ItemList",
+    "itemListOrder": "https://schema.org/ItemListOrderDescending",
+    "numberOfItems": 19,
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "EcoFlow DELTA Pro 3600 Wh Powerstation", "url": "https://campuna.de/inserat/ecoflow-delta-pro-3600wh" },
+      { "@type": "ListItem", "position": 2, "name": "Knaus Sport 500 EU Silver Selection", "url": "https://campuna.de/inserat/knaus-sport-500-eu-silver-selection" },
+      { "@type": "ListItem", "position": 3, "name": "VW Grand California 680 Automatik", "url": "https://campuna.de/inserat/vw-grand-california-680-automatik" }
+    ]
+  }
+}
+</script>
+
+<!-- ============ SCHEMA 3: FAQPage (must match visible FAQ word for word) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://campuna.de/inserate#faq",
+  "mainEntity": [
+    { "@type": "Question", "name": "Wie finde ich das passende Camping-Inserat?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Nutze die Filter auf dieser Seite: Suche nach Marke, Modell oder Stichwort, grenze den Preis ein und wähle Kategorie, Anbieter und Ort. Mit der Sortierung siehst du die neuesten oder günstigsten Angebote zuerst. Über die Kategorien unten kommst du direkt zu Wohnmobilen, Zelten, Zubehör und mehr." } },
+    { "@type": "Question", "name": "Was bedeutet Privat oder Gewerblich bei einem Inserat?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Privat bedeutet, dass eine Privatperson verkauft, meist ohne Gewährleistung. Gewerblich bedeutet, dass ein Händler oder Dienstleister mit Firmenprofil anbietet. Auf Campuna findest du beide Arten von Anbietern und kannst gezielt danach filtern." } },
+    { "@type": "Question", "name": "Was bedeutet VB beim Preis?",
+      "acceptedAnswer": { "@type": "Answer", "text": "VB steht für Verhandlungsbasis. Der angegebene Preis ist ein Vorschlag des Anbieters, über den du fair verhandeln kannst. Nutze dafür die direkte Nachricht an den Verkäufer und vereinbare am besten eine Besichtigung vor dem Kauf." } },
+    { "@type": "Question", "name": "Wie erstelle ich selbst ein Inserat auf Campuna?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Lege ein kostenloses Konto an, wähle die passende Kategorie und stelle dein Angebot mit Fotos, Beschreibung und Preis ein. Private Inserate sind kostenlos, ohne Provision. Eine Anleitung findest du unter So funktioniert Campuna." } }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- PREVIEW CSS ONLY (mirrors approved design). Replace with real design system. -->
+<style>
+:root{--green-900:#0F2E14;--green-800:#143D1B;--green-700:#1B5E20;--cream:#F4EFE6;--cream-2:#FAF7F0;--ink:#1E241E;--muted:#5C6B5C;--gold:#C9A24B;--gold-2:#E4C878;--hl:#F6C324}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Poppins',Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6;font-size:15px}
+img{max-width:100%;display:block} a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+.kicker{letter-spacing:.16em;text-transform:uppercase;font-size:.66rem;font-weight:600;color:var(--gold-2)}
+h1{font-size:clamp(1.8rem,3.6vw,2.7rem);line-height:1.15;margin:.25em 0;color:#fff}
+h2{font-size:clamp(1.25rem,2.2vw,1.7rem);color:var(--green-800);margin:.3em 0 .4em}
+h3{font-size:.92rem;margin:.3em 0;color:var(--green-900)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:999px;font-weight:600;font-size:.8rem;border:0;cursor:pointer}
+.btn-green{background:var(--green-700);color:#fff}
+header{background:#fff;position:sticky;top:0;z-index:50;border-bottom:1px solid #eee7da}
+.nav{display:flex;align-items:center;gap:26px;padding:13px 0}
+.logo{font-weight:800;color:var(--green-800);font-size:1.2rem}
+.logo small{font-size:.48rem;letter-spacing:.14em;color:var(--muted);display:block}
+.nav ul{list-style:none;display:flex;gap:22px;margin:0 0 0 auto;padding:0;font-size:.82rem;font-weight:500}
+.nav .active{color:var(--gold);border-bottom:2px solid var(--gold);padding-bottom:4px}
+/* hero band */
+.hero{padding:14px 0 0}
+.hero-card{border-radius:24px;color:#fff;text-align:center;padding:56px 26px;
+ background:linear-gradient(180deg,rgba(12,26,10,.55),rgba(12,26,10,.8)),linear-gradient(120deg,#4c6b3a,#233b1e)}
+/* PLACEHOLDER-IMG: alpine campsite photo behind gradient.
+   alt: "Campingplatz mit Wohnmobilen und Hütten in den Bergen" -->
+.hero-card p{max-width:640px;margin:.6em auto 0;color:#e9efe2;font-size:.85rem}
+.crumb{font-size:.72rem;color:var(--muted);padding:16px 0}
+.crumb a{color:var(--green-700);font-weight:600}
+/* layout */
+.layout{display:grid;grid-template-columns:280px 1fr;gap:26px;align-items:start;padding-bottom:40px}
+/* filters */
+.filters{background:var(--cream-2);border:1px solid #eee5d4;border-radius:18px;padding:20px}
+.filters h2{font-size:.95rem;margin:0;display:flex;justify-content:space-between;align-items:center}
+.filters h2 a{font-size:.62rem;color:var(--muted);font-weight:600;text-transform:uppercase}
+.f-label{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7a806f;margin:18px 0 8px}
+.filters input[type=text],.filters input[type=search],.filters select{width:100%;border:1px solid #e4dcc9;border-radius:12px;padding:10px 12px;font:inherit;font-size:.78rem;background:#fff;color:var(--ink)}
+.range{height:6px;border-radius:6px;background:var(--green-700);margin:14px 2px 8px;position:relative}
+.range i{position:absolute;top:-5px;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--green-700)}
+.range i.a{left:0}.range i.b{right:0}
+.range-lab{display:flex;justify-content:space-between;font-size:.64rem;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{border:1px solid #e0d7c2;border-radius:999px;padding:6px 12px;font-size:.66rem;font-weight:600;color:var(--muted);background:#fff}
+.chip.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+.check{display:flex;gap:8px;align-items:center;font-size:.72rem;color:var(--muted);margin-top:10px}
+.seg{display:flex;background:#fff;border:1px solid #e0d7c2;border-radius:999px;overflow:hidden}
+.seg span{flex:1;text-align:center;font-size:.66rem;font-weight:600;padding:8px 6px;color:var(--muted)}
+.seg .on{background:var(--green-700);color:#fff}
+.apply{width:100%;justify-content:center;margin-top:18px}
+/* results */
+.res-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.res-head h2{margin:0;color:var(--green-700);letter-spacing:.04em}
+.res-head .count{font-size:.7rem;color:var(--muted)}
+.sort{border:1px solid #e4dcc9;border-radius:12px;padding:9px 14px;font-size:.74rem;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:#fff;border:1px solid #f0e9da;border-radius:16px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,20,.05);position:relative}
+.card.hl{border-color:var(--hl);box-shadow:0 8px 20px rgba(246,195,36,.18);background:#FFFDF4}
+.card .ph{height:150px;background:linear-gradient(135deg,#cfd8cd,#9fb49e);position:relative}
+/* PLACEHOLDER-IMG per card: alt = listing title, loading="lazy", width/height -->
+.card .b1{position:absolute;top:10px;left:10px;background:var(--green-900);color:#fff;font-size:.56rem;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.06em}
+.card .b1.p{background:var(--green-700)}
+.card .b1.h{background:var(--hl);color:#5b4700}
+.card .loc{position:absolute;bottom:10px;right:10px;background:rgba(15,30,12,.8);color:#fff;font-size:.56rem;padding:4px 10px;border-radius:999px}
+.card .fav{position:absolute;top:10px;right:10px;background:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--green-700)}
+.card .body{padding:12px 14px 14px}
+.card .tags{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.card .tag{background:var(--cream);border-radius:999px;font-size:.58rem;padding:3px 9px;color:#6b7261;font-weight:600}
+.card .pl{font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:#9aa08d;margin-top:8px}
+.card .pr{display:flex;justify-content:space-between;align-items:center}
+.card .price{color:var(--green-700);font-weight:800;font-size:1rem}
+.card .det{font-size:.66rem;font-weight:700;color:var(--green-800)}
+.more{display:flex;flex-direction:column;align-items:center;gap:8px;margin:26px 0 8px}
+.pag{font-size:.7rem;color:var(--muted)}
+.pag a{color:var(--green-700);font-weight:700}
+/* popular searches */
+.pop{background:var(--cream-2);border-radius:18px;padding:22px 24px;margin-top:26px}
+.pop ul{list-style:none;display:flex;flex-wrap:wrap;gap:10px;padding:0;margin:12px 0 0}
+.pop a{background:#fff;border:1px solid #e6ddc8;border-radius:999px;padding:8px 14px;font-size:.7rem;font-weight:600;color:var(--green-800)}
+/* seo text */
+.seo-card{background:var(--cream-2);border:1px solid #efe7d6;border-radius:20px;padding:30px 32px;margin-top:26px}
+.seo-card .lead{color:var(--green-700);font-weight:600}
+.seo-card p{font-size:.84rem;color:#41503f}
+.seo-card h3{color:var(--green-800);font-size:.95rem;margin-top:1.1em}
+.seo-card a{color:var(--green-700);font-weight:600}
+/* trust strip */
+.trust{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:.72rem;color:var(--muted);background:#fff;border:1px dashed #d8cfb8;border-radius:14px;padding:12px 16px;margin-top:22px}
+.trust b{color:var(--green-800)}
+/* categories */
+.catsec{background:#fff;text-align:center;padding:46px 0}
+.cats{list-style:none;display:grid;grid-template-columns:repeat(9,1fr);gap:12px;padding:0;margin:24px 0 0}
+.cats li a{background:#fff;border:1px solid #efe8d9;border-radius:16px;box-shadow:0 6px 16px rgba(20,40,20,.05);padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:.64rem;font-weight:600;color:var(--green-900);min-height:92px}
+.cats .ic{width:34px;height:34px;border-radius:10px;background:var(--cream);display:flex;align-items:center;justify-content:center}
+/* faq */
+.faq{background:var(--cream-2);padding:46px 0}
+.faq details{background:#fff;border-radius:14px;padding:14px 18px;margin-bottom:10px;box-shadow:0 6px 14px rgba(20,40,20,.05)}
+.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary h3{margin:0;font-size:.85rem}
+.faq summary:after{content:"+";color:var(--gold);font-weight:700}
+.faq details[open] summary:after{content:"×"}
+.faq p{font-size:.8rem;color:var(--muted);margin-top:10px}
+.faq a{color:var(--green-700);font-weight:600}
+/* footer */
+footer{background:var(--green-900);color:#cfe0cd;font-size:.78rem}
+.f-intro{border-bottom:1px solid rgba(255,255,255,.12);padding:24px 0;color:#a9c2a7;font-size:.72rem;text-align:center}
+.f-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;gap:24px;padding:32px 0}
+.f-grid strong{color:#fff;display:block;margin-bottom:10px;font-size:.8rem}
+.f-grid ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.f-bottom{border-top:1px solid rgba(255,255,255,.12);padding:16px 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.68rem;color:#8fae8d}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.cats{grid-template-columns:repeat(5,1fr)}.f-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.grid{grid-template-columns:1fr}.cats{grid-template-columns:repeat(3,1fr)}.nav ul{display:none}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<!-- HEADER: shared final navigation. "Marktplatz" active. -->
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="/" aria-label="Campuna Startseite">▲ campuna<small>DEIN CAMPING-MARKTPLATZ</small></a>
+    <ul>
+      <li><a href="/">Startseite</a></li>
+      <li><a href="/ueber-uns">Über uns</a></li>
+      <li><a class="active" href="/inserate">Marktplatz</a></li>
+      <li><a href="/kategorien">Kategorien</a></li>
+      <li><a href="/spotlight">Spotlight</a></li>
+      <li><a href="/ratgeber">Ressourcen</a></li>
+    </ul>
+    <a class="btn btn-green" href="/konto" style="margin-left:18px">👤 Einloggen</a>
+  </div>
+</header>
+
+<main id="inhalt">
+
+<!-- ============================================================
+  SECTION 1: HERO BAND
+  The ONLY h1. Sub paragraph = the "above the grid" SEO text (58 words, keep under 80).
+  DEV: photo behind gradient, eager+preload.
+  alt: "Campingplatz mit Wohnmobilen und Hütten in den Bergen"
+============================================================ -->
+<section class="hero" aria-labelledby="plp-titel">
+  <div class="wrap">
+    <div class="hero-card">
+      <span class="kicker">Camping-Marktplatz Deutschland</span>
+      <h1 id="plp-titel">Camping-Inserate aus ganz Deutschland</h1>
+      <p>Entdecke aktuelle Camping-Angebote für Wohnmobile, Wohnwagen, Campingzubehör, Stellplätze, Services, Tiny Houses und mehr. Von privaten und gewerblichen Anbietern auf Campuna, täglich neu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- BREADCRUMB (visible, matches BreadcrumbList schema) -->
+<div class="wrap crumb" aria-label="Brotkrumen-Navigation">
+  <a href="/">Startseite</a> › <span>Inserate</span>
+</div>
+
+<div class="wrap layout">
+
+  <!-- ============================================================
+    SECTION 2: FILTER SIDEBAR
+    DEV: every filter changes URL parameters (GET), results server-rendered.
+    Canonical of every parameter combination stays /inserate (rule in head).
+    The CATEGORY dropdown navigates to the real category URLs instead of
+    adding a parameter (SEO rule 3).
+  ============================================================ -->
+  <aside class="filters" aria-label="Inserate filtern">
+    <h2>⚙ Filter anpassen <a href="/inserate">Zurücksetzen</a></h2>
+    <p class="f-label">Marke, Modell, Stichwort…</p>
+    <input type="search" name="q" placeholder="z. B. Morelo, Zelt, Solar, 6m">
+    <p class="f-label">Preis</p>
+    <div class="range" aria-hidden="true"><i class="a"></i><i class="b"></i></div>
+    <div class="range-lab"><span>0 €</span><span>150.000 € +</span></div>
+    <div class="chips">
+      <span class="chip on">Alle</span><span class="chip">bis 10.000 €</span><span class="chip">10.000 bis 30.000 €</span><span class="chip">30.000 bis 75.000 €</span><span class="chip">über 75.000 €</span>
+    </div>
+    <label class="check"><input type="checkbox" name="vb"> Preis verhandelbar (VB)</label>
+    <p class="f-label">Anbieter</p>
+    <div class="seg"><span class="on">Alle</span><span>Privat</span><span>Gewerblich</span></div>
+    <p class="f-label">Kategorie</p>
+    <select aria-label="Kategorie wählen">
+      <option>Alle Kategorien</option>
+      <option value="/wohnmobile">Wohnmobile &amp; Camper</option>
+      <option value="/zubehoer">Camping-Zubehör</option>
+      <option value="/zelte">Zelte &amp; Dachzelte</option>
+      <option value="/fahrraeder-traeger">Fahrräder &amp; Träger</option>
+      <option value="/stellplaetze">Stellplätze &amp; Campingplätze</option>
+      <option value="/services">Camping-Services</option>
+      <option value="/tiny-houses">Tiny Houses</option>
+      <option value="/mieten">Mieten &amp; Vermieten</option>
+      <option value="/boote">Boote &amp; Wassersport</option>
+    </select>
+    <p class="f-label">Unterkategorie</p>
+    <select aria-label="Unterkategorie wählen"><option>Alle Unterkategorien</option></select>
+    <p class="f-label">Ort / PLZ / Bundesland</p>
+    <input type="text" name="ort" placeholder="Stadt, PLZ oder Bundesland">
+    <button class="btn btn-green apply" type="submit">🔍 Filter anwenden</button>
+  </aside>
+
+  <!-- ============================================================
+    SECTION 3: RESULTS
+    H2 header + count + sort. Grid: 12 cards server-rendered per page.
+    Cards below = layout placeholders with realistic German sample data.
+    DEV: NEVER render test listings in production.
+  ============================================================ -->
+  <div>
+    <div class="res-head">
+      <div>
+        <h2>ALLE INSERATE</h2>
+        <span class="count">19 Inserate gefunden</span>
+      </div>
+      <label class="sr-only" for="sort">Sortierung</label>
+      <select id="sort" class="sort">
+        <option>Neueste zuerst</option>
+        <option>Preis aufsteigend</option>
+        <option>Preis absteigend</option>
+      </select>
+    </div>
+
+    <div class="grid">
+      <article class="card hl"><a href="/inserat/ecoflow-delta-pro-3600wh">
+        <div class="ph"><span class="b1 h">★ Hervorgehoben</span><span class="fav">♥</span><span class="loc">Hamburg</span></div>
+        <div class="body"><h3>EcoFlow DELTA Pro 3600 Wh Powerstation</h3>
+          <div class="tags"><span class="tag">Sehr gut</span><span class="tag">Elektrik &amp; Solar</span></div>
+          <p class="pl">Preis</p><div class="pr"><span class="price">2.499 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card hl"><a href="/inserat/knaus-sport-500-eu-silver-selection">
+        <div class="ph"><span class="b1 h">★ Hervorgehoben</span><span class="fav">♥</span><span class="loc">Stuttgart</span></div>
+        <div class="body"><h3>Knaus Sport 500 EU Silver Selection</h3>
+          <div class="tags"><span class="tag">Sehr gut</span><span class="tag">Wohnwagen</span></div>
+          <p class="pl">Kaufpreis</p><div class="pr"><span class="price">21.900 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card hl"><a href="/inserat/vw-grand-california-680-automatik">
+        <div class="ph"><span class="b1 h">★ Hervorgehoben</span><span class="fav">♥</span><span class="loc">München</span></div>
+        <div class="body"><h3>VW Grand California 680 Automatik</h3>
+          <div class="tags"><span class="tag">Sehr gut</span><span class="tag">Kastenwagen</span></div>
+          <p class="pl">Kaufpreis</p><div class="pr"><span class="price">79.900 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/hammermeister-starlet-sportboot">
+        <div class="ph"><span class="b1 p">Privat</span><span class="fav">♥</span><span class="loc">Erfurt</span></div>
+        <div class="body"><h3>Hammermeister Starlet Sportboot 50 PS</h3>
+          <div class="tags"><span class="tag">Gebraucht</span><span class="tag">Motorboote</span></div>
+          <p class="pl">Preis</p><div class="pr"><span class="price">9.900 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/vw-t61-california-ocean-4motion">
+        <div class="ph"><span class="b1">Gewerblich</span><span class="fav">♥</span><span class="loc">München</span></div>
+        <div class="body"><h3>VW T6.1 California Ocean 4Motion DSG, Vollausstattung</h3>
+          <div class="tags"><span class="tag">Gebraucht</span><span class="tag">Campervan</span></div>
+          <p class="pl">Kaufpreis</p><div class="pr"><span class="price">68.500 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/knaus-boxstar-600-street">
+        <div class="ph"><span class="b1">Gewerblich</span><span class="fav">♥</span><span class="loc">München</span></div>
+        <div class="body"><h3>Knaus Boxstar 600 Street Campervan, 160 PS</h3>
+          <div class="tags"><span class="tag">Gebraucht</span><span class="tag">Kastenwagen</span></div>
+          <p class="pl">Kaufpreis</p><div class="pr"><span class="price">54.900 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/ikamper-skycamp-30-dachzelt">
+        <div class="ph"><span class="b1 p">Privat</span><span class="fav">♥</span><span class="loc">Dresden</span></div>
+        <div class="body"><h3>iKamper Skycamp 3.0 4X Dachzelt, All-Black Edition</h3>
+          <div class="tags"><span class="tag">Neuwertig</span><span class="tag">Hartschalen-Dachzelt</span></div>
+          <p class="pl">Preis</p><div class="pr"><span class="price">3.450 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/tiny-house-mobilheim-24qm">
+        <div class="ph"><span class="b1">Gewerblich</span><span class="fav">♥</span><span class="loc">Kempten</span></div>
+        <div class="body"><h3>Tiny House Mobilheim, 4 Jahreszeiten, winterfest, 24 qm</h3>
+          <div class="tags"><span class="tag">Neu</span><span class="tag">Mobilheime</span></div>
+          <p class="pl">Kaufpreis</p><div class="pr"><span class="price">34.500 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/hymer-b-klasse-masterline-i-780">
+        <div class="ph"><span class="b1">Gewerblich</span><span class="fav">♥</span><span class="loc">München</span></div>
+        <div class="body"><h3>Hymer B-Klasse MasterLine I 780, Mercedes Sprinter</h3>
+          <div class="tags"><span class="tag">Gebraucht</span><span class="tag">Vollintegriert</span></div>
+          <p class="pl">Kaufpreis</p><div class="pr"><span class="price">119.000 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/campervan-ausbau-elektroservice">
+        <div class="ph"><span class="b1">Gewerblich</span><span class="fav">♥</span><span class="loc">Nürnberg</span></div>
+        <div class="body"><h3>Campervan-Ausbau &amp; Elektroservice, Solar und Landstrom</h3>
+          <div class="tags"><span class="tag">Werkstatt</span><span class="tag">Ausbau</span></div>
+          <p class="pl">Preis</p><div class="pr"><span class="price">ab 95 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/dometic-cfx3-45-kuehlbox">
+        <div class="ph"><span class="b1 p">Privat</span><span class="fav">♥</span><span class="loc">Dresden</span></div>
+        <div class="body"><h3>Dometic CFX3 45 Kompressor-Kühlbox</h3>
+          <div class="tags"><span class="tag">Sehr gut</span><span class="tag">Kühlboxen</span></div>
+          <p class="pl">Preis</p><div class="pr"><span class="price">620 €</span><span class="det">Details →</span></div></div></a></article>
+      <article class="card"><a href="/inserat/dauerstellplatz-ostsee">
+        <div class="ph"><span class="b1">Gewerblich</span><span class="fav">♥</span><span class="loc">Lübeck</span></div>
+        <div class="body"><h3>Ganzjahres-Stellplatz an der Ostsee, Strom und Wasser</h3>
+          <div class="tags"><span class="tag">Stellplatz</span><span class="tag">Dauercamping</span></div>
+          <p class="pl">Preis</p><div class="pr"><span class="price">2.400 € / Jahr</span><span class="det">Details →</span></div></div></a></article>
+    </div>
+
+    <!-- SECTION 4 (ADDED): load more + crawlable pagination fallback -->
+    <div class="more">
+      <button class="btn btn-green" type="button">Weitere Angebote laden</button>
+      <!-- DEV: this link is the crawler path. Keep it in the HTML even if the
+           button loads results via JS. Page 2: title "... | Seite 2", canonical
+           to /inserate?seite=2, links to page 1 and 3. -->
+      <p class="pag">Oder blättern: <a href="/inserate?seite=2">Seite 2 ansehen →</a></p>
+    </div>
+
+    <!-- SECTION 5 (ADDED): popular searches, links to category and price-band PLPs -->
+    <nav class="pop" aria-labelledby="beliebt-titel">
+      <span class="kicker" style="color:var(--gold)">Beliebte Suchen</span>
+      <h2 id="beliebt-titel" style="font-size:1.05rem;margin:.2em 0 0">Direkt zum passenden Bereich</h2>
+      <ul>
+        <li><a href="/wohnmobile">Wohnmobil gebraucht kaufen</a></li>
+        <li><a href="/wohnmobile/campervan">Campervan kaufen</a></li>
+        <li><a href="/wohnwagen">Wohnwagen kaufen</a></li>
+        <li><a href="/wohnmobile/gebraucht/bis-20000-euro">Wohnmobile bis 20.000 €</a></li>
+        <li><a href="/zelte/dachzelte">Dachzelte</a></li>
+        <li><a href="/zubehoer/vorzelte">Vorzelte</a></li>
+        <li><a href="/stellplaetze">Stellplätze</a></li>
+        <li><a href="/tiny-houses">Tiny Houses</a></li>
+        <li><a href="/services">Gasprüfung &amp; Werkstatt</a></li>
+        <li><a href="/wohnmobil-verkaufen">Wohnmobil verkaufen</a></li>
+      </ul>
+    </nav>
+
+    <!-- ============================================================
+      SECTION 6: SEO TEXT BLOCK (expanded to ~420 words, below the grid)
+      Was 3 thin lines in the design. This is the ranking copy of the page.
+    ============================================================ -->
+    <section class="seo-card" aria-labelledby="seo-titel">
+      <h2 id="seo-titel">Camping-Inserate auf Campuna entdecken</h2>
+      <p class="lead">Campuna ist dein Camping-Marktplatz für Fahrzeuge, Zubehör, Services, Stellplätze, Vermietung und vieles mehr.</p>
+      <p>Hier findest du aktuelle Inserate von privaten Verkäufern und gewerblichen Anbietern aus ganz Deutschland. Du suchst einen gebrauchten Campervan oder brauchst die richtige Ausrüstung für deine nächste Tour? Du möchtest deinen Campingplatz bewerben oder suchst spezialisierte Camping-Profis wie eine Werkstatt oder einen Gasprüfer? All das findest du auf dieser Seite an einem Ort.</p>
+      <h3>So findest du das richtige Angebot</h3>
+      <p>Mit den Filtern grenzt du die Auswahl gezielt ein: nach Preis, Bundesland, Anbieter, Kategorie und Unterkategorie. Über die Stichwortsuche findest du bestimmte Marken und Modelle, zum Beispiel Hymer, Knaus oder VW California. Die Sortierung zeigt dir wahlweise die neuesten oder die günstigsten Inserate zuerst. Noch schneller geht es über die Kategorien: <a href="/wohnmobile">Wohnmobile &amp; Camper</a>, <a href="/wohnwagen">Wohnwagen</a>, <a href="/zelte">Zelte &amp; Dachzelte</a>, <a href="/zubehoer">Campingzubehör</a> oder <a href="/stellplaetze">Stellplätze &amp; Campingplätze</a>.</p>
+      <h3>Von privat oder vom Händler kaufen</h3>
+      <p>Auf Campuna bieten private Camper und geprüfte gewerbliche Anbieter nebeneinander an. Private Angebote sind oft günstiger, gewerbliche Anbieter punkten mit Gewährleistung und Service. Mit dem Anbieter-Filter entscheidest du selbst. Tipps für einen sicheren Kauf, von der Besichtigung bis zum Kaufvertrag, findest du im <a href="/ratgeber">Campuna-Ratgeber</a> und auf der Seite <a href="/sicher-handeln">Sicher handeln</a>.</p>
+      <h3>Selbst verkaufen: kostenlos inserieren</h3>
+      <p>Du möchtest dein Wohnmobil, deinen Wohnwagen oder deine Campingausrüstung verkaufen? Private Inserate sind auf Campuna kostenlos, ohne Provision. Erstelle dein Angebot in wenigen Minuten und erreiche Camper in ganz Deutschland. <a href="/inserat-erstellen">Jetzt kostenlos inserieren</a> oder zuerst lesen, <a href="/so-funktionierts">wie Campuna funktioniert</a>.</p>
+    </section>
+
+    <!-- SECTION 7 (ADDED): trust strip -->
+    <div class="trust">
+      <span><b>✓ Direkter Kontakt</b> zwischen Käufer und Verkäufer</span>
+      <span><b>✓ Private Inserate kostenlos</b>, ohne Provision</span>
+      <span><b>✓ Tipps für sicheres Handeln:</b> <a href="/sicher-handeln" style="color:var(--green-700);font-weight:700">Sicher handeln lesen</a></span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+  SECTION 8: CATEGORY ROW ("Nach Kategorie filtern")
+  Real links to the 9 category PLPs (SEO rule 3: category filter = navigation).
+============================================================ -->
+<section class="catsec" aria-labelledby="kat-titel">
+  <div class="wrap">
+    <span class="kicker" style="color:var(--gold)">Stöbern</span>
+    <h2 id="kat-titel">Nach Kategorie filtern</h2>
+    <ul class="cats">
+      <li><a href="/zubehoer"><span class="ic">🎒</span>Camping-Zubehör</a></li>
+      <li><a href="/wohnmobile"><span class="ic">🚐</span>Wohnmobile &amp; Camper</a></li>
+      <li><a href="/zelte"><span class="ic">⛺</span>Zelte &amp; Dachzelte</a></li>
+      <li><a href="/fahrraeder-traeger"><span class="ic">🚲</span>Fahrräder &amp; Träger</a></li>
+      <li><a href="/stellplaetze"><span class="ic">📍</span>Stellplätze &amp; Campingplätze</a></li>
+      <li><a href="/services"><span class="ic">🔧</span>Camping-Services</a></li>
+      <li><a href="/tiny-houses"><span class="ic">🏠</span>Tiny Houses</a></li>
+      <li><a href="/mieten"><span class="ic">🔑</span>Mieten &amp; Vermieten</a></li>
+      <li><a href="/boote"><span class="ic">⛵</span>Boote &amp; Wassersport</a></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 9 (ADDED): FAQ (4 questions)
+  Answers visible in DOM, word for word identical to FAQPage schema.
+============================================================ -->
+<section class="faq" aria-labelledby="faq-titel">
+  <div class="wrap" style="max-width:860px">
+    <div style="text-align:center">
+      <span class="kicker" style="color:var(--gold)">Fragen &amp; Antworten</span>
+      <h2 id="faq-titel">Häufige Fragen zu den Inseraten</h2>
+    </div>
+    <details open>
+      <summary><h3>Wie finde ich das passende Camping-Inserat?</h3></summary>
+      <p>Nutze die Filter auf dieser Seite: Suche nach Marke, Modell oder Stichwort, grenze den Preis ein und wähle Kategorie, Anbieter und Ort. Mit der Sortierung siehst du die neuesten oder günstigsten Angebote zuerst. Über die <a href="/kategorien">Kategorien</a> unten kommst du direkt zu Wohnmobilen, Zelten, Zubehör und mehr.</p>
+    </details>
+    <details>
+      <summary><h3>Was bedeutet Privat oder Gewerblich bei einem Inserat?</h3></summary>
+      <p>Privat bedeutet, dass eine Privatperson verkauft, meist ohne Gewährleistung. Gewerblich bedeutet, dass ein Händler oder Dienstleister mit Firmenprofil anbietet. Auf Campuna findest du beide Arten von Anbietern und kannst gezielt danach filtern.</p>
+    </details>
+    <details>
+      <summary><h3>Was bedeutet VB beim Preis?</h3></summary>
+      <p>VB steht für Verhandlungsbasis. Der angegebene Preis ist ein Vorschlag des Anbieters, über den du fair verhandeln kannst. Nutze dafür die direkte Nachricht an den Verkäufer und vereinbare am besten eine Besichtigung vor dem Kauf.</p>
+    </details>
+    <details>
+      <summary><h3>Wie erstelle ich selbst ein Inserat auf Campuna?</h3></summary>
+      <p>Lege ein kostenloses Konto an, wähle die passende Kategorie und stelle dein Angebot mit Fotos, Beschreibung und Preis ein. Private Inserate sind kostenlos, ohne Provision. Eine Anleitung findest du unter <a href="/so-funktionierts">So funktioniert Campuna</a>.</p>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER: shared component, identical to homepage. -->
+<footer>
+  <div class="wrap f-intro">
+    <p style="margin:0">Campuna, dein Camping-Marktplatz. Campuna ist Deutschlands Plattform rund ums Camping: Wohnmobile und Camper, Wohnwagen, Zelte und Dachzelte, Campingzubehör, Stellplätze und Campingplätze, Tiny Houses, Boote sowie Camping-Services, zum Kaufen, Verkaufen und Entdecken an einem Ort.</p>
+  </div>
+  <nav class="wrap f-grid" aria-label="Footer Navigation">
+    <div>
+      <a class="logo" href="/" style="color:#fff">▲ campuna<small style="color:#9db89b">DEIN CAMPING-MARKTPLATZ</small></a>
+      <p style="color:#9db89b;font-size:.7rem;margin-top:12px">Campuna wächst mit dir.</p>
+      <p style="color:#9db89b;font-size:.7rem">Campuna · Erfurt, Thüringen · Deutschland<br><a href="mailto:info@campuna.de" style="color:#cfe0cd">info@campuna.de</a></p>
+    </div>
+    <div><strong>Navigation</strong>
+      <ul>
+        <li><a href="/">Startseite</a></li>
+        <li><a href="/inserate">Marktplatz</a></li>
+        <li><a href="/ueber-uns">Über uns</a></li>
+        <li><a href="/so-funktionierts">So funktioniert Campuna</a></li>
+        <li><a href="/spotlight">Spotlight</a></li>
+        <li><a href="/preise">Preise</a></li>
+      </ul>
+    </div>
+    <div><strong>Kategorien</strong>
+      <ul>
+        <li><a href="/zubehoer">Camping-Zubehör</a></li>
+        <li><a href="/wohnmobile">Wohnmobile &amp; Camper</a></li>
+        <li><a href="/zelte">Zelte &amp; Dachzelte</a></li>
+        <li><a href="/fahrraeder-traeger">Fahrräder &amp; Träger</a></li>
+        <li><a href="/stellplaetze">Stellplätze &amp; Campingplätze</a></li>
+        <li><a href="/services">Camping-Services</a></li>
+        <li><a href="/tiny-houses">Tiny Houses</a></li>
+        <li><a href="/mieten">Mieten &amp; Vermieten</a></li>
+        <li><a href="/boote">Boote &amp; Wassersport</a></li>
+      </ul>
+    </div>
+    <div><strong>Support</strong>
+      <ul>
+        <li><a href="/faq">Hilfe &amp; FAQ</a></li>
+        <li><a href="/sicher-handeln">Sicher handeln</a></li>
+        <li><a href="/kontakt">Kontakt</a></li>
+        <li><a href="/ratgeber">Ratgeber</a></li>
+        <li><a href="/tools/zuladungsrechner">Zuladungsrechner</a></li>
+        <li><a href="/tools/reisebudget-rechner">Reisebudget-Rechner</a></li>
+      </ul>
+    </div>
+    <div><strong>Rechtliches</strong>
+      <ul>
+        <li><a href="/impressum">Impressum</a></li>
+        <li><a href="/agb">AGB</a></li>
+        <li><a href="/nutzungsbedingungen">Nutzungsbedingungen</a></li>
+        <li><a href="/datenschutz">Datenschutz</a></li>
+        <li><a href="/cookie-einstellungen">Cookie-Einstellungen</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="wrap f-bottom">
+    <span>© 2026 Campuna. Alle Rechte vorbehalten.</span>
+    <span>Facebook · Instagram · TikTok · YouTube</span>
+  </div>
+</footer>
+
+</body>
+</html>

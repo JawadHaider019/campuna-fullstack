@@ -1,0 +1,980 @@
+﻿
+
+I N T E L I T U N E
+
+CAMPUNA
+
+Category Page SEO Template: Wohnmobile & Camper
+
+https://campuna.de/kategorie/fahrzeuge
+
+Field
+
+Value
+
+Page
+
+Category PLP Wohnmobile & Camper (/kategorie/fahrzeuge)
+
+Positioning
+
+Campuna is Germany&apos;s marketplace for the complete camping ecosystem. This page owns the vehicles pillar (38% of all keyword demand) and links out to gear, pitches and services.
+
+Content language
+
+German (de-DE), du-form, no em/en dashes in body copy (hyphens in compounds stay)
+
+Primary keywords
+
+wohnmobil kaufen (60.5k) · wohnmobil gebraucht kaufen (40.5k) · wohnwagen gebraucht kaufen (27.1k) · gebrauchte wohnmobile (18.1k)
+
+Based on
+
+Category master template (/zubehoer) + testing build testing.campuna.de/kategorie/fahrzeuge (checked 03.10.2026)
+
+Companion files
+
+campuna-kategorie-wohnmobile-template.html · preview_kategorie_wohnmobile.png
+
+Prepared
+
+Intelitune, 03.10.2026
+
+Instructions in English. Highlighted blocks are final German website copy: copy 1:1, do not translate or rephrase.
+
+
+0. Structure analysis of the testing build
+
+The testing build already follows the master template: photo hero with eyebrow, H1 and intro, breadcrumb, subcategory chips, listing count, grid, SEO text card, FAQ, other categories and footer. Good base. To make it a 100% SEO category page, the following was added:
+
+A. Sort dropdown
+
+Next to the count: Neueste zuerst, Preis aufsteigend, Preis absteigend. Sort parameter canonicalises to the base URL.
+
+B. Pagination fallback
+
+Real <a href="?seite=2"> link under the grid. Render only when total > page size.
+
+C. Beliebte Suchen
+
+10 chips to price-band, type and brand pages (the programmatic engine). Show a chip only when its page is live.
+
+D. SEO text expanded
+
+From ~120 words with plain-text labels to ~450 words with 5 real H3s, brand entities and 12 internal links.
+
+E. Trust strip
+
+Direct contact, free private listings, Sicher handeln link.
+
+F. Ratgeber teaser
+
+3 guides from the Kaufberatung and Verkaufen & Wert hubs.
+
+G. Sell CTA band
+
+Supply side: Kostenlos inserieren + link to the planned money page /wohnmobil-verkaufen.
+
+H. FAQ 3 → 5
+
+Added price question (AEO: was kostet ein wohnmobil, 1,000/mo) and driving licence question (top PAA). FAQPage schema.
+
+I. Campervan chip
+
+Listings already use "Campervan" as subcategory, but no chip existed. Campervan is a separate search cluster (campervan gebraucht 3,600/mo).
+
+Bugs found on testing.campuna.de (fix before launch)
+
+#
+
+Issue
+
+Fix
+
+Priority
+
+1
+
+<title> renders "... | Campuna | Campuna"
+
+System appends the brand. Store the title field without " | Campuna"
+
+High
+
+2
+
+Server HTML says "0 Inserate in dieser Kategorie"; listings load later by JS
+
+Render grid + count server-side. Crawlers and AI bots currently see an empty category
+
+Critical
+
+3
+
+FAQ answers 2 and 3 are not in the HTML until clicked
+
+All answers in the DOM; accordion only hides visually
+
+High
+
+4
+
+No JSON-LD on the page
+
+Add the 3 schema blocks from section 4
+
+High
+
+5
+
+Badge "BUSINESS" is English
+
+German: "Gewerblich" (and "Privat", "Hervorgehoben")
+
+Medium
+
+6
+
+"Fragen & Antworten zu Wohnmobile & Camper" is wrong German
+
+Dative: "zu Wohnmobilen und Campern". Add a dative label field per category (section 7)
+
+Medium
+
+7
+
+Card titles cut with "..." in the HTML
+
+Full title in the H3, shorten with CSS line-clamp only
+
+Medium
+
+8
+
+"Camping Zubehör", "Camping Services" without hyphen
+
+"Camping-Zubehör", "Camping-Services"
+
+Low
+
+9
+
+Footer column titles are H3 headings
+
+Use <p>/<strong>; headings only for page content
+
+Low
+
+10
+
+Subcategory chips: no hrefs found in the HTML
+
+Chips must be real <a href> links to /kategorie/fahrzeuge/{typ}
+
+High
+
+11
+
+Hymer and Pössl listings show forest stock photos
+
+Test data. Real listing photos only; never index test listings
+
+Medium
+
+
+1. Meta title + description (copy-paste)
+
+Title 57 chars, description 148 chars. Title changed vs the earlier replication table: it now also targets Wohnwagen (wohnwagen gebraucht kaufen 27.1k + wohnwagen kaufen 27.1k), because Wohnwagen is a subcategory of this page.
+
+<title>Wohnmobile, Camper & Wohnwagen gebraucht kaufen | Campuna</title>
+
+<meta name="description" content="Gebrauchte und neue Wohnmobile, Campervans, Kastenwagen und Wohnwagen von privat und vom Händler aus ganz Deutschland. Jetzt finden oder inserieren.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/fahrzeuge">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:type" content="website">
+
+<meta property="og:title" content="Wohnmobile, Camper & Wohnwagen gebraucht kaufen | Campuna">
+
+<meta property="og:description" content="Gebrauchte und neue Wohnmobile, Campervans, Kastenwagen und Wohnwagen von privat und vom Händler aus ganz Deutschland.">
+
+<meta property="og:url" content="https://campuna.de/kategorie/fahrzeuge">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-wohnmobile.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+CMS title field (if the system appends " | Campuna"):
+
+Wohnmobile, Camper & Wohnwagen gebraucht kaufen
+
+H1 (exactly one, unchanged from the design):
+
+Wohnmobile und Camper kaufen und verkaufen
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero (design)
+
+Eyebrow: KATEGORIE • WOHNMOBILE & CAMPER
+
+H1: Wohnmobile und Camper kaufen und verkaufen
+
+Intro: Gebrauchte und neue Wohnmobile, Campervans, Kastenwagen und Wohnwagen von privaten und gewerblichen Anbietern in ganz Deutschland. Jetzt entdecken oder kostenlos inserieren auf Campuna.
+
+
+Hero photo = LCP element: real <img> (not CSS background), AVIF/WebP, srcset, fetchpriority="high", preload. Alt: "Wohnmobile und Wohnwagen auf einem Campingplatz in den Bergen".
+
+2.2 Breadcrumb
+
+Startseite › Inserate › Wohnmobile & Camper
+
+2.3 Subcategory chips (real links)
+
+Chip label
+
+URL
+
+Search demand
+
+Alle (Anzahl)
+
+current page, no link
+
+category heads
+
+Campervan (NEW)
+
+/kategorie/fahrzeuge/campervan
+
+campervan gebraucht 3,600 + synonyms (Campingbus, Camper Bus, ausgebauter Van)
+
+Kastenwagen
+
+/kategorie/fahrzeuge/kastenwagen
+
+kastenwagen gebraucht 1,900 (KD 11)
+
+Alkoven
+
+/kategorie/fahrzeuge/alkoven
+
+alkoven wohnmobil gebraucht
+
+Teilintegriert
+
+/kategorie/fahrzeuge/teilintegriert
+
+teilintegriert gebraucht
+
+Vollintegriert
+
+/kategorie/fahrzeuge/vollintegriert
+
+vollintegriert gebraucht
+
+Wohnwagen
+
+/kategorie/fahrzeuge/wohnwagen
+
+wohnwagen gebraucht kaufen 27,100
+
+Sonstige Fahrzeuge
+
+/kategorie/fahrzeuge/sonstige-fahrzeuge
+
+Wohnkabinen, Expeditionsfahrzeuge
+
+2.4 Results header + grid + pagination
+
+A visually hidden H2 sits above the grid so the card H3s never follow the H1 directly (no skipped heading level):
+
+Hidden H2: Aktuelle Angebote: Wohnmobile und Camper
+
+Count: X Inserate in dieser Kategorie  ·  Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend
+
+Button: Weitere Angebote laden  ·  Fallback link: Oder blättern: Seite 2 ansehen
+
+
+Card: photo (alt = listing title, lazy, width/height), badge (Hervorgehoben / Privat / Gewerblich), favourite, location pill, H3 full title, condition + type pills, label Kaufpreis, price, Details link to /inserat/{slug}. Render server-side.
+
+2.5 Beliebte Suchen
+
+Kicker: BELIEBTE SUCHEN  ·  H2: Beliebt bei Wohnmobilen und Campern
+
+Chip (German)
+
+URL
+
+Keyword · volume/mo
+
+Wohnmobil bis 15.000 €
+
+/kategorie/fahrzeuge/bis-15000-euro
+
+gebrauchte wohnmobile bis 15.000 euro · 4,400
+
+Wohnmobil bis 20.000 €
+
+/kategorie/fahrzeuge/bis-20000-euro
+
+… bis 20.000 euro · 1,900
+
+Wohnmobil bis 25.000 €
+
+/kategorie/fahrzeuge/bis-25000-euro
+
+… bis 25.000 euro · 2,900
+
+Wohnmobil bis 30.000 €
+
+/kategorie/fahrzeuge/bis-30000-euro
+
+… bis 30.000 euro · 2,900
+
+Kastenwagen gebraucht
+
+/kategorie/fahrzeuge/kastenwagen
+
+kastenwagen gebraucht · 1,900
+
+Campervan gebraucht
+
+/kategorie/fahrzeuge/campervan
+
+campervan gebraucht · 3,600
+
+Wohnwagen gebraucht
+
+/kategorie/fahrzeuge/wohnwagen
+
+wohnwagen gebraucht kaufen · 27,100
+
+Hymer gebraucht
+
+/kategorie/fahrzeuge/hymer
+
+hymer gebraucht · 1,900
+
+Knaus gebraucht
+
+/kategorie/fahrzeuge/knaus
+
+knaus wohnmobil gebraucht · 880
+
+Dethleffs gebraucht
+
+/kategorie/fahrzeuge/dethleffs
+
+dethleffs gebraucht · 720
+
+
+Price-band and brand pages are phase 2. Show a chip only when its page is live. Never link a chip to a parameter URL.
+
+2.6 SEO text card (final German copy, ~450 words)
+
+Below the grid, inside the cream card from the design. The labels in the testing build ("Kastenwagen & Campervans:" etc.) are plain text: they become real H3 headings. Internal links as marked in the HTML file (12 links).
+
+H2: Wohnmobile und Camper auf Campuna kaufen und verkaufen
+
+Campuna ist dein Camping-Marktplatz für Wohnmobile, Campervans, Kastenwagen und Wohnwagen. Hier findest du gebrauchte und neue Fahrzeuge aus ganz Deutschland, von privat und vom Fachhändler.
+
+Ein Wohnmobil kauft man nicht jeden Tag. Deshalb siehst du bei jedem Inserat die wichtigsten Daten auf einen Blick: Preis, Zustand, Typ und Standort. Du kontaktierst Verkäufer direkt, ohne Umweg und ohne Provision. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du passendes Camping-Zubehör, freie Stellplätze und Werkstätten gleich mit.
+
+H3: Welche Wohnmobil-Typen gibt es?
+
+Kastenwagen und Campervans sind wendig im Alltag und flexibel auf Reisen. Beliebt sind ausgebaute Vans von VW, Ford und Mercedes-Benz sowie Kastenwagen von Pössl, Knaus und Westfalia. Alkoven bieten mit dem Bett über dem Fahrerhaus viel Platz für Familien. Teilintegrierte und vollintegrierte Wohnmobile bringen maximalen Raumkomfort für lange Reisen, etwa von Hymer, Dethleffs, Bürstner, Carado und Weinsberg. Wohnwagen sind die klassische Wahl für jedes Zugfahrzeug, vom kompakten Reisewohnwagen bis zum Familiencaravan mit Etagenbetten oder Rundsitzgruppe.
+
+H3: Was kostet ein gebrauchtes Wohnmobil?
+
+Der Preis hängt vor allem von Typ, Alter, Kilometerstand und Ausstattung ab. Ältere Kastenwagen und Alkoven findest du oft schon im unteren fünfstelligen Bereich, junge Teilintegrierte und Vollintegrierte kosten ein Vielfaches davon. Mit dem Preisfilter grenzt du dein Budget ein, zum Beispiel auf Wohnmobile bis 20.000 Euro oder bis 30.000 Euro. Rechne beim Vergleich auch laufende Kosten wie Versicherung, Steuer und Wartung mit ein.
+
+H3: Von privat oder vom Händler kaufen?
+
+Bei privaten Verkäufern bekommst du oft einen günstigeren Preis und erfährst viel über die Geschichte des Fahrzeugs. Händler bieten dafür meist eine Gewährleistung, eine geprüfte Übergabe und manchmal eine Finanzierung. Auf Campuna erkennst du am Hinweis Privat oder Gewerblich sofort, mit wem du es zu tun hast, und vergleichst beide Angebote direkt.
+
+H3: Gebraucht kaufen: Darauf solltest du achten
+
+Prüfe zuerst die Dichtigkeit: Eine Feuchtigkeitsmessung zeigt versteckte Wasserschäden im Aufbau. Wirf einen Blick auf Rost am Unterboden und frag nach dem Scheckheft und einer gültigen Gasprüfung. Wichtig ist auch das Verhältnis von Leergewicht und zulässigem Gesamtgewicht, denn mit dem Führerschein Klasse B darfst du Fahrzeuge bis 3,5 Tonnen fahren. Mach immer eine Probefahrt und halte den Kauf in einem schriftlichen Kaufvertrag fest. Die komplette Checkliste für den Gebrauchtkauf findest du im Ratgeber, Tipps für die Übergabe auf der Seite Sicher handeln.
+
+H3: Wohnmobil privat verkaufen
+
+Du willst dein Wohnmobil oder deinen Wohnwagen verkaufen? Auf Campuna inserierst du privat kostenlos, ohne Provision und ohne versteckte Kosten. Lade Fotos hoch, beschreibe Zustand und Ausstattung und lege deinen Preis fest. Interessierte Camper melden sich direkt bei dir. Wie du einen realistischen Preis findest, erklärt der Ratgeber Was ist mein Wohnmobil wert?. Alles zum Ablauf findest du unter Wohnmobil verkaufen.
+
+2.7 Trust strip
+
+✓ Direkter Kontakt zwischen Käufer und Verkäufer  ·  ✓ Private Inserate kostenlos, ohne Provision  ·  ✓ Tipps für sicheres Handeln: Sicher handeln lesen
+
+2.8 Ratgeber teaser
+
+Kicker: RATGEBER  ·  H2: Wissen rund um Wohnmobile
+
+1) Gebrauchtes Wohnmobil kaufen: Die komplette Checkliste  ·  2) Kastenwagen, Alkoven oder Teilintegriert: Welcher Typ passt zu dir?  ·  3) Was ist mein Wohnmobil wert? So ermittelst du den Preis
+
+
+Dynamic: 3 newest guides tagged Wohnmobil (topical map hubs Kaufberatung + Verkaufen & Wert). Titles = H3.
+
+2.9 Sell CTA band
+
+Kicker: VERKAUFEN  ·  H2: Du willst dein Wohnmobil verkaufen?  ·  Text: Inseriere privat kostenlos und ohne Provision. Interessierte Camper aus ganz Deutschland melden sich direkt bei dir.
+
+Buttons: Kostenlos inserieren (/inserat-erstellen)  ·  So verkaufst du dein Wohnmobil (/wohnmobil-verkaufen)
+
+
+/wohnmobil-verkaufen is the planned money page (wohnmobil verkaufen 3,600/mo, CPC €14). Until it is live, show only the first button.
+
+2.10 FAQ (visible text = schema text)
+
+Kicker: HÄUFIG GESTELLTE FRAGEN  ·  H2: Fragen & Antworten zu Wohnmobilen und Campern
+
+Subline: Wichtige Informationen und Tipps zu Wohnmobilen und Campern, kurz beantwortet.
+
+Q1: Worauf sollte ich beim Kauf eines gebrauchten Wohnmobils achten?
+
+Achte auf Dichtigkeit (Feuchtigkeitsmessung), Rost am Unterboden, Scheckheftpflege, eine gültige Gasprüfung und das Verhältnis zwischen Leergewicht und zulässigem Gesamtgewicht (3,5-Tonnen-Grenze). Mach außerdem immer eine Probefahrt und halte den Kauf in einem schriftlichen Kaufvertrag fest.
+
+Q2: Welche Wohnmobil-Typen finde ich auf Campuna?
+
+Auf Campuna findest du Kastenwagen und Campervans, Alkoven, teilintegrierte und vollintegrierte Wohnmobile sowie Wohnwagen und sonstige Fahrzeuge wie Wohnkabinen. Alle Typen gibt es gebraucht und neu, von privaten Verkäufern und von Händlern aus ganz Deutschland. Über die Unterkategorien grenzt du die Auswahl mit einem Klick ein.
+
+Q3: Wie verkaufe ich mein Wohnmobil auf Campuna?
+
+Erstelle ein kostenloses Konto, wähle die Kategorie Wohnmobile & Camper und den passenden Typ und lade aussagekräftige Fotos hoch. Beschreibe Zustand, Ausstattung und Kilometerstand und lege deinen Preis fest. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir, die Übergabe vereinbart ihr persönlich.
+
+Q4: Was kostet ein gebrauchtes Wohnmobil?
+
+Das hängt vor allem von Typ, Alter, Kilometerstand und Ausstattung ab. Ältere Kastenwagen und Alkoven gibt es oft schon im unteren fünfstelligen Bereich, junge Teilintegrierte und Vollintegrierte kosten ein Vielfaches davon. Auf Campuna filterst du nach Preis und vergleichst Angebote direkt.
+
+Q5: Welchen Führerschein brauche ich für ein Wohnmobil?
+
+Mit dem Führerschein Klasse B darfst du Wohnmobile bis 3,5 Tonnen zulässiger Gesamtmasse fahren. Für schwerere Fahrzeuge bis 7,5 Tonnen brauchst du die Klasse C1. Wer seinen Führerschein vor 1999 gemacht hat, darf mit der alten Klasse 3 in der Regel bis 7,5 Tonnen fahren. Eine EU-Reform hebt die Grenze für Wohnmobile mit Klasse B künftig auf 4,25 Tonnen an, in Deutschland gilt das aber noch nicht.
+
+
+Q5 legal note: Klasse B is limited to 3.5 t in Germany today. The EU directive raising the motorhome limit to 4.25 t must be transposed by 2029 at the latest. Re-check this answer every 6 months and update when the German rule changes.
+
+2.11 Weitere Kategorien + footer
+
+Kicker: ENTDECKEN  ·  H2: Weitere Kategorien entdecken  ·  Subline: Von Fahrzeugen über Ausrüstung und Stellplätze bis zu Vermietung und Services: neun Kategorien, ein Marktplatz.
+
+Footer intro: Campuna, dein Camping-Marktplatz. Campuna ist Deutschlands Marktplatz für die ganze Camping-Welt: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung, Camping-Services und gewerbliche Anbieter. Kaufen, verkaufen und entdecken an einem Ort.
+
+
+Footer intro replaces the old line ("Deutschlands Plattform rund ums Camping...") sitewide, per the 03.10.2026 positioning update. Footer category list starts with Wohnmobile & Camper.
+
+
+3. Keyword map (where each keyword lives)
+
+Keyword
+
+Vol/mo · KD
+
+Placement
+
+wohnmobil kaufen
+
+60,500 · 30
+
+Title (Wohnmobile ... kaufen), H1, intro, SEO H2
+
+wohnmobil gebraucht kaufen
+
+40,500 · 35
+
+Title (gebraucht kaufen), lead, H3 "Gebraucht kaufen"
+
+wohnwagen gebraucht kaufen / wohnwagen kaufen
+
+27,100 each
+
+Title, intro, chip, SEO text type section
+
+gebrauchte wohnmobile
+
+18,100 · 45
+
+Meta description, lead sentence
+
+wohnmobile gebraucht / wohnmobile kaufen
+
+12,100 / 9,900
+
+SEO text, FAQ
+
+campervan gebraucht + synonyms
+
+3,600
+
+Chip + SEO text + future sub-PLP
+
+kastenwagen gebraucht
+
+1,900 · 11
+
+Chip, Beliebte Suchen, SEO text
+
+gebrauchte wohnmobile bis 15.000/20.000/25.000/30.000 euro
+
+4,400/1,900/2,900/2,900 · 14–17
+
+Beliebte Suchen → price-band pages, SEO price section
+
+hymer / knaus / dethleffs gebraucht
+
+1,900 / 880 / 720
+
+Beliebte Suchen → brand pages, brand entities in SEO text
+
+was kostet ein wohnmobil / wohnmobil kosten
+
+1,000 / 880
+
+H3 + FAQ Q4 (answer-first)
+
+wohnmobil führerschein (PAA)
+
+PAA trigger
+
+FAQ Q5
+
+wohnmobil verkaufen
+
+3,600 · 13 · €14 CPC
+
+Sell band + SEO H3 → /wohnmobil-verkaufen
+
+Entities covered: VW, Ford, Mercedes-Benz, Fiat/Citroën bases, Pössl, Knaus, Westfalia, Hymer, Dethleffs, Bürstner, Carado, Weinsberg; Kastenwagen, Campervan, Alkoven, Teilintegriert, Vollintegriert, Wohnwagen, Wohnkabine; Gasprüfung, Feuchtigkeitsmessung, zulässiges Gesamtgewicht, Führerschein Klasse B/C1/3.
+
+
+4. Category page rules (apply to all 9 categories)
+
+
+Grid, count, SEO text and FAQ answers are server-rendered. Nothing important may appear only after JavaScript runs.
+
+
+Canonical = clean category URL. Sort/filter params canonicalise to it; ?seite=2+ is self-canonical with "Seite 2" in the title; never noindex pagination.
+
+
+Subcategory, price-band and brand pages are real URLs under /kategorie/{slug}/..., never parameter URLs. Chips link only to live pages.
+
+
+Exactly one H1. Section titles H2 (hidden H2 above the grid), cards and FAQ questions H3. No headings in header/footer.
+
+
+No Product schema on category pages: BreadcrumbList + CollectionPage/ItemList + FAQPage only. FAQ schema text = visible text, word for word.
+
+
+Count = real total. Test, draft and sold listings never render. Empty category: page stays indexable with empty-state message, CTA and full SEO text.
+
+
+All visible labels in German (Gewerblich, not Business). German copy: du-form, no em/en dashes.
+
+
+Hero photo as <img> with alt, preload and fetchpriority; listing images lazy with fixed dimensions.
+
+
+5. Schema markup (copy-paste JSON-LD)
+
+Three blocks, each in its own <script type="application/ld+json"> in the <head>. Extracted 1:1 from the HTML file. Organization and WebSite live on the homepage and are referenced via @id. ItemList items = the listings rendered on the page.
+
+5.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Wohnmobile & Camper",
+
+      "item": "https://campuna.de/kategorie/fahrzeuge"
+
+    }
+
+  ]
+
+}
+
+5.2 CollectionPage + ItemList (dynamic)
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorie/fahrzeuge#collection",
+
+  "url": "https://campuna.de/kategorie/fahrzeuge",
+
+  "name": "Wohnmobile und Camper kaufen und verkaufen",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 5,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "VW Grand California 680 Automatik",
+
+        "url": "https://campuna.de/inserat/vw-grand-california-680-automatik"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Knaus Boxstar 600 Street Campervan, 160 PS",
+
+        "url": "https://campuna.de/inserat/knaus-boxstar-600-street-campervan"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "VW T6.1 California Ocean 4Motion DSG",
+
+        "url": "https://campuna.de/inserat/vw-t6-1-california-ocean-4motion-dsg"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Hymer B-Klasse MasterLine I 780 Mercedes",
+
+        "url": "https://campuna.de/inserat/hymer-b-klasse-masterline-i-780"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 5,
+
+        "name": "Pössl 2Win Plus Citroën Jumper 140 PS",
+
+        "url": "https://campuna.de/inserat/poessl-2win-plus-citroen-jumper-140ps"
+
+      }
+
+    ]
+
+  }
+
+}
+
+5.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorie/fahrzeuge#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Worauf sollte ich beim Kauf eines gebrauchten Wohnmobils achten?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Achte auf Dichtigkeit (Feuchtigkeitsmessung), Rost am Unterboden, Scheckheftpflege, eine gültige Gasprüfung und das Verhältnis zwischen Leergewicht und zulässigem Gesamtgewicht (3,5-Tonnen-Grenze). Mach außerdem immer eine Probefahrt und halte den Kauf in einem schriftlichen Kaufvertrag fest."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welche Wohnmobil-Typen finde ich auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Auf Campuna findest du Kastenwagen und Campervans, Alkoven, teilintegrierte und vollintegrierte Wohnmobile sowie Wohnwagen und sonstige Fahrzeuge wie Wohnkabinen. Alle Typen gibt es gebraucht und neu, von privaten Verkäufern und von Händlern aus ganz Deutschland. Über die Unterkategorien grenzt du die Auswahl mit einem Klick ein."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wie verkaufe ich mein Wohnmobil auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Erstelle ein kostenloses Konto, wähle die Kategorie Wohnmobile & Camper und den passenden Typ und lade aussagekräftige Fotos hoch. Beschreibe Zustand, Ausstattung und Kilometerstand und lege deinen Preis fest. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir, die Übergabe vereinbart ihr persönlich."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was kostet ein gebrauchtes Wohnmobil?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Das hängt vor allem von Typ, Alter, Kilometerstand und Ausstattung ab. Ältere Kastenwagen und Alkoven gibt es oft schon im unteren fünfstelligen Bereich, junge Teilintegrierte und Vollintegrierte kosten ein Vielfaches davon. Auf Campuna filterst du nach Preis und vergleichst Angebote direkt."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welchen Führerschein brauche ich für ein Wohnmobil?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Mit dem Führerschein Klasse B darfst du Wohnmobile bis 3,5 Tonnen zulässiger Gesamtmasse fahren. Für schwerere Fahrzeuge bis 7,5 Tonnen brauchst du die Klasse C1. Wer seinen Führerschein vor 1999 gemacht hat, darf mit der alten Klasse 3 in der Regel bis 7,5 Tonnen fahren. Eine EU-Reform hebt die Grenze für Wohnmobile mit Klasse B künftig auf 4,25 Tonnen an, in Deutschland gilt das aber noch nicht."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+6. URL structure and slug recommendations
+
+The testing build uses /kategorie/{slug} (confirmed, canonical https://campuna.de/kategorie/fahrzeuge). This replaces the short slugs (/wohnmobile, /zubehoer ...) in earlier Intelitune templates. Several slugs still contain umlauts or English "and" from the old Bubble site. Category pages have no rankings or backlinks yet, so now (before launch) is the only free moment to clean them. Recommended:
+
+Current slug (testing)
+
+Recommended slug
+
+Why
+
+fahrzeuge
+
+fahrzeuge (keep)
+
+ASCII, clear, matches old URL
+
+ausrüstung-und-zubehör
+
+ausruestung-und-zubehoer
+
+Umlauts become %C3%BC in shared links
+
+zelte-and-dachzelte
+
+zelte-und-dachzelte
+
+English "and" in a German URL
+
+fahrräder-träger
+
+fahrraeder-traeger
+
+Umlauts
+
+campingplätze-stellplätze
+
+campingplaetze-stellplaetze
+
+Umlauts
+
+dienstleistungen / tiny-houses / mieten-vermieten / boote-wassersport
+
+keep
+
+Already clean
+
+uber-campuna
+
+ueber-campuna
+
+ü must be ue, not u
+
+
+301 map at launch: every old Bubble URL /category/{old-slug} → /kategorie/{new-slug} (e.g. /category/fahrzeuge → /kategorie/fahrzeuge). If testing slugs change, also 301 the testing slug to the new one.
+
+
+Sub-URL patterns under this category: types /kategorie/fahrzeuge/{typ}, price bands /kategorie/fahrzeuge/bis-{preis}-euro, brands /kategorie/fahrzeuge/{marke}. Keep type and brand slugs unique (no collisions).
+
+
+The HTML template already uses the recommended slugs. If the client keeps the current slugs, only the hrefs change, nothing else.
+
+
+7. Per-category CMS fields (so all 9 pages replicate cleanly)
+
+The testing build fills labels by inserting the category name into fixed sentences, which breaks German grammar ("zu Wohnmobile & Camper"). Give every category these fields:
+
+Field
+
+Wohnmobile & Camper value
+
+meta_title (without brand)
+
+Wohnmobile, Camper & Wohnwagen gebraucht kaufen
+
+meta_description
+
+Gebrauchte und neue Wohnmobile, Campervans, Kastenwagen und Wohnwagen von privat und vom Händler aus ganz Deutschland. Jetzt finden oder inserieren.
+
+eyebrow
+
+Kategorie • Wohnmobile & Camper
+
+h1
+
+Wohnmobile und Camper kaufen und verkaufen
+
+hero_intro (≤80 words)
+
+Gebrauchte und neue Wohnmobile, Campervans, Kastenwagen und Wohnwagen von privaten und gewerblichen Anbietern in ganz Deutschland. Jetzt entdecken oder kostenlos inserieren auf Campuna.
+
+label_dative
+
+Wohnmobilen und Campern
+
+popular_title
+
+Beliebt bei Wohnmobilen und Campern
+
+seo_text (rich text, H2/H3 allowed)
+
+Section 2.6
+
+faq (list of Q/A)
+
+Section 2.10
+
+popular_searches (label + URL + live flag)
+
+Section 2.5
+
+guide_tag
+
+Wohnmobil
+
+sell_headline / sell_target
+
+Du willst dein Wohnmobil verkaufen? / /wohnmobil-verkaufen
+
+
+8. Pre-launch checklist
+
+
+Title 57 ≤ 60 (no double brand), description 148 ≤ 155, exactly one H1, no skipped heading levels.
+
+
+View source (not DevTools) shows: listing cards, correct count, SEO text, all 5 FAQ answers.
+
+
+3 JSON-LD blocks valid in Rich Results Test; FAQ text identical to visible text.
+
+
+Chips and Beliebte Suchen are <a href> to live 200 pages; no parameter URLs; no 404s.
+
+
+Badges and labels German; grammar of FAQ heading uses the dative field.
+
+
+0 em/en dashes in visible copy (checked in template: 0).
+
+
+Hero LCP: <img> + preload + fetchpriority; mobile LCP < 2.5 s; no CLS from chips or cards.
+
+
+301s from /category/fahrzeuge and any changed slugs; old Bubble URL returns 301, not 200 or 404.
+
+Verified in the template: title 57, description 148, 1 H1, 0 heading skips, 0 dashes, 3 valid JSON-LD blocks, FAQ match 5/5, SEO text 449 words.
+
+

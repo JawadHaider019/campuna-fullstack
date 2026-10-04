@@ -1,0 +1,927 @@
+﻿
+
+I N T E L I T U N E
+
+CAMPUNA
+
+Category Page SEO Template: Camping-Services
+
+https://campuna.de/kategorie/dienstleistungen
+
+Field
+
+Value
+
+Page
+
+Category PLP Camping-Services (slug dienstleistungen)
+
+Positioning
+
+Campuna is Germany&apos;s marketplace for the complete camping ecosystem. This page owns the services and professional-providers pillar.
+
+Content language
+
+German (de-DE), du-form, no em/en dashes in body copy
+
+Primary keywords
+
+gasprüfung wohnmobil (5,400, KD 24) · gasprüfung wohnwagen (2,400, KD 19) · wohnmobil werkstatt (1,900, KD 29) · dichtigkeitsprüfung wohnmobil (1,300, KD 14) · wohnwagen reparatur (1,000, KD 15)
+
+Sources
+
+Live Bubble page (16 listings) · testing.campuna.de/kategorie/dienstleistungen · Ubersuggest DE (03.10.2026) · DVFG and VGH (Gasprüfung facts) · DVFG/DFGA (G 608)
+
+Companion files
+
+campuna-kategorie-services-template.html · preview_kategorie_services.png
+
+Prepared
+
+Intelitune, 03.10.2026
+
+Instructions in English. Highlighted blocks are final German website copy: copy 1:1, do not translate or rephrase.
+
+
+0. Strategy and structure analysis
+
+Why Gasprüfung leads this page
+
+Since 19 June 2025 the gas check according to DVGW G 607 is legally mandatory for motorhomes and caravans with a fixed LPG system, every two years (sources: DVFG, VGH). Search demand jumped: "gasprüfung wohnmobil" reached 12,100/mo in June 2026 (average 5,400, KD 24), "gasprüfung wohnwagen" 4,400 in May 2026 (average 2,400, KD 19). Campuna already lists mobile Gasprüfung providers in Berlin and Frankfurt. This is the fastest-ranking service cluster on the site.
+
+"In der Nähe" searches (gasprüfung wohnmobil in der nähe 1,600, wohnmobil werkstatt in meiner nähe 880) are served by this national page plus the radius search and a "Mobiler Service" flag. No city pages (strategy decision).
+
+Changes vs the testing build
+
+A. H1
+
+"Camping-Services finden und anbieten" becomes "Camping-Services für Wohnmobil und Wohnwagen" (entity and vehicle context in the H1).
+
+B. Chips
+
+Added Gasprüfung (first), Dichtigkeitsprüfung (1,300, KD 14) and Kurse & Einweisung (3 live course listings). Testing chips Reparatur & Wartung, Fahrzeugaufbereitung, Tuning & Ausbau, Transport stay.
+
+C. Price type and pills for services
+
+Labels "Preis ab", "Festpreis", "pro Stunde", "Kurspreis" from a price_type field. Pills show the service type (Gasprüfung, Mobiler Service, Fahrzeugaufbereitung, Kurs & Einweisung) instead of a condition. Live shows "Neu" and English "Like new" on services.
+
+D. Standard additions
+
+Sort, hidden H2, pagination fallback, Beliebte Suchen (9), SEO text ~350 words with 5 H3s and verified Gasprüfung facts, trust strip, Ratgeber, provider CTA, FAQ 1 → 5.
+
+Misfiled and duplicate live listings (fix at migration)
+
+Listing
+
+Problem
+
+Action
+
+Camper Bus Vivaro zu vermieten · 9 Sitzer Bus · Carado T-447
+
+Rentals in Services
+
+Move to Mieten & Vermieten
+
+CUBE4LIFE Campingboxen (3 listings)
+
+Product, not a service
+
+Move to Camping-Zubehör
+
+Mobile Gasprüfung G607 und G608 (4 listings, 2 providers)
+
+Duplicates, duplicate titles (also flagged in the audit)
+
+One listing per service and location + provider profile /anbieter/{name}
+
+Keramikversiegelung Light / Ultra / Ultra + (3 listings)
+
+Variants of one service
+
+OK as separate packages; consider one listing with package options
+
+Bugs to fix before launch
+
+#
+
+Issue
+
+Fix
+
+Priority
+
+1
+
+Title "Camping-Services: Werkstatt & Gasprüfung | Campuna | Campuna"
+
+New title, stored without brand
+
+High
+
+2
+
+Server HTML "Alle (0)" / "0 Inserate"; cards via JS
+
+Grid + count server-side
+
+Critical
+
+3
+
+Only 1 FAQ; other answers not in HTML; no JSON-LD
+
+5 FAQs in DOM + 3 schema blocks
+
+High
+
+4
+
+Chips without hrefs
+
+Real <a href> to /kategorie/dienstleistungen/{typ}
+
+High
+
+5
+
+"Camping Services" without hyphen; "Fragen & Antworten zu Camping Services"
+
+"Camping-Services" everywhere
+
+Low
+
+6
+
+Condition pills and "Preis" label on services
+
+price_type + service-type pills (C)
+
+Medium
+
+
+1. Meta title + description (copy-paste)
+
+Title 60 chars (at the limit), description 153 chars. Slug "dienstleistungen" stays (ASCII, clear).
+
+<title>Gasprüfung & Werkstatt für Wohnmobil und Wohnwagen | Campuna</title>
+
+<meta name="description" content="Gasprüfung nach G 607, Werkstatt, Dichtigkeitsprüfung, Aufbereitung und Einsteigerkurse für Wohnmobil und Wohnwagen. Anbieter in ganz Deutschland finden.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/dienstleistungen">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:title" content="Gasprüfung & Werkstatt für Wohnmobil und Wohnwagen | Campuna">
+
+<meta property="og:description" content="Gasprüfung nach G 607, Werkstatt, Dichtigkeitsprüfung, Aufbereitung und Einsteigerkurse für Wohnmobil und Wohnwagen.">
+
+<meta property="og:url" content="https://campuna.de/kategorie/dienstleistungen">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-services.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+CMS title field (system appends " | Campuna"):
+
+Gasprüfung & Werkstatt für Wohnmobil und Wohnwagen
+
+H1:
+
+Camping-Services für Wohnmobil und Wohnwagen
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero
+
+Eyebrow: KATEGORIE • CAMPING-SERVICES
+
+H1: Camping-Services für Wohnmobil und Wohnwagen
+
+Intro: Gasprüfung nach G 607, Werkstatt und Reparatur, Dichtigkeitsprüfung, Aufbereitung und Kurse für Einsteiger: Camping-Services für Wohnmobil und Wohnwagen von Fachbetrieben in ganz Deutschland. Finde deinen Service oder präsentiere dein Unternehmen auf Campuna.
+
+
+Hero <img> alt: "Techniker bei der Gasprüfung an einem Wohnmobil".
+
+2.2 Breadcrumb
+
+Startseite › Inserate › Camping-Services
+
+2.3 Subcategory chips
+
+Chip
+
+URL (under /kategorie/dienstleistungen)
+
+Search demand (DE/mo)
+
+Alle (Anzahl)
+
+current page
+
+category heads
+
+Gasprüfung (NEW, first)
+
+/gaspruefung
+
+gasprüfung wohnmobil 5,400 · wohnwagen 2,400
+
+Reparatur & Wartung
+
+/reparatur-wartung
+
+wohnwagen reparatur 1,000 · KD 15
+
+Dichtigkeitsprüfung (NEW)
+
+/dichtigkeitspruefung
+
+dichtigkeitsprüfung wohnmobil 1,300 · KD 14
+
+Fahrzeugaufbereitung
+
+/fahrzeugaufbereitung
+
+wohnmobil aufbereitung 320 · KD 8 · CPC 2.21 $
+
+Tuning & Ausbau
+
+/tuning-ausbau
+
+camper ausbau
+
+Kurse & Einweisung (NEW)
+
+/kurse-einweisung
+
+wohnmobil fahrtraining 90 + einsteiger long tail
+
+Transport
+
+/transport
+
+wohnmobil überführung
+
+2.4 Results header, grid, pagination
+
+Hidden H2: Aktuelle Angebote: Camping-Services
+
+Count: X Inserate in dieser Kategorie  ·  Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend  ·  Button: Weitere Angebote laden  ·  Fallback: Oder blättern: Seite 2 ansehen
+
+price_type
+
+Card label
+
+Example
+
+from price
+
+Preis ab
+
+Mobile Gasprüfung · ab 75 €
+
+fixed price
+
+Festpreis
+
+Dichtigkeitsprüfung (example format only)
+
+hourly
+
+pro Stunde
+
+Werkstatt hourly rate (example format only)
+
+course
+
+Kurspreis
+
+Startklar für deine erste Wohnmobilreise · 149 €
+
+2.5 Beliebte Suchen
+
+Kicker: BELIEBTE SUCHEN  ·  H2: Beliebt bei Camping-Services
+
+Chip
+
+URL
+
+Keyword · vol · KD
+
+Gasprüfung nach G 607
+
+/gaspruefung
+
+gasprüfung wohnmobil · 5,400 · 24 / wohnwagen · 2,400 · 19
+
+Mobile Gasprüfung
+
+/mobile-gaspruefung
+
+gasprüfung wohnmobil in der nähe · 1,600 · 10
+
+Gasprüfung für Boote (G 608)
+
+/gaspruefung-boot
+
+gasprüfung boot (cross-link Boote)
+
+Wohnmobil-Werkstatt
+
+/werkstatt
+
+wohnmobil werkstatt · 1,900 · 29
+
+Wohnwagen-Reparatur
+
+/reparatur-wartung
+
+wohnwagen reparatur · 1,000 · 15
+
+Dichtigkeitsprüfung
+
+/dichtigkeitspruefung
+
+dichtigkeitsprüfung wohnmobil · 1,300 · 14
+
+Wohnmobil-Aufbereitung
+
+/fahrzeugaufbereitung
+
+wohnmobil aufbereitung · 320 · 8
+
+Kurse für Einsteiger
+
+/kurse-einweisung
+
+long tail
+
+Camper-Ausbau
+
+/tuning-ausbau
+
+long tail
+
+2.6 SEO text card (final German copy)
+
+H2: Camping-Services und Werkstätten auf Campuna
+
+Campuna ist dein Camping-Marktplatz für Services rund um Wohnmobil und Wohnwagen. Hier findest du Gasprüfer, Werkstätten, Aufbereiter und Kurse für Einsteiger aus ganz Deutschland.
+
+Ein Wohnmobil braucht Pflege, Prüfungen und ab und zu eine Reparatur. Auf Campuna präsentieren sich Fachbetriebe und mobile Prüfer mit ihren Leistungen, Preisen und ihrer Region. Mit der Umkreissuche findest du Anbieter in deiner Nähe. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du passende Ersatzteile und Zubehör oder dein nächstes Wohnmobil gleich mit.
+
+H3: Gasprüfung nach G 607: Pflicht für Wohnmobil und Wohnwagen
+
+Seit Juni 2025 ist die Gasprüfung nach DVGW G 607 für Wohnmobile und Wohnwagen mit fest eingebauter Flüssiggasanlage gesetzlich vorgeschrieben, alle zwei Jahre. Sie läuft unabhängig von der Hauptuntersuchung, bei der HU wird aber der Nachweis kontrolliert. Die Prüfung kostet meist zwischen 30 und 100 Euro. Mobile Prüfer kommen zu dir nach Hause oder auf den Campingplatz. Für Boote gilt die Prüfung nach G 608, passend dazu findest du hier auch Prüfer für Boote.
+
+H3: Werkstatt, Reparatur und Dichtigkeitsprüfung
+
+Feuchtigkeit ist der größte Feind jedes Aufbaus. Eine Dichtigkeitsprüfung mit Feuchtigkeitsmessung zeigt Schäden, bevor sie teuer werden. Viele Hersteller verlangen sie jährlich, damit die Dichtheitsgarantie gilt. Für Reparaturen an Aufbau, Elektrik, Heizung oder Fahrwerk findest du spezialisierte Wohnmobil-Werkstätten, die auch Wohnwagen betreuen.
+
+H3: Aufbereitung und Keramikversiegelung
+
+Sonne, Regen und Baumharz setzen Lack und GFK-Wänden zu. Eine professionelle Aufbereitung entfernt Oxidation und Grauschleier, eine Keramikversiegelung schützt die Oberfläche danach für längere Zeit. Das lohnt sich besonders vor einem Verkauf, weil ein gepflegtes Fahrzeug einen besseren Preis erzielt.
+
+H3: Kurse und Einweisung für Einsteiger
+
+Wasser, Gas, Strom und Heizung im Wohnmobil sind für Einsteiger oft Neuland. In Kursen und Einweisungen lernst du Technik, Beladung und Fahrverhalten, bevor die erste Reise startet. Für die Planung hilft dir zusätzlich der Zuladungsrechner.
+
+H3: Als Werkstatt oder Dienstleister anbieten
+
+Du bist Werkstatt, Gasprüfer, Aufbereiter oder bietest Kurse an? Präsentiere dein Unternehmen mit einem eigenen Anbieterprofil und stelle deine Leistungen mit Preis und Region ein. Camper aus deiner Umgebung finden dich über die Kategorie und die Umkreissuche und melden sich direkt bei dir.
+
+
+Fact basis (checked 03.10.2026): G 607 mandatory since 19.06.2025, every 24 months, independent of the HU but checked there (DVFG, VGH); cost 30 to 100 €, TÜV/DEKRA about 50 to 70 € (VGH); G 608 = gas systems on sport boats (DVFG/DFGA). Re-check yearly.
+
+2.7 Trust strip, Ratgeber, provider band
+
+✓ Fachbetriebe mit eigenem Anbieterprofil  ·  ✓ Direkter Kontakt ohne Vermittlungsgebühr  ·  ✓ Mobile Services auch vor Ort
+
+Kicker: RATGEBER  ·  H2: Wissen rund um Wartung und Prüfungen  ·  1) Gasprüfung G 607: Pflicht, Kosten und Ablauf  ·  2) Dichtigkeitsprüfung am Wohnmobil: Wann sie sich lohnt  ·  3) Wasser, Gas und Strom im Wohnmobil einfach erklärt
+
+Kicker: FÜR ANBIETER  ·  H2: Du bist Werkstatt, Prüfer oder Dienstleister?  ·  Präsentiere dein Unternehmen mit einem Anbieterprofil und werde von Campern in deiner Region gefunden.  ·  Buttons: Anbieter werden (/abo) · Service inserieren (/inserat-erstellen)
+
+
+Guide 1 is a priority article for the 60-blog plan (hub Camping-Praxis & Technik): the legal change makes it a strong AEO and news-type piece. Publish before the next season peak (March).
+
+2.8 FAQ (visible text = schema text)
+
+Kicker: HÄUFIG GESTELLTE FRAGEN  ·  H2: Fragen & Antworten zu Camping-Services
+
+Subline: Wichtige Informationen zu Gasprüfung, Werkstatt und Service, kurz beantwortet.
+
+Q1: Welche Services finde ich auf Campuna?
+
+Von der Gasprüfung nach G 607 über Werkstatt, Reparatur und Dichtigkeitsprüfung bis zu Aufbereitung, Camper-Ausbau und Kursen für Einsteiger. Die Anbieter sind Fachbetriebe, mobile Prüfer und Werkstätten aus ganz Deutschland, die sich mit einem eigenen Profil präsentieren.
+
+Q2: Ist die Gasprüfung für Wohnmobil und Wohnwagen Pflicht?
+
+Ja. Seit Juni 2025 ist die Gasprüfung nach DVGW G 607 für Wohnmobile und Wohnwagen mit fest eingebauter Flüssiggasanlage gesetzlich vorgeschrieben, und zwar alle zwei Jahre. Sie ist unabhängig von der Hauptuntersuchung, bei der HU wird aber der Nachweis kontrolliert. Auch viele Campingplätze verlangen eine gültige Prüfbescheinigung.
+
+Q3: Was kostet eine Gasprüfung?
+
+Meist zwischen 30 und 100 Euro, bei Prüfstellen wie TÜV oder DEKRA oft um die 50 bis 70 Euro. Mobile Prüfer, die zu dir nach Hause oder auf den Campingplatz kommen, berechnen teils eine Anfahrt. Kleine Reparaturen wie ein neuer Gasschlauch kommen bei Bedarf dazu.
+
+Q4: Was ist der Unterschied zwischen G 607 und G 608?
+
+G 607 regelt die Gasprüfung für Freizeitfahrzeuge wie Wohnmobile und Wohnwagen. G 608 gilt für Flüssiggasanlagen auf Sportbooten. Viele mobile Prüfer bieten beides an. Achte bei der Buchung darauf, dass der Prüfer die passende Sachkunde hat.
+
+Q5: Wie werde ich Anbieter auf Campuna?
+
+Als Werkstatt, Prüfer oder Dienstleister legst du ein Anbieterprofil an und stellst deine Leistungen mit Preis, Region und Kontakt ein. Camper finden dich über die Kategorie und die Umkreissuche und melden sich direkt bei dir. Die Pakete für gewerbliche Anbieter findest du auf der Seite Campuna Business.
+
+
+Q1 kept from testing with an extended answer; Q2 to Q5 new. Dative label for this category: "zu Camping-Services".
+
+2.9 Weitere Kategorien + footer
+
+Same as all category pages (8 cards, Wohnmobile & Camper first; footer intro with the 03.10.2026 positioning).
+
+
+3. Keyword map
+
+Ubersuggest DE 03.10.2026 + master sheet. Season: Gasprüfung peaks March to July.
+
+Keyword
+
+Vol/mo · KD
+
+Placement
+
+gasprüfung wohnmobil
+
+5,400 · 24 (peak 12,100)
+
+Title, chip, H3, FAQ Q2
+
+gasprüfung wohnwagen
+
+2,400 · 19
+
+Title (Wohnwagen), H3, FAQ Q2
+
+wohnmobil werkstatt
+
+1,900 · 29
+
+Title, H3, Beliebte Suchen
+
+gasprüfung wohnmobil in der nähe
+
+1,600 · 10
+
+Mobile Gasprüfung chip, radius search
+
+dichtigkeitsprüfung wohnmobil
+
+1,300 · 14
+
+Chip, H3
+
+wohnwagen reparatur / reparatur von wohnwagen
+
+1,000 · 15 / 720 · 14
+
+Chip, H3, Beliebte Suchen
+
+wohnmobil werkstatt in meiner nähe
+
+880 · 17
+
+Radius search, intro
+
+gasprüfung kosten / was kostet eine gasprüfung
+
+390 · 18 / 210 · 19
+
+FAQ Q3 (answer-first)
+
+wohnmobil aufbereitung
+
+320 · 8 (CPC 2.21 $)
+
+Chip, H3
+
+wohnmobil fahrtraining
+
+90 · 22
+
+Kurse chip, H3
+
+
+4. Category page rules (same for all 9 categories)
+
+
+Grid, count, SEO text and every FAQ answer server-rendered.
+
+
+Canonical = clean category URL; sort/filter params canonicalise to it; ?seite=2+ self-canonical with "Seite 2" in the title.
+
+
+Chips and Beliebte Suchen = real <a href> links to live pages only.
+
+
+One H1; hidden H2 above the grid; card titles and FAQ questions H3; no headings in header or footer.
+
+
+BreadcrumbList + CollectionPage/ItemList + FAQPage. No Product schema. FAQ schema text = visible text.
+
+
+Service listings: Service + Offer schema on the listing page; providers: LocalBusiness (AutoRepair where fitting) on /anbieter/{name}.
+
+
+German labels; copy in du-form without em/en dashes.
+
+
+5. Schema markup (copy-paste JSON-LD)
+
+Extracted 1:1 from the HTML. ItemList items = listings rendered on the page.
+
+5.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Camping-Services",
+
+      "item": "https://campuna.de/kategorie/dienstleistungen"
+
+    }
+
+  ]
+
+}
+
+5.2 CollectionPage + ItemList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorie/dienstleistungen#collection",
+
+  "url": "https://campuna.de/kategorie/dienstleistungen",
+
+  "name": "Camping-Services für Wohnmobil und Wohnwagen",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 8,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "Mobile Gasprüfung G 607 und G 608",
+
+        "url": "https://campuna.de/inserat/mobile-gaspruefung-g607-g608-berlin"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Mobile Gasprüfung G 607 und G 608",
+
+        "url": "https://campuna.de/inserat/mobile-gaspruefung-g607-g608-frankfurt"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Keramikversiegelung Crystal Serum Light",
+
+        "url": "https://campuna.de/inserat/keramikversiegelung-crystal-serum-light"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Keramikversiegelung Crystal Serum Ultra",
+
+        "url": "https://campuna.de/inserat/keramikversiegelung-crystal-serum-ultra"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 5,
+
+        "name": "Startklar für deine erste Wohnmobilreise",
+
+        "url": "https://campuna.de/inserat/startklar-erste-wohnmobilreise"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 6,
+
+        "name": "Wasser, Gas, Heizung und Strom im Wohnmobil verstehen",
+
+        "url": "https://campuna.de/inserat/wasser-gas-heizung-strom-wohnmobil"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 7,
+
+        "name": "Wohnmobil-Neuling 55plus: entspannt starten",
+
+        "url": "https://campuna.de/inserat/wohnmobil-neuling-55plus"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 8,
+
+        "name": "Mobile Gasprüfung G 608 für Boote",
+
+        "url": "https://campuna.de/inserat/mobile-gaspruefung-g608-boot"
+
+      }
+
+    ]
+
+  }
+
+}
+
+5.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorie/dienstleistungen#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welche Services finde ich auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Von der Gasprüfung nach G 607 über Werkstatt, Reparatur und Dichtigkeitsprüfung bis zu Aufbereitung, Camper-Ausbau und Kursen für Einsteiger. Die Anbieter sind Fachbetriebe, mobile Prüfer und Werkstätten aus ganz Deutschland, die sich mit einem eigenen Profil präsentieren."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Ist die Gasprüfung für Wohnmobil und Wohnwagen Pflicht?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ja. Seit Juni 2025 ist die Gasprüfung nach DVGW G 607 für Wohnmobile und Wohnwagen mit fest eingebauter Flüssiggasanlage gesetzlich vorgeschrieben, und zwar alle zwei Jahre. Sie ist unabhängig von der Hauptuntersuchung, bei der HU wird aber der Nachweis kontrolliert. Auch viele Campingplätze verlangen eine gültige Prüfbescheinigung."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was kostet eine Gasprüfung?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Meist zwischen 30 und 100 Euro, bei Prüfstellen wie TÜV oder DEKRA oft um die 50 bis 70 Euro. Mobile Prüfer, die zu dir nach Hause oder auf den Campingplatz kommen, berechnen teils eine Anfahrt. Kleine Reparaturen wie ein neuer Gasschlauch kommen bei Bedarf dazu."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was ist der Unterschied zwischen G 607 und G 608?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "G 607 regelt die Gasprüfung für Freizeitfahrzeuge wie Wohnmobile und Wohnwagen. G 608 gilt für Flüssiggasanlagen auf Sportbooten. Viele mobile Prüfer bieten beides an. Achte bei der Buchung darauf, dass der Prüfer die passende Sachkunde hat."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wie werde ich Anbieter auf Campuna?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Als Werkstatt, Prüfer oder Dienstleister legst du ein Anbieterprofil an und stellst deine Leistungen mit Preis, Region und Kontakt ein. Camper finden dich über die Kategorie und die Umkreissuche und melden sich direkt bei dir. Die Pakete für gewerbliche Anbieter findest du auf der Seite Campuna Business."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+6. URL and provider pages
+
+Old (Bubble)
+
+Testing
+
+Recommended
+
+/category/dienstleistungen
+
+/kategorie/dienstleistungen
+
+keep /kategorie/dienstleistungen
+
+
+301 the old Bubble URL. Sub-URLs /kategorie/dienstleistungen/{typ}.
+
+
+Provider profiles /anbieter/{name} are the real SEO asset for services: name searches, reviews, LocalBusiness schema and the "Auf Campuna gelistet" badge backlink loop (competitor report: caravanmarkt pattern). Each Gasprüfung provider gets one profile listing all locations and services.
+
+
+7. CMS fields for this category
+
+Field
+
+Value
+
+meta_title (without brand)
+
+Gasprüfung & Werkstatt für Wohnmobil und Wohnwagen
+
+meta_description
+
+Gasprüfung nach G 607, Werkstatt, Dichtigkeitsprüfung, Aufbereitung und Einsteigerkurse für Wohnmobil und Wohnwagen. Anbieter in ganz Deutschland finden.
+
+eyebrow
+
+Kategorie • Camping-Services
+
+h1
+
+Camping-Services für Wohnmobil und Wohnwagen
+
+hero_intro
+
+Gasprüfung nach G 607, Werkstatt und Reparatur, Dichtigkeitsprüfung, Aufbereitung und Kurse für Einsteiger: Camping-Services für Wohnmobil und Wohnwagen von Fachbetrieben in ganz Deutschland. Finde deinen Service oder präsentiere dein Unternehmen auf Campuna.
+
+label_dative
+
+Camping-Services
+
+popular_title
+
+Beliebt bei Camping-Services
+
+price_label
+
+from listing price_type (Preis ab / Festpreis / pro Stunde / Kurspreis)
+
+pill_source
+
+service type (+ "Mobiler Service")
+
+seo_text / faq / popular_searches
+
+Sections 2.6 / 2.8 / 2.5
+
+guide_tag
+
+Wartung
+
+sell_headline / sell_target
+
+Du bist Werkstatt, Prüfer oder Dienstleister? / /abo + /inserat-erstellen
+
+
+8. Pre-launch checklist
+
+
+Title 60, description 153, one H1, no skipped heading levels.
+
+
+View source shows cards, real count, SEO text and all 5 FAQ answers.
+
+
+Rich Results Test: 3 valid blocks; FAQ text identical to visible text.
+
+
+Rentals moved to Mieten & Vermieten, CUBE4LIFE boxes to Camping-Zubehör, Gasprüfung duplicates merged.
+
+
+Service cards show service-type pills and the right price label; no condition pills; "Camping-Services" with hyphen.
+
+
+Gasprüfung facts re-checked before launch.
+
+Verified in the template: title 60, description 153, 1 H1, 0 heading skips, 0 dashes, 3 valid JSON-LD blocks, FAQ match 5/5, SEO text 349 words.
+
+

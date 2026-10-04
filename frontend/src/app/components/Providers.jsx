@@ -1,15 +1,48 @@
 'use client';
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, useMotionValue } from 'framer-motion';
-import { ArrowRight, ShieldCheck, Building2 } from 'lucide-react';
+import {
+    ArrowRight,
+    ShieldCheck,
+    Building2,
+    Truck,
+    MapPin,
+    Compass,
+    Wrench,
+    Hammer,
+    ShoppingBag,
+    Building,
+    Home,
+    Anchor,
+    Sparkles,
+    ChevronLeft,
+    ChevronRight
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAllProfiles } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
-import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/imageUrl';
+import { PROVIDER_CATEGORIES } from '@/data';
 import AuthRequiredModal from './AuthRequiredModal';
 import PioneerBadge from './PioneerBadge';
+
+const CATEGORY_ICONS = {
+    Truck,
+    MapPin,
+    Compass,
+    Wrench,
+    Hammer,
+    ShoppingBag,
+    Building,
+    Home,
+    Anchor,
+    Building2
+};
+
+function getCategoryIcon(iconName) {
+    return CATEGORY_ICONS[iconName] || Building2;
+}
 
 const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, router }) => {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
@@ -109,7 +142,7 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
                     </p>
                 </div>
 
-                {/* Footer Action Row: Inserate on Left, CTA on Right */}
+                {/* Footer Action Row */}
                 <div className="pt-3 border-t border-forest/10 flex items-center justify-between">
                     <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-forest">
                         <ShieldCheck className="w-4 h-4 text-gold shrink-0" />
@@ -133,12 +166,44 @@ ProviderCard.displayName = 'ProviderCard';
 export default function Providers({ onPartnerClick, isLoggedIn }) {
     const router = useRouter();
     const rowRef = useRef(null);
+    const tabsRef = useRef(null);
+    const [canScrollTabsLeft, setCanScrollTabsLeft] = useState(false);
+    const [canScrollTabsRight, setCanScrollTabsRight] = useState(true);
     const [constraints, setConstraints] = useState(0);
     const [isDesktop, setIsDesktop] = useState(false);
     const [authModalState, setAuthModalState] = useState({ isOpen: false, returnUrl: '' });
+    const [selectedCategory, setSelectedCategory] = useState('all');
 
     const { user } = useAuthStore();
     const [providersList, setProvidersList] = useState([]);
+
+    const checkTabsScroll = useCallback(() => {
+        if (tabsRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = tabsRef.current;
+            setCanScrollTabsLeft(scrollLeft > 6);
+            setCanScrollTabsRight(scrollLeft + clientWidth < scrollWidth - 6);
+        }
+    }, []);
+
+    const scrollTabs = (direction) => {
+        if (tabsRef.current) {
+            const amount = direction === 'left' ? -260 : 260;
+            tabsRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+        }
+    };
+
+    useEffect(() => {
+        checkTabsScroll();
+        const el = tabsRef.current;
+        if (el) {
+            el.addEventListener('scroll', checkTabsScroll, { passive: true });
+            window.addEventListener('resize', checkTabsScroll);
+            return () => {
+                el.removeEventListener('scroll', checkTabsScroll);
+                window.removeEventListener('resize', checkTabsScroll);
+            };
+        }
+    }, [checkTabsScroll, providersList]);
 
     useEffect(() => {
         const loadProviders = async () => {
@@ -178,12 +243,26 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
         loadProviders();
     }, [user?.id]);
 
+    // Filter providers by selected category tab
+    const filteredProviders = useMemo(() => {
+        if (selectedCategory === 'all') return providersList;
+        const sel = selectedCategory.toLowerCase();
+        return providersList.filter(p => {
+            const pCat = (p.providerCategory || '').toLowerCase();
+            return pCat.includes(sel) || sel.includes(pCat);
+        });
+    }, [providersList, selectedCategory]);
+
     const x = useMotionValue(0);
     const dirRef = useRef(-1);
     const isHoveredRef = useRef(false);
     const isDraggingRef = useRef(false);
     const cardWidthRef = useRef(360);
-    const gap = 16;
+
+    // Reset carousel position when category changes
+    useEffect(() => {
+        x.set(0);
+    }, [selectedCategory, x]);
 
     useEffect(() => {
         const measureCard = () => {
@@ -202,9 +281,9 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
             clearTimeout(timer);
             window.removeEventListener('resize', measureCard);
         };
-    }, [providersList]);
+    }, [filteredProviders]);
 
-    const shouldSlide = !isDesktop || providersList.length > 3;
+    const shouldSlide = !isDesktop || filteredProviders.length > 3;
 
     useEffect(() => {
         let animationFrameId;
@@ -234,7 +313,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                 const delta = Math.min((time - lastTime) / 1000, 0.1);
                 lastTime = time;
 
-                if (shouldSlide && constraints > 0 && providersList.length > 0) {
+                if (shouldSlide && constraints > 0 && filteredProviders.length > 0) {
                     if (!isHoveredRef.current && !isDraggingRef.current) {
                         let currentX = x.get() + dirRef.current * 25 * delta;
                         if (dirRef.current === -1 && currentX <= -constraints) {
@@ -262,30 +341,29 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             observer.disconnect();
         };
-    }, [providersList.length, constraints, x, shouldSlide]);
+    }, [filteredProviders.length, constraints, x, shouldSlide]);
 
-    if (providersList.length === 0) {
-        return null;
-    }
+    const selectedCategoryObj = PROVIDER_CATEGORIES.find(c => c.name === selectedCategory || c.id === selectedCategory);
 
     return (
-        <section id="campuna-spotlight" className="py-10 sm:py-16 bg-sand relative overflow-x-hidden scroll-mt-24">
+        <section id="campuna-spotlight" className="py-10 sm:py-16 bg-sand relative overflow-x-hidden scroll-mt-24 border-t border-forest/5">
             <div className="max-w-8xl mx-auto px-6 md:px-12">
-                {/* Section header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-                    <div className="space-y-1">
+
+                {/* ── 1. MAIN PROVIDER SECTION HEADER (Matched to Listing.jsx) ── */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-6">
+                    <div className="space-y-2 max-w-3xl">
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
                             CAMPUNA SPOTLIGHT
                         </span>
                         <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-black">
                             Camping-Anbieter im Spotlight
                         </h2>
-                        <p className="font-sans text-xs sm:text-sm text-charcoal/70 max-w-2xl font-light mt-2">
+                        <p className="font-sans text-sm text-charcoal/60 leading-relaxed font-light">
                             Hier zeigen wir gewerbliche Anbieter, die Campuna mit aufbauen: Händler, Vermieter, Werkstätten und Hersteller. Du bist selbst Anbieter? Dann präsentiere dein Unternehmen mit einem eigenen Profil.
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="hidden lg:flex items-center gap-4 shrink-0 pb-1">
                         <button
                             onClick={() => router.push(isLoggedIn ? '/abo' : '/registrieren?type=commercial')}
                             className="text-xs font-bold uppercase tracking-widest text-gold hover:text-forest transition-colors cursor-pointer"
@@ -295,23 +373,111 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                         <span className="text-charcoal/30">•</span>
                         <button
                             onClick={() => router.push('/anbieter')}
-                            className="group flex items-center space-x-1.5 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer"
+                            className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer"
                         >
-                            <span className="pb-0.5 border-b border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
-                            <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+                            <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
+                            <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                         </button>
                     </div>
                 </div>
 
-                <div className="relative">
-                    {shouldSlide && (
-                        <>
-                            <div className="hidden md:block absolute inset-y-0 left-0 w-24 lg:w-32 bg-gradient-to-r from-sand via-sand/35 to-transparent z-10 pointer-events-none" />
-                            <div className="hidden md:block absolute inset-y-0 right-0 w-24 lg:w-32 bg-gradient-to-l from-sand via-sand/35 to-transparent z-10 pointer-events-none" />
-                        </>
+                {/* ── 2. CATEGORY TABS ROW ABOVE THE CARDS (Smooth Horizontal Scroll) ── */}
+                <div className="relative mb-6 group/tabs">
+                    {/* Left Scroll Chevron (Desktop & Tablet) */}
+                    {canScrollTabsLeft && (
+                        <button
+                            type="button"
+                            onClick={() => scrollTabs('left')}
+                            aria-label="Nach links scrollen"
+                            className="hidden sm:flex absolute -left-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 bg-white/95 hover:bg-white text-forest shadow-md rounded-full items-center justify-center border border-forest/10 transition-all duration-200 cursor-pointer"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
                     )}
 
-                    {providersList.length > 0 && (
+                    {/* Scrollable Tabs Track */}
+                    <div
+                        ref={tabsRef}
+                        onWheel={(e) => {
+                            if (tabsRef.current && Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
+                                tabsRef.current.scrollLeft += e.deltaY;
+                            }
+                        }}
+                        className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none no-scrollbar scroll-smooth -mx-4 px-4 sm:mx-0 sm:px-0 touch-pan-x"
+                    >
+                        {/* Tab "Alle" */}
+                        <button
+                            type="button"
+                            onClick={() => setSelectedCategory('all')}
+                            className={`group relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 shrink-0 cursor-pointer ${
+                                selectedCategory === 'all'
+                                    ? 'bg-forest text-white shadow-md'
+                                    : 'bg-white/90 hover:bg-white text-charcoal/75 hover:text-forest border border-forest/10 hover:border-forest/25'
+                            }`}
+                        >
+                            <Sparkles className={`w-3.5 h-3.5 ${selectedCategory === 'all' ? 'text-gold' : 'text-charcoal/40 group-hover:text-forest'}`} />
+                            <span>Alle Bereiche</span>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                                selectedCategory === 'all' ? 'bg-white/20 text-gold' : 'bg-sand text-charcoal/60 border border-forest/5'
+                            }`}>
+                                {providersList.length}
+                            </span>
+                        </button>
+
+                        {/* Individual Category Tabs */}
+                        {PROVIDER_CATEGORIES.map((cat) => {
+                            const Icon = getCategoryIcon(cat.iconName);
+                            const isSelected = selectedCategory === cat.name;
+                            const countInCat = providersList.filter(p => (p.providerCategory || '').toLowerCase().includes(cat.name.toLowerCase()) || cat.name.toLowerCase().includes((p.providerCategory || '').toLowerCase())).length;
+
+                            return (
+                                <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => setSelectedCategory(cat.name)}
+                                    className={`group relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold tracking-tight transition-all duration-200 shrink-0 cursor-pointer ${
+                                        isSelected
+                                            ? 'bg-forest text-white shadow-md'
+                                            : 'bg-white/90 hover:bg-white text-charcoal/75 hover:text-forest border border-forest/10 hover:border-forest/25'
+                                    }`}
+                                >
+                                    <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-gold' : 'text-charcoal/40 group-hover:text-gold'}`} />
+                                    <span>{cat.shortName || cat.name}</span>
+                                    {countInCat > 0 && (
+                                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                                            isSelected ? 'bg-white/20 text-gold' : 'bg-sand text-charcoal/60 border border-forest/5'
+                                        }`}>
+                                            {countInCat}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {/* Right Scroll Chevron (Desktop & Tablet) */}
+                    {canScrollTabsRight && (
+                        <button
+                            type="button"
+                            onClick={() => scrollTabs('right')}
+                            aria-label="Nach rechts scrollen"
+                            className="hidden sm:flex absolute -right-3 top-1/2 -translate-y-1/2 z-20 w-7 h-7 bg-white/95 hover:bg-white text-forest shadow-md rounded-full items-center justify-center border border-forest/10 transition-all duration-200 cursor-pointer"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    )}
+                </div>
+
+                {/* ── 3. SPOTLIGHT SLIDING CAROUSEL / CARDS ── */}
+                {filteredProviders.length > 0 ? (
+                    <div className="relative">
+                        {shouldSlide && (
+                            <>
+                                <div className="hidden md:block absolute inset-y-0 left-0 w-24 lg:w-32 bg-gradient-to-r from-sand via-sand/80 to-transparent z-10 pointer-events-none" />
+                                <div className="hidden md:block absolute inset-y-0 right-0 w-24 lg:w-32 bg-gradient-to-l from-sand via-sand/80 to-transparent z-10 pointer-events-none" />
+                            </>
+                        )}
+
                         <div
                             className={`relative overflow-x-hidden ${shouldSlide ? 'cursor-grab active:cursor-grabbing' : ''}`}
                             ref={rowRef}
@@ -331,11 +497,11 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                                 onPointerEnter={() => { isHoveredRef.current = true; }}
                                 onPointerLeave={() => { isHoveredRef.current = false; }}
                                 className={shouldSlide
-                                    ? "flex gap-5 sm:gap-6 w-max px-4 sm:px-16 md:px-32 py-4 sm:py-6"
-                                    : "flex gap-5 sm:gap-6 justify-center w-full py-4 sm:py-6"
+                                    ? "flex gap-5 sm:gap-6 w-max px-4 sm:px-16 md:px-32 py-2 sm:py-4"
+                                    : "flex gap-5 sm:gap-6 justify-center w-full py-2 sm:py-4"
                                 }
                             >
-                                {providersList.map((partner, idx) => (
+                                {filteredProviders.map((partner, idx) => (
                                     <ProviderCard
                                         key={`${partner.id}-${idx}`}
                                         partner={partner}
@@ -346,20 +512,38 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                                 ))}
                             </motion.div>
                         </div>
-                    )}
-
-                    <div className="mt-8 flex items-center justify-center gap-4 sm:gap-6 lg:hidden">
-                        <button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/registrieren?type=commercial')}
-                            className="text-charcoal/60 hover:text-forest text-[11px] font-sans font-semibold transition-colors border-b border-transparent hover:border-forest/30 pb-0.5 cursor-pointer"
-                        >
-                            Auch Anbieter werden
-                        </button>
-                        <button onClick={() => router.push('/anbieter')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
-                            <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
-                            <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                        </button>
                     </div>
+                ) : (
+                    /* Fallback Card when category has no active spotlight partner */
+                    <div className="bg-white rounded-3xl border border-forest/10 p-8 sm:p-10 text-center max-w-xl mx-auto shadow-xs space-y-2">
+                        <div className="w-12 h-12 rounded-2xl bg-sand/60 text-forest mx-auto flex items-center justify-center">
+                            <Building2 className="w-6 h-6 text-gold" />
+                        </div>
+                        <h3 className="font-display text-base sm:text-lg font-bold text-forest">
+                            Keine Anbieter gefunden
+                        </h3>
+                        <p className="font-sans text-xs sm:text-sm text-charcoal/60 max-w-md mx-auto font-light leading-relaxed">
+                            In dieser Kategorie sind aktuell keine Spotlight-Anbieter verfügbar.
+                        </p>
+                    </div>
+                )}
+
+                {/* Mobile Bottom Action */}
+                <div className="mt-8 flex md:hidden items-center justify-center gap-3">
+                    <button
+                        onClick={() => router.push(isLoggedIn ? '/abo' : '/registrieren?type=commercial')}
+                        className="text-xs font-bold uppercase tracking-widest text-gold hover:text-forest transition-colors cursor-pointer"
+                    >
+                        Anbieter werden
+                    </button>
+                    <span className="text-charcoal/30">•</span>
+                    <button
+                        onClick={() => router.push('/anbieter')}
+                        className="group flex items-center space-x-1.5 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer"
+                    >
+                        <span className="pb-0.5 border-b border-gold/50 group-hover:border-gold transition-colors">Alle Anbieter</span>
+                        <ArrowRight className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform" />
+                    </button>
                 </div>
             </div>
 

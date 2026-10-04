@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- ============================================================
+  CAMPUNA CATEGORY PAGE: BOOTE & WASSERSPORT (/kategorie/boote-wassersport)
+  FOR DEVELOPER | Prepared by Intelitune | 03.10.2026
+  Content = FINAL GERMAN. Comments/instructions = ENGLISH.
+  Same template as the other category pages.
+
+  SOURCES CHECKED 03.10.2026: live Bubble page (5 listings), testing build
+  testing.campuna.de/kategorie/boote-wassersport, Ubersuggest DE,
+  bussgeldkatalog.org (license-free limits), DVGW G 608 providers,
+  Untere Wasserbehörde guidance (Oder-Spree) for dock permits.
+
+  STRATEGY NOTE: "boot kaufen" 18,100/mo (peak 40,500 in August, KD 39) is
+  the head. Inventory today = 3 docks from one Teltow provider + 1 motorboat
+  + 1 inflatable. "bootssteg" 1,600 (KD 20) and "schwimmsteg kaufen" (KD 9)
+  match that stock and are the quickest wins, so Stege get their own chip,
+  H3 and FAQ. Seasonality: publish and fill inventory before spring.
+
+  CHANGED / ADDED vs testing build:
+    A) Title "Boote & Wassersport kaufen & verkaufen" -> "Boot kaufen: Motorboote,
+       Schlauchboote & Stege"; H1 now names Stege
+    B) Chips: testing 6 + "Bootsstege & Schwimmstege" + "Bootsanhänger" (NEW)
+    C) Pills = boat type + condition in German ("Wie neu", not "Like new")
+    D) Price format "21.900 €" (live: "21900,00 €")
+    E) Standard additions: sort, hidden H2, pagination fallback, Beliebte Suchen,
+       SEO text (5 H3s), trust strip, Ratgeber, sell band, FAQ 1 -> 5
+  BUGS: double brand in title, "0 Inserate" in server HTML, only 1 FAQ, no
+  JSON-LD, chips without hrefs, dative "zu Boote & Wassersport" (use
+  "zu Booten und Wassersport").
+============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- SEO: Title 56 chars, Description 145 chars.
+     DEV: store the title WITHOUT " | Campuna" if the system appends the brand. -->
+<title>Boot kaufen: Motorboote, Schlauchboote &amp; Stege | Campuna</title>
+<meta name="description" content="Gebrauchte und neue Boote kaufen und verkaufen: Motorboote, Schlauchboote, Kajaks, SUPs, Bootsstege und Bootsanhänger von privat und vom Händler.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/boote-wassersport">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="de" href="https://campuna.de/kategorie/boote-wassersport">
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/kategorie/boote-wassersport">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Campuna">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Boot kaufen: Motorboote, Schlauchboote &amp; Stege | Campuna">
+<meta property="og:description" content="Motorboote, Schlauchboote, Kajaks, SUPs und Bootsstege von privat und vom Händler kaufen oder dein Boot kostenlos verkaufen.">
+<meta property="og:url" content="https://campuna.de/kategorie/boote-wassersport">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-boote.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- ============ SCHEMA 1: BreadcrumbList ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+    { "@type": "ListItem", "position": 2, "name": "Inserate", "item": "https://campuna.de/inserate" },
+    { "@type": "ListItem", "position": 3, "name": "Boote & Wassersport", "item": "https://campuna.de/kategorie/boote-wassersport" }
+  ]
+}
+</script>
+
+<!-- ============ SCHEMA 2: CollectionPage + ItemList (dynamic) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://campuna.de/kategorie/boote-wassersport#collection",
+  "url": "https://campuna.de/kategorie/boote-wassersport",
+  "name": "Boote, Stege und Wassersport kaufen und verkaufen",
+  "inLanguage": "de-DE",
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+  "about": { "@id": "https://campuna.de/#organization" },
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": 5,
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Bootssteg Bootsanleger 3 x 6 m Schwimmsteg", "url": "https://campuna.de/inserat/bootssteg-bootsanleger-3x6-schwimmsteg" },
+      { "@type": "ListItem", "position": 2, "name": "Ranieri Voyager 17 (Bj. 2019) Bodensee", "url": "https://campuna.de/inserat/ranieri-voyager-17-bodensee" },
+      { "@type": "ListItem", "position": 3, "name": "Schlauchboot stabil, sehr gepflegt mit 2 PS AB", "url": "https://campuna.de/inserat/schlauchboot-2-ps-aussenborder" },
+      { "@type": "ListItem", "position": 4, "name": "Schwimmsteg Badesteg ECO 2 x 5 m", "url": "https://campuna.de/inserat/schwimmsteg-badesteg-eco-2x5" },
+      { "@type": "ListItem", "position": 5, "name": "Schwimmsteg Badesteg ECO 1/2 x 4 m", "url": "https://campuna.de/inserat/schwimmsteg-badesteg-eco-4m" }
+    ]
+  }
+}
+</script>
+
+<!-- ============ SCHEMA 3: FAQPage (matches visible FAQ word for word) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://campuna.de/kategorie/boote-wassersport#faq",
+  "mainEntity": [
+    { "@type": "Question", "name": "Welche Boote darf ich ohne Führerschein fahren?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Ohne Sportbootführerschein darfst du auf den meisten deutschen Gewässern Boote mit Muskelkraft fahren, also Kajaks, Ruderboote und SUPs, dazu Motorboote mit höchstens 11,03 kW Motorleistung, das sind 15 PS. Auf dem Rhein und dem Bodensee gelten strengere Grenzen, und manche Seen verbieten Verbrennungsmotoren ganz. Prüfe deshalb vor dem Kauf die Regeln deines Reviers." } },
+    { "@type": "Question", "name": "Brauche ich für mein Boot eine Gasprüfung?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Wenn du eine Gasanlage an Bord hast, etwa für Kocher oder Heizung, verlangen viele Häfen, Liegeplatzordnungen und Versicherungen eine gültige Gasprüfung nach DVGW-Arbeitsblatt G 608. Üblich ist eine Prüfung alle zwei Jahre durch einen Sachkundigen. Prüfer für Boote findest du auf Campuna in der Kategorie Camping-Services." } },
+    { "@type": "Question", "name": "Brauche ich eine Genehmigung für einen Bootssteg?",
+      "acceptedAnswer": { "@type": "Answer", "text": "In der Regel ja. Stege, Anlegepfähle und andere Anlagen am oder im Gewässer muss meist die Untere Wasserbehörde genehmigen, an Bundeswasserstraßen zusätzlich das Wasserstraßen- und Schifffahrtsamt. Kläre den Antrag, bevor du einen Bootssteg oder Schwimmsteg kaufst, und frag den Anbieter nach Maßen, Tragfähigkeit und Verankerung." } },
+    { "@type": "Question", "name": "Worauf sollte ich beim Kauf eines gebrauchten Boots achten?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Prüfe den Rumpf auf Risse, Osmose und Reparaturstellen und lass dir Motorstunden und Wartungsnachweise zeigen. Wichtig sind außerdem Kaufvertrag, Eigentumsnachweis und CE-Kennzeichnung, bei einer Gasanlage auch die Gasprüfung. Mach eine Probefahrt, und bei größeren Booten lohnt sich ein Gutachten." } },
+    { "@type": "Question", "name": "Wie verkaufe ich mein Boot auf Campuna?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Erstelle kostenlos ein Inserat mit guten Fotos, Baujahr, Motorleistung, Maßen und Zustand. Gib an, ob ein Trailer oder Zubehör dabei ist und ob das Boot führerscheinfrei ist. Private Inserate sind ohne Provision, Händler, Stegbauer und Hersteller präsentieren ihr Angebot mit einem Anbieterprofil." } }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ============ PREVIEW CSS: mirrors the testing build design ============ */
+:root{
+  --green-900:#0F2E14; --green-800:#14451C; --green-700:#1B6B23; --green-600:#2E7D32;
+  --gold:#C9A24B; --hl:#F2C230; --cream:#F7F3EA; --cream-2:#FBF9F4; --line:#ECE5D6;
+  --ink:#16220F; --muted:#6B7464;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Poppins',Arial,sans-serif;color:var(--ink);background:var(--cream-2);line-height:1.6;font-size:15px}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px}
+.wide{max-width:1320px;margin:0 auto;padding:0 28px}
+.kicker{display:block;font-size:.62rem;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;font-weight:700;font-size:.78rem;padding:12px 22px}
+.btn-green{background:var(--green-700);color:#fff}
+.btn-gold{background:var(--hl);color:#3a2d00}
+.btn-ghost{border:1.5px solid rgba(255,255,255,.75);color:#fff}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* header */
+header{background:#fff;border-bottom:1px solid #f0ece2;position:sticky;top:0;z-index:50}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;max-width:1440px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.15rem;color:var(--green-900)}
+.logo .mark{width:28px;height:28px;border-radius:8px;background:var(--green-900);color:#b9e07a;font-size:.7rem;display:flex;align-items:center;justify-content:center}
+.logo small{display:block;font-size:.42rem;letter-spacing:.14em;color:var(--green-900);font-weight:700;margin-top:-4px}
+.nav ul{display:flex;gap:30px;list-style:none;font-size:.78rem;font-weight:600;color:var(--green-700)}
+.nav .btn{padding:9px 18px;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
+
+/* hero (photo) */
+.hero{margin:14px 28px 0;border-radius:40px;overflow:hidden;position:relative;min-height:330px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;
+  background:linear-gradient(180deg,rgba(10,22,10,.45),rgba(10,22,10,.55)),
+  linear-gradient(180deg,#9fb7c9 0%,#7d9a6a 38%,#56703f 60%,#3d5530 100%)}
+/* PLACEHOLDER-IMG: alpine campsite photo (<img>, object-fit:cover, behind overlay)
+   alt="Wohnmobile und Wohnwagen auf einem Campingplatz in den Bergen" */
+.hero .in{max-width:640px;padding:46px 20px}
+.hero .kicker{color:var(--gold);margin-bottom:8px}
+.hero h1{font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.12;font-weight:800;letter-spacing:-.02em}
+.hero p{font-size:.84rem;color:#eef3ea;margin-top:14px}
+
+/* breadcrumb + chips */
+.crumbs{font-size:.68rem;color:var(--muted);margin:20px 0 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.crumbs a:hover{color:var(--green-700)}
+.crumbs strong{color:var(--ink)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;list-style:none}
+.chips a{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:.68rem;font-weight:600;color:var(--ink)}
+.chips a.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+
+/* results */
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:26px 0 14px;flex-wrap:wrap}
+.res-head .count{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.sort{border:1px solid var(--line);border-radius:10px;padding:7px 12px;font:inherit;font-size:.7rem;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:#fff;border:1px solid #f1ece1;border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(20,40,20,.05)}
+.card.hl{border:1.5px solid #f0d27a;background:#FFFCF2}
+.card .ph{height:118px;position:relative;background:linear-gradient(135deg,#d9c2a0,#a9876b)}
+.card .ph.b{background:linear-gradient(135deg,#2c4a64,#c9a77a)}
+.card .ph.c{background:linear-gradient(135deg,#3f6a3f,#9fc0a6)}
+/* PLACEHOLDER-IMG per card: real listing photo, alt = listing title,
+   loading="lazy", width/height set, aspect-ratio 4/3 */
+.badge{position:absolute;top:9px;left:9px;font-size:.5rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--green-900);color:#d6f0a8}
+.badge.h{background:var(--hl);color:#3a2d00}
+.fav{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.62rem;color:var(--green-700)}
+.loc{position:absolute;bottom:8px;right:8px;font-size:.5rem;background:rgba(20,25,18,.72);color:#fff;border-radius:999px;padding:3px 8px}
+.card .body{padding:10px 12px 12px}
+.card h3{font-size:.76rem;line-height:1.3;font-weight:800;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 8px}
+.pills span{font-size:.5rem;background:var(--cream);border-radius:5px;padding:2px 7px;color:#7a7462}
+.pl{font-size:.48rem;letter-spacing:.12em;text-transform:uppercase;color:#a7a28f}
+.pr{display:flex;justify-content:space-between;align-items:center}
+.price{font-weight:800;color:var(--green-700);font-size:.95rem}
+.det{font-size:.6rem;font-weight:700;color:var(--green-700)}
+.more{text-align:center;margin:22px 0 4px}
+.pag{text-align:center;font-size:.68rem;color:var(--muted);margin-top:8px}
+.pag a{color:var(--green-700);font-weight:700}
+
+/* popular searches */
+.pop{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:34px}
+.pop h2{font-size:1rem;font-weight:800;color:var(--green-800);margin-top:4px}
+.pop ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pop a{display:inline-block;background:var(--cream);border-radius:999px;padding:6px 12px;font-size:.66rem;font-weight:600;color:var(--green-800)}
+
+/* SEO text card (design) */
+.seo{background:var(--cream);border:1px solid var(--line);border-radius:22px;padding:30px 30px 26px;margin-top:30px}
+.seo h2{font-size:1.15rem;font-weight:800;color:var(--green-700);letter-spacing:-.01em}
+.seo .lead{font-size:.74rem;font-weight:700;color:var(--green-700);margin:8px 0 10px}
+.seo h3{font-size:.84rem;font-weight:800;color:var(--green-800);margin:16px 0 4px}
+.seo p{font-size:.72rem;color:#5b6155;margin-bottom:6px}
+.seo a{color:var(--green-700);font-weight:600}
+
+/* trust strip */
+.trust{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;border:1px dashed #e0d7c2;border-radius:14px;padding:12px 16px;margin-top:18px;font-size:.68rem}
+.trust b{color:var(--green-700)}
+
+/* guides */
+.guides{margin-top:44px}
+.guides h2,.faq h2,.more-cats h2{font-weight:800;color:var(--green-700);letter-spacing:-.02em}
+.guides h2{font-size:1.3rem;margin-top:4px}
+.g-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.g-card{background:#fff;border:1px solid #f1ece1;border-radius:14px;padding:16px}
+.g-card .t{font-size:.52rem;font-weight:800;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.g-card h3{font-size:.78rem;font-weight:800;line-height:1.35;margin:6px 0}
+.g-card span{font-size:.6rem;color:var(--muted)}
+
+/* sell band */
+.sell{background:linear-gradient(120deg,var(--green-900),var(--green-700));border-radius:22px;color:#fff;padding:28px 30px;margin-top:40px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.sell h2{font-size:1.25rem;font-weight:800;margin-top:4px}
+.sell p{font-size:.74rem;color:#cfe3cb;margin-top:4px;max-width:440px}
+.sell .acts{display:flex;gap:10px;flex-wrap:wrap}
+
+/* FAQ (design) */
+.faq{text-align:center;margin-top:64px}
+.faq h2{font-size:clamp(1.6rem,3vw,2.15rem);line-height:1.1;margin-top:8px}
+.faq .sub{font-size:.72rem;color:var(--muted);margin:8px 0 22px}
+.faq .list{max-width:580px;margin:0 auto;text-align:left}
+.faq details{background:#fff;border:1px solid #efe9dc;border-radius:12px;margin-bottom:10px;padding:16px 16px}
+.faq details[open]{border-color:#e9cf96}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary h3{font-size:.78rem;font-weight:800;color:var(--green-700)}
+.faq summary::after{content:"⌄";width:20px;height:20px;border-radius:50%;background:var(--cream);color:var(--green-700);font-size:.7rem;display:flex;align-items:center;justify-content:center;flex:none}
+.faq details[open] summary::after{content:"⌃"}
+.faq details p{font-size:.68rem;color:#646b5d;margin-top:12px;padding-left:10px}
+
+/* other categories (design) */
+.more-cats{text-align:center;margin-top:64px;padding-bottom:56px}
+.more-cats h2{font-size:clamp(1.6rem,3vw,2.15rem);margin-top:8px}
+.more-cats .sub{font-size:.76rem;color:var(--muted);max-width:420px;margin:8px auto 22px}
+.mc-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;max-width:1000px;margin:0 auto;padding:0 20px}
+.mc-grid a{background:#fff;border:1px solid #ece6d8;border-radius:10px;padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:.56rem;font-weight:700;color:var(--ink);text-align:center}
+.mc-grid .ic{width:26px;height:26px;border-radius:8px;background:#EAF3E6;color:var(--green-700);display:flex;align-items:center;justify-content:center}
+.mc-grid svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+
+/* footer (design) */
+footer{background:linear-gradient(180deg,#f6f1e6,#efe7d6);padding:42px 0 18px;font-size:.66rem;color:#5d6457;border-top:1px solid #ece4d3}
+.f-intro{background:#fff;border:1px solid #eee6d6;border-radius:14px;padding:14px 18px;text-align:center;font-size:.64rem;max-width:860px;margin:0 auto}
+.f-intro strong{color:var(--green-700)}
+.f-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:24px;max-width:860px;margin:30px auto 0}
+.f-grid .ft{font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:var(--green-700);font-weight:800;margin-bottom:10px}
+.f-grid ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.f-grid a:hover{color:var(--green-700)}
+.f-bottom{max-width:860px;margin:30px auto 0;border-top:1px solid #e4dccb;padding-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:.56rem}
+.soc{display:flex;gap:8px}
+.soc a{width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid #e1d8c5;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--green-700)}
+.calc-fab{position:fixed;right:22px;bottom:22px;display:flex;align-items:center;gap:8px;z-index:40}
+.calc-fab span{background:var(--green-900);color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.06em;padding:6px 10px;border-radius:999px}
+.calc-fab i{width:38px;height:38px;border-radius:50%;background:var(--green-700);color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal;box-shadow:0 6px 14px rgba(0,0,0,.2)}
+
+@media(max-width:860px){.grid{grid-template-columns:repeat(2,1fr)}.g-grid{grid-template-columns:1fr}.mc-grid{grid-template-columns:repeat(4,1fr)}.f-grid{grid-template-columns:1fr 1fr}.nav ul{display:none}.hero{margin:10px 12px 0;border-radius:26px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.mc-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER (shared component, as on testing build) ============ -->
+<!-- DEV: keep the live hrefs of the shared header. Labels as in the design. -->
+<header>
+  <div class="nav">
+    <a class="logo" href="/" aria-label="Campuna Startseite"><span class="mark" aria-hidden="true">A/</span><span>campuna<small>DEIN CAMPING-MARKTPLATZ</small></span></a>
+    <ul>
+      <li><a href="/">Startseite</a></li>
+      <li><a href="/kategorien">Kategorien</a></li>
+      <li><a href="/ueber-campuna">Über uns</a></li>
+      <li><a href="/inserate">Zum Stöbern</a></li>
+      <li><a href="/anbieter">Entdecke</a></li>
+      <li><a href="/ratgeber">Ratgeber</a></li>
+    </ul>
+    <a class="btn btn-green" href="/login">👤 Einloggen</a>
+  </div>
+</header>
+
+<main>
+
+<!-- PLACEHOLDER-IMG: hero photo, alt="Motorboot an einem Schwimmsteg auf einem See" -->
+<section class="hero" aria-labelledby="kat-h1">
+  <div class="in">
+    <span class="kicker">Kategorie • Boote &amp; Wassersport</span>
+    <h1 id="kat-h1">Boote, Stege und Wassersport kaufen und verkaufen</h1>
+    <p>Motorboote, Segelboote, Schlauchboote, Kajaks und SUPs von privat und vom Händler, dazu Bootsstege, Bootsanhänger und Zubehör für deine Zeit am Wasser. Ob Angelboot für den See oder Badesteg für dein Ufergrundstück: Hier findest du dein nächstes Boot oder verkaufst deins kostenlos.</p>
+  </div>
+</section>
+
+<div class="wrap">
+
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">⌂ Startseite</a> › <a href="/inserate">Inserate</a> › <strong>Boote &amp; Wassersport</strong>
+  </nav>
+
+  <!-- ============ CHIPS (testing 6 + Bootsstege & Schwimmstege + Bootsanhänger) ============ -->
+  <ul class="chips" aria-label="Unterkategorien">
+    <li><a class="on" aria-current="page">Alle (5)</a></li>
+    <li><a href="/kategorie/boote-wassersport/motorboote">Motorboote</a></li>
+    <li><a href="/kategorie/boote-wassersport/segelboote">Segelboote</a></li>
+    <li><a href="/kategorie/boote-wassersport/schlauchboote">Schlauchboote</a></li>
+    <li><a href="/kategorie/boote-wassersport/kajaks-sups">Kajaks &amp; SUPs</a></li>
+    <li><a href="/kategorie/boote-wassersport/bootsstege">Bootsstege &amp; Schwimmstege</a></li>
+    <li><a href="/kategorie/boote-wassersport/bootsanhaenger">Bootsanhänger</a></li>
+    <li><a href="/kategorie/boote-wassersport/wassersportausruestung">Wassersportausrüstung</a></li>
+    <li><a href="/kategorie/boote-wassersport/zubehoer">Zubehör &amp; Sonstiges</a></li>
+  </ul>
+
+  <h2 class="sr-only">Aktuelle Angebote: Boote, Stege und Wassersport</h2>
+  <div class="res-head">
+    <span class="count">5 Inserate in dieser Kategorie</span>
+    <label class="sr-only" for="sort">Sortierung</label>
+    <select id="sort" class="sort">
+      <option>Neueste zuerst</option>
+      <option>Preis aufsteigend</option>
+      <option>Preis absteigend</option>
+    </select>
+  </div>
+
+  <!-- DEV: SSR grid. Price label from price_type (Kaufpreis / Preis / Festpreis), format "21.900 €".
+       Pills = boat type + condition in German. -->
+  <div class="grid">
+    <article class="card hl"><a href="/inserat/bootssteg-bootsanleger-3x6-schwimmsteg">
+      <div class="ph "><span class="badge h">★ Hervorgehoben</span><span class="fav">♡</span><span class="loc">Teltow</span></div>
+      <div class="body"><h3>Bootssteg Bootsanleger 3 x 6 m Schwimmsteg</h3>
+        <div class="pills"><span>Bootssteg</span><span>Neu</span></div>
+        <p class="pl">Preis</p><div class="pr"><span class="price">4.080 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/ranieri-voyager-17-bodensee">
+      <div class="ph b"><span class="badge">Privat</span><span class="fav">♡</span><span class="loc">Konstanz</span></div>
+      <div class="body"><h3>Ranieri Voyager 17 (Bj. 2019) Bodensee</h3>
+        <div class="pills"><span>Motorboot</span><span>Wie neu</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">21.900 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/schlauchboot-2-ps-aussenborder">
+      <div class="ph c"><span class="badge">Privat</span><span class="fav">♡</span><span class="loc">Marktrodach</span></div>
+      <div class="body"><h3>Schlauchboot stabil, sehr gepflegt mit 2 PS AB</h3>
+        <div class="pills"><span>Schlauchboot</span><span>Führerscheinfrei</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">690 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/schwimmsteg-badesteg-eco-2x5">
+      <div class="ph "><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Teltow</span></div>
+      <div class="body"><h3>Schwimmsteg Badesteg ECO 2 x 5 m</h3>
+        <div class="pills"><span>Schwimmsteg</span><span>Neu</span></div>
+        <p class="pl">Preis</p><div class="pr"><span class="price">2.378 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/schwimmsteg-badesteg-eco-4m">
+      <div class="ph b"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Teltow</span></div>
+      <div class="body"><h3>Schwimmsteg Badesteg ECO 1/2 x 4 m</h3>
+        <div class="pills"><span>Schwimmsteg</span><span>Neu</span></div>
+        <p class="pl">Preis</p><div class="pr"><span class="price">1.124 €</span><span class="det">Details →</span></div></div></a></article>
+  </div>
+
+  <div class="more"><a class="btn btn-green" href="/kategorie/boote-wassersport?seite=2">Weitere Angebote laden</a></div>
+  <p class="pag">Oder blättern: <a href="/kategorie/boote-wassersport?seite=2">Seite 2 ansehen →</a></p>
+
+  <!-- ============ BELIEBTE SUCHEN (show a chip only when its page is live) ============ -->
+  <section class="pop" aria-labelledby="pop-h">
+    <span class="kicker">Beliebte Suchen</span>
+    <h2 id="pop-h">Beliebt bei Booten und Wassersport</h2>
+    <ul>
+      <li><a href="/kategorie/boote-wassersport/gebraucht">Boot gebraucht kaufen</a></li>
+      <li><a href="/kategorie/boote-wassersport/motorboote">Motorboot gebraucht</a></li>
+      <li><a href="/kategorie/boote-wassersport/fuehrerscheinfrei">Führerscheinfreie Boote</a></li>
+      <li><a href="/kategorie/boote-wassersport/bootsstege">Bootssteg kaufen</a></li>
+      <li><a href="/kategorie/boote-wassersport/bootsstege/schwimmsteg">Schwimmsteg kaufen</a></li>
+      <li><a href="/kategorie/boote-wassersport/bootsanhaenger">Bootsanhänger gebraucht</a></li>
+      <li><a href="/kategorie/boote-wassersport/schlauchboote">Schlauchboot mit Motor</a></li>
+      <li><a href="/kategorie/boote-wassersport/kajaks-sups">Kajak und SUP gebraucht</a></li>
+    </ul>
+  </section>
+
+  <!-- ============ SEO TEXT CARD (5 real H3s) ============ -->
+  <section class="seo" aria-labelledby="seo-h">
+    <h2 id="seo-h">Boote und Wassersport auf Campuna</h2>
+    <p class="lead">Campuna ist dein Marktplatz für die ganze Camping-Welt, und dazu gehört auch das Wasser. Hier kaufst und verkaufst du Boote, Bootsstege und Wassersportausrüstung von privat und vom Händler aus ganz Deutschland.</p>
+    <p>Viele Camper haben ein Schlauchboot, ein Kajak oder ein SUP im Gepäck, andere suchen ein Motorboot für den Urlaub am See oder einen Badesteg für das eigene Ufergrundstück. Auf Campuna findest du alles an einem Ort, dazu den passenden <a href="/kategorie/campingplaetze-stellplaetze">Stellplatz am Wasser</a>, <a href="/kategorie/ausruestung-und-zubehoer">Camping-Zubehör</a> und das <a href="/kategorie/fahrzeuge">Wohnmobil</a> als Zugfahrzeug.</p>
+
+    <h3>Boot gebraucht kaufen: Motorboot, Segelboot oder Schlauchboot</h3>
+    <p>Ein <a href="/kategorie/boote-wassersport/motorboote">gebrauchtes Motorboot</a> ist der Klassiker für Seen und Flüsse, ein <a href="/kategorie/boote-wassersport/segelboote">Segelboot</a> ist ideal für alle, die es ruhiger mögen. <a href="/kategorie/boote-wassersport/schlauchboote">Schlauchboote</a> sind leicht, passen zusammengelegt in den Kofferraum und fahren schon mit einem kleinen Außenborder. Vergleiche Baujahr, Motorleistung, Länge und Ausstattung direkt in den Inseraten und schreib Verkäufern ohne Umweg.</p>
+
+    <h3>Führerscheinfreie Boote</h3>
+    <p>Für Boote mit Muskelkraft und Motorboote bis 15 PS brauchst du auf den meisten deutschen Gewässern keinen Sportbootführerschein. Auf dem Rhein und dem Bodensee gelten strengere Grenzen, und manche Seen erlauben gar keine Verbrennungsmotoren. Willst du ein <a href="/kategorie/boote-wassersport/fuehrerscheinfrei">führerscheinfreies Boot kaufen</a>, prüfe vorher die Regeln deines Reviers.</p>
+
+    <h3>Bootsstege und Schwimmstege</h3>
+    <p>Ein <a href="/kategorie/boote-wassersport/bootsstege">Bootssteg</a> macht dein Ufergrundstück erst richtig nutzbar, als Anleger für dein Boot oder als Badesteg. <a href="/kategorie/boote-wassersport/bootsstege/schwimmsteg">Schwimmstege</a> aus Modulen lassen sich in Länge und Breite flexibel zusammenstellen und heben und senken sich mit dem Wasserstand. Kläre vor dem Kauf die Genehmigung mit der Unteren Wasserbehörde und frag den Anbieter nach Tragfähigkeit und Verankerung.</p>
+
+    <h3>Kajaks, SUPs und Wassersportausrüstung</h3>
+    <p><a href="/kategorie/boote-wassersport/kajaks-sups">Kajaks und SUP-Boards</a> sind der einfachste Weg aufs Wasser und passen auf jeden Campingtrip. Dazu findest du <a href="/kategorie/boote-wassersport/wassersportausruestung">Wassersportausrüstung</a> wie Schwimmwesten, Paddel und Neoprenanzüge. Gebrauchte Boards und Kajaks sind oft kaum genutzt und deutlich günstiger als neu.</p>
+
+    <h3>Darauf solltest du beim Bootskauf achten</h3>
+    <p>Prüfe den Rumpf auf Risse und Osmose, lass dir Motorstunden und Wartungsnachweise zeigen und mach eine Probefahrt. Hat das Boot eine Gasanlage, verlangen viele Häfen eine gültige <a href="/kategorie/dienstleistungen/gaspruefung-boot">Gasprüfung nach G 608</a>. Für den Transport brauchst du einen passenden <a href="/kategorie/boote-wassersport/bootsanhaenger">Bootsanhänger</a> und je nach Gewicht des Gespanns den Führerschein BE oder die Schlüsselzahl B96. Mehr Tipps findest du auf der Seite <a href="/sicher-handeln">Sicher handeln</a>.</p>
+  </section>
+
+  <div class="trust">
+    <span>✓ <b>Direkter Kontakt</b> zwischen Käufer und Verkäufer</span>
+    <span>✓ <b>Private Inserate kostenlos</b>, ohne Provision</span>
+    <span>✓ <b>Tipps für sicheres Handeln:</b> <a href="/sicher-handeln" style="color:var(--green-700);font-weight:700">Sicher handeln lesen</a></span>
+  </div>
+
+  <!-- DEV: show only live guides. None of these 3 exist yet; until then fill the slots with live Kaufberatung posts. -->
+  <section class="guides" aria-labelledby="guides-h">
+    <span class="kicker">Ratgeber</span>
+    <h2 id="guides-h">Wissen rund um Boote und Wassersport</h2>
+    <div class="g-grid">
+      <a class="g-card" href="/ratgeber/fuehrerscheinfreie-boote"><span class="t">Praxis</span><h3>Führerscheinfreie Boote: Was ist wo erlaubt?</h3><span>Camping-Praxis &amp; Technik · 5 Min.</span></a>
+      <a class="g-card" href="/ratgeber/gebrauchtes-boot-kaufen"><span class="t">Kaufberatung</span><h3>Gebrauchtes Boot kaufen: Die Checkliste</h3><span>Kaufberatung · 7 Min.</span></a>
+      <a class="g-card" href="/ratgeber/bootssteg-genehmigung"><span class="t">Praxis</span><h3>Bootssteg am eigenen Ufer: Genehmigung, Maße und Material</h3><span>Camping-Praxis &amp; Technik · 6 Min.</span></a>
+    </div>
+  </section>
+
+  <section class="sell" aria-labelledby="sell-h">
+    <div>
+      <span class="kicker" style="color:var(--hl)">Verkaufen</span>
+      <h2 id="sell-h">Du willst dein Boot verkaufen?</h2>
+      <p>Private Inserate sind kostenlos und ohne Provision. Bootshändler, Stegbauer und Hersteller präsentieren ihr Angebot mit einem Anbieterprofil.</p>
+    </div>
+    <div class="acts">
+      <a class="btn btn-gold" href="/inserat-erstellen">Kostenlos inserieren →</a>
+      <a class="btn btn-ghost" href="/abo">Für Händler &amp; Hersteller</a>
+    </div>
+  </section>
+
+</div>
+
+<section class="faq" aria-labelledby="faq-h">
+  <div class="wrap">
+    <span class="kicker">Häufig gestellte Fragen</span>
+    <h2 id="faq-h">Fragen &amp; Antworten zu Booten und Wassersport</h2>
+    <p class="sub">Wichtige Informationen zu Führerschein, Gasprüfung, Stegen und Bootskauf, kurz beantwortet.</p>
+    <div class="list">
+      <details open>
+        <summary><h3>Welche Boote darf ich ohne Führerschein fahren?</h3></summary>
+        <p>Ohne Sportbootführerschein darfst du auf den meisten deutschen Gewässern Boote mit Muskelkraft fahren, also Kajaks, Ruderboote und SUPs, dazu Motorboote mit höchstens 11,03 kW Motorleistung, das sind 15 PS. Auf dem Rhein und dem Bodensee gelten strengere Grenzen, und manche Seen verbieten Verbrennungsmotoren ganz. Prüfe deshalb vor dem Kauf die Regeln deines Reviers.</p>
+      </details>
+      <details>
+        <summary><h3>Brauche ich für mein Boot eine Gasprüfung?</h3></summary>
+        <p>Wenn du eine Gasanlage an Bord hast, etwa für Kocher oder Heizung, verlangen viele Häfen, Liegeplatzordnungen und Versicherungen eine gültige Gasprüfung nach DVGW-Arbeitsblatt G 608. Üblich ist eine Prüfung alle zwei Jahre durch einen Sachkundigen. Prüfer für Boote findest du auf Campuna in der Kategorie Camping-Services.</p>
+      </details>
+      <details>
+        <summary><h3>Brauche ich eine Genehmigung für einen Bootssteg?</h3></summary>
+        <p>In der Regel ja. Stege, Anlegepfähle und andere Anlagen am oder im Gewässer muss meist die Untere Wasserbehörde genehmigen, an Bundeswasserstraßen zusätzlich das Wasserstraßen- und Schifffahrtsamt. Kläre den Antrag, bevor du einen Bootssteg oder Schwimmsteg kaufst, und frag den Anbieter nach Maßen, Tragfähigkeit und Verankerung.</p>
+      </details>
+      <details>
+        <summary><h3>Worauf sollte ich beim Kauf eines gebrauchten Boots achten?</h3></summary>
+        <p>Prüfe den Rumpf auf Risse, Osmose und Reparaturstellen und lass dir Motorstunden und Wartungsnachweise zeigen. Wichtig sind außerdem Kaufvertrag, Eigentumsnachweis und CE-Kennzeichnung, bei einer Gasanlage auch die Gasprüfung. Mach eine Probefahrt, und bei größeren Booten lohnt sich ein Gutachten.</p>
+      </details>
+      <details>
+        <summary><h3>Wie verkaufe ich mein Boot auf Campuna?</h3></summary>
+        <p>Erstelle kostenlos ein Inserat mit guten Fotos, Baujahr, Motorleistung, Maßen und Zustand. Gib an, ob ein Trailer oder Zubehör dabei ist und ob das Boot führerscheinfrei ist. Private Inserate sind ohne Provision, Händler, Stegbauer und Hersteller präsentieren ihr Angebot mit einem Anbieterprofil.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="more-cats" aria-labelledby="mc-h">
+  <span class="kicker">Entdecken</span>
+  <h2 id="mc-h">Weitere Kategorien entdecken</h2>
+  <p class="sub">Von Fahrzeugen über Ausrüstung und Stellplätze bis zu Vermietung und Services: neun Kategorien, ein Marktplatz.</p>
+  <div class="mc-grid">
+    <a href="/kategorie/fahrzeuge"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 16V8h13l4 4v4M3 16h2m4 0h6m4 0h2"/></svg></span>Wohnmobile &amp; Camper</a>
+    <a href="/kategorie/ausruestung-und-zubehoer"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 8h12v12H6zM9 8V6a3 3 0 0 1 6 0v2"/></svg></span>Camping-Zubehör</a>
+    <a href="/kategorie/zelte-und-dachzelte"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 4 3 20h18L12 4zm0 7v9"/></svg></span>Zelte &amp; Dachzelte</a>
+    <a href="/kategorie/fahrraeder-traeger"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm12 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 14l4-7h5l3 7"/></svg></span>Fahrräder &amp; Träger</a>
+    <a href="/kategorie/campingplaetze-stellplaetze"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 1 0-14 0c0 6 7 11 7 11z"/></svg></span>Stellplätze &amp; Campingplätze</a>
+    <a href="/kategorie/dienstleistungen"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 7a4 4 0 1 0-5.7 3.6L4 15v4h4l4.4-4.3A4 4 0 0 0 14 7z"/></svg></span>Camping-Services</a>
+    <a href="/kategorie/tiny-houses"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7M6 10v9h12v-9"/></svg></span>Tiny Houses</a>
+    <a href="/kategorie/mieten-vermieten"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 8a4 4 0 1 1 4 4l-8 8H6v-4l8-8z"/></svg></span>Mieten &amp; Vermieten</a>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER (design; intro line = new positioning 03.10.2026) ============ -->
+<!-- DEV: column titles are NOT headings (use <p class="ft">). Categories: Wohnmobile & Camper first. -->
+<footer>
+  <div class="wide">
+    <p class="f-intro"><strong>Campuna, dein Camping-Marktplatz.</strong> Campuna ist Deutschlands Marktplatz für die ganze Camping-Welt: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung, Camping-Services und gewerbliche Anbieter. Kaufen, verkaufen und entdecken an einem Ort.</p>
+    <nav class="f-grid" aria-label="Footer Navigation">
+      <div>
+        <a class="logo" href="/"><span class="mark" aria-hidden="true">A/</span><span>campuna<small>DEIN CAMPING-MARKTPLATZ</small></span></a>
+        <p style="margin-top:10px">Von Campern für Camper. Der spezialisierte Marktplatz für die deutschsprachige Camping-Community.</p>
+        <p style="margin-top:10px">Campuna · Erfurt, Thüringen, Deutschland<br>E-Mail: <a href="mailto:info@campuna.de" style="text-decoration:underline">info@campuna.de</a></p>
+      </div>
+      <div><p class="ft">Navigation</p>
+        <ul>
+          <li><a href="/">Startseite</a></li>
+          <li><a href="/inserate">Alle Angebote</a></li>
+          <li><a href="/anbieter">Anbieter</a></li>
+          <li><a href="/abo">Campuna Business</a></li>
+          <li><a href="/ueber-campuna">Über uns</a></li>
+          <li><a href="/so-funktioniert-campuna">So funktioniert's</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Kategorien</p>
+        <ul>
+          <li><a href="/kategorie/fahrzeuge">Wohnmobile &amp; Camper</a></li>
+          <li><a href="/kategorie/ausruestung-und-zubehoer">Camping-Zubehör</a></li>
+          <li><a href="/kategorie/zelte-und-dachzelte">Zelte &amp; Dachzelte</a></li>
+          <li><a href="/kategorie/fahrraeder-traeger">Fahrräder &amp; Träger</a></li>
+          <li><a href="/kategorie/campingplaetze-stellplaetze">Stellplätze &amp; Campingplätze</a></li>
+          <li><a href="/kategorie/dienstleistungen">Camping-Services</a></li>
+          <li><a href="/kategorie/tiny-houses">Tiny Houses</a></li>
+          <li><a href="/kategorie/mieten-vermieten">Mieten &amp; Vermieten</a></li>
+          <li><a href="/kategorie/boote-wassersport">Boote &amp; Wassersport</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Support &amp; Tools</p>
+        <ul>
+          <li><a href="/faq-hilfe">Hilfe &amp; FAQ</a></li>
+          <li><a href="/zuladungsrechner">Zuladungsrechner</a></li>
+          <li><a href="/reisekostenrechner">Reisebudget-Rechner</a></li>
+          <li><a href="/kontakt">Kontakt &amp; Feedback</a></li>
+          <li><a href="/sicher-handeln">Sicher handeln</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Rechtliches</p>
+        <ul>
+          <li><a href="/agb">AGB</a></li>
+          <li><a href="/nutzungsbedingungen">Nutzungsbedingungen</a></li>
+          <li><a href="/datenschutz">Datenschutz</a></li>
+          <li><a href="/impressum">Impressum</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="f-bottom">
+      <span>© 2026 Campuna®. Alle Rechte vorbehalten.</span>
+      <span class="soc"><a href="#" aria-label="Instagram">IG</a><a href="#" aria-label="TikTok">TT</a><a href="#" aria-label="YouTube">YT</a><a href="#" aria-label="Facebook">FB</a></span>
+    </div>
+  </div>
+</footer>
+
+<!-- Floating calculator button (design). DEV: real link to the calculator page. -->
+<a class="calc-fab" href="/zuladungsrechner" aria-label="Zuladungsrechner öffnen"><span>BERECHNEN</span><i aria-hidden="true">▦</i></a>
+
+</body>
+</html>

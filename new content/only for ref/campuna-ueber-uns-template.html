@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- ============================================================
+  CAMPUNA ABOUT US PAGE (/ueber-uns) | SEO TEMPLATE FOR DEVELOPER
+  Prepared by Intelitune | 26.09.2026
+  Content = FINAL GERMAN. Comments/instructions = ENGLISH.
+
+  IMPLEMENTATION RULES (same as homepage):
+  1. SSR everything. 2. One <h1>. 3. Real <a href> links. 4. Text stays in DOM.
+  5. width/height on images, hero eager + preload, rest lazy. 6. Mobile LCP < 2.5s.
+  7. Placeholder CSS/images preview the approved design; replace with design system.
+============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- SEO: Title 52 chars, Description 141 chars -->
+<title>Über Campuna | Der Camping-Marktplatz für Deutschland</title>
+<meta name="description" content="Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz wächst. Lerne die Idee hinter Campuna aus Erfurt kennen und mach mit.">
+
+<link rel="canonical" href="https://campuna.de/ueber-uns">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="de" href="https://campuna.de/ueber-uns">
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/ueber-uns">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Campuna">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Über Campuna | Der Camping-Marktplatz für Deutschland">
+<meta property="og:description" content="Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz wächst. Lerne die Idee hinter Campuna kennen.">
+<meta property="og:url" content="https://campuna.de/ueber-uns">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-ueber-uns.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- ============ SCHEMA 1: BreadcrumbList ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+    { "@type": "ListItem", "position": 2, "name": "Über Campuna", "item": "https://campuna.de/ueber-uns" }
+  ]
+}
+</script>
+
+<!-- ============ SCHEMA 2: AboutPage (references the sitewide Organization @id) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "@id": "https://campuna.de/ueber-uns#aboutpage",
+  "url": "https://campuna.de/ueber-uns",
+  "name": "Über Campuna",
+  "inLanguage": "de-DE",
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+  "about": { "@id": "https://campuna.de/#organization" },
+  "description": "Warum es Campuna gibt, wofür wir stehen und wie unser Camping-Marktplatz für Deutschland wächst."
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- PREVIEW CSS ONLY (mirrors approved design). Replace with real design system. -->
+<style>
+:root{--green-900:#0F2E14;--green-800:#143D1B;--green-700:#1B5E20;--cream:#F4EFE6;--cream-2:#FAF7F0;--ink:#1E241E;--muted:#5C6B5C;--gold:#C9A24B;--gold-2:#E4C878;--white:#fff}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Poppins',Arial,sans-serif;color:var(--ink);background:var(--cream-2);line-height:1.6;font-size:15px}
+img{max-width:100%;display:block} a{color:inherit;text-decoration:none}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+.kicker{letter-spacing:.16em;text-transform:uppercase;font-size:.68rem;font-weight:600;color:var(--gold)}
+h1{font-size:clamp(1.8rem,3.6vw,2.6rem);line-height:1.2;margin:.3em 0;color:#fff}
+h1 em{font-style:normal;color:var(--gold-2)}
+h2{font-size:clamp(1.35rem,2.4vw,1.9rem);line-height:1.25;color:var(--green-700);margin:.3em 0 .4em}
+h3{font-size:1rem;margin:.3em 0;color:var(--green-900)}
+p{margin:.45em 0}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font-weight:600;font-size:.82rem;border:0;cursor:pointer}
+.btn-green{background:var(--green-700);color:#fff}.btn-gold{background:var(--gold-2);color:var(--green-900)}
+section{padding:52px 0}
+.center{text-align:center}
+header{background:var(--cream-2);position:sticky;top:0;z-index:50;border-bottom:1px solid #eae4d8}
+.nav{display:flex;align-items:center;gap:26px;padding:14px 0}
+.logo{font-weight:800;color:var(--green-800);font-size:1.2rem}
+.logo small{font-size:.48rem;letter-spacing:.14em;color:var(--muted);display:block}
+.nav ul{list-style:none;display:flex;gap:22px;margin:0 0 0 auto;padding:0;font-size:.82rem;font-weight:500}
+.nav .active{color:var(--gold);border-bottom:2px solid var(--gold);padding-bottom:4px}
+/* hero */
+.hero{padding:16px 0 0}
+.hero-card{border-radius:26px;overflow:hidden;color:#fff;text-align:center;padding:88px 26px 96px;
+ background:linear-gradient(180deg,rgba(12,24,10,.45),rgba(12,24,10,.72)),linear-gradient(120deg,#5a4a33,#31431f 55%,#17240f)}
+/* PLACEHOLDER-IMG: campervan at sunset photo behind gradient.
+   alt: "Camper sitzen abends vor ihrem Campingbus in den Hügeln" -->
+.hero-card p{max-width:600px;margin:.6em auto;color:#eee6d8;font-size:.9rem}
+/* breadcrumb */
+.crumb{font-size:.72rem;color:var(--muted);padding:16px 0}
+.crumb a{color:var(--green-700);font-weight:600}
+/* badge bar */
+.badge-bar{background:#fff;border-radius:16px;box-shadow:0 10px 24px rgba(20,40,20,.07);padding:16px 22px;display:flex;gap:18px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+.badge-bar strong{color:var(--green-700);font-size:.88rem}
+.badge-bar span{color:var(--muted);font-size:.72rem;max-width:520px;text-align:right}
+/* story */
+.story{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:center}
+.story .ph{border-radius:22px;min-height:320px;position:relative;background:linear-gradient(180deg,rgba(10,25,12,.02) 55%,rgba(10,25,12,.35)),linear-gradient(120deg,#7d9770,#41603d)}
+/* PLACEHOLDER-IMG: man on a boat at a lake. alt: "Camper genießt den Abend an einem See" -->
+.story .tagline{position:absolute;left:16px;bottom:16px;background:#fff;border-radius:999px;padding:8px 14px;font-size:.62rem;font-weight:700;color:var(--green-800)}
+.story .lead{color:var(--green-700);font-weight:600}
+.story p{font-size:.88rem;color:#3d473d}
+/* status cards */
+.status{background:var(--cream)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+.card-w{background:#fff;border-radius:20px;padding:26px;box-shadow:0 10px 24px rgba(20,40,20,.06)}
+.card-g{background:linear-gradient(160deg,var(--green-700),var(--green-900));border-radius:20px;padding:26px;color:#fff}
+.card-w h3,.card-g h3{display:flex;align-items:center;gap:8px;margin-top:0}
+.card-g h3{color:#fff}
+.tick{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:12px;font-size:.8rem}
+.card-w .tick li{color:#41503f;padding-left:26px;position:relative}
+.card-w .tick li:before{content:"✓";position:absolute;left:0;color:var(--green-700);font-weight:700}
+.card-g .tick li{color:#dbe7d8;padding-left:26px;position:relative}
+.card-g .tick li:before{content:"✦";position:absolute;left:0;color:var(--gold-2)}
+.tick strong{color:inherit}
+/* values */
+.values{display:grid;grid-template-columns:1fr .8fr;gap:20px;align-items:center;margin-top:26px}
+.v-list{display:flex;flex-direction:column;gap:12px}
+.v-card{background:#fff;border-radius:16px;padding:16px 20px;box-shadow:0 8px 18px rgba(20,40,20,.05);position:relative}
+.v-card h3{font-size:.88rem;margin:0 0 4px}
+.v-card p{font-size:.76rem;color:var(--muted);margin:0}
+.v-card .dot{position:absolute;top:16px;right:16px;width:26px;height:26px;border-radius:50%;background:var(--cream);display:flex;align-items:center;justify-content:center;font-size:.7rem}
+.v-map{min-height:420px;position:relative}
+/* statement */
+.statement h2{color:var(--green-800);font-size:clamp(1.3rem,2.4vw,1.8rem)}
+.statement h2 em{font-style:normal;color:var(--gold)}
+.statement p{color:var(--muted);font-size:.88rem;max-width:620px;margin:.5em auto}
+.quote{color:var(--green-800);font-weight:700;font-size:.9rem}
+/* cta */
+.join-card{background:linear-gradient(140deg,var(--green-700),var(--green-900));border-radius:26px;color:#fff;padding:46px 40px;position:relative;overflow:hidden}
+.join-card:after{content:"";position:absolute;right:-30px;top:-30px;width:200px;height:200px;border:2px solid rgba(228,200,120,.5);border-radius:32px;transform:rotate(16deg)}
+.join-card h2{color:#fff;margin:.2em 0}
+.join-card p{color:#d8e4d6;font-size:.85rem;max-width:520px}
+/* footer */
+footer{background:var(--green-900);color:#cfe0cd;font-size:.78rem}
+.f-intro{border-bottom:1px solid rgba(255,255,255,.12);padding:24px 0;color:#a9c2a7;font-size:.72rem;text-align:center}
+.f-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;gap:24px;padding:32px 0}
+.f-grid strong{color:#fff;display:block;margin-bottom:10px;font-size:.8rem}
+.f-grid ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.f-bottom{border-top:1px solid rgba(255,255,255,.12);padding:16px 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.68rem;color:#8fae8d}
+@media(max-width:960px){.story,.two,.values{grid-template-columns:1fr}.f-grid{grid-template-columns:1fr 1fr}.v-map{display:none}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<!-- HEADER: same final navigation as homepage. "Über uns" marked active. -->
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="/" aria-label="Campuna Startseite">▲ campuna<small>DEIN CAMPING-MARKTPLATZ</small></a>
+    <ul>
+      <li><a href="/">Startseite</a></li>
+      <li><a class="active" href="/ueber-uns">Über uns</a></li>
+      <li><a href="/inserate">Marktplatz</a></li>
+      <li><a href="/kategorien">Kategorien</a></li>
+      <li><a href="/spotlight">Spotlight</a></li>
+      <li><a href="/ratgeber">Ressourcen</a></li>
+    </ul>
+    <a class="btn btn-green" href="/konto" style="margin-left:18px">👤 Einloggen</a>
+  </div>
+</header>
+
+<main id="inhalt">
+
+<!-- ============================================================
+  SECTION 1: HERO
+  The ONLY h1. Brand claim + entity. CTA scrolls to the story section.
+  DEV: real photo (campervan at sunset) behind dark gradient, eager + preload.
+  alt: "Camper sitzen abends vor ihrem Campingbus in den Hügeln"
+============================================================ -->
+<section class="hero" aria-labelledby="hero-titel">
+  <div class="wrap">
+    <div class="hero-card">
+      <h1 id="hero-titel">Wir wollen Camping <em>an einem Ort</em> zusammenbringen.</h1>
+      <p>Campuna ist entstanden, weil wir selbst einen Ort vermisst haben, an dem Angebote, Anbieter, Campingplätze, Wissen und praktische Helfer rund ums Camping zusammenkommen.</p>
+      <a class="btn btn-green" href="#warum">Mehr über uns erfahren ↓</a>
+    </div>
+  </div>
+</section>
+
+<!-- BREADCRUMB (visible, matches BreadcrumbList schema) -->
+<div class="wrap crumb" aria-label="Brotkrumen-Navigation">
+  <a href="/">Startseite</a> › <span>Über Campuna</span>
+</div>
+
+<!-- ============================================================
+  SECTION 2: POSITIONING BADGE BAR
+  One sentence that defines the entity for users and search engines.
+============================================================ -->
+<div class="wrap">
+  <div class="badge-bar">
+    <strong>● Dein Camping-Marktplatz für Deutschland</strong>
+    <span>Die spezialisierte Plattform für Wohnmobile, Wohnwagen, Campingzubehör, Stellplätze, Vermietung und Services rund ums Camping.</span>
+  </div>
+</div>
+
+<!-- ============================================================
+  SECTION 3: THE STORY ("Warum es Campuna gibt")
+  Core E-E-A-T content of the page. Keep all paragraphs in HTML.
+  DEV: image right (PLACEHOLDER), alt: "Camper genießt den Abend an einem See"
+============================================================ -->
+<section id="warum" aria-labelledby="story-titel">
+  <div class="wrap story">
+    <div>
+      <span class="kicker">Die Geschichte</span>
+      <h2 id="story-titel">Warum es Campuna gibt</h2>
+      <p>Camping ist ein riesiges Thema. Digital ist es trotzdem über viele Orte verstreut: Fahrzeuge stehen auf allgemeinen Kleinanzeigen-Portalen, Tipps verstecken sich in Gruppen und Foren, Campingplätze haben eigene Verzeichnisse, Zubehör und Services liegen wieder woanders.</p>
+      <p class="lead">Wir wollten einen Ort schaffen, an dem Camping nicht nur eine Kategorie unter vielen ist. Einen Ort, an dem sich alles ums Camping dreht. Genau dafür haben wir Campuna gebaut.</p>
+      <p>Heute findest du auf Campuna private und gewerbliche <a href="/inserate" style="color:var(--green-700);font-weight:600">Angebote</a>, Campingplätze, Vermietungen, Services, Wissen und praktische Camping-Helfer.</p>
+      <p>Unsere Idee geht weiter. Wir bauen die Campingplattform, die wir selbst vermisst haben. Das Fundament steht. Jetzt wächst Campuna mit jedem Camper, jedem Inserat, jedem Anbieter und jedem Campingplatz.</p>
+    </div>
+    <div class="ph" role="img" aria-label="Camper genießt den Abend an einem See">
+      <span class="tagline">🌿 CAMPUNA WÄCHST MIT DIR.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 4: STATUS & VISION ("Wo Campuna heute steht")
+  Two cards: today (white) + vision (green). List items stay HTML text.
+============================================================ -->
+<section class="status" aria-labelledby="status-titel">
+  <div class="wrap">
+    <div class="center">
+      <span class="kicker">Status &amp; Zukunft</span>
+      <h2 id="status-titel">Wo Campuna heute steht</h2>
+      <p style="color:var(--muted);font-size:.85rem">Wie Campuna aufgebaut ist und wohin die Reise geht.</p>
+    </div>
+    <div class="two">
+      <div class="card-w">
+        <h3>● Heute auf Campuna</h3>
+        <ul class="tick">
+          <li><strong>Spezialisierter Marktplatz</strong> für den Kauf und Verkauf von Fahrzeugen und Campingausrüstung.</li>
+          <li><strong>Gewerbliche Anbieter</strong> wie Werkstätten, Vermieter und Serviceprofis mit eigenen Profilen und Angeboten.</li>
+          <li><strong>Campingplätze und Stellplätze</strong> mit Informationen und passenden Angeboten.</li>
+          <li><strong>Camping-Wissen und Tools</strong> wie der <a href="/tools/zuladungsrechner" style="color:var(--green-700);font-weight:600">Zuladungsrechner</a> und der <a href="/tools/reisebudget-rechner" style="color:var(--green-700);font-weight:600">Reisebudget-Rechner</a> für entspannte Touren.</li>
+        </ul>
+      </div>
+      <div class="card-g">
+        <h3>● Unsere Vision</h3>
+        <ul class="tick">
+          <li><strong>Immer mehr Bereiche</strong> der Camping-Welt sinnvoll und digital an einem Ort zusammenbringen.</li>
+          <li><strong>Eine faire und transparente Community</strong>, in der gewerbliche Partner, Händler und private Camper partnerschaftlich handeln.</li>
+          <li><strong>Gemeinsam wachsen:</strong> Jede neue Funktion und jeder neue Anbieter richtet sich nach dem Feedback der Community.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 5: VALUES ("Was uns wichtig ist")
+  6 value cards (h3). The connector graphic is DECORATIVE:
+  build as CSS/SVG, keep it out of the accessibility tree (aria-hidden).
+============================================================ -->
+<section aria-labelledby="werte-titel">
+  <div class="wrap">
+    <div class="center">
+      <span class="kicker">Unsere Werte</span>
+      <h2 id="werte-titel">Was uns wichtig ist</h2>
+    </div>
+    <div class="values">
+      <div class="v-list">
+        <div class="v-card"><span class="dot">🧭</span><h3>Camping im Mittelpunkt</h3><p>Bei Campuna ist Camping nicht nur eine Kategorie unter vielen. Die ganze Plattform dreht sich darum.</p></div>
+        <div class="v-card"><span class="dot">📦</span><h3>Alles an einem Ort</h3><p>Angebote, Anbieter, Orte, Vermietung, Services, Wissen und praktische Helfer wachsen Schritt für Schritt zusammen.</p></div>
+        <div class="v-card"><span class="dot">❤</span><h3>Von Campern gemacht</h3><p>Wir bauen die Campingplattform, die wir selbst vermisst haben.</p></div>
+        <div class="v-card"><span class="dot">👥</span><h3>Offen für alle Seiten</h3><p>Private Camper, Händler, Campingplätze, Vermieter und Serviceanbieter gehören zur selben Camping-Welt.</p></div>
+        <div class="v-card"><span class="dot">✅</span><h3>Einfach und transparent</h3><p>Campuna soll klar bleiben und ohne unnötige Hürden funktionieren.</p></div>
+        <div class="v-card"><span class="dot">🌱</span><h3>Campuna wächst mit dir</h3><p>Jedes Inserat, jeder Anbieter und jeder aktive Camper macht die Plattform ein Stück wertvoller.</p></div>
+      </div>
+      <!-- Decorative connector graphic (mindmap lines to the Campuna node) -->
+      <div class="v-map" aria-hidden="true">
+        <svg viewBox="0 0 320 460" width="100%" height="100%" fill="none">
+          <path d="M0 40 C160 40 240 210 292 224" stroke="#2E5D3A" stroke-width="2.5"/>
+          <path d="M0 115 C150 115 235 215 292 228" stroke="#C9A24B" stroke-width="2.5"/>
+          <path d="M0 190 C150 190 235 225 292 232" stroke="#C94B6E" stroke-width="2.5"/>
+          <path d="M0 265 C150 265 235 240 292 236" stroke="#4B6EC9" stroke-width="2.5"/>
+          <path d="M0 340 C150 340 235 250 292 240" stroke="#2E8D6A" stroke-width="2.5"/>
+          <path d="M0 415 C160 415 240 255 292 244" stroke="#D97A2B" stroke-width="2.5"/>
+          <circle cx="292" cy="234" r="26" fill="#F4EFE6" stroke="#1B5E20" stroke-width="2"/>
+          <circle cx="292" cy="234" r="12" fill="#1B5E20"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Foundation statement -->
+    <div class="statement center" style="margin-top:34px">
+      <h2>Das Fundament steht. <em>Was daraus wird, entsteht mit deiner Hilfe.</em></h2>
+      <p>Campuna ist noch nicht am Ziel. Genau deshalb ist jetzt der richtige Moment, von Anfang an dabei zu sein.</p>
+      <p class="quote">„Campuna wächst mit dir. Sei von Anfang an dabei.“</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 6: PROVIDER CTA
+  Conversion goal of this page: listing creation / provider sign-up.
+============================================================ -->
+<section aria-labelledby="cta-titel">
+  <div class="wrap">
+    <div class="join-card">
+      <span class="kicker">Für Anbieter</span>
+      <h2 id="cta-titel">Werde Teil von Campuna.</h2>
+      <p>Du verkaufst, vermietest oder bietest etwas rund ums Camping an? Sei von Anfang an dabei und erreiche Camper auf einer Plattform, die sich ausschließlich ums Camping dreht.</p>
+      <a class="btn btn-gold" href="/inserat-erstellen">Kostenlos inserieren →</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER: identical to homepage footer (single shared component). -->
+<footer>
+  <div class="wrap f-intro">
+    <p style="margin:0">Campuna, dein Camping-Marktplatz. Campuna ist Deutschlands Plattform rund ums Camping: Wohnmobile und Camper, Wohnwagen, Zelte und Dachzelte, Campingzubehör, Stellplätze und Campingplätze, Tiny Houses, Boote sowie Camping-Services, zum Kaufen, Verkaufen und Entdecken an einem Ort.</p>
+  </div>
+  <nav class="wrap f-grid" aria-label="Footer Navigation">
+    <div>
+      <a class="logo" href="/" style="color:#fff">▲ campuna<small style="color:#9db89b">DEIN CAMPING-MARKTPLATZ</small></a>
+      <p style="color:#9db89b;font-size:.7rem;margin-top:12px">Campuna wächst mit dir.</p>
+      <p style="color:#9db89b;font-size:.7rem">Campuna · Erfurt, Thüringen · Deutschland<br><a href="mailto:info@campuna.de" style="color:#cfe0cd">info@campuna.de</a></p>
+    </div>
+    <div><strong>Navigation</strong>
+      <ul>
+        <li><a href="/">Startseite</a></li>
+        <li><a href="/inserate">Marktplatz</a></li>
+        <li><a href="/ueber-uns">Über uns</a></li>
+        <li><a href="/so-funktionierts">So funktioniert Campuna</a></li>
+        <li><a href="/spotlight">Spotlight</a></li>
+        <li><a href="/preise">Preise</a></li>
+      </ul>
+    </div>
+    <div><strong>Kategorien</strong>
+      <ul>
+        <li><a href="/zubehoer">Camping-Zubehör</a></li>
+        <li><a href="/wohnmobile">Wohnmobile &amp; Camper</a></li>
+        <li><a href="/zelte">Zelte &amp; Dachzelte</a></li>
+        <li><a href="/fahrraeder-traeger">Fahrräder &amp; Träger</a></li>
+        <li><a href="/stellplaetze">Stellplätze &amp; Campingplätze</a></li>
+        <li><a href="/services">Camping-Services</a></li>
+        <li><a href="/tiny-houses">Tiny Houses</a></li>
+        <li><a href="/mieten">Mieten &amp; Vermieten</a></li>
+        <li><a href="/boote">Boote &amp; Wassersport</a></li>
+      </ul>
+    </div>
+    <div><strong>Support</strong>
+      <ul>
+        <li><a href="/faq">Hilfe &amp; FAQ</a></li>
+        <li><a href="/sicher-handeln">Sicher handeln</a></li>
+        <li><a href="/kontakt">Kontakt</a></li>
+        <li><a href="/ratgeber">Ratgeber</a></li>
+        <li><a href="/tools/zuladungsrechner">Zuladungsrechner</a></li>
+        <li><a href="/tools/reisebudget-rechner">Reisebudget-Rechner</a></li>
+      </ul>
+    </div>
+    <div><strong>Rechtliches</strong>
+      <ul>
+        <li><a href="/impressum">Impressum</a></li>
+        <li><a href="/agb">AGB</a></li>
+        <li><a href="/nutzungsbedingungen">Nutzungsbedingungen</a></li>
+        <li><a href="/datenschutz">Datenschutz</a></li>
+        <li><a href="/cookie-einstellungen">Cookie-Einstellungen</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="wrap f-bottom">
+    <span>© 2026 Campuna. Alle Rechte vorbehalten.</span>
+    <span>Facebook · Instagram · TikTok · YouTube</span>
+  </div>
+</footer>
+
+</body>
+</html>

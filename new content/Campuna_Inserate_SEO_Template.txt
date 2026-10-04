@@ -1,0 +1,451 @@
+﻿
+
+I N T E L I T U N E
+
+Campuna All Listings Page (/inserate): SEO Template for Development
+
+Final German content, structure analysis, on-page, technical PLP rules, schema code and internal linking. Instructions in English, website copy in German.
+Field
+Value
+Page / URL
+https://campuna.de/inserate
+Page type
+Marketplace overview PLP (all categories mixed). Category PLPs (/wohnmobile etc.) are separate pages.
+Target queries
+camping inserate, camping angebote, camping kleinanzeigen, camping kaufen deutschland (supporting; heads belong to category PLPs)
+Content language
+German (de-DE), du address, no dashes in body copy
+Conversion goals
+Listing detail clicks + Kostenlos inserieren
+Companion file
+campuna-inserate-template.html (visual template with schema, hand to developer 1:1)
+Prepared
+Intelitune, 26.09.2026
+
+
+1. Structure analysis (design vs SEO requirements)
+
+The approved design already covers: hero band, breadcrumb, filter sidebar, listing grid with badges, load-more, a short SEO text card, category icon row and footer. That base is good. Five things were missing for a 100% SEO page and are ADDED in this template:
+
+
+ADDED: Popular-searches link block ("Beliebte Suchen") linking to category and price-band PLPs. This is the equity bridge from the busiest page to the money pages.
+
+
+ADDED: FAQ section (4 questions) with FAQPage schema. AEO block for Google snippets and AI answers.
+
+
+ADDED: Trust strip (direct contact, free private listings, link to Sicher handeln).
+
+
+ADDED: Crawlable pagination fallback: a real link "Seite 2 ansehen" under the load-more button.
+
+
+EXPANDED: the SEO text card from 3 thin lines to about 420 words with H3 subsections and internal links (SOP rule: short intro above the grid, 400 to 600 words below).
+
+
+REMOVED: the "test" listing card from the mockup. Test listings must never render in production (the old Bubble site had exactly this indexed).
+
+
+2. Meta title and meta description (final)
+Element
+Final value
+Length
+Meta title
+Camping-Inserate aus ganz Deutschland | Campuna
+47 chars
+Meta description
+Aktuelle Camping-Inserate für Wohnmobile, Wohnwagen, Zubehör, Stellplätze, Services und mehr. Angebote von privat und vom Händler, täglich neu.
+143 chars
+
+Copy-paste head snippet:
+
+<title>Camping-Inserate aus ganz Deutschland | Campuna</title>
+
+<meta name="description" content="Aktuelle Camping-Inserate für Wohnmobile, Wohnwagen, Zubehör, Stellplätze, Services und mehr. Angebote von privat und vom Händler, täglich neu.">
+
+<link rel="canonical" href="https://campuna.de/inserate">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<link rel="alternate" hreflang="de" href="https://campuna.de/inserate">
+
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/inserate">
+
+<meta property="og:type" content="website">
+
+<meta property="og:site_name" content="Campuna">
+
+<meta property="og:locale" content="de_DE">
+
+<meta property="og:title" content="Camping-Inserate aus ganz Deutschland | Campuna">
+
+<meta property="og:description" content="Aktuelle Camping-Inserate für Wohnmobile, Wohnwagen, Zubehör, Stellplätze, Services und mehr. Von privat und vom Händler.">
+
+<meta property="og:url" content="https://campuna.de/inserate">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-inserate.jpg">
+
+<meta name="twitter:card" content="summary_large_image">
+
+
+3. Critical PLP technical rules
+
+
+SSR everything. Filters and sort work via GET URL parameters; results render server-side.
+
+
+Canonical: every parameter combination (price, provider, sort, location, q, seite=1) canonicals to https://campuna.de/inserate.
+
+
+EXCEPTION category: the category filter NAVIGATES to the real category PLPs (/wohnmobile, /zelte, ...) instead of adding a parameter. Never create /inserate?kategorie=x as an indexable duplicate of a category page.
+
+
+Pagination: the load-more button may use JS, but a real <a href="/inserate?seite=2"> stays in the HTML. Page 2+: self-canonical, title suffix "Seite 2", never noindex, link to previous and next page.
+
+
+Schema: CollectionPage + ItemList (dynamic from rendered listings) + BreadcrumbList + FAQPage. NO Product schema on this overview; Product/Vehicle + Offer lives on listing detail pages only.
+
+
+Listing card images: alt = listing title, loading="lazy", width/height set. First row may load eager.
+
+
+Sold or expired listings never appear here; test listings never render in production.
+
+
+Sort options: Neueste zuerst (default), Preis aufsteigend, Preis absteigend.
+
+
+One H1 (hero). Results header "ALLE INSERATE" and all section headings = H2. Card titles = H3.
+
+
+4. Section-by-section content
+
+
+4.1. Hero band
+
+Purpose: Carries the H1 + the short above-grid SEO text (58 words, keep under 80).
+
+Final German copy:
+
+Kicker: Camping-Marktplatz Deutschland
+
+H1: Camping-Inserate aus ganz Deutschland
+
+Paragraph: Entdecke aktuelle Camping-Angebote für Wohnmobile, Wohnwagen, Campingzubehör, Stellplätze, Services, Tiny Houses und mehr. Von privaten und gewerblichen Anbietern auf Campuna, täglich neu.
+
+Technical / on-page instructions:
+
+
+Photo behind dark gradient, eager + preload. Alt: Campingplatz mit Wohnmobilen und Hütten in den Bergen
+
+
+4.2. Breadcrumb
+
+Purpose: Visible breadcrumb, matches BreadcrumbList schema.
+
+Final German copy:
+
+Startseite › Inserate
+
+Technical / on-page instructions:
+
+
+Home is a real link to /
+
+
+4.3. Filter sidebar
+
+Purpose: All filter UI labels final. Filters set GET parameters; category select navigates to category URLs.
+
+Final German copy:
+
+Heading: Filter anpassen · Reset link: Zurücksetzen
+
+Labels: Marke, Modell, Stichwort… (placeholder: z. B. Morelo, Zelt, Solar, 6m) · Preis (0 € bis 150.000 € +) · Preis-Chips: Alle, bis 10.000 €, 10.000 bis 30.000 €, 30.000 bis 75.000 €, über 75.000 € · Checkbox: Preis verhandelbar (VB) · Anbieter: Alle / Privat / Gewerblich · Kategorie: Alle Kategorien + 9 Kategorien · Unterkategorie: Alle Unterkategorien · Ort / PLZ / Bundesland (placeholder: Stadt, PLZ oder Bundesland) · Button: Filter anwenden
+
+Technical / on-page instructions:
+
+
+Apply = GET submit; the URL must be shareable and server-rendered
+
+
+Category options carry the real PLP URLs and navigate on selection
+
+
+4.4. Results header + grid
+
+Purpose: Listing grid, 12 cards per page server-rendered.
+
+Final German copy:
+
+H2: ALLE INSERATE · Count line: 19 Inserate gefunden · Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend
+
+Card badges: Hervorgehoben (gold) / Privat / Gewerblich · Price labels: Preis / Kaufpreis · Link: Details · Condition tags: Neu, Neuwertig, Sehr gut, Gebraucht
+
+Sample cards (final German wording in the HTML): EcoFlow DELTA Pro 3600 Wh Powerstation, Knaus Sport 500 EU Silver Selection, VW Grand California 680 Automatik, Hammermeister Starlet Sportboot 50 PS, VW T6.1 California Ocean 4Motion DSG, Knaus Boxstar 600 Street, iKamper Skycamp 3.0 4X Dachzelt, Tiny House Mobilheim 24 qm, Hymer B-Klasse MasterLine I 780, Campervan-Ausbau und Elektroservice, Dometic CFX3 45, Ganzjahres-Stellplatz an der Ostsee
+
+Technical / on-page instructions:
+
+
+Card = one <article> with one <a> wrapper, title as H3
+
+
+Highlighted cards get the gold border style
+
+
+Location chip on the image = city name
+
+
+4.5. Load more + pagination (ADDED)
+
+Purpose: Crawler-safe pagination.
+
+Final German copy:
+
+Button: Weitere Angebote laden
+
+Fallback line: Oder blättern: Seite 2 ansehen
+
+Technical / on-page instructions:
+
+
+The fallback link is a real <a href="/inserate?seite=2"> and stays in the HTML
+
+
+4.6. Popular searches (ADDED)
+
+Purpose: Equity bridge to category and price-band PLPs.
+
+Final German copy:
+
+Kicker: Beliebte Suchen · H2: Direkt zum passenden Bereich
+
+Links: Wohnmobil gebraucht kaufen (/wohnmobile), Campervan kaufen (/wohnmobile/campervan), Wohnwagen kaufen (/wohnwagen), Wohnmobile bis 20.000 € (/wohnmobile/gebraucht/bis-20000-euro), Dachzelte (/zelte/dachzelte), Vorzelte (/zubehoer/vorzelte), Stellplätze (/stellplaetze), Tiny Houses (/tiny-houses), Gasprüfung & Werkstatt (/services), Wohnmobil verkaufen (/wohnmobil-verkaufen)
+
+
+4.7. SEO text block (EXPANDED, about 420 words)
+
+Purpose: The ranking copy of the page, below the grid.
+
+Final German copy:
+
+H2: Camping-Inserate auf Campuna entdecken
+
+Lead (green bold): Campuna ist dein Camping-Marktplatz für Fahrzeuge, Zubehör, Services, Stellplätze, Vermietung und vieles mehr.
+
+Paragraph: Hier findest du aktuelle Inserate von privaten Verkäufern und gewerblichen Anbietern aus ganz Deutschland. Du suchst einen gebrauchten Campervan oder brauchst die richtige Ausrüstung für deine nächste Tour? Du möchtest deinen Campingplatz bewerben oder suchst spezialisierte Camping-Profis wie eine Werkstatt oder einen Gasprüfer? All das findest du auf dieser Seite an einem Ort.
+
+H3: So findest du das richtige Angebot + paragraph (filters, brand search Hymer/Knaus/VW California, sorting, category links: Wohnmobile & Camper, Wohnwagen, Zelte & Dachzelte, Campingzubehör, Stellplätze & Campingplätze)
+
+H3: Von privat oder vom Händler kaufen + paragraph (differences, Anbieter filter, links to Ratgeber and Sicher handeln)
+
+H3: Selbst verkaufen: kostenlos inserieren + paragraph (free private listings, no commission, links to /inserat-erstellen and /so-funktionierts)
+
+Technical / on-page instructions:
+
+
+Full final text is in the HTML file, section 6. Keep every internal link.
+
+
+4.8. Trust strip (ADDED)
+
+Purpose: Conversion trust signals.
+
+Final German copy:
+
+Direkter Kontakt zwischen Käufer und Verkäufer · Private Inserate kostenlos, ohne Provision · Tipps für sicheres Handeln: Sicher handeln lesen (/sicher-handeln)
+
+
+4.9. Category row
+
+Purpose: Second category link block ("Nach Kategorie filtern"), real PLP links.
+
+Final German copy:
+
+Kicker: Stöbern · H2: Nach Kategorie filtern · the 9 category cards with their URLs
+
+
+4.10. FAQ (ADDED, 4 questions)
+
+Purpose: AEO block; text identical to FAQPage schema.
+
+Final German copy:
+
+H2: Häufige Fragen zu den Inseraten
+
+Q1: Wie finde ich das passende Camping-Inserat? · Q2: Was bedeutet Privat oder Gewerblich bei einem Inserat? · Q3: Was bedeutet VB beim Preis? · Q4: Wie erstelle ich selbst ein Inserat auf Campuna? Full answers: see schema code section 5.3 (identical text on the page).
+
+Technical / on-page instructions:
+
+
+Answers stay in the DOM; questions are H3 in summary
+
+
+5. Schema code (JSON-LD, copy-paste ready)
+
+
+5.1 BreadcrumbList
+
+<script type="application/ld+json">
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+
+    { "@type": "ListItem", "position": 2, "name": "Inserate", "item": "https://campuna.de/inserate" }
+
+  ]
+
+}
+
+</script>
+
+ 
+
+
+5.2 CollectionPage + ItemList
+
+Developer note: generate itemListElement dynamically from the listings rendered on page 1 (position = card order, url = listing detail URL, numberOfItems = total count). The 3 items in the code are shape examples. No Product schema here.
+
+<script type="application/ld+json">
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/inserate#collection",
+
+  "url": "https://campuna.de/inserate",
+
+  "name": "Camping-Inserate aus ganz Deutschland",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+
+  "about": { "@id": "https://campuna.de/#organization" },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "itemListOrder": "https://schema.org/ItemListOrderDescending",
+
+    "numberOfItems": 19,
+
+    "itemListElement": [
+
+      { "@type": "ListItem", "position": 1, "name": "EcoFlow DELTA Pro 3600 Wh Powerstation", "url": "https://campuna.de/inserat/ecoflow-delta-pro-3600wh" },
+
+      { "@type": "ListItem", "position": 2, "name": "Knaus Sport 500 EU Silver Selection", "url": "https://campuna.de/inserat/knaus-sport-500-eu-silver-selection" },
+
+      { "@type": "ListItem", "position": 3, "name": "VW Grand California 680 Automatik", "url": "https://campuna.de/inserat/vw-grand-california-680-automatik" }
+
+    ]
+
+  }
+
+}
+
+</script>
+
+ 
+
+
+5.3 FAQPage
+
+Developer note: single source of truth for the FAQ answers; visible text must match word for word.
+
+<script type="application/ld+json">
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/inserate#faq",
+
+  "mainEntity": [
+
+    { "@type": "Question", "name": "Wie finde ich das passende Camping-Inserat?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Nutze die Filter auf dieser Seite: Suche nach Marke, Modell oder Stichwort, grenze den Preis ein und wähle Kategorie, Anbieter und Ort. Mit der Sortierung siehst du die neuesten oder günstigsten Angebote zuerst. Über die Kategorien unten kommst du direkt zu Wohnmobilen, Zelten, Zubehör und mehr." } },
+
+    { "@type": "Question", "name": "Was bedeutet Privat oder Gewerblich bei einem Inserat?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Privat bedeutet, dass eine Privatperson verkauft, meist ohne Gewährleistung. Gewerblich bedeutet, dass ein Händler oder Dienstleister mit Firmenprofil anbietet. Auf Campuna findest du beide Arten von Anbietern und kannst gezielt danach filtern." } },
+
+    { "@type": "Question", "name": "Was bedeutet VB beim Preis?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "VB steht für Verhandlungsbasis. Der angegebene Preis ist ein Vorschlag des Anbieters, über den du fair verhandeln kannst. Nutze dafür die direkte Nachricht an den Verkäufer und vereinbare am besten eine Besichtigung vor dem Kauf." } },
+
+    { "@type": "Question", "name": "Wie erstelle ich selbst ein Inserat auf Campuna?",
+
+      "acceptedAnswer": { "@type": "Answer", "text": "Lege ein kostenloses Konto an, wähle die passende Kategorie und stelle dein Angebot mit Fotos, Beschreibung und Preis ein. Private Inserate sind kostenlos, ohne Provision. Eine Anleitung findest du unter So funktioniert Campuna." } }
+
+  ]
+
+}
+
+</script>
+
+
+6. Internal linking map
+From
+Target URLs
+Breadcrumb
+/
+Cards
+/inserat/SLUG (each card)
+Pagination
+/inserate?seite=2
+Popular searches
+/wohnmobile, /wohnmobile/campervan, /wohnwagen, /wohnmobile/gebraucht/bis-20000-euro, /zelte/dachzelte, /zubehoer/vorzelte, /stellplaetze, /tiny-houses, /services, /wohnmobil-verkaufen
+SEO text
+/wohnmobile, /wohnwagen, /zelte, /zubehoer, /stellplaetze, /ratgeber, /sicher-handeln, /inserat-erstellen, /so-funktionierts
+FAQ
+/kategorien, /so-funktionierts
+Category row + Footer
+all 9 category PLPs
+
+
+7. Developer checklist
+
+
+SSR, one H1, headings per section 4, all links real <a href>
+
+
+Canonical rules from section 3 implemented (parameters canonical to /inserate, category = navigation, pagination self-canonical)
+
+
+All 3 schema blocks in head, ItemList dynamic, validate with Rich Results Test
+
+
+Card images: alt = title, lazy, width/height; hero eager + preload
+
+
+No test/sold/expired listings rendered
+
+
+Crawlable Seite-2 link present under load more
+
+
+Filters shareable via URL (GET), results server-rendered
+
+
+Mobile: filter sidebar collapses above the grid, no horizontal scroll, LCP under 2.5s
+
+ 
+
+Verified: title 47 chars, description 143 chars, one H1, 0 dashes in body copy, about 960 visible words, all JSON-LD valid.
+
+

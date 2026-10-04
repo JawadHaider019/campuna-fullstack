@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- ============================================================
+  CAMPUNA CATEGORY PAGE: TINY HOUSES (/kategorie/tiny-houses)
+  FOR DEVELOPER | Prepared by Intelitune | 03.10.2026
+  Content = FINAL GERMAN. Comments/instructions = ENGLISH.
+  Same template as the other category pages.
+
+  SOURCES CHECKED 03.10.2026: live Bubble page (3 listings, one provider in
+  Gelnhausen), testing.campuna.de/kategorie/tiny-houses, Ubersuggest DE,
+  wohneigentum.nrw (Baugenehmigung), tiny-house-helden.de (road limits),
+  verti.de (price range, updated 29.01.2025).
+
+  STRATEGY NOTE: "tiny house kaufen" = 33,100/mo at KD 18 with no seasonality:
+  the best volume-to-difficulty keyword on the whole site. "mobilheim kaufen"
+  8,100 at KD 33. This category deserves inventory building (Tiny House
+  manufacturers as commercial providers) and early blog support.
+
+  CHANGED / ADDED vs testing build:
+    A) Title "Tiny Houses & Mobilheime kaufen" -> exact match "Tiny House kaufen"
+       first (singular is the search form)
+    B) Chip "Tiny Houses auf Rädern" (1,900/mo, KD 18); testing chips stay
+    C) Hero intro: "minimalistisches Dauerwohnen" removed (permanent living depends
+       on Baugenehmigung; promise not safe), legal facts moved to FAQ
+    D) Standard additions: sort, hidden H2, pagination fallback, Beliebte Suchen,
+       SEO text (5 H3s), trust strip, Ratgeber, sell band, FAQ 1 -> 5
+  BUGS: double brand in title, "0 Inserate" in server HTML, only 1 FAQ, no
+  JSON-LD, chips without hrefs, dative "zu Tiny Houses" (no change needed:
+  English loan plural stays "zu Tiny Houses und Mobilheimen").
+  CATEGORY FIT: Mobilheime listed under Stellplätze (e.g. Imbrock, 65.000 €)
+  move here.
+============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- SEO: Title 56 chars, Description 151 chars.
+     DEV: store the title WITHOUT " | Campuna" if the system appends the brand. -->
+<title>Tiny House kaufen: neu, gebraucht &amp; Mobilheime | Campuna</title>
+<meta name="description" content="Tiny Houses neu und gebraucht, auf Rädern oder fest gebaut, dazu Mobilheime für Campingplatz und Ferienpark. Angebote aus ganz Deutschland vergleichen.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/tiny-houses">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="de" href="https://campuna.de/kategorie/tiny-houses">
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/kategorie/tiny-houses">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Campuna">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Tiny House kaufen: neu, gebraucht &amp; Mobilheime | Campuna">
+<meta property="og:description" content="Tiny Houses neu und gebraucht, auf Rädern oder fest gebaut, dazu Mobilheime für Campingplatz und Ferienpark.">
+<meta property="og:url" content="https://campuna.de/kategorie/tiny-houses">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-tiny-houses.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- ============ SCHEMA 1: BreadcrumbList ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+    { "@type": "ListItem", "position": 2, "name": "Inserate", "item": "https://campuna.de/inserate" },
+    { "@type": "ListItem", "position": 3, "name": "Tiny Houses", "item": "https://campuna.de/kategorie/tiny-houses" }
+  ]
+}
+</script>
+
+<!-- ============ SCHEMA 2: CollectionPage + ItemList (dynamic) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://campuna.de/kategorie/tiny-houses#collection",
+  "url": "https://campuna.de/kategorie/tiny-houses",
+  "name": "Tiny Houses und Mobilheime kaufen und verkaufen",
+  "inLanguage": "de-DE",
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+  "about": { "@id": "https://campuna.de/#organization" },
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": 4,
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Tiny House: flexibel, modern und vielseitig", "url": "https://campuna.de/inserat/tiny-house-flexibel-modern-vielseitig" },
+      { "@type": "ListItem", "position": 2, "name": "Tiny House: hochwertig, modern und ganzjährig bewohnbar", "url": "https://campuna.de/inserat/tiny-house-hochwertig-ganzjaehrig" },
+      { "@type": "ListItem", "position": 3, "name": "Tiny House für 4 bis 6 Personen aus Lärche und Fichte", "url": "https://campuna.de/inserat/tiny-house-4-6-personen-laerche-fichte" },
+      { "@type": "ListItem", "position": 4, "name": "Mobilheim auf dem Campingplatz Imbrock", "url": "https://campuna.de/inserat/mobilheim-campingplatz-imbrock" }
+    ]
+  }
+}
+</script>
+
+<!-- ============ SCHEMA 3: FAQPage (matches visible FAQ word for word) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://campuna.de/kategorie/tiny-houses#faq",
+  "mainEntity": [
+    { "@type": "Question", "name": "Sind die angebotenen Tiny Houses ganzjährig bewohnbar?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Viele Modelle sind winterfest gedämmt und haben eine Heizung, aber nicht alle. Achte im Inserat auf Angaben zu Dämmung, Heizung und frostsicheren Wasserleitungen. Ob du dauerhaft darin wohnen darfst, hängt außerdem vom Standort und der Baugenehmigung ab." } },
+    { "@type": "Question", "name": "Brauche ich für ein Tiny House eine Baugenehmigung?",
+      "acceptedAnswer": { "@type": "Answer", "text": "In den meisten Fällen ja. Sobald ein Tiny House dauerhaft an einem Ort steht und zum Wohnen genutzt wird, gilt es baurechtlich als Gebäude, auch wenn es Räder hat. Das Grundstück muss erschlossen sein und der Bebauungsplan muss die Nutzung erlauben. Frag vor dem Kauf beim Bauamt deiner Gemeinde nach." } },
+    { "@type": "Question", "name": "Was kostet ein Tiny House?",
+      "acceptedAnswer": { "@type": "Answer", "text": "In der Regel zwischen 20.000 und 100.000 Euro, je nach Größe, Bauweise und Ausstattung. Dazu kommen Grundstück oder Stellplatz, Erschließung, Transport und Genehmigung. Gebrauchte Tiny Houses und Mobilheime sind oft deutlich günstiger, auf Campuna vergleichst du neue und gebrauchte Modelle direkt." } },
+    { "@type": "Question", "name": "Darf ein Tiny House auf Rädern auf die Straße?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Ja, wenn es als Anhänger zugelassen ist und die Grenzen einhält: höchstens 2,55 Meter breit und 4 Meter hoch. Bis 3,5 Tonnen Gesamtgewicht reicht für das Gespann meist der Führerschein Klasse BE. Schwerere Modelle brauchen die Klasse C1E oder werden von einer Spedition transportiert." } },
+    { "@type": "Question", "name": "Was ist der Unterschied zwischen Tiny House und Mobilheim?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Ein Tiny House ist meist kleiner, oft auf einem Trailer gebaut und für ein eigenes Grundstück gedacht. Ein Mobilheim ist größer und breiter, wird per Tieflader geliefert und steht meist auf einem Campingplatz oder in einem Ferienpark. Dort dient es in der Regel der Freizeit und nicht als Erstwohnsitz." } }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ============ PREVIEW CSS: mirrors the testing build design ============ */
+:root{
+  --green-900:#0F2E14; --green-800:#14451C; --green-700:#1B6B23; --green-600:#2E7D32;
+  --gold:#C9A24B; --hl:#F2C230; --cream:#F7F3EA; --cream-2:#FBF9F4; --line:#ECE5D6;
+  --ink:#16220F; --muted:#6B7464;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Poppins',Arial,sans-serif;color:var(--ink);background:var(--cream-2);line-height:1.6;font-size:15px}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px}
+.wide{max-width:1320px;margin:0 auto;padding:0 28px}
+.kicker{display:block;font-size:.62rem;font-weight:700;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;font-weight:700;font-size:.78rem;padding:12px 22px}
+.btn-green{background:var(--green-700);color:#fff}
+.btn-gold{background:var(--hl);color:#3a2d00}
+.btn-ghost{border:1.5px solid rgba(255,255,255,.75);color:#fff}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* header */
+header{background:#fff;border-bottom:1px solid #f0ece2;position:sticky;top:0;z-index:50}
+.nav{display:flex;align-items:center;justify-content:space-between;padding:12px 28px;max-width:1440px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.15rem;color:var(--green-900)}
+.logo .mark{width:28px;height:28px;border-radius:8px;background:var(--green-900);color:#b9e07a;font-size:.7rem;display:flex;align-items:center;justify-content:center}
+.logo small{display:block;font-size:.42rem;letter-spacing:.14em;color:var(--green-900);font-weight:700;margin-top:-4px}
+.nav ul{display:flex;gap:30px;list-style:none;font-size:.78rem;font-weight:600;color:var(--green-700)}
+.nav .btn{padding:9px 18px;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
+
+/* hero (photo) */
+.hero{margin:14px 28px 0;border-radius:40px;overflow:hidden;position:relative;min-height:330px;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;
+  background:linear-gradient(180deg,rgba(10,22,10,.45),rgba(10,22,10,.55)),
+  linear-gradient(180deg,#9fb7c9 0%,#7d9a6a 38%,#56703f 60%,#3d5530 100%)}
+/* PLACEHOLDER-IMG: alpine campsite photo (<img>, object-fit:cover, behind overlay)
+   alt="Wohnmobile und Wohnwagen auf einem Campingplatz in den Bergen" */
+.hero .in{max-width:640px;padding:46px 20px}
+.hero .kicker{color:var(--gold);margin-bottom:8px}
+.hero h1{font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1.12;font-weight:800;letter-spacing:-.02em}
+.hero p{font-size:.84rem;color:#eef3ea;margin-top:14px}
+
+/* breadcrumb + chips */
+.crumbs{font-size:.68rem;color:var(--muted);margin:20px 0 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.crumbs a:hover{color:var(--green-700)}
+.crumbs strong{color:var(--ink)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;list-style:none}
+.chips a{display:inline-block;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 14px;font-size:.68rem;font-weight:600;color:var(--ink)}
+.chips a.on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+
+/* results */
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:26px 0 14px;flex-wrap:wrap}
+.res-head .count{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.sort{border:1px solid var(--line);border-radius:10px;padding:7px 12px;font:inherit;font-size:.7rem;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:#fff;border:1px solid #f1ece1;border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(20,40,20,.05)}
+.card.hl{border:1.5px solid #f0d27a;background:#FFFCF2}
+.card .ph{height:118px;position:relative;background:linear-gradient(135deg,#d9c2a0,#a9876b)}
+.card .ph.b{background:linear-gradient(135deg,#2c4a64,#c9a77a)}
+.card .ph.c{background:linear-gradient(135deg,#3f6a3f,#9fc0a6)}
+/* PLACEHOLDER-IMG per card: real listing photo, alt = listing title,
+   loading="lazy", width/height set, aspect-ratio 4/3 */
+.badge{position:absolute;top:9px;left:9px;font-size:.5rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--green-900);color:#d6f0a8}
+.badge.h{background:var(--hl);color:#3a2d00}
+.fav{position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.62rem;color:var(--green-700)}
+.loc{position:absolute;bottom:8px;right:8px;font-size:.5rem;background:rgba(20,25,18,.72);color:#fff;border-radius:999px;padding:3px 8px}
+.card .body{padding:10px 12px 12px}
+.card h3{font-size:.76rem;line-height:1.3;font-weight:800;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin:6px 0 8px}
+.pills span{font-size:.5rem;background:var(--cream);border-radius:5px;padding:2px 7px;color:#7a7462}
+.pl{font-size:.48rem;letter-spacing:.12em;text-transform:uppercase;color:#a7a28f}
+.pr{display:flex;justify-content:space-between;align-items:center}
+.price{font-weight:800;color:var(--green-700);font-size:.95rem}
+.det{font-size:.6rem;font-weight:700;color:var(--green-700)}
+.more{text-align:center;margin:22px 0 4px}
+.pag{text-align:center;font-size:.68rem;color:var(--muted);margin-top:8px}
+.pag a{color:var(--green-700);font-weight:700}
+
+/* popular searches */
+.pop{background:#fff;border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:34px}
+.pop h2{font-size:1rem;font-weight:800;color:var(--green-800);margin-top:4px}
+.pop ul{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pop a{display:inline-block;background:var(--cream);border-radius:999px;padding:6px 12px;font-size:.66rem;font-weight:600;color:var(--green-800)}
+
+/* SEO text card (design) */
+.seo{background:var(--cream);border:1px solid var(--line);border-radius:22px;padding:30px 30px 26px;margin-top:30px}
+.seo h2{font-size:1.15rem;font-weight:800;color:var(--green-700);letter-spacing:-.01em}
+.seo .lead{font-size:.74rem;font-weight:700;color:var(--green-700);margin:8px 0 10px}
+.seo h3{font-size:.84rem;font-weight:800;color:var(--green-800);margin:16px 0 4px}
+.seo p{font-size:.72rem;color:#5b6155;margin-bottom:6px}
+.seo a{color:var(--green-700);font-weight:600}
+
+/* trust strip */
+.trust{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;border:1px dashed #e0d7c2;border-radius:14px;padding:12px 16px;margin-top:18px;font-size:.68rem}
+.trust b{color:var(--green-700)}
+
+/* guides */
+.guides{margin-top:44px}
+.guides h2,.faq h2,.more-cats h2{font-weight:800;color:var(--green-700);letter-spacing:-.02em}
+.guides h2{font-size:1.3rem;margin-top:4px}
+.g-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.g-card{background:#fff;border:1px solid #f1ece1;border-radius:14px;padding:16px}
+.g-card .t{font-size:.52rem;font-weight:800;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.g-card h3{font-size:.78rem;font-weight:800;line-height:1.35;margin:6px 0}
+.g-card span{font-size:.6rem;color:var(--muted)}
+
+/* sell band */
+.sell{background:linear-gradient(120deg,var(--green-900),var(--green-700));border-radius:22px;color:#fff;padding:28px 30px;margin-top:40px;display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap}
+.sell h2{font-size:1.25rem;font-weight:800;margin-top:4px}
+.sell p{font-size:.74rem;color:#cfe3cb;margin-top:4px;max-width:440px}
+.sell .acts{display:flex;gap:10px;flex-wrap:wrap}
+
+/* FAQ (design) */
+.faq{text-align:center;margin-top:64px}
+.faq h2{font-size:clamp(1.6rem,3vw,2.15rem);line-height:1.1;margin-top:8px}
+.faq .sub{font-size:.72rem;color:var(--muted);margin:8px 0 22px}
+.faq .list{max-width:580px;margin:0 auto;text-align:left}
+.faq details{background:#fff;border:1px solid #efe9dc;border-radius:12px;margin-bottom:10px;padding:16px 16px}
+.faq details[open]{border-color:#e9cf96}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary h3{font-size:.78rem;font-weight:800;color:var(--green-700)}
+.faq summary::after{content:"⌄";width:20px;height:20px;border-radius:50%;background:var(--cream);color:var(--green-700);font-size:.7rem;display:flex;align-items:center;justify-content:center;flex:none}
+.faq details[open] summary::after{content:"⌃"}
+.faq details p{font-size:.68rem;color:#646b5d;margin-top:12px;padding-left:10px}
+
+/* other categories (design) */
+.more-cats{text-align:center;margin-top:64px;padding-bottom:56px}
+.more-cats h2{font-size:clamp(1.6rem,3vw,2.15rem);margin-top:8px}
+.more-cats .sub{font-size:.76rem;color:var(--muted);max-width:420px;margin:8px auto 22px}
+.mc-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px;max-width:1000px;margin:0 auto;padding:0 20px}
+.mc-grid a{background:#fff;border:1px solid #ece6d8;border-radius:10px;padding:14px 6px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:.56rem;font-weight:700;color:var(--ink);text-align:center}
+.mc-grid .ic{width:26px;height:26px;border-radius:8px;background:#EAF3E6;color:var(--green-700);display:flex;align-items:center;justify-content:center}
+.mc-grid svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+
+/* footer (design) */
+footer{background:linear-gradient(180deg,#f6f1e6,#efe7d6);padding:42px 0 18px;font-size:.66rem;color:#5d6457;border-top:1px solid #ece4d3}
+.f-intro{background:#fff;border:1px solid #eee6d6;border-radius:14px;padding:14px 18px;text-align:center;font-size:.64rem;max-width:860px;margin:0 auto}
+.f-intro strong{color:var(--green-700)}
+.f-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr 1fr;gap:24px;max-width:860px;margin:30px auto 0}
+.f-grid .ft{font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:var(--green-700);font-weight:800;margin-bottom:10px}
+.f-grid ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.f-grid a:hover{color:var(--green-700)}
+.f-bottom{max-width:860px;margin:30px auto 0;border-top:1px solid #e4dccb;padding-top:12px;display:flex;justify-content:space-between;align-items:center;font-size:.56rem}
+.soc{display:flex;gap:8px}
+.soc a{width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid #e1d8c5;display:flex;align-items:center;justify-content:center;font-size:.55rem;color:var(--green-700)}
+.calc-fab{position:fixed;right:22px;bottom:22px;display:flex;align-items:center;gap:8px;z-index:40}
+.calc-fab span{background:var(--green-900);color:#fff;font-size:.5rem;font-weight:800;letter-spacing:.06em;padding:6px 10px;border-radius:999px}
+.calc-fab i{width:38px;height:38px;border-radius:50%;background:var(--green-700);color:#fff;display:flex;align-items:center;justify-content:center;font-style:normal;box-shadow:0 6px 14px rgba(0,0,0,.2)}
+
+@media(max-width:860px){.grid{grid-template-columns:repeat(2,1fr)}.g-grid{grid-template-columns:1fr}.mc-grid{grid-template-columns:repeat(4,1fr)}.f-grid{grid-template-columns:1fr 1fr}.nav ul{display:none}.hero{margin:10px 12px 0;border-radius:26px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.mc-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER (shared component, as on testing build) ============ -->
+<!-- DEV: keep the live hrefs of the shared header. Labels as in the design. -->
+<header>
+  <div class="nav">
+    <a class="logo" href="/" aria-label="Campuna Startseite"><span class="mark" aria-hidden="true">A/</span><span>campuna<small>DEIN CAMPING-MARKTPLATZ</small></span></a>
+    <ul>
+      <li><a href="/">Startseite</a></li>
+      <li><a href="/kategorien">Kategorien</a></li>
+      <li><a href="/ueber-campuna">Über uns</a></li>
+      <li><a href="/inserate">Zum Stöbern</a></li>
+      <li><a href="/anbieter">Entdecke</a></li>
+      <li><a href="/ratgeber">Ratgeber</a></li>
+    </ul>
+    <a class="btn btn-green" href="/login">👤 Einloggen</a>
+  </div>
+</header>
+
+<main>
+
+<!-- PLACEHOLDER-IMG: hero photo, alt="Tiny House aus Holz auf Rädern in einer Wiese" -->
+<section class="hero" aria-labelledby="kat-h1">
+  <div class="in">
+    <span class="kicker">Kategorie • Tiny Houses</span>
+    <h1 id="kat-h1">Tiny Houses und Mobilheime kaufen und verkaufen</h1>
+    <p>Tiny Houses neu und gebraucht, auf Rädern oder fest gebaut, dazu Mobilheime, Chalets und Bauwagen von privaten und gewerblichen Anbietern in ganz Deutschland. Finde dein kleines Zuhause oder inseriere kostenlos auf Campuna.</p>
+  </div>
+</section>
+
+<div class="wrap">
+
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">⌂ Startseite</a> › <a href="/inserate">Inserate</a> › <strong>Tiny Houses</strong>
+  </nav>
+
+  <!-- ============ CHIPS (testing 3 + Tiny Houses auf Rädern) ============ -->
+  <ul class="chips" aria-label="Unterkategorien">
+    <li><a class="on" aria-current="page">Alle (4)</a></li>
+    <li><a href="/kategorie/tiny-houses/tiny-houses">Tiny Houses</a></li>
+    <li><a href="/kategorie/tiny-houses/tiny-houses-auf-raedern">Tiny Houses auf Rädern</a></li>
+    <li><a href="/kategorie/tiny-houses/mobilheime">Mobilheime</a></li>
+    <li><a href="/kategorie/tiny-houses/bauwagen">Bauwagen</a></li>
+  </ul>
+
+  <h2 class="sr-only">Aktuelle Angebote: Tiny Houses und Mobilheime</h2>
+  <div class="res-head">
+    <span class="count">4 Inserate in dieser Kategorie</span>
+    <label class="sr-only" for="sort">Sortierung</label>
+    <select id="sort" class="sort">
+      <option>Neueste zuerst</option>
+      <option>Preis aufsteigend</option>
+      <option>Preis absteigend</option>
+    </select>
+  </div>
+
+  <!-- DEV: SSR grid. Label "Kaufpreis". Pills: condition + type, plus "Ganzjährig bewohnbar" /
+       "Winterfest" only when the listing has that attribute set. German price format. -->
+  <div class="grid">
+    <article class="card"><a href="/inserat/tiny-house-flexibel-modern-vielseitig">
+      <div class="ph "><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Gelnhausen</span></div>
+      <div class="body"><h3>Tiny House: flexibel, modern und vielseitig</h3>
+        <div class="pills"><span>Neu</span><span>Tiny House auf Rädern</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">52.000 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/tiny-house-hochwertig-ganzjaehrig">
+      <div class="ph b"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Gelnhausen</span></div>
+      <div class="body"><h3>Tiny House: hochwertig, modern und ganzjährig bewohnbar</h3>
+        <div class="pills"><span>Neu</span><span>Ganzjährig bewohnbar</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">65.000 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/tiny-house-4-6-personen-laerche-fichte">
+      <div class="ph c"><span class="badge">Gewerblich</span><span class="fav">♡</span><span class="loc">Gelnhausen</span></div>
+      <div class="body"><h3>Tiny House für 4 bis 6 Personen aus Lärche und Fichte</h3>
+        <div class="pills"><span>Neu</span><span>Tiny House auf Rädern</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">55.000 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/mobilheim-campingplatz-imbrock">
+      <div class="ph b"><span class="badge">Privat</span><span class="fav">♡</span><span class="loc">Soltau, Niedersachsen</span></div>
+      <div class="body"><h3>Mobilheim auf dem Campingplatz Imbrock</h3>
+        <div class="pills"><span>Wie neu</span><span>Mobilheim</span></div>
+        <p class="pl">Kaufpreis</p><div class="pr"><span class="price">65.000 €</span><span class="det">Details →</span></div></div></a></article>
+  </div>
+
+  <div class="more"><a class="btn btn-green" href="/kategorie/tiny-houses?seite=2">Weitere Angebote laden</a></div>
+  <p class="pag">Oder blättern: <a href="/kategorie/tiny-houses?seite=2">Seite 2 ansehen →</a></p>
+
+  <!-- ============ BELIEBTE SUCHEN (show a chip only when its page is live) ============ -->
+  <section class="pop" aria-labelledby="pop-h">
+    <span class="kicker">Beliebte Suchen</span>
+    <h2 id="pop-h">Beliebt bei Tiny Houses und Mobilheimen</h2>
+    <ul>
+      <li><a href="/kategorie/tiny-houses/tiny-houses-auf-raedern">Tiny House auf Rädern</a></li>
+      <li><a href="/kategorie/tiny-houses/gebraucht">Tiny House gebraucht</a></li>
+      <li><a href="/kategorie/tiny-houses/ganzjaehrig-bewohnbar">Tiny House ganzjährig bewohnbar</a></li>
+      <li><a href="/kategorie/tiny-houses/mit-grundstueck">Tiny House mit Grundstück</a></li>
+      <li><a href="/kategorie/tiny-houses/mobilheime">Mobilheim kaufen</a></li>
+      <li><a href="/kategorie/tiny-houses/mobilheime-gebraucht">Mobilheim gebraucht</a></li>
+      <li><a href="/kategorie/tiny-houses/mobilheim-campingplatz">Mobilheim auf dem Campingplatz</a></li>
+      <li><a href="/kategorie/tiny-houses/mobilheim-winterfest">Mobilheim winterfest</a></li>
+      <li><a href="/kategorie/tiny-houses/bauwagen">Bauwagen</a></li>
+    </ul>
+  </section>
+
+  <!-- ============ SEO TEXT CARD (5 real H3s) ============ -->
+  <section class="seo" aria-labelledby="seo-h">
+    <h2 id="seo-h">Tiny Houses und Mobilheime auf Campuna</h2>
+    <p class="lead">Campuna ist dein Camping-Marktplatz für Tiny Houses, Mobilheime und Bauwagen. Hier findest du neue und gebrauchte Modelle aus ganz Deutschland, von privat und direkt vom Hersteller.</p>
+    <p>Kleiner wohnen, näher an der Natur sein oder einen festen Rückzugsort am Wochenende haben: Tiny Houses und Mobilheime erfüllen viele Wünsche. Auf Campuna bieten Hersteller, Händler und Privatleute ihre Häuser direkt an. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du den passenden <a href="/kategorie/campingplaetze-stellplaetze/dauercampingplaetze">Dauercampingplatz</a>, <a href="/kategorie/ausruestung-und-zubehoer">Ausstattung</a> oder <a href="/kategorie/dienstleistungen/transport">Transport</a> gleich mit.</p>
+
+    <h3>Tiny House kaufen: auf Rädern oder fest gebaut</h3>
+    <p>Ein <a href="/kategorie/tiny-houses/tiny-houses-auf-raedern">Tiny House auf Rädern</a> steht auf einem Trailer und lässt sich umsetzen, ein fest gebautes Modell bleibt dauerhaft an seinem Standort. Beliebt sind Holzbauweisen aus Lärche oder Fichte, gute Dämmung für das ganze Jahr und clevere Grundrisse mit Schlafebene. Achte im Inserat auf Wohnfläche, Gewicht, Dämmung, Heizung und Anschlüsse für Wasser und Strom.</p>
+
+    <h3>Was kostet ein Tiny House?</h3>
+    <p>Ein Tiny House kostet in der Regel zwischen 20.000 und 100.000 Euro, je nach Größe, Bauweise und Ausstattung. Dazu kommen Grundstück oder Stellplatz, Erschließung, Transport und Genehmigung. <a href="/kategorie/tiny-houses/gebraucht">Gebrauchte Tiny Houses</a> und <a href="/kategorie/tiny-houses/mobilheime-gebraucht">gebrauchte Mobilheime</a> sind oft deutlich günstiger. Auf Campuna vergleichst du neue und gebrauchte Angebote direkt.</p>
+
+    <h3>Baugenehmigung und Standort</h3>
+    <p>Wer dauerhaft in einem Tiny House wohnen will, braucht in der Regel eine Baugenehmigung, auch für ein Modell auf Rädern. Das Grundstück muss erschlossen sein und der Bebauungsplan muss die Nutzung erlauben. Für Dauerwohnen gelten zusätzlich Anforderungen an Dämmung und Heizung. Kläre den Standort deshalb vor dem Kauf mit dem Bauamt deiner Gemeinde.</p>
+
+    <h3>Mobilheime auf Campingplatz und Ferienpark</h3>
+    <p><a href="/kategorie/tiny-houses/mobilheime">Mobilheime</a> sind größer als die meisten Tiny Houses und stehen meist auf einem Campingplatz oder in einem Ferienpark. Viele Inserate auf Campuna verbinden das Mobilheim mit einem festen Platz. Kläre vor dem Kauf mit dem Betreiber, ob du den Platz übernehmen darfst. Ein Erstwohnsitz ist auf Campingplätzen in Deutschland in der Regel nicht erlaubt.</p>
+
+    <h3>Tiny House oder Mobilheim verkaufen</h3>
+    <p>Du willst dein Tiny House oder Mobilheim verkaufen? Auf Campuna inserierst du privat kostenlos, ohne Provision. Zeig Fotos von innen und außen und nenne Wohnfläche, Baujahr, Dämmung und Standort. Hersteller und Händler präsentieren ihre Modelle mit einem eigenen <a href="/abo">Anbieterprofil</a>. <a href="/inserat-erstellen">Jetzt kostenlos inserieren</a>.</p>
+  </section>
+
+  <div class="trust">
+    <span>✓ <b>Direkter Kontakt</b> zu Herstellern und Privatverkäufern</span>
+    <span>✓ <b>Private Inserate kostenlos</b>, ohne Provision</span>
+    <span>✓ <b>Tipps für sicheres Handeln:</b> <a href="/sicher-handeln" style="color:var(--green-700);font-weight:700">Sicher handeln lesen</a></span>
+  </div>
+
+  <section class="guides" aria-labelledby="guides-h">
+    <span class="kicker">Ratgeber</span>
+    <h2 id="guides-h">Wissen rund um Tiny Houses und Mobilheime</h2>
+    <div class="g-grid">
+      <a class="g-card" href="/ratgeber/tiny-house-kaufen"><span class="t">Kaufberatung</span><h3>Tiny House kaufen: Kosten, Baugenehmigung und Standort</h3><span>Tiny House &amp; Mobilheim · 9 Min.</span></a>
+      <a class="g-card" href="/ratgeber/tiny-house-oder-mobilheim"><span class="t">Vergleich</span><h3>Tiny House oder Mobilheim: Was passt zu dir?</h3><span>Tiny House &amp; Mobilheim · 6 Min.</span></a>
+      <a class="g-card" href="/ratgeber/mobilheim-campingplatz-kaufen"><span class="t">Ratgeber</span><h3>Mobilheim auf dem Campingplatz kaufen: Das musst du wissen</h3><span>Tiny House &amp; Mobilheim · 7 Min.</span></a>
+    </div>
+  </section>
+
+  <section class="sell" aria-labelledby="sell-h">
+    <div>
+      <span class="kicker" style="color:var(--hl)">Verkaufen</span>
+      <h2 id="sell-h">Du willst dein Tiny House oder Mobilheim verkaufen?</h2>
+      <p>Private Inserate sind kostenlos und ohne Provision. Hersteller und Händler präsentieren ihre Modelle mit einem Anbieterprofil.</p>
+    </div>
+    <div class="acts">
+      <a class="btn btn-gold" href="/inserat-erstellen">Kostenlos inserieren →</a>
+      <a class="btn btn-ghost" href="/abo">Für Hersteller</a>
+    </div>
+  </section>
+
+</div>
+
+<section class="faq" aria-labelledby="faq-h">
+  <div class="wrap">
+    <span class="kicker">Häufig gestellte Fragen</span>
+    <h2 id="faq-h">Fragen &amp; Antworten zu Tiny Houses und Mobilheimen</h2>
+    <p class="sub">Wichtige Informationen zu Kosten, Genehmigung und Transport, kurz beantwortet.</p>
+    <div class="list">
+      <details open>
+        <summary><h3>Sind die angebotenen Tiny Houses ganzjährig bewohnbar?</h3></summary>
+        <p>Viele Modelle sind winterfest gedämmt und haben eine Heizung, aber nicht alle. Achte im Inserat auf Angaben zu Dämmung, Heizung und frostsicheren Wasserleitungen. Ob du dauerhaft darin wohnen darfst, hängt außerdem vom Standort und der Baugenehmigung ab.</p>
+      </details>
+      <details>
+        <summary><h3>Brauche ich für ein Tiny House eine Baugenehmigung?</h3></summary>
+        <p>In den meisten Fällen ja. Sobald ein Tiny House dauerhaft an einem Ort steht und zum Wohnen genutzt wird, gilt es baurechtlich als Gebäude, auch wenn es Räder hat. Das Grundstück muss erschlossen sein und der Bebauungsplan muss die Nutzung erlauben. Frag vor dem Kauf beim Bauamt deiner Gemeinde nach.</p>
+      </details>
+      <details>
+        <summary><h3>Was kostet ein Tiny House?</h3></summary>
+        <p>In der Regel zwischen 20.000 und 100.000 Euro, je nach Größe, Bauweise und Ausstattung. Dazu kommen Grundstück oder Stellplatz, Erschließung, Transport und Genehmigung. Gebrauchte Tiny Houses und Mobilheime sind oft deutlich günstiger, auf Campuna vergleichst du neue und gebrauchte Modelle direkt.</p>
+      </details>
+      <details>
+        <summary><h3>Darf ein Tiny House auf Rädern auf die Straße?</h3></summary>
+        <p>Ja, wenn es als Anhänger zugelassen ist und die Grenzen einhält: höchstens 2,55 Meter breit und 4 Meter hoch. Bis 3,5 Tonnen Gesamtgewicht reicht für das Gespann meist der Führerschein Klasse BE. Schwerere Modelle brauchen die Klasse C1E oder werden von einer Spedition transportiert.</p>
+      </details>
+      <details>
+        <summary><h3>Was ist der Unterschied zwischen Tiny House und Mobilheim?</h3></summary>
+        <p>Ein Tiny House ist meist kleiner, oft auf einem Trailer gebaut und für ein eigenes Grundstück gedacht. Ein Mobilheim ist größer und breiter, wird per Tieflader geliefert und steht meist auf einem Campingplatz oder in einem Ferienpark. Dort dient es in der Regel der Freizeit und nicht als Erstwohnsitz.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="more-cats" aria-labelledby="mc-h">
+  <span class="kicker">Entdecken</span>
+  <h2 id="mc-h">Weitere Kategorien entdecken</h2>
+  <p class="sub">Von Fahrzeugen über Ausrüstung und Stellplätze bis zu Vermietung und Services: neun Kategorien, ein Marktplatz.</p>
+  <div class="mc-grid">
+    <a href="/kategorie/fahrzeuge"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 16V8h13l4 4v4M3 16h2m4 0h6m4 0h2"/></svg></span>Wohnmobile &amp; Camper</a>
+    <a href="/kategorie/ausruestung-und-zubehoer"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 8h12v12H6zM9 8V6a3 3 0 0 1 6 0v2"/></svg></span>Camping-Zubehör</a>
+    <a href="/kategorie/zelte-und-dachzelte"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 4 3 20h18L12 4zm0 7v9"/></svg></span>Zelte &amp; Dachzelte</a>
+    <a href="/kategorie/fahrraeder-traeger"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm12 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 14l4-7h5l3 7"/></svg></span>Fahrräder &amp; Träger</a>
+    <a href="/kategorie/campingplaetze-stellplaetze"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s7-5 7-11a7 7 0 1 0-14 0c0 6 7 11 7 11z"/></svg></span>Stellplätze &amp; Campingplätze</a>
+    <a href="/kategorie/dienstleistungen"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 7a4 4 0 1 0-5.7 3.6L4 15v4h4l4.4-4.3A4 4 0 0 0 14 7z"/></svg></span>Camping-Services</a>
+    <a href="/kategorie/mieten-vermieten"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 8a4 4 0 1 1 4 4l-8 8H6v-4l8-8z"/></svg></span>Mieten &amp; Vermieten</a>
+    <a href="/kategorie/boote-wassersport"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 17h16l-2 3H6l-2-3zm8-13v10M12 6l6 8H6l6-8z"/></svg></span>Boote &amp; Wassersport</a>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER (design; intro line = new positioning 03.10.2026) ============ -->
+<!-- DEV: column titles are NOT headings (use <p class="ft">). Categories: Wohnmobile & Camper first. -->
+<footer>
+  <div class="wide">
+    <p class="f-intro"><strong>Campuna, dein Camping-Marktplatz.</strong> Campuna ist Deutschlands Marktplatz für die ganze Camping-Welt: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung, Camping-Services und gewerbliche Anbieter. Kaufen, verkaufen und entdecken an einem Ort.</p>
+    <nav class="f-grid" aria-label="Footer Navigation">
+      <div>
+        <a class="logo" href="/"><span class="mark" aria-hidden="true">A/</span><span>campuna<small>DEIN CAMPING-MARKTPLATZ</small></span></a>
+        <p style="margin-top:10px">Von Campern für Camper. Der spezialisierte Marktplatz für die deutschsprachige Camping-Community.</p>
+        <p style="margin-top:10px">Campuna · Erfurt, Thüringen, Deutschland<br>E-Mail: <a href="mailto:info@campuna.de" style="text-decoration:underline">info@campuna.de</a></p>
+      </div>
+      <div><p class="ft">Navigation</p>
+        <ul>
+          <li><a href="/">Startseite</a></li>
+          <li><a href="/inserate">Alle Angebote</a></li>
+          <li><a href="/anbieter">Anbieter</a></li>
+          <li><a href="/abo">Campuna Business</a></li>
+          <li><a href="/ueber-campuna">Über uns</a></li>
+          <li><a href="/so-funktioniert-campuna">So funktioniert's</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Kategorien</p>
+        <ul>
+          <li><a href="/kategorie/fahrzeuge">Wohnmobile &amp; Camper</a></li>
+          <li><a href="/kategorie/ausruestung-und-zubehoer">Camping-Zubehör</a></li>
+          <li><a href="/kategorie/zelte-und-dachzelte">Zelte &amp; Dachzelte</a></li>
+          <li><a href="/kategorie/fahrraeder-traeger">Fahrräder &amp; Träger</a></li>
+          <li><a href="/kategorie/campingplaetze-stellplaetze">Stellplätze &amp; Campingplätze</a></li>
+          <li><a href="/kategorie/dienstleistungen">Camping-Services</a></li>
+          <li><a href="/kategorie/tiny-houses">Tiny Houses</a></li>
+          <li><a href="/kategorie/mieten-vermieten">Mieten &amp; Vermieten</a></li>
+          <li><a href="/kategorie/boote-wassersport">Boote &amp; Wassersport</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Support &amp; Tools</p>
+        <ul>
+          <li><a href="/faq-hilfe">Hilfe &amp; FAQ</a></li>
+          <li><a href="/zuladungsrechner">Zuladungsrechner</a></li>
+          <li><a href="/reisekostenrechner">Reisebudget-Rechner</a></li>
+          <li><a href="/kontakt">Kontakt &amp; Feedback</a></li>
+          <li><a href="/sicher-handeln">Sicher handeln</a></li>
+        </ul>
+      </div>
+      <div><p class="ft">Rechtliches</p>
+        <ul>
+          <li><a href="/agb">AGB</a></li>
+          <li><a href="/nutzungsbedingungen">Nutzungsbedingungen</a></li>
+          <li><a href="/datenschutz">Datenschutz</a></li>
+          <li><a href="/impressum">Impressum</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="f-bottom">
+      <span>© 2026 Campuna®. Alle Rechte vorbehalten.</span>
+      <span class="soc"><a href="#" aria-label="Instagram">IG</a><a href="#" aria-label="TikTok">TT</a><a href="#" aria-label="YouTube">YT</a><a href="#" aria-label="Facebook">FB</a></span>
+    </div>
+  </div>
+</footer>
+
+<!-- Floating calculator button (design). DEV: real link to the calculator page. -->
+<a class="calc-fab" href="/zuladungsrechner" aria-label="Zuladungsrechner öffnen"><span>BERECHNEN</span><i aria-hidden="true">▦</i></a>
+
+</body>
+</html>

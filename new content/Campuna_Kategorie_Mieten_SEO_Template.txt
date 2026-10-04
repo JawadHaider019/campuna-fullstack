@@ -1,0 +1,857 @@
+﻿
+
+I N T E L I T U N E
+
+CAMPUNA
+
+Category Page SEO Template: Mieten & Vermieten
+
+https://campuna.de/kategorie/mieten-vermieten
+
+Field
+
+Value
+
+Page
+
+Category PLP Mieten & Vermieten
+
+Positioning
+
+Campuna is Germany&apos;s marketplace for the complete camping ecosystem; rentals are part of it. SEO investment in this phase stays on buy and sell: this page is built clean and targets only the winnable rental niche.
+
+Content language
+
+German (de-DE), du-form, no em/en dashes in body copy
+
+Target keywords
+
+wohnwagen mieten (33,100, KD 25) · wohnmobil mieten privat (1,900, KD 14) · wohnwagen vermieten (1,300, KD 33) · wohnwagen mieten privat (480, KD 28)
+
+Not targeted head-on
+
+wohnmobil mieten (90,500) · camper mieten (40,500): owned by rental platforms with far stronger domains
+
+Sources
+
+Live Bubble page (8 listings) · testing.campuna.de/kategorie/mieten-vermieten · Ubersuggest DE (03.10.2026) · master keyword sheet (archived rental sheet)
+
+Companion files
+
+campuna-kategorie-mieten-template.html · preview_kategorie_mieten.png
+
+Prepared
+
+Intelitune, 03.10.2026
+
+Instructions in English. Highlighted blocks are final German website copy: copy 1:1, do not translate or rephrase.
+
+
+0. Strategy and structure analysis
+
+How this page fits the strategy
+
+The client positions Campuna as the marketplace for the complete camping ecosystem, and rentals are part of that. The SEO investment decided for this phase is buy and sell; the 10,771 rental keywords (328k volume) are archived, not deleted. So this page is built SEO-clean like every other category, but without a rental content programme. It focuses on what Campuna can realistically win:
+
+
+Wohnwagen rental: "wohnwagen mieten" 33,100/mo at KD 25, and 4 of the 8 live listings are caravans (a provider in Erfurt rents Eriba, Fendt, Hobby and Kleox).
+
+
+"Privat" long tails: "wohnmobil mieten privat" 1,900 at KD 14, "wohnwagen mieten privat" 480. Private rental is Campuna&apos;s marketplace strength.
+
+
+Supply side: "wohnwagen vermieten" 1,300, "wohnmobil vermieten" 720. Owners who rent out are also future sellers.
+
+
+Bridge to buying: the SEO text and FAQ 5 answer "mieten oder kaufen" and link to Wohnmobile & Camper (and the existing post wohnwagen-mieten-oder-kaufen).
+
+If the client later activates rentals as an SEO focus, this page is ready: the archived keyword sheet, sub-pages from Beliebte Suchen and rental guides can be switched on without restructuring.
+
+Changes vs the testing build
+
+A. Title and H1
+
+Title "Mieten & Vermieten: Camper & mehr" becomes "Wohnwagen & Wohnmobil mieten oder vermieten". H1 "Mieten und Vermieten auf Campuna" becomes "Wohnwagen und Wohnmobile mieten und vermieten". Both now carry the search terms.
+
+B. Chips
+
+"Wohnwagen mieten" first (inventory + winnable keyword), "Camper mieten" added. Testing chips Wohnmobil mieten and Zubehör mieten stay.
+
+C. Price unit
+
+Live shows "Preis 79,00 €" with no unit. price_type field: "Preis pro Tag", "Preis pro Nacht", "Preis pro Woche".
+
+D. Pills
+
+Vehicle type (Wohnwagen, Mini-Wohnwagen, Wohnmobil, Campervan, Stellplatz mit Wohnwagen) instead of condition ("Like new" on rentals).
+
+E. Standard additions
+
+Sort, hidden H2, pagination fallback, Beliebte Suchen (8), SEO text ~320 words with 5 H3s, trust strip, Ratgeber, rental band "Für Vermietstationen", FAQ 1 → 5.
+
+Bugs to fix before launch
+
+#
+
+Issue
+
+Fix
+
+Priority
+
+1
+
+Title "Mieten & Vermieten: Camper & mehr | Campuna | Campuna"
+
+New title, stored without brand
+
+High
+
+2
+
+Server HTML "0 Inserate"; cards via JS
+
+Grid + count server-side
+
+Critical
+
+3
+
+Only 1 FAQ; no JSON-LD; chips without hrefs
+
+5 FAQs in DOM, 3 schema blocks, real <a href> chips
+
+High
+
+4
+
+Emoji "✨" in a live listing title (also in the old URL, flagged in the audit)
+
+Strip emoji from titles and slugs on save
+
+Medium
+
+5
+
+Price without unit; condition pills
+
+price_type + type pills
+
+High
+
+6
+
+"Fragen & Antworten zu Mieten & Vermieten"
+
+Dative label: "zur Miete und Vermietung"
+
+Medium
+
+7
+
+Rentals filed under Camping-Services (Vivaro, 9 Sitzer Bus, Carado T-447)
+
+Move here
+
+Medium
+
+
+1. Meta title + description (copy-paste)
+
+Title 53 chars, description 144 chars. Slug "mieten-vermieten" stays.
+
+<title>Wohnwagen & Wohnmobil mieten oder vermieten | Campuna</title>
+
+<meta name="description" content="Wohnwagen, Wohnmobile und Camper von privat und von Vermietstationen mieten oder dein eigenes Fahrzeug vermieten. Angebote aus ganz Deutschland.">
+
+<link rel="canonical" href="https://campuna.de/kategorie/mieten-vermieten">
+
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<meta property="og:title" content="Wohnwagen & Wohnmobil mieten oder vermieten | Campuna">
+
+<meta property="og:description" content="Wohnwagen, Wohnmobile und Camper von privat und von Vermietstationen mieten oder dein eigenes Fahrzeug vermieten.">
+
+<meta property="og:url" content="https://campuna.de/kategorie/mieten-vermieten">
+
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-mieten.jpg">
+
+<meta property="og:locale" content="de_DE">
+
+<meta name="twitter:card" content="summary_large_image">
+
+CMS title field (system appends " | Campuna"):
+
+Wohnwagen & Wohnmobil mieten oder vermieten
+
+H1:
+
+Wohnwagen und Wohnmobile mieten und vermieten
+
+
+2. Section-by-section build order + final German copy
+
+2.1 Hero
+
+Eyebrow: KATEGORIE • MIETEN & VERMIETEN
+
+H1: Wohnwagen und Wohnmobile mieten und vermieten
+
+Intro: Wohnwagen, Wohnmobile und Campervans von privaten Vermietern und Vermietstationen in ganz Deutschland, dazu Camping-Zubehör zum Mieten. Finde dein Fahrzeug für den nächsten Urlaub oder vermiete deins kostenlos auf Campuna.
+
+
+Hero <img> alt: "Gemieteter Wohnwagen mit Vorzelt auf einem Campingplatz".
+
+2.2 Breadcrumb
+
+Startseite › Inserate › Mieten & Vermieten
+
+2.3 Subcategory chips
+
+Chip
+
+URL (under /kategorie/mieten-vermieten)
+
+Search demand (DE/mo)
+
+Alle (Anzahl)
+
+current page
+
+category
+
+Wohnwagen mieten (first)
+
+/wohnwagen-mieten
+
+wohnwagen mieten 33,100 · KD 25
+
+Wohnmobil mieten
+
+/wohnmobil-mieten
+
+wohnmobil mieten 90,500 (platform-dominated)
+
+Camper mieten (NEW)
+
+/camper-mieten
+
+camper mieten 40,500 · KD 23 (platform-dominated)
+
+Zubehör mieten
+
+/zubehoer-mieten
+
+long tail
+
+2.4 Results header, grid, pagination
+
+Hidden H2: Aktuelle Angebote: Wohnwagen und Wohnmobile zur Miete
+
+Count: X Inserate in dieser Kategorie  ·  Sort: Neueste zuerst / Preis aufsteigend / Preis absteigend  ·  Button: Weitere Angebote laden  ·  Fallback: Oder blättern: Seite 2 ansehen
+
+2.5 Beliebte Suchen
+
+Kicker: BELIEBTE SUCHEN  ·  H2: Beliebt bei Miete und Vermietung
+
+Chip
+
+URL
+
+Keyword · vol · KD
+
+Wohnwagen mieten
+
+/wohnwagen-mieten
+
+wohnwagen mieten · 33,100 · 25
+
+Wohnwagen privat mieten
+
+/wohnwagen-mieten-privat
+
+wohnwagen mieten privat · 480 · 28
+
+Wohnwagen am Campingplatz mieten
+
+/wohnwagen-campingplatz
+
+wohnwagen mieten campingplatz · 2,400 · 11 (master, archived sheet)
+
+Wohnmobil privat mieten
+
+/wohnmobil-mieten-privat
+
+wohnmobil mieten privat · 1,900 · 14
+
+Camper mieten
+
+/camper-mieten
+
+camper mieten · 40,500 · 23
+
+Zubehör mieten
+
+/zubehoer-mieten
+
+long tail
+
+Wohnwagen vermieten
+
+/wohnwagen-vermieten
+
+wohnwagen vermieten · 1,300 · 33
+
+Wohnmobil vermieten
+
+/wohnmobil-vermieten
+
+wohnmobil vermieten · 720 · 39
+
+
+Sub-pages are optional in this phase. Show a chip only when its page is live; otherwise hide it.
+
+2.6 SEO text card (final German copy)
+
+H2: Wohnwagen und Wohnmobile auf Campuna mieten
+
+Campuna ist dein Camping-Marktplatz, auch für die Miete. Hier findest du Wohnwagen, Wohnmobile und Campervans von privaten Vermietern und Vermietstationen aus ganz Deutschland.
+
+Mieten ist der einfachste Weg, Camping auszuprobieren oder den Urlaub flexibel zu planen. Du kontaktierst Vermieter direkt und klärst Termin, Übergabe und Ausstattung persönlich. Und weil Campuna die ganze Camping-Welt an einem Ort bündelt, findest du den passenden Stellplatz, Zubehör und später vielleicht dein eigenes Wohnmobil gleich mit.
+
+H3: Wohnwagen mieten: von privat oder von der Vermietstation
+
+Ein Mietwohnwagen ist oft die günstigste Art, mit Familie oder Freunden zu campen. Vom kleinen Mini-Wohnwagen für das Festival bis zum Familienwohnwagen mit Etagenbetten ist alles dabei. Manche Vermieter stellen den Wohnwagen direkt auf einem Campingplatz bereit, dann brauchst du nicht einmal ein Zugfahrzeug.
+
+H3: Wohnmobil und Campervan mieten
+
+Mit einem Wohnmobil oder Campervan bist du ohne Gespann unterwegs und flexibel bei der Route. Private Vermieter bieten oft persönliche Übergaben und gut ausgestattete Fahrzeuge, Vermietstationen haben mehr Auswahl und feste Abläufe.
+
+H3: Darauf solltest du bei der Miete achten
+
+Prüfe Freikilometer, Kaution, Versicherung und Selbstbeteiligung und lass dir die Ausstattung bei der Übergabe zeigen. Für einen Wohnwagen brauchst du ein passendes Zugfahrzeug mit Anhängerkupplung und je nach Gewicht des Gespanns den Führerschein BE oder die Schlüsselzahl B96. Haltet Schäden in einem Übergabeprotokoll fest. Mehr Tipps findest du auf der Seite Sicher handeln.
+
+H3: Wohnmobil oder Wohnwagen vermieten
+
+Dein Fahrzeug steht die meiste Zeit des Jahres? Auf Campuna kannst du es privat vermieten und kostenlos inserieren. Kläre vorher die Versicherung für Selbstfahrervermietung, nutze einen schriftlichen Mietvertrag mit Kaution und gib die Einnahmen in der Steuererklärung an. Vermietstationen präsentieren ihre Flotte mit einem eigenen Anbieterprofil.
+
+H3: Mieten oder kaufen?
+
+Wer öfter als ein paar Wochen im Jahr campt, fährt mit einem eigenen Fahrzeug oft günstiger. Gebrauchte Wohnwagen und Wohnmobile findest du auf Campuna direkt von privat und vom Händler. Den Vergleich findest du im Ratgeber Wohnwagen mieten oder kaufen.
+
+2.7 Trust strip, Ratgeber, rental band
+
+✓ Direkter Kontakt zu privaten Vermietern und Vermietstationen  ·  ✓ Private Inserate kostenlos, ohne Provision  ·  ✓ Tipps für sicheres Handeln: Sicher handeln lesen
+
+Kicker: RATGEBER  ·  H2: Wissen rund um Miete und Vermietung  ·  1) Wohnwagen mieten oder kaufen: Was lohnt sich?  ·  2) Wohnwagen ziehen: Welcher Führerschein für welches Gespann?  ·  3) Wohnmobil privat vermieten: Versicherung, Vertrag und Steuern
+
+Kicker: VERMIETEN  ·  H2: Du willst dein Wohnmobil oder deinen Wohnwagen vermieten?  ·  Private Inserate sind kostenlos und ohne Provision. Vermietstationen präsentieren ihre Flotte mit einem Anbieterprofil.  ·  Buttons: Kostenlos inserieren · Für Vermietstationen (/abo)
+
+
+Guide 1 exists today (/post/wohnwagen-mieten-oder-kaufen → 301 to /ratgeber/wohnwagen-mieten-oder-kaufen). Guides 2 and 3 are not in the 60-blog plan (rental parked): show only live guides; until then fill the slots with Kaufberatung posts.
+
+2.8 FAQ (visible text = schema text)
+
+Kicker: HÄUFIG GESTELLTE FRAGEN  ·  H2: Fragen & Antworten zur Miete und Vermietung
+
+Subline: Wichtige Informationen zu Miete, Führerschein und Vermietung, kurz beantwortet.
+
+Q1: Was ist bei der Fahrzeugmiete wichtig?
+
+Achte auf Freikilometer, Höhe der Kaution, Versicherung und Selbstbeteiligung sowie auf die mitgelieferte Ausstattung wie Kabeltrommel, Auffahrkeile und Campingmöbel. Lass dir bei der Übergabe alles zeigen und haltet vorhandene Schäden gemeinsam in einem Übergabeprotokoll fest.
+
+Q2: Welchen Führerschein brauche ich für einen Mietwohnwagen?
+
+Das hängt vom Gewicht des Gespanns ab. Mit Klasse B darfst du einen Anhänger bis 750 kg ziehen oder ein Gespann bis 3,5 Tonnen Gesamtmasse fahren. Mit der Schlüsselzahl B96 sind bis 4,25 Tonnen erlaubt, mit Klasse BE Anhänger bis 3,5 Tonnen. Für Wohnmobile bis 3,5 Tonnen reicht Klasse B.
+
+Q3: Kann ich mein Wohnmobil privat vermieten?
+
+Ja, auf Campuna inserierst du dein Wohnmobil oder deinen Wohnwagen kostenlos. Kläre vorher mit deiner Versicherung, ob die Vermietung an Selbstfahrer abgedeckt ist, denn normale Policen schließen das oft aus. Nutze einen schriftlichen Mietvertrag mit Kaution und Übergabeprotokoll. Mieteinnahmen musst du in der Steuererklärung angeben.
+
+Q4: Was kostet es, einen Wohnwagen zu mieten?
+
+Der Preis hängt von Größe, Ausstattung und Saison ab und wird meist pro Tag oder pro Nacht berechnet. Kleine Wohnwagen sind günstiger als große Familienwohnwagen, Wohnmobile kosten meist deutlich mehr. Dazu kommen oft Kaution, Endreinigung und Gasflasche. Auf Campuna siehst du den Preis direkt in jedem Inserat.
+
+Q5: Wohnwagen mieten oder kaufen: Was lohnt sich?
+
+Wer nur ein- oder zweimal im Jahr unterwegs ist, fährt mit der Miete oft günstiger. Wer regelmäßig campt, spart mit einem eigenen Wohnwagen auf Dauer Mietkosten und ist flexibler. Gebrauchte Wohnwagen und Wohnmobile findest du auf Campuna in der Kategorie Wohnmobile & Camper.
+
+
+Q2 fact basis: Klasse B = trailer up to 750 kg or combination up to 3.5 t; B96 = combination up to 4.25 t; BE = trailer up to 3.5 t (German Fahrerlaubnisverordnung). Q3: standard motor insurance often excludes Selbstfahrervermietung; rental income is taxable. No price numbers in Q4 on purpose: rental prices change by season and provider.
+
+2.9 Weitere Kategorien + footer
+
+Same as all category pages (8 cards, Wohnmobile & Camper first; footer intro with the 03.10.2026 positioning).
+
+
+3. Keyword map
+
+Ubersuggest DE 03.10.2026. Ubersuggest shows low difficulty for "wohnmobil mieten" (16), but the SERP is held by rental platforms and fleets with much stronger domains (Semrush KD 32 in the master sheet). Treat the two heads as not targetable in this phase.
+
+Keyword
+
+Vol/mo · KD
+
+Placement
+
+wohnmobil mieten
+
+90,500 · 16 (Ubersuggest) / 32 (Semrush)
+
+H1, chip; not a ranking target
+
+camper mieten
+
+40,500 · 23
+
+Chip; not a ranking target
+
+wohnwagen mieten
+
+33,100 · 25
+
+Title (first), H1, chip, H3
+
+wohnwagen mieten campingplatz (master)
+
+2,400 · 11
+
+H3 link, Beliebte Suchen
+
+wohnmobil mieten privat
+
+1,900 · 14
+
+Beliebte Suchen, H3
+
+wohnwagen vermieten
+
+1,300 · 33
+
+Title (vermieten), H3, band
+
+wohnmobil vermieten
+
+720 · 39
+
+H3, FAQ Q3
+
+wohnwagen mieten privat
+
+480 · 28
+
+Beliebte Suchen
+
+
+4. Category page rules (same for all 9 categories)
+
+
+Grid, count, SEO text and every FAQ answer server-rendered.
+
+
+Canonical = clean category URL; sort/filter params canonicalise to it; ?seite=2+ self-canonical with "Seite 2" in the title.
+
+
+Chips and Beliebte Suchen = real <a href> links to live pages only.
+
+
+One H1; hidden H2 above the grid; card titles and FAQ questions H3; no headings in header or footer.
+
+
+BreadcrumbList + CollectionPage/ItemList + FAQPage. No Product schema. FAQ schema text = visible text.
+
+
+Sold, test and draft listings never render. Empty category stays indexable with message, CTA and SEO text.
+
+
+German labels; no emoji in titles or URLs; copy in du-form without em/en dashes.
+
+
+5. Schema markup (copy-paste JSON-LD)
+
+Extracted 1:1 from the HTML. ItemList items = listings rendered on the page. Rental stations get LocalBusiness on /anbieter/{name}.
+
+5.1 BreadcrumbList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "BreadcrumbList",
+
+  "itemListElement": [
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 1,
+
+      "name": "Startseite",
+
+      "item": "https://campuna.de/"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 2,
+
+      "name": "Inserate",
+
+      "item": "https://campuna.de/inserate"
+
+    },
+
+    {
+
+      "@type": "ListItem",
+
+      "position": 3,
+
+      "name": "Mieten & Vermieten",
+
+      "item": "https://campuna.de/kategorie/mieten-vermieten"
+
+    }
+
+  ]
+
+}
+
+5.2 CollectionPage + ItemList
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "CollectionPage",
+
+  "@id": "https://campuna.de/kategorie/mieten-vermieten#collection",
+
+  "url": "https://campuna.de/kategorie/mieten-vermieten",
+
+  "name": "Wohnwagen und Wohnmobile mieten und vermieten",
+
+  "inLanguage": "de-DE",
+
+  "isPartOf": {
+
+    "@id": "https://campuna.de/#website"
+
+  },
+
+  "about": {
+
+    "@id": "https://campuna.de/#organization"
+
+  },
+
+  "mainEntity": {
+
+    "@type": "ItemList",
+
+    "numberOfItems": 8,
+
+    "itemListElement": [
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 1,
+
+        "name": "Hymer Eriba Rockabilly Wohnwagen Vermietung",
+
+        "url": "https://campuna.de/inserat/hymer-eriba-rockabilly-vermietung"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 2,
+
+        "name": "Fendt Bianco Wohnwagen Vermietung",
+
+        "url": "https://campuna.de/inserat/fendt-bianco-wohnwagen-vermietung"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 3,
+
+        "name": "Hobby 545 KMF Wohnwagenvermietung",
+
+        "url": "https://campuna.de/inserat/hobby-545-kmf-wohnwagenvermietung"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 4,
+
+        "name": "Kleox Festival Wohnwagen",
+
+        "url": "https://campuna.de/inserat/kleox-festival-wohnwagen"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 5,
+
+        "name": "Camper mieten in Oberbayern",
+
+        "url": "https://campuna.de/inserat/camper-mieten-oberbayern"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 6,
+
+        "name": "Chausson 640 Titanium Wohnmobil mieten",
+
+        "url": "https://campuna.de/inserat/chausson-640-titanium-mieten"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 7,
+
+        "name": "Wohnmobil Camper mieten",
+
+        "url": "https://campuna.de/inserat/wohnmobil-camper-mieten-recke"
+
+      },
+
+      {
+
+        "@type": "ListItem",
+
+        "position": 8,
+
+        "name": "Idyllischer Stellplatz auf Rügen an der Ostsee",
+
+        "url": "https://campuna.de/inserat/idyllischer-stellplatz-ruegen-ostsee"
+
+      }
+
+    ]
+
+  }
+
+}
+
+5.3 FAQPage
+
+{
+
+  "@context": "https://schema.org",
+
+  "@type": "FAQPage",
+
+  "@id": "https://campuna.de/kategorie/mieten-vermieten#faq",
+
+  "mainEntity": [
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was ist bei der Fahrzeugmiete wichtig?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Achte auf Freikilometer, Höhe der Kaution, Versicherung und Selbstbeteiligung sowie auf die mitgelieferte Ausstattung wie Kabeltrommel, Auffahrkeile und Campingmöbel. Lass dir bei der Übergabe alles zeigen und haltet vorhandene Schäden gemeinsam in einem Übergabeprotokoll fest."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Welchen Führerschein brauche ich für einen Mietwohnwagen?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Das hängt vom Gewicht des Gespanns ab. Mit Klasse B darfst du einen Anhänger bis 750 kg ziehen oder ein Gespann bis 3,5 Tonnen Gesamtmasse fahren. Mit der Schlüsselzahl B96 sind bis 4,25 Tonnen erlaubt, mit Klasse BE Anhänger bis 3,5 Tonnen. Für Wohnmobile bis 3,5 Tonnen reicht Klasse B."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Kann ich mein Wohnmobil privat vermieten?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Ja, auf Campuna inserierst du dein Wohnmobil oder deinen Wohnwagen kostenlos. Kläre vorher mit deiner Versicherung, ob die Vermietung an Selbstfahrer abgedeckt ist, denn normale Policen schließen das oft aus. Nutze einen schriftlichen Mietvertrag mit Kaution und Übergabeprotokoll. Mieteinnahmen musst du in der Steuererklärung angeben."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Was kostet es, einen Wohnwagen zu mieten?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Der Preis hängt von Größe, Ausstattung und Saison ab und wird meist pro Tag oder pro Nacht berechnet. Kleine Wohnwagen sind günstiger als große Familienwohnwagen, Wohnmobile kosten meist deutlich mehr. Dazu kommen oft Kaution, Endreinigung und Gasflasche. Auf Campuna siehst du den Preis direkt in jedem Inserat."
+
+      }
+
+    },
+
+    {
+
+      "@type": "Question",
+
+      "name": "Wohnwagen mieten oder kaufen: Was lohnt sich?",
+
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+
+        "text": "Wer nur ein- oder zweimal im Jahr unterwegs ist, fährt mit der Miete oft günstiger. Wer regelmäßig campt, spart mit einem eigenen Wohnwagen auf Dauer Mietkosten und ist flexibler. Gebrauchte Wohnwagen und Wohnmobile findest du auf Campuna in der Kategorie Wohnmobile & Camper."
+
+      }
+
+    }
+
+  ]
+
+}
+
+
+6. URL and category fit
+
+Old (Bubble)
+
+Testing
+
+Recommended
+
+/category/mieten-vermieten
+
+/kategorie/mieten-vermieten
+
+keep /kategorie/mieten-vermieten
+
+
+301 the old Bubble URL. Sub-URLs /kategorie/mieten-vermieten/{typ}.
+
+
+Receives the rental listings filed under Camping-Services. The listing "Idyllischer Stellplatz auf Rügen" (25 € per night) is a pitch with caravan: it can stay here (rental) or move to Stellplätze; one category only.
+
+
+7. CMS fields for this category
+
+Field
+
+Value
+
+meta_title (without brand)
+
+Wohnwagen & Wohnmobil mieten oder vermieten
+
+meta_description
+
+Wohnwagen, Wohnmobile und Camper von privat und von Vermietstationen mieten oder dein eigenes Fahrzeug vermieten. Angebote aus ganz Deutschland.
+
+eyebrow
+
+Kategorie • Mieten & Vermieten
+
+h1
+
+Wohnwagen und Wohnmobile mieten und vermieten
+
+hero_intro
+
+Wohnwagen, Wohnmobile und Campervans von privaten Vermietern und Vermietstationen in ganz Deutschland, dazu Camping-Zubehör zum Mieten. Finde dein Fahrzeug für den nächsten Urlaub oder vermiete deins kostenlos auf Campuna.
+
+label_dative (FAQ heading)
+
+zur Miete und Vermietung
+
+popular_title
+
+Beliebt bei Miete und Vermietung
+
+price_label
+
+from price_type (Preis pro Tag / pro Nacht / pro Woche)
+
+pill_source
+
+vehicle type
+
+seo_text / faq / popular_searches
+
+Sections 2.6 / 2.8 / 2.5
+
+guide_tag
+
+Mieten
+
+sell_headline / sell_target
+
+Du willst dein Wohnmobil oder deinen Wohnwagen vermieten? / /inserat-erstellen + /abo
+
+
+8. Pre-launch checklist
+
+
+Title 53, description 144, one H1, no skipped heading levels.
+
+
+View source shows cards, real count, SEO text and all 5 FAQ answers.
+
+
+Rich Results Test: 3 valid blocks; FAQ text identical to visible text.
+
+
+Price unit on every card; type pills; no emoji in titles or URLs.
+
+
+Rental listings moved from Camping-Services.
+
+
+Only live guides shown in the Ratgeber slots.
+
+Verified in the template: title 53, description 144, 1 H1, 0 heading skips, 0 dashes, 3 valid JSON-LD blocks, FAQ match 5/5, SEO text 322 words.
+
+

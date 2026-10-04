@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- ============================================================
+  CAMPUNA CATEGORY PAGE MASTER TEMPLATE (/zubehoer) | FOR DEVELOPER
+  Prepared by Intelitune | 26.09.2026
+  Content = FINAL GERMAN. Comments/instructions = ENGLISH.
+  THIS FILE IS THE MASTER TEMPLATE FOR ALL 9 CATEGORY PAGES.
+  Only the marked variables change per category (see docx section 2:
+  per-category H1, title, description, subcategories, sample copy).
+
+  STRUCTURE ANALYSIS vs the approved design:
+  Design already has: hero with in-category search + filter button, breadcrumb,
+  subcategory chips, count, listing grid, short SEO card, "Popular areas"
+  (other categories), footer. GOOD base.
+  SECTIONS ADDED for a 100% SEO category page:
+    A) Result header with count + sort (was missing on category level)
+    B) Beliebte Suchen in dieser Kategorie (subcategory/keyword deep links)
+    C) SEO text expanded from 3 lines to ~450 words with H3s + brand entities
+    D) Ratgeber teaser (3 matching guides) -> topical authority bridge
+    E) FAQ (4 category questions) + FAQPage schema
+    F) Crawlable pagination fallback + trust strip
+    G) Sell CTA band ("Zubehör verkaufen?")
+  FIXED from mockup: count said "0 listings" while cards were visible. Count
+  must always equal rendered results. Empty state has its own rule (below).
+
+  CATEGORY PLP RULES (implement for all 9 categories):
+  1. Subcategory chips are REAL LINKS to subcategory URLs (/zubehoer/vorzelte),
+     never JS-only filters. Active chip = current page, no self-link.
+  2. Canonical: /zubehoer canonicals to itself. Filter/sort/page parameters
+     canonical to /zubehoer. Subcategory pages canonical to themselves.
+  3. In-category search submits GET to /suche with hidden kategorie parameter.
+  4. Pagination: real <a href="/zubehoer?seite=2"> fallback, page 2+ self-canonical
+     with title suffix "Seite 2".
+  5. Empty state (0 listings): keep the page indexable, show the message
+     "Aktuell gibt es hier keine Inserate. Sei der Erste und inseriere kostenlos."
+     + CTA + keep the full SEO text block. Never render an empty white page.
+  6. No Product schema on category level. CollectionPage + ItemList + Breadcrumb + FAQ.
+  7. One H1. Card and FAQ titles = H3. Grid images: alt = listing title, lazy, sized.
+============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- SEO: Title 44 chars, Description 150 chars. VARIABLE per category. -->
+<title>Camping-Zubehör kaufen & verkaufen | Campuna</title>
+<meta name="description" content="Gebrauchtes und neues Camping-Zubehör von privat und vom Händler: Vorzelte, Möbel, Küche, Elektrik und Solar. Jetzt entdecken oder kostenlos inserieren.">
+
+<link rel="canonical" href="https://campuna.de/zubehoer">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="de" href="https://campuna.de/zubehoer">
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/zubehoer">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Campuna">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Camping-Zubehör kaufen & verkaufen | Campuna">
+<meta property="og:description" content="Gebrauchtes und neues Camping-Zubehör von privat und vom Händler: Vorzelte, Möbel, Küche, Elektrik und Solar.">
+<meta property="og:url" content="https://campuna.de/zubehoer">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-zubehoer.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- ============ SCHEMA 1: BreadcrumbList (3 levels) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://campuna.de/" },
+    { "@type": "ListItem", "position": 2, "name": "Inserate", "item": "https://campuna.de/inserate" },
+    { "@type": "ListItem", "position": 3, "name": "Camping-Zubehör", "item": "https://campuna.de/zubehoer" }
+  ]
+}
+</script>
+
+<!-- ============ SCHEMA 2: CollectionPage + ItemList (dynamic) ============ -->
+<!-- DEV: itemListElement generated from rendered listings, numberOfItems = real
+     total in this category. Example shape below. No Product schema here. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "@id": "https://campuna.de/zubehoer#collection",
+  "url": "https://campuna.de/zubehoer",
+  "name": "Camping-Zubehör kaufen und verkaufen",
+  "inLanguage": "de-DE",
+  "isPartOf": { "@id": "https://campuna.de/#website" },
+  "about": { "@id": "https://campuna.de/#organization" },
+  "mainEntity": {
+    "@type": "ItemList",
+    "numberOfItems": 3,
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "EcoFlow DELTA Pro 3600 Wh Powerstation", "url": "https://campuna.de/inserat/ecoflow-delta-pro-3600wh" },
+      { "@type": "ListItem", "position": 2, "name": "Dometic CFX3 45 Kompressor-Kühlbox", "url": "https://campuna.de/inserat/dometic-cfx3-45-kuehlbox" },
+      { "@type": "ListItem", "position": 3, "name": "Isabella Capri North G18 Vorzelt", "url": "https://campuna.de/inserat/isabella-capri-north-g18-vorzelt" }
+    ]
+  }
+}
+</script>
+
+<!-- ============ SCHEMA 3: FAQPage (matches visible FAQ word for word) ============ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://campuna.de/zubehoer#faq",
+  "mainEntity": [
+    { "@type": "Question", "name": "Worauf sollte ich beim Kauf von gebrauchtem Camping-Zubehör achten?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Prüfe Zustand, Vollständigkeit und Funktion vor dem Kauf: Bei Vorzelten die Nähte und das Gestänge, bei Elektrik wie Powerstations die Ladezyklen, bei Kühlboxen die Kühlleistung. Frage nach Rechnung und Restgarantie und hole das Zubehör nach Möglichkeit persönlich ab." } },
+    { "@type": "Question", "name": "Welche Arten von Camping-Zubehör finde ich auf Campuna?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Auf Campuna findest du Zubehör in sechs Bereichen: Vorzelte und Markisen, Campingmöbel, Küche und Grillen, Elektrik und Solar, Sanitär und Wasser sowie sonstiges Zubehör. Angeboten wird neue und gebrauchte Ausrüstung von privaten Verkäufern und Händlern aus ganz Deutschland." } },
+    { "@type": "Question", "name": "Wie verkaufe ich mein Camping-Zubehör auf Campuna?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Erstelle ein kostenloses Konto, wähle die Kategorie Camping-Zubehör und die passende Unterkategorie und stelle dein Inserat mit Fotos, Beschreibung und Preis ein. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir." } },
+    { "@type": "Question", "name": "Versand oder Abholung: Wie läuft die Übergabe ab?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Das vereinbarst du direkt mit dem Anbieter. Kleinteile wie Lampen oder Geschirr werden oft versendet, größere Teile wie Vorzelte oder Möbel meist vor Ort abgeholt. Bei Abholung kannst du den Artikel vorher prüfen. Tipps dazu findest du auf der Seite Sicher handeln." } }
+  ]
+}
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- PREVIEW CSS ONLY (mirrors approved design). Replace with real design system. -->
+<style>
+:root{--green-900:#0F2E14;--green-800:#143D1B;--green-700:#1B5E20;--cream:#F4EFE6;--cream-2:#FAF7F0;--ink:#1E241E;--muted:#5C6B5C;--gold:#C9A24B;--gold-2:#E4C878;--hl:#F6C324}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Poppins',Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.6;font-size:15px}
+img{max-width:100%;display:block} a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+.kicker{letter-spacing:.16em;text-transform:uppercase;font-size:.66rem;font-weight:600;color:var(--gold-2)}
+h1{font-size:clamp(1.8rem,3.6vw,2.7rem);line-height:1.15;margin:.25em 0;color:#fff}
+h2{font-size:clamp(1.25rem,2.2vw,1.7rem);color:var(--green-800);margin:.3em 0 .4em}
+h3{font-size:.92rem;margin:.3em 0;color:var(--green-900)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 20px;border-radius:999px;font-weight:600;font-size:.8rem;border:0;cursor:pointer}
+.btn-green{background:var(--green-700);color:#fff}
+.btn-gold{background:var(--gold-2);color:var(--green-900)}
+header{background:#fff;position:sticky;top:0;z-index:50;border-bottom:1px solid #eee7da}
+.nav{display:flex;align-items:center;gap:26px;padding:13px 0}
+.logo{font-weight:800;color:var(--green-800);font-size:1.2rem}
+.logo small{font-size:.48rem;letter-spacing:.14em;color:var(--muted);display:block}
+.nav ul{list-style:none;display:flex;gap:22px;margin:0 0 0 auto;padding:0;font-size:.82rem;font-weight:500}
+.nav .active{color:var(--gold);border-bottom:2px solid var(--gold);padding-bottom:4px}
+/* hero */
+.hero{padding:14px 0 0}
+.hero-card{border-radius:24px;color:#fff;padding:60px 40px;position:relative;
+ background:linear-gradient(90deg,rgba(8,18,8,.86) 0%,rgba(8,18,8,.55) 55%,rgba(8,18,8,.35)),linear-gradient(120deg,#2c4a26,#15260f)}
+/* PLACEHOLDER-IMG: campsite at a lake from above, behind gradient.
+   alt: "Campingplatz am See mit Wohnwagen und Vorzelten aus der Luft" -->
+.hero-card p{max-width:640px;color:#e6ecdf;font-size:.86rem;margin:.5em 0 1.2em}
+.hero-search{display:flex;gap:10px;flex-wrap:wrap}
+.hero-search input{flex:1;min-width:240px;border:0;border-radius:999px;padding:13px 20px;font:inherit;font-size:.8rem;background:rgba(255,255,255,.14);color:#fff;outline:1px solid rgba(255,255,255,.25)}
+.hero-search input::placeholder{color:#cfd8c8}
+.crumb{font-size:.72rem;color:var(--muted);padding:16px 0}
+.crumb a{color:var(--green-700);font-weight:600}
+.crumb b{color:var(--ink)}
+/* subcategory chips */
+.subcats{display:flex;gap:10px;flex-wrap:wrap;padding:4px 0 18px}
+.subcats a,.subcats span{border:1px solid #e2d9c4;border-radius:999px;padding:8px 16px;font-size:.72rem;font-weight:600;color:var(--muted);background:#fff}
+.subcats .on{background:var(--green-700);border-color:var(--green-700);color:#fff}
+/* results */
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.res-head .count{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sort{border:1px solid #e4dcc9;border-radius:12px;padding:9px 14px;font-size:.74rem;background:#fff;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{background:#fff;border:1px solid #f0e9da;border-radius:16px;overflow:hidden;box-shadow:0 8px 20px rgba(20,40,20,.05);position:relative}
+.card.hl{border-color:var(--hl);background:#FFFDF4}
+.card .ph{height:170px;background:linear-gradient(135deg,#cfd8cd,#9fb49e);position:relative}
+/* PLACEHOLDER-IMG per card: alt = listing title, loading="lazy", width/height */
+.card .b1{position:absolute;top:10px;left:10px;background:var(--green-900);color:#fff;font-size:.56rem;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.06em}
+.card .b1.h{background:var(--hl);color:#5b4700}
+.card .loc{position:absolute;bottom:10px;right:10px;background:rgba(15,30,12,.8);color:#fff;font-size:.56rem;padding:4px 10px;border-radius:999px}
+.card .fav{position:absolute;top:10px;right:10px;background:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--green-700)}
+.card .body{padding:12px 14px 14px}
+.card .tags{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.card .tag{background:var(--cream);border-radius:999px;font-size:.58rem;padding:3px 9px;color:#6b7261;font-weight:600}
+.card .pl{font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;color:#9aa08d;margin-top:8px}
+.card .pr{display:flex;justify-content:space-between;align-items:center}
+.card .price{color:var(--green-700);font-weight:800;font-size:1rem}
+.card .det{font-size:.66rem;font-weight:700;color:var(--green-800)}
+.more{display:flex;flex-direction:column;align-items:center;gap:8px;margin:26px 0 8px}
+.pag{font-size:.7rem;color:var(--muted)}
+.pag a{color:var(--green-700);font-weight:700}
+/* popular searches */
+.pop{background:var(--cream-2);border-radius:18px;padding:22px 24px;margin-top:24px}
+.pop ul{list-style:none;display:flex;flex-wrap:wrap;gap:10px;padding:0;margin:12px 0 0}
+.pop a{background:#fff;border:1px solid #e6ddc8;border-radius:999px;padding:8px 14px;font-size:.7rem;font-weight:600;color:var(--green-800)}
+/* seo text */
+.seo-card{background:var(--cream-2);border:1px solid #efe7d6;border-radius:20px;padding:30px 32px;margin-top:24px}
+.seo-card .lead{color:var(--green-700);font-weight:600}
+.seo-card p{font-size:.84rem;color:#41503f}
+.seo-card h3{color:var(--green-800);font-size:.95rem;margin-top:1.1em}
+.seo-card a{color:var(--green-700);font-weight:600}
+/* guides */
+.guides{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:24px}
+.guides a{background:#fff;border:1px solid #efe7d6;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 16px rgba(20,40,20,.05)}
+.guides .gk{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gold)}
+.guides h3{margin:0;font-size:.82rem}
+.guides span{font-size:.64rem;color:var(--muted)}
+/* trust + sell band */
+.trust{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:.72rem;color:var(--muted);background:#fff;border:1px dashed #d8cfb8;border-radius:14px;padding:12px 16px;margin-top:20px}
+.trust b{color:var(--green-800)}
+.sell{background:linear-gradient(140deg,var(--green-700),var(--green-900));border-radius:22px;color:#fff;padding:34px 36px;margin-top:26px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.sell h2{color:#fff;margin:0 0 4px}
+.sell p{color:#d8e4d6;font-size:.8rem;margin:0}
+/* other categories */
+.catsec{background:var(--cream-2);text-align:center;padding:44px 0;margin-top:34px}
+.cats{list-style:none;display:grid;grid-template-columns:repeat(8,1fr);gap:12px;padding:0;margin:22px 0 0}
+.cats li a{background:#fff;border:1px solid #efe8d9;border-radius:16px;box-shadow:0 6px 16px rgba(20,40,20,.05);padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:.62rem;font-weight:600;color:var(--green-900);min-height:88px}
+.cats .ic{width:34px;height:34px;border-radius:10px;background:var(--cream);display:flex;align-items:center;justify-content:center}
+/* faq */
+.faq{padding:44px 0 10px}
+.faq details{background:var(--cream-2);border-radius:14px;padding:14px 18px;margin-bottom:10px}
+.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary h3{margin:0;font-size:.85rem}
+.faq summary:after{content:"+";color:var(--gold);font-weight:700}
+.faq details[open] summary:after{content:"×"}
+.faq p{font-size:.8rem;color:var(--muted);margin-top:10px}
+.faq a{color:var(--green-700);font-weight:600}
+/* footer */
+footer{background:var(--green-900);color:#cfe0cd;font-size:.78rem;margin-top:40px}
+.f-intro{border-bottom:1px solid rgba(255,255,255,.12);padding:24px 0;color:#a9c2a7;font-size:.72rem;text-align:center}
+.f-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;gap:24px;padding:32px 0}
+.f-grid strong{color:#fff;display:block;margin-bottom:10px;font-size:.8rem}
+.f-grid ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.f-bottom{border-top:1px solid rgba(255,255,255,.12);padding:16px 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.68rem;color:#8fae8d}
+@media(max-width:1000px){.grid,.guides{grid-template-columns:repeat(2,1fr)}.cats{grid-template-columns:repeat(4,1fr)}.f-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.grid,.guides{grid-template-columns:1fr}.cats{grid-template-columns:repeat(3,1fr)}.nav ul{display:none}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<!-- HEADER: shared final navigation. -->
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="/" aria-label="Campuna Startseite">▲ campuna<small>DEIN CAMPING-MARKTPLATZ</small></a>
+    <ul>
+      <li><a href="/">Startseite</a></li>
+      <li><a href="/ueber-uns">Über uns</a></li>
+      <li><a href="/inserate">Marktplatz</a></li>
+      <li><a class="active" href="/kategorien">Kategorien</a></li>
+      <li><a href="/spotlight">Spotlight</a></li>
+      <li><a href="/ratgeber">Ressourcen</a></li>
+    </ul>
+    <a class="btn btn-green" href="/konto" style="margin-left:18px">👤 Einloggen</a>
+  </div>
+</header>
+
+<main id="inhalt">
+
+<!-- ============================================================
+  SECTION 1: CATEGORY HERO
+  The ONLY h1 (VARIABLE per category). Sub = above-grid SEO text (<= 80 words).
+  In-category search: GET /suche with hidden kategorie field.
+  DEV: photo behind gradient, eager + preload.
+  alt: "Campingplatz am See mit Wohnwagen und Vorzelten aus der Luft"
+============================================================ -->
+<section class="hero" aria-labelledby="kat-titel">
+  <div class="wrap">
+    <div class="hero-card">
+      <span class="kicker">Kategorie</span>
+      <h1 id="kat-titel">Camping-Zubehör kaufen und verkaufen</h1>
+      <p>Entdecke gebrauchtes und neues Camping-Zubehör von privaten und gewerblichen Anbietern auf Campuna: von Vorzelten und Markisen über Campingmöbel und Küche bis zu Elektrik, Solar und Outdoor-Ausrüstung.</p>
+      <form class="hero-search" action="/suche" method="get" role="search" aria-label="In Camping-Zubehör suchen">
+        <input type="hidden" name="kategorie" value="zubehoer">
+        <label class="sr-only" for="kat-q">In Camping-Zubehör suchen</label>
+        <input id="kat-q" name="q" type="search" placeholder="In Camping-Zubehör suchen…">
+        <button class="btn btn-gold" type="submit">⚙ Alle Filter öffnen</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- BREADCRUMB (3 levels, matches BreadcrumbList schema) -->
+<div class="wrap crumb" aria-label="Brotkrumen-Navigation">
+  <a href="/">Startseite</a> › <a href="/inserate">Inserate</a> › <b>Camping-Zubehör</b>
+</div>
+
+<div class="wrap">
+
+  <!-- ============================================================
+    SECTION 2: SUBCATEGORY CHIPS
+    RULE: real links to subcategory PLP URLs, VARIABLE per category.
+    Active chip ("Alle") = current page, rendered as span, no self-link.
+  ============================================================ -->
+  <nav class="subcats" aria-label="Unterkategorien">
+    <span class="on">Alle (3)</span>
+    <a href="/zubehoer/vorzelte">Vorzelte &amp; Markisen</a>
+    <a href="/zubehoer/campingmoebel">Campingmöbel</a>
+    <a href="/zubehoer/kueche-grill">Küche &amp; Grillen</a>
+    <a href="/zubehoer/elektrik-solar">Elektrik &amp; Solar</a>
+    <a href="/zubehoer/sanitaer-wasser">Sanitär &amp; Wasser</a>
+    <a href="/zubehoer/sonstiges">Sonstiges Zubehör</a>
+  </nav>
+
+  <!-- ============================================================
+    SECTION 3: RESULTS HEADER + GRID (ADDED: sort on category level)
+    Count must equal rendered results (mockup bug: "0 listings" with cards).
+    EMPTY STATE: if 0 listings, render:
+    "Aktuell gibt es hier keine Inserate. Sei der Erste und inseriere kostenlos."
+    + button + keep SEO text below. Page stays indexable.
+  ============================================================ -->
+  <div class="res-head">
+    <span class="count">3 Inserate in dieser Kategorie</span>
+    <label class="sr-only" for="sort">Sortierung</label>
+    <select id="sort" class="sort">
+      <option>Neueste zuerst</option>
+      <option>Preis aufsteigend</option>
+      <option>Preis absteigend</option>
+    </select>
+  </div>
+
+  <div class="grid">
+    <article class="card hl"><a href="/inserat/ecoflow-delta-pro-3600wh">
+      <div class="ph"><span class="b1 h">★ Hervorgehoben</span><span class="fav">♥</span><span class="loc">Hamburg</span></div>
+      <div class="body"><h3>EcoFlow DELTA Pro 3600 Wh Powerstation</h3>
+        <div class="tags"><span class="tag">Sehr gut</span><span class="tag">Elektrik &amp; Solar</span></div>
+        <p class="pl">Preis</p><div class="pr"><span class="price">2.499 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/dometic-cfx3-45-kuehlbox">
+      <div class="ph"><span class="b1">Gewerblich</span><span class="fav">♥</span><span class="loc">Hamburg</span></div>
+      <div class="body"><h3>Dometic CFX3 45 Kompressor-Kühlbox</h3>
+        <div class="tags"><span class="tag">Neuwertig</span><span class="tag">Küche &amp; Kühlung</span></div>
+        <p class="pl">Preis</p><div class="pr"><span class="price">620 €</span><span class="det">Details →</span></div></div></a></article>
+    <article class="card"><a href="/inserat/isabella-capri-north-g18-vorzelt">
+      <div class="ph"><span class="b1">Gewerblich</span><span class="fav">♥</span><span class="loc">Köln</span></div>
+      <div class="body"><h3>Isabella Capri North G18 Vorzelt, Umlaufmaß 975 cm</h3>
+        <div class="tags"><span class="tag">Gebraucht</span><span class="tag">Vorzelte &amp; Markisen</span></div>
+        <p class="pl">Preis</p><div class="pr"><span class="price">1.150 €</span><span class="det">Details →</span></div></div></a></article>
+  </div>
+
+  <!-- Load more + crawlable pagination (ADDED) -->
+  <div class="more">
+    <button class="btn btn-green" type="button">Weitere Angebote laden</button>
+    <p class="pag">Oder blättern: <a href="/zubehoer?seite=2">Seite 2 ansehen →</a></p>
+  </div>
+
+  <!-- ============================================================
+    SECTION 4 (ADDED): POPULAR SEARCHES IN THIS CATEGORY
+    Deep links to subcategories + related pages. VARIABLE per category.
+  ============================================================ -->
+  <nav class="pop" aria-labelledby="beliebt-titel">
+    <span class="kicker" style="color:var(--gold)">Beliebte Suchen</span>
+    <h2 id="beliebt-titel" style="font-size:1.05rem;margin:.2em 0 0">Beliebt in Camping-Zubehör</h2>
+    <ul>
+      <li><a href="/zubehoer/vorzelte">Vorzelt für Wohnwagen</a></li>
+      <li><a href="/zubehoer/vorzelte">Aufblasbares Vorzelt</a></li>
+      <li><a href="/zubehoer/elektrik-solar">Powerstation &amp; Solar</a></li>
+      <li><a href="/zubehoer/kueche-grill">Kühlboxen</a></li>
+      <li><a href="/zubehoer/campingmoebel">Campingstühle &amp; Tische</a></li>
+      <li><a href="/zubehoer/sanitaer-wasser">Wassertanks &amp; Toiletten</a></li>
+      <li><a href="/fahrraeder-traeger">Fahrradträger</a></li>
+      <li><a href="/zelte/dachzelte">Dachzelte</a></li>
+    </ul>
+  </nav>
+
+  <!-- ============================================================
+    SECTION 5: SEO TEXT BLOCK (EXPANDED to ~450 words, below the grid)
+    VARIABLE per category. Brand entities included on purpose.
+  ============================================================ -->
+  <section class="seo-card" aria-labelledby="seo-titel">
+    <h2 id="seo-titel">Camping-Zubehör auf Campuna finden</h2>
+    <p class="lead">Auf Campuna findest du Camping-Zubehör für Wohnmobil, Wohnwagen, Camper und Zelt, gebraucht und neu, von privat und vom Händler.</p>
+    <p>Gute Ausrüstung muss nicht neu sein. Vieles rund ums Camping, vom Vorzelt bis zur Kühlbox, wird nur wenige Wochen im Jahr genutzt und wechselt gut erhalten den Besitzer. Genau dafür ist diese Kategorie da: Camper aus ganz Deutschland bieten hier ihr Zubehör an, private Verkäufer genauso wie gewerbliche Anbieter mit neuen Restposten und Vorführware.</p>
+    <h3>Diese Unterkategorien findest du hier</h3>
+    <p>Bei <a href="/zubehoer/vorzelte">Vorzelten und Markisen</a> findest du klassische Gestängezelte und aufblasbare Modelle von Marken wie Isabella, Dometic oder DWT. <a href="/zubehoer/campingmoebel">Campingmöbel</a> reichen vom Klappstuhl bis zur kompletten Sitzgruppe. Unter <a href="/zubehoer/kueche-grill">Küche und Grillen</a> stehen Kocher, Grills, Geschirr und Kühlboxen, etwa von Dometic oder Mobicool. <a href="/zubehoer/elektrik-solar">Elektrik und Solar</a> umfasst Powerstations, Solarmodule, Batterien und Ladetechnik, zum Beispiel von EcoFlow, Ective oder Victron. Dazu kommen <a href="/zubehoer/sanitaer-wasser">Sanitär und Wasser</a> mit Toiletten, Tanks und Pumpen sowie <a href="/zubehoer/sonstiges">sonstiges Zubehör</a> wie Auffahrkeile, Spiegel und Sicherungstechnik.</p>
+    <h3>Gebraucht kaufen: So gehst du sicher</h3>
+    <p>Schau dir Fotos und Beschreibung genau an und stelle Fragen, bevor du dich entscheidest. Bei Vorzelten zählen Umlaufmaß, Nähte und Gestänge, bei Elektrik die Ladezyklen und bei Kühlboxen die Kühlleistung. Größere Teile holst du am besten persönlich ab und prüfst sie vor Ort. Mehr Tipps findest du im <a href="/ratgeber">Campuna-Ratgeber</a> und auf der Seite <a href="/sicher-handeln">Sicher handeln</a>.</p>
+    <h3>Zubehör verkaufen: kostenlos inserieren</h3>
+    <p>Dein Vorzelt passt nicht mehr zum neuen Wohnwagen oder die Ausrüstung liegt nur noch im Keller? Dann stelle sie hier ein. Private Inserate sind auf Campuna kostenlos, ohne Provision. <a href="/inserat-erstellen">Jetzt kostenlos inserieren</a> und Camper in ganz Deutschland erreichen.</p>
+  </section>
+
+  <!-- Trust strip (ADDED) -->
+  <div class="trust">
+    <span><b>✓ Direkter Kontakt</b> zwischen Käufer und Verkäufer</span>
+    <span><b>✓ Private Inserate kostenlos</b>, ohne Provision</span>
+    <span><b>✓ Tipps für sicheres Handeln:</b> <a href="/sicher-handeln" style="color:var(--green-700);font-weight:700">Sicher handeln lesen</a></span>
+  </div>
+
+  <!-- ============================================================
+    SECTION 6 (ADDED): MATCHING GUIDES (topical authority bridge)
+    VARIABLE per category: 3 guides from the matching blog hub.
+  ============================================================ -->
+  <section aria-labelledby="guides-titel" style="margin-top:30px">
+    <span class="kicker" style="color:var(--gold)">Ratgeber</span>
+    <h2 id="guides-titel" style="font-size:1.15rem">Wissen rund um Camping-Zubehör</h2>
+    <div class="guides">
+      <a href="/ratgeber/gebrauchte-campingausruestung-kaufen"><span class="gk">Kaufberatung</span><h3>Gebrauchte Campingausrüstung kaufen: Worauf achten?</h3><span>Ausrüstung &amp; Zelte · 7 Min.</span></a>
+      <a href="/ratgeber/vorzelt-aufblasbar-oder-gestaenge"><span class="gk">Vergleich</span><h3>Vorzelt aufblasbar oder mit Gestänge: Was ist besser?</h3><span>Ausrüstung &amp; Zelte · 6 Min.</span></a>
+      <a href="/ratgeber/camping-checkliste"><span class="gk">Checkliste</span><h3>Camping-Checkliste für Anfänger: Das gehört ins Gepäck</h3><span>Ausrüstung &amp; Zelte · 5 Min.</span></a>
+    </div>
+  </section>
+
+  <!-- ============================================================
+    SECTION 7 (ADDED): SELL CTA BAND
+  ============================================================ -->
+  <div class="sell">
+    <div>
+      <span class="kicker">Verkaufen</span>
+      <h2>Du hast Camping-Zubehör abzugeben?</h2>
+      <p>Erstelle dein Inserat in wenigen Minuten. Privat kostenlos, ohne Provision.</p>
+    </div>
+    <a class="btn btn-gold" href="/inserat-erstellen">Kostenlos inserieren →</a>
+  </div>
+</div>
+
+<!-- ============================================================
+  SECTION 8: OTHER CATEGORIES ("Weitere Kategorien entdecken")
+  The current category is EXCLUDED from this row (8 remaining).
+============================================================ -->
+<section class="catsec" aria-labelledby="andere-titel">
+  <div class="wrap">
+    <span class="kicker" style="color:var(--gold)">Entdecken</span>
+    <h2 id="andere-titel">Weitere Kategorien entdecken</h2>
+    <ul class="cats">
+      <li><a href="/wohnmobile"><span class="ic">🚐</span>Wohnmobile &amp; Camper</a></li>
+      <li><a href="/zelte"><span class="ic">⛺</span>Zelte &amp; Dachzelte</a></li>
+      <li><a href="/fahrraeder-traeger"><span class="ic">🚲</span>Fahrräder &amp; Träger</a></li>
+      <li><a href="/stellplaetze"><span class="ic">📍</span>Stellplätze &amp; Campingplätze</a></li>
+      <li><a href="/services"><span class="ic">🔧</span>Camping-Services</a></li>
+      <li><a href="/tiny-houses"><span class="ic">🏠</span>Tiny Houses</a></li>
+      <li><a href="/mieten"><span class="ic">🔑</span>Mieten &amp; Vermieten</a></li>
+      <li><a href="/boote"><span class="ic">⛵</span>Boote &amp; Wassersport</a></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 9 (ADDED): FAQ (4 category questions)
+  Visible answers = FAQPage schema word for word. VARIABLE per category.
+============================================================ -->
+<section class="faq" aria-labelledby="faq-titel">
+  <div class="wrap" style="max-width:860px">
+    <div style="text-align:center">
+      <span class="kicker" style="color:var(--gold)">Fragen &amp; Antworten</span>
+      <h2 id="faq-titel">Häufige Fragen zu Camping-Zubehör</h2>
+    </div>
+    <details open>
+      <summary><h3>Worauf sollte ich beim Kauf von gebrauchtem Camping-Zubehör achten?</h3></summary>
+      <p>Prüfe Zustand, Vollständigkeit und Funktion vor dem Kauf: Bei Vorzelten die Nähte und das Gestänge, bei Elektrik wie Powerstations die Ladezyklen, bei Kühlboxen die Kühlleistung. Frage nach Rechnung und Restgarantie und hole das Zubehör nach Möglichkeit persönlich ab.</p>
+    </details>
+    <details>
+      <summary><h3>Welche Arten von Camping-Zubehör finde ich auf Campuna?</h3></summary>
+      <p>Auf Campuna findest du Zubehör in sechs Bereichen: Vorzelte und Markisen, Campingmöbel, Küche und Grillen, Elektrik und Solar, Sanitär und Wasser sowie sonstiges Zubehör. Angeboten wird neue und gebrauchte Ausrüstung von privaten Verkäufern und Händlern aus ganz Deutschland.</p>
+    </details>
+    <details>
+      <summary><h3>Wie verkaufe ich mein Camping-Zubehör auf Campuna?</h3></summary>
+      <p>Erstelle ein kostenloses Konto, wähle die Kategorie Camping-Zubehör und die passende Unterkategorie und stelle dein Inserat mit Fotos, Beschreibung und Preis ein. Private Inserate sind kostenlos, ohne Provision. Interessenten melden sich direkt bei dir.</p>
+    </details>
+    <details>
+      <summary><h3>Versand oder Abholung: Wie läuft die Übergabe ab?</h3></summary>
+      <p>Das vereinbarst du direkt mit dem Anbieter. Kleinteile wie Lampen oder Geschirr werden oft versendet, größere Teile wie Vorzelte oder Möbel meist vor Ort abgeholt. Bei Abholung kannst du den Artikel vorher prüfen. Tipps dazu findest du auf der Seite <a href="/sicher-handeln">Sicher handeln</a>.</p>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER: shared component, identical to homepage. -->
+<footer>
+  <div class="wrap f-intro">
+    <p style="margin:0">Campuna, dein Camping-Marktplatz. Campuna ist Deutschlands Plattform rund ums Camping: Wohnmobile und Camper, Wohnwagen, Zelte und Dachzelte, Campingzubehör, Stellplätze und Campingplätze, Tiny Houses, Boote sowie Camping-Services, zum Kaufen, Verkaufen und Entdecken an einem Ort.</p>
+  </div>
+  <nav class="wrap f-grid" aria-label="Footer Navigation">
+    <div>
+      <a class="logo" href="/" style="color:#fff">▲ campuna<small style="color:#9db89b">DEIN CAMPING-MARKTPLATZ</small></a>
+      <p style="color:#9db89b;font-size:.7rem;margin-top:12px">Campuna wächst mit dir.</p>
+      <p style="color:#9db89b;font-size:.7rem">Campuna · Erfurt, Thüringen · Deutschland<br><a href="mailto:info@campuna.de" style="color:#cfe0cd">info@campuna.de</a></p>
+    </div>
+    <div><strong>Navigation</strong>
+      <ul>
+        <li><a href="/">Startseite</a></li>
+        <li><a href="/inserate">Marktplatz</a></li>
+        <li><a href="/ueber-uns">Über uns</a></li>
+        <li><a href="/so-funktionierts">So funktioniert Campuna</a></li>
+        <li><a href="/spotlight">Spotlight</a></li>
+        <li><a href="/preise">Preise</a></li>
+      </ul>
+    </div>
+    <div><strong>Kategorien</strong>
+      <ul>
+        <li><a href="/zubehoer">Camping-Zubehör</a></li>
+        <li><a href="/wohnmobile">Wohnmobile &amp; Camper</a></li>
+        <li><a href="/zelte">Zelte &amp; Dachzelte</a></li>
+        <li><a href="/fahrraeder-traeger">Fahrräder &amp; Träger</a></li>
+        <li><a href="/stellplaetze">Stellplätze &amp; Campingplätze</a></li>
+        <li><a href="/services">Camping-Services</a></li>
+        <li><a href="/tiny-houses">Tiny Houses</a></li>
+        <li><a href="/mieten">Mieten &amp; Vermieten</a></li>
+        <li><a href="/boote">Boote &amp; Wassersport</a></li>
+      </ul>
+    </div>
+    <div><strong>Support</strong>
+      <ul>
+        <li><a href="/faq">Hilfe &amp; FAQ</a></li>
+        <li><a href="/sicher-handeln">Sicher handeln</a></li>
+        <li><a href="/kontakt">Kontakt</a></li>
+        <li><a href="/ratgeber">Ratgeber</a></li>
+        <li><a href="/tools/zuladungsrechner">Zuladungsrechner</a></li>
+        <li><a href="/tools/reisebudget-rechner">Reisebudget-Rechner</a></li>
+      </ul>
+    </div>
+    <div><strong>Rechtliches</strong>
+      <ul>
+        <li><a href="/impressum">Impressum</a></li>
+        <li><a href="/agb">AGB</a></li>
+        <li><a href="/nutzungsbedingungen">Nutzungsbedingungen</a></li>
+        <li><a href="/datenschutz">Datenschutz</a></li>
+        <li><a href="/cookie-einstellungen">Cookie-Einstellungen</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="wrap f-bottom">
+    <span>© 2026 Campuna. Alle Rechte vorbehalten.</span>
+    <span>Facebook · Instagram · TikTok · YouTube</span>
+  </div>
+</footer>
+
+</body>
+</html>

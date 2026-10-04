@@ -71,61 +71,49 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                 <div className="text-center max-w-6xl w-full mx-auto my-auto pt-6 pb-4">
                     {/* Luxury Hero Headline: 2 lines on Desktop/Laptop, 3 lines on Mobile/Tablet */}
                     <motion.h1 
-                        initial={{ opacity: 0, y: 25 }}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-                        className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-[30px] xl:text-[38px] 2xl:text-[44px] font-bold tracking-tight text-white mb-5 leading-tight sm:leading-snug w-full mx-auto"
+                        className="font-display text-xl sm:text-2xl md:text-3xl lg:text-[25px] xl:text-[31px] 2xl:text-[36px] font-bold tracking-tight text-white mb-4 leading-tight sm:leading-snug w-full mx-auto"
                     >
                         <span className="block lg:whitespace-nowrap">Dein Camping-Marktplatz:</span>
                         
                         {/* Mobile & Tablet: Clean 2 additional lines -> 3 lines total */}
-                        <span className="block lg:hidden text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1.5 sm:mt-2">
+                        <span className="block lg:hidden text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1 sm:mt-1.5">
                             <span className="block">Wir bringen Camping</span>
                             <span className="block">an einem Ort zusammen.</span>
                         </span>
 
                         {/* Laptop & Desktop: Exactly 1 single line with lg:whitespace-nowrap -> 2 lines total */}
-                        <span className="hidden lg:block text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-2 lg:whitespace-nowrap">
+                        <span className="hidden lg:block text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1.5 lg:whitespace-nowrap">
                             Wir bringen Camping an einem Ort zusammen.
                         </span>
                     </motion.h1>
 
                     {/* Editorial Subheadline */}
                     <motion.p
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.25, duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
-                        className="font-sans text-sm sm:text-md md:text-lg text-sand/90 leading-relaxed max-w-2xl mx-auto mb-8 font-light"
+                        className="font-sans text-xs sm:text-sm md:text-base text-sand/90 leading-relaxed max-w-2xl mx-auto mb-6 font-light"
                     >
                         Angebote, Anbieter, Wissen und praktische Helfer rund ums Camping. Auf Campuna kaufst und verkaufst du Wohnmobile, Wohnwagen, Zelte, Zubehör, Stellplätze und mehr, privat oder gewerblich, in ganz Deutschland.
                     </motion.p>
 
-                    {/* Action Buttons */}
+                    {/* Action Button: Camping entdecken (Browse listings/categories) */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6, duration: 0.8 }}
-                        className="flex flex-col sm:flex-row items-center justify-center gap-2.5 mb-8"
+                        transition={{ delay: 0.5, duration: 0.8 }}
+                        className="flex items-center justify-center mb-6"
                     >
                         <motion.button
-                            onClick={() => {
-                                if (typeof window !== 'undefined') {
-                                    window.dispatchEvent(new CustomEvent('open-campuna-tools-modal'));
-                                }
-                            }}
+                            onClick={() => router.push('/inserate')}
                             whileHover={{ scale: 1.04 }}
                             whileTap={{ scale: 0.96 }}
-                            className="w-full sm:w-auto bg-gradient-to-r from-gold to-beige text-forest hover:brightness-110 font-sans font-bold py-3 px-6 rounded-full shadow-lg transform transition-all duration-300 text-[12px] tracking-wider cursor-pointer"
+                            className="bg-gradient-to-r from-gold to-beige text-forest hover:brightness-110 font-sans font-bold py-3 px-7 rounded-full shadow-lg transform transition-all duration-300 text-xs tracking-wider cursor-pointer"
                         >
                             Camping entdecken
-                        </motion.button>
-                        <motion.button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto?tab=create_listing' : '/registrieren')}
-                            whileHover={{ scale: 1.04 }}
-                            whileTap={{ scale: 0.96 }}
-                            className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/25 font-sans font-semibold py-3 px-6 rounded-full transition-all duration-300 text-[12px] tracking-wider cursor-pointer"
-                        >
-                            Kostenlos inserieren
                         </motion.button>
                     </motion.div>
 

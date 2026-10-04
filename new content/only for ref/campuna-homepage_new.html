@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="de">
+<head>
+<!-- ============================================================
+  CAMPUNA HOMEPAGE | SEO TEMPLATE FOR DEVELOPER
+  Prepared by Intelitune | 26.09.2026
+  NOTE FOR TEAM: All page content is FINAL GERMAN (client site language).
+  All comments/instructions are ENGLISH (for our team + developer).
+
+  IMPLEMENTATION RULES (do not skip):
+  1. Render everything server-side (SSR). No text may appear only via JS.
+  2. Exactly ONE <h1> per page. Never skip heading levels.
+  3. Every link must be a real <a href>. No onclick navigation.
+  4. FAQ answers must exist in the HTML DOM (accordion opens/closes visually only).
+  5. Images: always set width/height (CLS). Hero = eager + preload. Everything below the fold = loading="lazy".
+  6. Target mobile LCP under 2.5s. Hero image as AVIF/WebP with responsive srcset.
+  7. This file uses placeholder CSS + placeholder image blocks so it VISUALLY previews
+     like the approved design. Replace with the real design system + real images.
+  8. Where you see PLACEHOLDER-IMG comments, drop in the real asset with the given alt text.
+  POSITIONING UPDATE 03.10.2026 (client-approved): Campuna = marketplace for the COMPLETE
+  camping ecosystem (vehicles, gear, tents, pitches/campsites, tiny houses, boats, rentals,
+  services, professional providers). Never present it as an accessories shop. German copy
+  renders "ecosystem" as "die ganze Camping-Welt" (natural German for consumers).
+============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- SEO: Title max 60 chars, Description max 155 chars. Do not change wording. Updated 03.10.2026 (positioning). -->
+<title>Campuna | Camping-Marktplatz: Kaufen, Verkaufen, Entdecken</title>
+<meta name="description" content="Wohnmobile, Wohnwagen, Zubehör, Zelte, Stellplätze, Tiny Houses, Boote, Vermietung und Services: die ganze Camping-Welt an einem Ort. Privat kostenlos.">
+
+<link rel="canonical" href="https://campuna.de/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="alternate" hreflang="de" href="https://campuna.de/">
+<link rel="alternate" hreflang="x-default" href="https://campuna.de/">
+
+<!-- Open Graph / Social sharing -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Campuna">
+<meta property="og:locale" content="de_DE">
+<meta property="og:title" content="Campuna | Camping-Marktplatz: Kaufen, Verkaufen, Entdecken">
+<meta property="og:description" content="Die ganze Camping-Welt an einem Ort: Wohnmobile, Wohnwagen, Zubehör, Zelte, Stellplätze, Tiny Houses, Boote, Vermietung und Camping-Services.">
+<meta property="og:url" content="https://campuna.de/">
+<meta property="og:image" content="https://campuna.de/assets/og/campuna-og-startseite.jpg">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- PERFORMANCE: preload the real hero image in production -->
+<!-- <link rel="preload" as="image" href="/assets/hero/campuna-hero-lake.avif" fetchpriority="high"> -->
+
+<!-- ============ SCHEMA 1: Organization (entity: Campuna) ============ -->
+<!-- DEV: replace the sameAs placeholder URLs with the real social profiles -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://campuna.de/#organization",
+  "name": "Campuna",
+  "url": "https://campuna.de/",
+  "logo": "https://campuna.de/assets/logo/campuna-logo.png",
+  "description": "Campuna ist Deutschlands Marktplatz für die ganze Camping-Welt: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung, Camping-Services und gewerbliche Anbieter. Kaufen, verkaufen und entdecken an einem Ort.",
+  "slogan": "Wir bringen Camping an einem Ort zusammen.",
+  "areaServed": { "@type": "Country", "name": "Deutschland" },
+  "knowsAbout": ["Wohnmobile", "Wohnwagen", "Camper", "Camping-Zubehör", "Zelte", "Dachzelte", "Stellplätze", "Campingplätze", "Tiny Houses", "Mobilheime", "Boote", "Wassersport", "Vermietung von Campingfahrzeugen", "Camping-Services"],
+  "email": "info@campuna.de",
+  "address": { "@type": "PostalAddress", "addressLocality": "Erfurt", "addressRegion": "Thüringen", "addressCountry": "DE" },
+  "sameAs": [
+    "https://www.facebook.com/PROFILE",
+    "https://www.instagram.com/PROFILE",
+    "https://www.tiktok.com/@PROFILE",
+    "https://www.youtube.com/@PROFILE"
+  ]
+}
+</script>
+
+<!-- ============ SCHEMA 2: WebSite + Sitelinks SearchBox ============ -->
+<!-- DEV: /suche?q= must work exactly like this -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://campuna.de/#website",
+  "url": "https://campuna.de/",
+  "name": "Campuna",
+  "publisher": { "@id": "https://campuna.de/#organization" },
+  "inLanguage": "de-DE",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": { "@type": "EntryPoint", "urlTemplate": "https://campuna.de/suche?q={search_term_string}" },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+
+<!-- ============ SCHEMA 3: FAQPage ============ -->
+<!-- DEV: answer texts MUST match the visible FAQ section word for word -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://campuna.de/#faq",
+  "mainEntity": [
+    { "@type": "Question", "name": "Was ist Campuna?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Campuna ist der Camping-Marktplatz für Deutschland und bündelt die ganze Camping-Welt an einem Ort: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung und Camping-Services. Du kaufst, verkaufst und entdeckst hier Angebote von privat und von gewerblichen Anbietern. Betrieben wird die Plattform von Campern aus Erfurt." } },
+    { "@type": "Question", "name": "Für wen ist Campuna geeignet?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Campuna richtet sich an alle, die campen: an Einsteiger und erfahrene Camper, an private Käufer und Verkäufer sowie an gewerbliche Anbieter wie Händler, Vermieter, Werkstätten und Campingplätze. Privatpersonen inserieren kostenlos, gewerbliche Anbieter präsentieren ihr Angebot mit einem eigenen Firmenprofil." } },
+    { "@type": "Question", "name": "Wie kann ich auf Campuna verkaufen?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Erstelle ein kostenloses Konto, lege dein Inserat mit Fotos, Beschreibung und Preis an und veröffentliche es. Interessenten melden sich direkt über die Plattform bei dir. Den Verkauf wickelst du persönlich ab, ohne Provision an Campuna. Eine Schritt-für-Schritt-Anleitung findest du unter So funktioniert Campuna." } },
+    { "@type": "Question", "name": "Kostet das Inserieren auf Campuna etwas?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Private Inserate sind auf Campuna kostenlos, ohne Provision und ohne versteckte Gebühren. Gewerbliche Anbieter wählen ein Paket, mit dem sie mehrere Angebote und ein eigenes Firmenprofil verwalten können. Alle Details und Preise findest du auf unserer Preisseite." } },
+    { "@type": "Question", "name": "Was kann ich auf Campuna anbieten?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Alles rund ums Camping: Wohnmobile, Camper und Wohnwagen, Zelte und Dachzelte, Campingzubehör, Fahrräder und Träger, Stellplätze und Campingplätze, Tiny Houses, Boote und Wassersport sowie Camping-Services wie Gasprüfung, Werkstatt oder Aufbereitung. Auch Miet- und Vermietungsangebote haben eine eigene Kategorie." } },
+    { "@type": "Question", "name": "Wie finde ich passende Camping-Angebote?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Nutze die Suche auf der Startseite und filtere nach Kategorie, Ort und Preis. Mit der Umkreissuche findest du Angebote in deiner Nähe und in ganz Deutschland. Zusätzlich helfen dir die neun Kategorien, der Campuna-Ratgeber und unsere Rechner bei der Auswahl." } },
+    { "@type": "Question", "name": "Wie sicher ist das Kaufen und Verkaufen von privat?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Campuna setzt auf direkte Kommunikation zwischen Käufer und Verkäufer und klare Regeln für sicheres Handeln. Wir empfehlen bei Fahrzeugen immer Besichtigung, Probefahrt und einen schriftlichen Kaufvertrag. Praktische Tipps dazu findest du im Ratgeber und auf der Seite Sicher handeln." } }
+  ]
+}
+</script>
+
+<!-- Preview font only. In production use the project font via self-hosted woff2 + preload. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- PREVIEW CSS ONLY: mirrors the approved design (colors, rounded cards, layout).
+     Replace with the real design system. Class names are placeholders. -->
+<style>
+:root{
+  --green-900:#0F2E14; --green-800:#143D1B; --green-700:#1B5E20; --green-600:#2E7D32;
+  --cream:#F4EFE6; --cream-2:#FAF7F0; --ink:#1E241E; --muted:#5C6B5C;
+  --gold:#C9A24B; --gold-2:#E4C878; --white:#fff; --radius:22px;
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;font-family:'Poppins',Arial,sans-serif;color:var(--ink);background:var(--cream-2);line-height:1.6;font-size:15px}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+.kicker{letter-spacing:.16em;text-transform:uppercase;font-size:.68rem;font-weight:600;color:var(--gold)}
+h1{font-size:clamp(1.9rem,4vw,3rem);line-height:1.15;margin:.4em 0}
+h2{font-size:clamp(1.4rem,2.6vw,2rem);line-height:1.2;color:var(--green-800);margin:.3em 0 .4em}
+h3{font-size:1.02rem;margin:.4em 0 .3em;color:var(--green-900)}
+p{margin:.4em 0}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;font-weight:600;font-size:.85rem;border:0;cursor:pointer}
+.btn-gold{background:var(--gold);color:#fff}
+.btn-ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.8)}
+.btn-green{background:var(--green-700);color:#fff}
+.btn-outline{background:#fff;color:var(--green-700);border:1.5px solid var(--green-700)}
+section{padding:56px 0}
+.center{text-align:center}
+/* topbar */
+.topbar{background:var(--green-900);color:#e8f0e8;font-size:.75rem;padding:8px 0}
+.topbar .wrap{display:flex;justify-content:center;gap:14px;align-items:center;flex-wrap:wrap}
+.topbar a{color:var(--gold-2);font-weight:600}
+/* header */
+header{background:var(--cream-2);position:sticky;top:0;z-index:50;border-bottom:1px solid #eae4d8}
+.nav{display:flex;align-items:center;gap:26px;padding:14px 0}
+.logo{font-weight:800;color:var(--green-800);font-size:1.25rem;display:flex;align-items:baseline;gap:4px}
+.logo small{font-size:.5rem;letter-spacing:.14em;color:var(--muted);display:block}
+.nav ul{list-style:none;display:flex;gap:22px;margin:0 0 0 auto;padding:0;font-size:.83rem;font-weight:500}
+.nav ul a:hover{color:var(--green-700)}
+.nav .active{color:var(--gold);border-bottom:2px solid var(--gold);padding-bottom:4px}
+/* hero */
+.hero{padding:22px 0 0}
+.hero-card{position:relative;border-radius:28px;overflow:hidden;color:#fff;
+  background:linear-gradient(180deg,rgba(15,46,20,.55),rgba(15,46,20,.82)),
+  radial-gradient(900px 300px at 50% 0%,#3f7d46 0%,#1c4a23 55%,#12301a 100%);
+  padding:74px 28px 90px;text-align:center}
+/* PLACEHOLDER-IMG: real lake/campsite photo goes behind the gradient */
+.hero-card .h-sub{max-width:620px;margin:0 auto;color:#e7efe4;font-size:.9rem}
+.hero-card h1 em{font-style:normal;color:var(--gold-2)}
+.hero-cta{margin:22px 0 26px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.search{background:#fff;border-radius:999px;display:flex;gap:8px;align-items:center;max-width:760px;margin:0 auto;padding:8px 8px 8px 20px;color:var(--ink)}
+.search input{flex:1;border:0;outline:0;font:inherit;font-size:.85rem;min-width:120px;background:transparent}
+.search select{border:0;outline:0;font:inherit;font-size:.8rem;color:var(--muted);background:#f4f1ea;border-radius:999px;padding:10px 14px}
+/* foundation card overlapping hero */
+.foundation{max-width:860px;margin:-58px auto 0;background:#fff;border-radius:24px;box-shadow:0 18px 40px rgba(20,40,20,.12);padding:30px 34px;text-align:center;position:relative;z-index:2}
+.foundation h2{margin:0 0 6px}
+.foundation h2 .g1{color:var(--green-800)} .foundation h2 .g2{color:var(--gold)}
+.foundation p{color:var(--muted);font-size:.85rem;max-width:640px;margin:0 auto}
+/* categories */
+.cats{list-style:none;display:grid;grid-template-columns:repeat(9,1fr);gap:12px;padding:0;margin:26px 0 0}
+.cats li a{background:#fff;border-radius:18px;box-shadow:0 8px 20px rgba(20,40,20,.06);padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:.68rem;font-weight:600;text-align:center;color:var(--green-900);min-height:104px;justify-content:flex-start}
+.cats .ic{width:40px;height:40px;border-radius:12px;background:var(--cream);display:flex;align-items:center;justify-content:center;color:var(--green-700)}
+.cats svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+/* offers */
+.sec-head{display:flex;align-items:end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.sec-head .link{color:var(--gold);font-weight:600;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase}
+.grid-offers{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:22px}
+.card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 24px rgba(20,40,20,.07)}
+.card .ph{height:130px;background:linear-gradient(135deg,#cfd8cd,#9fb49e);position:relative}
+/* PLACEHOLDER-IMG: listing photo, alt = listing title, loading="lazy", width/height set */
+.card .badge{position:absolute;top:10px;left:10px;background:var(--green-700);color:#fff;font-size:.6rem;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.06em}
+.card .body{padding:12px 14px 14px}
+.card h3{font-size:.8rem;margin:0 0 6px;line-height:1.35}
+.card .price{color:var(--green-700);font-weight:700;font-size:.9rem}
+.card .meta{color:var(--muted);font-size:.7rem}
+/* spotlight */
+.spot{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:22px}
+.spot .s-card{background:linear-gradient(160deg,#17301c,#0f2314);border-radius:18px;color:#fff;padding:22px 18px;min-height:110px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;text-align:center}
+.spot .s-card strong{font-size:.85rem}
+.spot .s-card span{font-size:.65rem;color:#bcd0bc}
+/* tools */
+.tools-card{background:var(--cream);border-radius:26px;padding:36px;margin-top:8px}
+.tabs{display:flex;gap:10px;justify-content:center;margin:18px 0 22px;flex-wrap:wrap}
+.tab{background:#fff;border-radius:999px;padding:10px 18px;font-size:.75rem;font-weight:600;color:var(--muted);border:1px solid #e5decf}
+.tab.on{background:var(--green-700);color:#fff;border-color:var(--green-700)}
+.calc{background:#fff;border-radius:20px;padding:26px;display:grid;grid-template-columns:1.3fr .9fr;gap:26px}
+.calc h3{margin-top:0}
+.slider{height:6px;border-radius:6px;background:linear-gradient(90deg,var(--green-600) 60%,#e3ded2 60%);margin:18px 0 6px}
+.calc .lab{font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between}
+.cost{background:var(--cream-2);border:1px solid #eee5d4;border-radius:16px;padding:18px}
+.cost .row{display:flex;justify-content:space-between;font-size:.75rem;padding:6px 0;border-bottom:1px dashed #e2dbc9}
+.cost .total{font-size:1.3rem;font-weight:800;color:var(--green-700);display:flex;justify-content:space-between;padding-top:10px}
+.hintbox{background:#eef6ee;border-radius:12px;font-size:.68rem;color:var(--green-800);padding:10px 12px;margin-top:12px}
+/* why */
+.why{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.why .w-card{background:#fff;border-radius:20px;padding:26px 22px;box-shadow:0 10px 24px rgba(20,40,20,.06);position:relative}
+.why .num{position:absolute;top:18px;right:20px;color:#e4ddcb;font-weight:800;font-size:1.1rem}
+.why .ic{width:44px;height:44px;border-radius:12px;background:var(--cream);display:flex;align-items:center;justify-content:center;color:var(--green-700);margin-bottom:12px}
+.why p{font-size:.8rem;color:var(--muted)}
+/* guide */
+.guide{display:grid;grid-template-columns:1.25fr .9fr;gap:18px;margin-top:22px}
+.feat{border-radius:22px;overflow:hidden;position:relative;min-height:300px;color:#fff;display:flex;align-items:flex-end;
+  background:linear-gradient(180deg,rgba(10,25,12,.05) 30%,rgba(10,25,12,.85)),linear-gradient(120deg,#5c7a52,#2c452c)}
+/* PLACEHOLDER-IMG: featured article photo */
+.feat .fb{padding:24px}
+.feat .tag{background:var(--gold);color:#fff;font-size:.6rem;font-weight:700;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.08em}
+.feat h3{color:#fff;font-size:1.25rem;margin:.5em 0}
+.mini{display:flex;flex-direction:column;gap:12px}
+.mini a{background:#fff;border-radius:16px;padding:14px 16px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 18px rgba(20,40,20,.05)}
+.mini .th{width:64px;height:52px;border-radius:10px;background:linear-gradient(135deg,#cdd7cb,#9db29b);flex:none}
+.mini h3{font-size:.78rem;margin:0}
+.mini span{font-size:.65rem;color:var(--muted)}
+/* mission */
+.mission{background:linear-gradient(160deg,var(--green-800),var(--green-900));color:#fff;text-align:center}
+.mission h2{color:#fff}
+.mission p{max-width:640px;margin:.5em auto;color:#d8e4d6;font-size:.88rem}
+.mission .accent{color:var(--gold-2);font-weight:600}
+.video{max-width:640px;margin:26px auto 0;border-radius:20px;min-height:250px;position:relative;
+  background:linear-gradient(180deg,rgba(8,20,10,.25),rgba(8,20,10,.6)),linear-gradient(120deg,#4c6b47,#233b25)}
+/* PLACEHOLDER-IMG: video poster, click-to-load facade, NO autoplay embed */
+.play{position:absolute;inset:0;margin:auto;width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;color:var(--green-800);font-size:1.2rem}
+/* join */
+.join-card{background:linear-gradient(140deg,var(--green-800),var(--green-900));border-radius:26px;color:#fff;padding:46px 40px;position:relative;overflow:hidden}
+.join-card:after{content:"";position:absolute;right:-40px;top:-40px;width:220px;height:220px;border:2px solid rgba(201,162,75,.5);border-radius:36px;transform:rotate(18deg)}
+.join-card h2{color:#fff;margin-top:0}
+.join-card p{color:#d8e4d6;font-size:.85rem;max-width:560px}
+/* faq */
+.faq details{background:#fff;border-radius:16px;padding:16px 20px;margin-bottom:10px;box-shadow:0 6px 16px rgba(20,40,20,.05)}
+.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary h3{margin:0;font-size:.88rem}
+.faq summary:after{content:"+";color:var(--gold);font-weight:700;font-size:1.1rem}
+.faq details[open] summary:after{content:"×"}
+.faq p{font-size:.82rem;color:var(--muted);margin-top:10px}
+.faq a{color:var(--green-700);font-weight:600}
+/* footer */
+footer{background:var(--green-900);color:#cfe0cd;font-size:.78rem}
+.f-intro{border-bottom:1px solid rgba(255,255,255,.12);padding:26px 0;color:#a9c2a7;font-size:.72rem;text-align:center}
+.f-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;gap:24px;padding:34px 0}
+.f-grid strong{color:#fff;display:block;margin-bottom:10px;font-size:.8rem}
+.f-grid ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.f-grid a:hover{color:var(--gold-2)}
+.f-bottom{border-top:1px solid rgba(255,255,255,.12);padding:16px 0;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.68rem;color:#8fae8d}
+/* responsive */
+@media(max-width:1000px){.cats{grid-template-columns:repeat(5,1fr)}.grid-offers{grid-template-columns:repeat(2,1fr)}.spot{grid-template-columns:repeat(2,1fr)}.calc{grid-template-columns:1fr}.why{grid-template-columns:1fr}.guide{grid-template-columns:1fr}.f-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.cats{grid-template-columns:repeat(3,1fr)}.grid-offers{grid-template-columns:1fr}.nav ul{display:none}}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+  TOPBAR (announcement). Conversion element, not a ranking element.
+============================================================ -->
+<div class="topbar" role="region" aria-label="Hinweis">
+  <div class="wrap">
+    <span>Private Inserate sind kostenlos.</span>
+    <a href="/inserat-erstellen">Jetzt inserieren</a>
+    <span>oder</span>
+    <a href="/inserate">Angebote entdecken</a>
+  </div>
+</div>
+
+<!-- ============================================================
+  HEADER + NAV (client-approved final navigation)
+  DEV: real <a href> links, keyboard accessible, aria-expanded on dropdowns.
+  Dropdown lists shortened here; take full category list from footer block.
+============================================================ -->
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="/" aria-label="Campuna Startseite">▲ campuna<small>DEIN CAMPING-MARKTPLATZ</small></a>
+    <ul>
+      <li><a class="active" href="/">Startseite</a></li>
+      <li><a href="/ueber-uns">Über uns</a></li>
+      <li><a href="/inserate">Marktplatz</a></li>
+      <li><a href="/kategorien" aria-expanded="false">Kategorien</a></li>
+      <li><a href="/spotlight">Spotlight</a></li>
+      <li><a href="/ratgeber" aria-expanded="false">Ressourcen</a></li>
+    </ul>
+    <a class="btn btn-green" href="/konto" style="margin-left:18px">👤 Einloggen</a>
+  </div>
+</header>
+
+<main id="inhalt">
+
+<!-- ============================================================
+  SECTION 1: HERO
+  SEO: the ONLY h1. Keyword "Camping-Marktplatz" + brand claim.
+  Sub-line carries the full-ecosystem positioning (all pillars named = entity coverage).
+  DEV: real lake photo behind gradient (PLACEHOLDER-IMG),
+  alt: "Campingplatz an einem See in Deutschland mit Wohnmobilen und Zelten",
+  eager load + preload in <head>. Search form = GET /suche?q=
+============================================================ -->
+<section class="hero" aria-labelledby="hero-titel">
+  <div class="wrap">
+    <div class="hero-card">
+      <h1 id="hero-titel">Dein Camping-Marktplatz: Wir bringen Camping <em>an einem Ort</em> zusammen.</h1>
+      <p class="h-sub">Die ganze Camping-Welt auf einer Plattform: Wohnmobile, Wohnwagen und Camper, Zubehör, Zelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung und Camping-Services. Hier kaufst, verkaufst und entdeckst du Angebote von privat und von Profis aus ganz Deutschland.</p>
+      <div class="hero-cta">
+        <a class="btn btn-gold" href="/inserate">Camping entdecken</a>
+        <a class="btn btn-ghost" href="/inserat-erstellen">Kostenlos inserieren</a>
+      </div>
+      <form class="search" action="/suche" method="get" role="search" aria-label="Angebote durchsuchen">
+        <label class="sr-only" for="suche-q">Was suchst du?</label>
+        <input id="suche-q" name="q" type="search" placeholder="Was suchst du? z. B. Wohnmobil, Dachzelt, Stellplatz">
+        <label class="sr-only" for="suche-kat">Kategorie</label>
+        <select id="suche-kat" name="kategorie">
+          <option value="">Alle Kategorien</option>
+          <option value="wohnmobile">Wohnmobile &amp; Camper</option>
+          <option value="zubehoer">Camping-Zubehör</option>
+          <option value="zelte">Zelte &amp; Dachzelte</option>
+          <option value="fahrraeder-traeger">Fahrräder &amp; Träger</option>
+          <option value="stellplaetze">Stellplätze &amp; Campingplätze</option>
+          <option value="services">Camping-Services</option>
+          <option value="tiny-houses">Tiny Houses</option>
+          <option value="mieten">Mieten &amp; Vermieten</option>
+          <option value="boote">Boote &amp; Wassersport</option>
+        </select>
+        <button class="btn btn-green" type="submit">🔍 Suchen</button>
+      </form>
+    </div>
+
+    <!-- SECTION 2: FOUNDATION CARD (overlaps hero, like the design) -->
+    <div class="foundation" aria-labelledby="fundament-titel">
+      <h2 id="fundament-titel"><span class="g1">Das Fundament steht.</span> <span class="g2">Jetzt bringen wir Campuna gemeinsam zum Leben.</span></h2>
+      <p>Wir bauen die Campingplattform, die wir uns selbst gewünscht haben: gemeinsam mit Campern, privaten Anbietern, Händlern, Vermietern, Campingplätzen und Service-Profis aus ganz Deutschland.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 3: CATEGORIES (9 cards)
+  SEO: most important internal link block. One <a> per card to the category PLP.
+  DEV: icons inline SVG (decorative, no alt needed).
+  ORDER (03.10.2026): Wohnmobile & Camper first, Camping-Zubehör second, rest unchanged.
+  Leading with vehicles supports the full-ecosystem positioning (accessories is one pillar,
+  not the identity). Keep the same order in the search dropdown and the footer.
+============================================================ -->
+<section aria-labelledby="kategorien-titel">
+  <div class="wrap center">
+    <span class="kicker">Kategorien</span>
+    <h2 id="kategorien-titel">Camping hat viele Seiten. Wir bringen sie zusammen.</h2>
+    <p style="color:var(--muted);font-size:.85rem">Von Fahrzeugen über Ausrüstung und Stellplätze bis zu Vermietung und Services: neun Kategorien, ein Marktplatz. Wähle deinen Bereich und stöbere durch Angebote aus ganz Deutschland.</p>
+    <ul class="cats">
+      <li><a href="/wohnmobile"><span class="ic"><svg viewBox="0 0 24 24"><path d="M3 16V8h13l4 4v4M3 16h2m4 0h6m4 0h2M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></svg></span>Wohnmobile &amp; Camper</a></li>
+      <li><a href="/zubehoer"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 7h12v13H6zM9 7V5a3 3 0 0 1 6 0v2"/></svg></span>Camping-Zubehör</a></li>
+      <li><a href="/zelte"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 4 3 20h18L12 4zm0 6v10"/></svg></span>Zelte &amp; Dachzelte</a></li>
+      <li><a href="/fahrraeder-traeger"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm12 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 14l4-7h5l3 7M10 7h4"/></svg></span>Fahrräder &amp; Träger</a></li>
+      <li><a href="/stellplaetze"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 21s7-5.1 7-11a7 7 0 1 0-14 0c0 5.9 7 11 7 11zm0-8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg></span>Stellplätze &amp; Campingplätze</a></li>
+      <li><a href="/services"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 7a4 4 0 1 0-5.7 3.6L4 15v4h4l4.4-4.3A4 4 0 0 0 14 7z"/></svg></span>Camping-Services</a></li>
+      <li><a href="/tiny-houses"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7M6 10v9h12v-9"/></svg></span>Tiny Houses</a></li>
+      <li><a href="/mieten"><span class="ic"><svg viewBox="0 0 24 24"><path d="M14 8a4 4 0 1 1 4 4l-8 8H6v-4l8-8zM16 6l2 2"/></svg></span>Mieten &amp; Vermieten</a></li>
+      <li><a href="/boote"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 17h16l-2 3H6l-2-3zm8-13v10M12 6l6 8H6l6-8z"/></svg></span>Boote &amp; Wassersport</a></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 4: CURRENT OFFERS (dynamic listing grid)
+  DEV: render 8 cards server-side. Card image alt = listing title,
+  loading="lazy", width/height set. Card title = h3. Link = /inserat/SLUG.
+  The 8 cards below are LAYOUT PLACEHOLDERS with realistic sample data.
+  CATEGORY MIX RULE (positioning): show listings from at least 4 different categories,
+  max 3 cards per category, so the homepage always shows the whole camping world.
+============================================================ -->
+<section aria-labelledby="angebote-titel">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="kicker">Marktplatz</span>
+        <h2 id="angebote-titel">Camping-Angebote auf Campuna</h2>
+        <p style="color:var(--muted);font-size:.85rem;margin:0">Stöbere durch gebrauchte und neue Camping-Angebote aus ganz Deutschland, von privat und vom Händler. Täglich kommen neue Inserate dazu.</p>
+      </div>
+      <a class="link" href="/inserate">Alle Angebote →</a>
+    </div>
+    <div class="grid-offers">
+      <article class="card"><a href="/inserat/beispiel-1"><div class="ph"><span class="badge">Gewerblich</span></div><div class="body"><h3>Kaufe California Ocean 4Motion</h3><p class="price">68.500 €</p><p class="meta">Wohnmobile &amp; Camper · München</p></div></a></article>
+      <article class="card"><a href="/inserat/beispiel-2"><div class="ph"><span class="badge">Privat</span></div><div class="body"><h3>Knaus Boxstar 600 Street</h3><p class="price">54.900 €</p><p class="meta">Wohnmobile &amp; Camper · Leipzig</p></div></a></article>
+      <article class="card"><a href="/inserat/beispiel-3"><div class="ph"><span class="badge">Privat</span></div><div class="body"><h3>Dachzelt Skycamp 3.0, X-Cover</h3><p class="price">1.450 €</p><p class="meta">Zelte &amp; Dachzelte · Erfurt</p></div></a></article>
+      <article class="card"><a href="/inserat/beispiel-4"><div class="ph"><span class="badge">Gewerblich</span></div><div class="body"><h3>Tiny House Modell Fjord, 4 Jahreszeiten</h3><p class="price">34.500 €</p><p class="meta">Tiny Houses · Rostock</p></div></a></article>
+      <article class="card"><a href="/inserat/beispiel-5"><div class="ph"><span class="badge">Privat</span></div><div class="body"><h3>Hymer B-Klasse Masterline 780</h3><p class="price">119.000 €</p><p class="meta">Wohnmobile &amp; Camper · Stuttgart</p></div></a></article>
+      <article class="card"><a href="/inserat/beispiel-6"><div class="ph"><span class="badge">Privat</span></div><div class="body"><h3>Thule Fahrradträger für die Deichsel</h3><p class="price">480 €</p><p class="meta">Fahrräder &amp; Träger · Köln</p></div></a></article>
+      <article class="card"><a href="/inserat/beispiel-7"><div class="ph"><span class="badge">Gewerblich</span></div><div class="body"><h3>Ganzjahres-Stellplatz am Ostseeufer</h3><p class="price">45.900 €</p><p class="meta">Stellplätze &amp; Campingplätze · Lübeck</p></div></a></article>
+      <article class="card"><a href="/inserat/beispiel-8"><div class="ph"><span class="badge">Privat</span></div><div class="body"><h3>Dometic CFX3 45 Kompressor-Kühlbox</h3><p class="price">620 €</p><p class="meta">Camping-Zubehör · Dresden</p></div></a></article>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 5: PROVIDER SPOTLIGHT
+  DEV: dynamic carousel of provider cards. Logo alt = company name.
+  Link each card to /anbieter/NAME.
+============================================================ -->
+<section aria-labelledby="spotlight-titel" style="background:var(--cream)">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="kicker">Campuna Spotlight</span>
+        <h2 id="spotlight-titel">Camping-Anbieter im Spotlight</h2>
+        <p style="color:var(--muted);font-size:.85rem;margin:0">Hier zeigen wir gewerbliche Anbieter, die Campuna mit aufbauen: Händler, Vermieter, Werkstätten, Campingplätze und Hersteller. Du bist selbst Anbieter? Dann präsentiere dein Unternehmen mit einem eigenen Profil.</p>
+      </div>
+      <a class="link" href="/anbieter">Alle Anbieter →</a>
+    </div>
+    <div class="spot">
+      <!-- PLACEHOLDER cards: replace with real provider logos/links -->
+      <a class="s-card" href="/anbieter/beispiel-a"><strong>VTN Camping</strong><span>Händler · Zubehör</span></a>
+      <a class="s-card" href="/anbieter/beispiel-b"><strong>ProVerda GmbH</strong><span>Fahrzeugaufbereitung</span></a>
+      <a class="s-card" href="/anbieter/beispiel-c"><strong>Toens Lorenz Wohnmobile</strong><span>Händler · Wohnmobile</span></a>
+      <a class="s-card" href="/anbieter-werden"><strong>Dein Unternehmen?</strong><span>Jetzt Anbieter werden</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 6: KNOWLEDGE & TOOLS
+  SEO: calculators must ALSO live on their own indexable URLs:
+  /tools/zuladungsrechner and /tools/reisebudget-rechner. Homepage = teaser.
+  DEV: tab contents stay in the DOM (no lazy fetch). The calculator below is a
+  static visual mock of the Reisebudget-Rechner for layout only.
+============================================================ -->
+<section aria-labelledby="wissen-titel">
+  <div class="wrap">
+    <div class="tools-card">
+      <div class="center">
+        <span class="kicker">Campuna Wissen</span>
+        <h2 id="wissen-titel">Camping-Wissen &amp; nützliche Tools</h2>
+        <p style="color:var(--muted);font-size:.85rem;max-width:680px;margin:.4em auto">Praktische Helfer für deine Planung: Mit dem <a href="/tools/zuladungsrechner" style="color:var(--green-700);font-weight:600">Zuladungsrechner</a> prüfst du das Gewicht deines Wohnmobils oder Wohnwagens, mit dem <a href="/tools/reisebudget-rechner" style="color:var(--green-700);font-weight:600">Reisebudget-Rechner</a> planst du die Kosten deiner nächsten Tour. Dazu findest du im <a href="/ratgeber" style="color:var(--green-700);font-weight:600">Campuna-Ratgeber</a> ehrliche Tipps rund ums Kaufen, Verkaufen und Campen.</p>
+      </div>
+      <div class="tabs" role="tablist">
+        <span class="tab">Zuladungsrechner</span>
+        <span class="tab on">Camping-Reisebudget-Rechner</span>
+        <span class="tab">Camping-Tipps</span>
+      </div>
+      <div class="calc">
+        <div>
+          <span class="kicker" style="color:var(--green-700)">Reisebudget planen</span>
+          <h3>Camping-Reisebudget-Rechner</h3>
+          <p style="font-size:.75rem;color:var(--muted)">Plane das Budget für deine nächste Tour: Reisetage, Personen, Sprit und Stellplatzkosten. Das Ergebnis siehst du sofort.</p>
+          <div class="lab"><span>Reisetage</span><span>7 Tage</span></div><div class="slider"></div>
+          <div class="lab"><span>Personen</span><span>2</span></div><div class="slider"></div>
+          <div class="lab"><span>Strecke gesamt</span><span>1.200 km</span></div><div class="slider"></div>
+        </div>
+        <div class="cost">
+          <span class="kicker" style="color:var(--green-700)">Kostenübersicht</span>
+          <div class="row"><span>Sprit</span><span>192,00 €</span></div>
+          <div class="row"><span>Stellplätze</span><span>175,00 €</span></div>
+          <div class="row"><span>Verpflegung</span><span>168,00 €</span></div>
+          <div class="total"><span>Gesamt</span><span>535,00 €</span></div>
+          <p style="font-size:.68rem;color:var(--muted);margin-top:6px">Das sind rund 76 € pro Tag.</p>
+          <div class="hintbox">Budget merken: Lege ein kostenloses Konto an und speichere deine Planung für die nächste Tour.</div>
+        </div>
+      </div>
+      <p class="center" style="margin-top:18px"><a class="btn btn-outline" href="/tools/reisebudget-rechner">Zum vollständigen Rechner</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 7: WHY CAMPUNA (3 USP cards, h3 titles)
+============================================================ -->
+<section aria-labelledby="warum-titel">
+  <div class="wrap center">
+    <span class="kicker">Warum Campuna?</span>
+    <h2 id="warum-titel">Warum Campuna?</h2>
+    <p style="color:var(--muted);font-size:.85rem">Eine Plattform, die alle Seiten der Camping-Welt verbindet.</p>
+    <div class="why">
+      <div class="w-card"><span class="num">01</span><span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 21s7-5.1 7-11a7 7 0 1 0-14 0c0 5.9 7 11 7 11z"/></svg></span>
+        <h3>Camping an einem Ort</h3>
+        <p>Fahrzeuge, Ausrüstung, Stellplätze, Vermietung, Services und Anbieter: Du musst nicht mehr zwischen fünf Portalen springen. Auf Campuna findest du die ganze Camping-Welt gebündelt an einem Ort.</p>
+      </div>
+      <div class="w-card"><span class="num">02</span><span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4 3 20h18L12 4z"/></svg></span>
+        <h3>Von Campern gemacht</h3>
+        <p>Hinter Campuna steht ein Team, das selbst campt. Deshalb bauen wir genau die Funktionen, die uns unterwegs gefehlt haben, von der Umkreissuche bis zum Zuladungsrechner.</p>
+      </div>
+      <div class="w-card"><span class="num">03</span><span class="ic"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 20V10m6 10V4m6 16v-7"/></svg></span>
+        <h3>Campuna wächst mit dir</h3>
+        <p>Mit jedem Inserat, jedem Anbieter und jedem Ratgeber-Artikel wird die Plattform nützlicher. Deine Angebote und dein Feedback machen Campuna jeden Tag ein Stück besser.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 8: GUIDE / BLOG TEASER
+  DEV: 1 featured + 3 latest posts, dynamic. Post titles = h3.
+  Thumbnails lazy, alt = article title.
+============================================================ -->
+<section aria-labelledby="ratgeber-titel" style="background:var(--cream)">
+  <div class="wrap">
+    <div class="sec-head">
+      <div>
+        <span class="kicker">Camping Ratgeber</span>
+        <h2 id="ratgeber-titel">Camping-Ratgeber &amp; Tipps</h2>
+        <p style="color:var(--muted);font-size:.85rem;margin:0">Kaufberatung, Verkaufstipps, Technik und Praxiswissen: Im Ratgeber beantworten wir die Fragen, die sich Camper wirklich stellen.</p>
+      </div>
+      <a class="link" href="/ratgeber">Alle Artikel →</a>
+    </div>
+    <div class="guide">
+      <a class="feat" href="/ratgeber/was-ist-campuna">
+        <div class="fb">
+          <span class="tag">Campuna</span>
+          <h3>Was ist Campuna? Der Camping-Marktplatz für Deutschland</h3>
+          <p style="font-size:.75rem;color:#d9e4d6;margin:0 0 12px">Wie Campuna funktioniert, was du hier findest und wie du mitmachst.</p>
+          <span class="btn btn-gold" style="font-size:.7rem;padding:9px 16px">Artikel lesen</span>
+        </div>
+      </a>
+      <div class="mini">
+        <a href="/ratgeber/wohnmobil-gebraucht-kaufen-checkliste"><span class="th"></span><span><h3>Gebrauchtes Wohnmobil kaufen: Die komplette Checkliste</h3><span>Kaufberatung · 8 Min.</span></span></a>
+        <a href="/ratgeber/was-ist-mein-wohnmobil-wert"><span class="th"></span><span><h3>Was ist mein Wohnmobil wert? So ermittelst du den Preis</h3><span>Verkaufen &amp; Wert · 6 Min.</span></span></a>
+        <a href="/ratgeber/wohnmobil-richtig-beladen"><span class="th"></span><span><h3>Wohnmobil richtig beladen: Zuladung einfach berechnen</h3><span>Praxis &amp; Technik · 7 Min.</span></span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 9: MISSION (dark green band + video facade)
+  DEV: video = click-to-load facade with poster image. NO autoplay iframe.
+============================================================ -->
+<section class="mission" aria-labelledby="mission-titel">
+  <div class="wrap">
+    <span class="kicker">Über Campuna</span>
+    <h2 id="mission-titel">Wir bauen die Campingplattform, die wir selbst vermisst haben.</h2>
+    <p>Camping findet heute an vielen verschiedenen Orten statt. Angebote hier, Tipps dort, Campingplätze woanders. <span class="accent">Unsere Idee ist einfach: Wir wollen Camping an einem Ort zusammenbringen.</span></p>
+    <p>Das Fundament steht. Jetzt wächst Campuna mit jedem Camper, jedem Inserat, jedem Anbieter und jedem Beitrag weiter.</p>
+    <p class="accent">Campuna wächst mit euch.</p>
+    <div class="video" role="img" aria-label="Zwei Camper vor einem Tiny House, Vorschaubild zum Campuna-Video">
+      <span class="play">▶</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 10: JOIN / NEWSLETTER CTA
+============================================================ -->
+<section aria-labelledby="mitmachen-titel">
+  <div class="wrap">
+    <div class="join-card">
+      <span class="kicker">Werde Teil</span>
+      <h2 id="mitmachen-titel">Werde Teil von Campuna.</h2>
+      <p>Ob du kaufen, verkaufen, vermieten oder mit deinem Unternehmen sichtbar werden willst: Melde dich an und gestalte den Camping-Marktplatz von Anfang an mit.</p>
+      <a class="btn btn-gold" href="/registrieren">Jetzt kostenlos registrieren</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+  SECTION 11: FAQ (7 questions)
+  SEO/AEO core. Answers visible in DOM. Must match FAQPage schema verbatim.
+  DEV: <details>/<summary> is fine; question = h3 inside summary.
+============================================================ -->
+<section class="faq" aria-labelledby="faq-titel">
+  <div class="wrap" style="max-width:860px">
+    <div class="center">
+      <span class="kicker">Campuna Fragen &amp; Antworten</span>
+      <h2 id="faq-titel">Alles, was du über Campuna wissen musst</h2>
+      <p style="color:var(--muted);font-size:.85rem">Die häufigsten Fragen zu unserem Camping-Marktplatz, kurz beantwortet.</p>
+    </div>
+
+    <details open>
+      <summary><h3>Was ist Campuna?</h3></summary>
+      <p>Campuna ist der Camping-Marktplatz für Deutschland und bündelt die ganze Camping-Welt an einem Ort: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung und Camping-Services. Du kaufst, verkaufst und entdeckst hier Angebote von privat und von gewerblichen Anbietern. Betrieben wird die Plattform von Campern aus Erfurt.</p>
+    </details>
+    <details>
+      <summary><h3>Für wen ist Campuna geeignet?</h3></summary>
+      <p>Campuna richtet sich an alle, die campen: an Einsteiger und erfahrene Camper, an private Käufer und Verkäufer sowie an gewerbliche Anbieter wie Händler, Vermieter, Werkstätten und Campingplätze. Privatpersonen inserieren kostenlos, gewerbliche Anbieter präsentieren ihr Angebot mit einem eigenen Firmenprofil.</p>
+    </details>
+    <details>
+      <summary><h3>Wie kann ich auf Campuna verkaufen?</h3></summary>
+      <p>Erstelle ein kostenloses Konto, lege dein Inserat mit Fotos, Beschreibung und Preis an und veröffentliche es. Interessenten melden sich direkt über die Plattform bei dir. Den Verkauf wickelst du persönlich ab, ohne Provision an Campuna. Eine Schritt-für-Schritt-Anleitung findest du unter <a href="/so-funktionierts">So funktioniert Campuna</a>.</p>
+    </details>
+    <details>
+      <summary><h3>Kostet das Inserieren auf Campuna etwas?</h3></summary>
+      <p>Private Inserate sind auf Campuna kostenlos, ohne Provision und ohne versteckte Gebühren. Gewerbliche Anbieter wählen ein Paket, mit dem sie mehrere Angebote und ein eigenes Firmenprofil verwalten können. Alle Details und Preise findest du auf unserer <a href="/preise">Preisseite</a>.</p>
+    </details>
+    <details>
+      <summary><h3>Was kann ich auf Campuna anbieten?</h3></summary>
+      <p>Alles rund ums Camping: Wohnmobile, Camper und Wohnwagen, Zelte und Dachzelte, Campingzubehör, Fahrräder und Träger, Stellplätze und Campingplätze, Tiny Houses, Boote und Wassersport sowie Camping-Services wie Gasprüfung, Werkstatt oder Aufbereitung. Auch Miet- und Vermietungsangebote haben eine eigene Kategorie.</p>
+    </details>
+    <details>
+      <summary><h3>Wie finde ich passende Camping-Angebote?</h3></summary>
+      <p>Nutze die Suche auf der Startseite und filtere nach Kategorie, Ort und Preis. Mit der Umkreissuche findest du Angebote in deiner Nähe und in ganz Deutschland. Zusätzlich helfen dir die neun <a href="/kategorien">Kategorien</a>, der <a href="/ratgeber">Campuna-Ratgeber</a> und unsere Rechner bei der Auswahl.</p>
+    </details>
+    <details>
+      <summary><h3>Wie sicher ist das Kaufen und Verkaufen von privat?</h3></summary>
+      <p>Campuna setzt auf direkte Kommunikation zwischen Käufer und Verkäufer und klare Regeln für sicheres Handeln. Wir empfehlen bei Fahrzeugen immer Besichtigung, Probefahrt und einen schriftlichen Kaufvertrag. Praktische Tipps dazu findest du im Ratgeber und auf der Seite <a href="/sicher-handeln">Sicher handeln</a>.</p>
+    </details>
+  </div>
+</section>
+
+</main>
+
+<!-- ============================================================
+  FOOTER
+  SEO: second link block to all 9 category PLPs + crawlable NAP data.
+============================================================ -->
+<footer>
+  <div class="wrap f-intro">
+    <p style="margin:0">Campuna, dein Camping-Marktplatz. Campuna ist Deutschlands Marktplatz für die ganze Camping-Welt: Wohnmobile, Wohnwagen und Camper, Camping-Zubehör, Zelte und Dachzelte, Stellplätze und Campingplätze, Tiny Houses, Boote, Vermietung, Camping-Services und gewerbliche Anbieter. Kaufen, verkaufen und entdecken an einem Ort.</p>
+  </div>
+  <nav class="wrap f-grid" aria-label="Footer Navigation">
+    <div>
+      <a class="logo" href="/" style="color:#fff">▲ campuna<small style="color:#9db89b">DEIN CAMPING-MARKTPLATZ</small></a>
+      <p style="color:#9db89b;font-size:.7rem;margin-top:12px">Campuna wächst mit dir.</p>
+      <p style="color:#9db89b;font-size:.7rem">Campuna · Erfurt, Thüringen · Deutschland<br><a href="mailto:info@campuna.de" style="color:#cfe0cd">info@campuna.de</a></p>
+    </div>
+    <div><strong>Navigation</strong>
+      <ul>
+        <li><a href="/">Startseite</a></li>
+        <li><a href="/inserate">Marktplatz</a></li>
+        <li><a href="/ueber-uns">Über uns</a></li>
+        <li><a href="/so-funktionierts">So funktioniert Campuna</a></li>
+        <li><a href="/spotlight">Spotlight</a></li>
+        <li><a href="/preise">Preise</a></li>
+      </ul>
+    </div>
+    <div><strong>Kategorien</strong>
+      <ul>
+        <li><a href="/wohnmobile">Wohnmobile &amp; Camper</a></li>
+        <li><a href="/zubehoer">Camping-Zubehör</a></li>
+        <li><a href="/zelte">Zelte &amp; Dachzelte</a></li>
+        <li><a href="/fahrraeder-traeger">Fahrräder &amp; Träger</a></li>
+        <li><a href="/stellplaetze">Stellplätze &amp; Campingplätze</a></li>
+        <li><a href="/services">Camping-Services</a></li>
+        <li><a href="/tiny-houses">Tiny Houses</a></li>
+        <li><a href="/mieten">Mieten &amp; Vermieten</a></li>
+        <li><a href="/boote">Boote &amp; Wassersport</a></li>
+      </ul>
+    </div>
+    <div><strong>Support</strong>
+      <ul>
+        <li><a href="/faq">Hilfe &amp; FAQ</a></li>
+        <li><a href="/sicher-handeln">Sicher handeln</a></li>
+        <li><a href="/kontakt">Kontakt</a></li>
+        <li><a href="/ratgeber">Ratgeber</a></li>
+        <li><a href="/tools/zuladungsrechner">Zuladungsrechner</a></li>
+        <li><a href="/tools/reisebudget-rechner">Reisebudget-Rechner</a></li>
+      </ul>
+    </div>
+    <div><strong>Rechtliches</strong>
+      <ul>
+        <li><a href="/impressum">Impressum</a></li>
+        <li><a href="/agb">AGB</a></li>
+        <li><a href="/nutzungsbedingungen">Nutzungsbedingungen</a></li>
+        <li><a href="/datenschutz">Datenschutz</a></li>
+        <li><a href="/cookie-einstellungen">Cookie-Einstellungen</a></li>
+      </ul>
+    </div>
+  </nav>
+  <div class="wrap f-bottom">
+    <span>© 2026 Campuna. Alle Rechte vorbehalten.</span>
+    <span>Facebook · Instagram · TikTok · YouTube</span>
+  </div>
+</footer>
+
+</body>
+</html>
