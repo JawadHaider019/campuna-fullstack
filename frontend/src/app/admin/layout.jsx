@@ -75,20 +75,26 @@ export default function AdminLayout({ children }) {
         });
     };
 
-    // Role Guard: Ensure user is logged in as ADMIN
+    const isBlogAdmin = user?.role === 'BLOG_ADMIN';
+    const isFullAdmin = user?.role === 'ADMIN';
+
+    // Role Guard: Ensure user is logged in as ADMIN or BLOG_ADMIN
     useEffect(() => {
         if (mounted) {
             if (!isLoggedIn || !user) {
                 router.replace('/login');
-            } else if (user.role !== 'ADMIN') {
+            } else if (!isFullAdmin && !isBlogAdmin) {
                 router.replace('/mein-konto');
+            } else if (isBlogAdmin && pathname !== '/admin/blogs') {
+                // Blog Admin is strictly restricted to /admin/blogs only
+                router.replace('/admin/blogs');
             }
         }
-    }, [mounted, isLoggedIn, user, router]);
+    }, [mounted, isLoggedIn, user, router, isFullAdmin, isBlogAdmin, pathname]);
 
-    // Load review queue, report count & unread messages for live badges with 20s background polling
+    // Load review queue, report count & unread messages for live badges with 20s background polling (Full Admin only)
     useEffect(() => {
-        if (mounted && isLoggedIn && user?.role === 'ADMIN') {
+        if (mounted && isLoggedIn && isFullAdmin) {
             const fetchAdminBadges = () => {
                 getAdminDashboardStats()
                     .then(res => {
@@ -131,9 +137,9 @@ export default function AdminLayout({ children }) {
                 window.removeEventListener('campuna-unread-sync', fetchAdminBadges);
             };
         }
-    }, [mounted, isLoggedIn, user, pathname]);
+    }, [mounted, isLoggedIn, isFullAdmin, pathname]);
 
-    const menuItems = [
+    const fullAdminMenuItems = [
         { label: 'Dashboard', path: '/admin', icon: BarChart3 },
         {
             label: 'Inserate',
@@ -173,8 +179,13 @@ export default function AdminLayout({ children }) {
         { label: 'Benutzerverwaltung', path: '/admin/benutzer', icon: Users },
     ];
 
+    const blogAdminMenuItems = [
+        { label: 'Blog & Ratgeber', path: '/admin/blogs', icon: BookOpen },
+    ];
 
-    if (!mounted || !isLoggedIn || user?.role !== 'ADMIN') {
+    const menuItems = isBlogAdmin ? blogAdminMenuItems : fullAdminMenuItems;
+
+    if (!mounted || !isLoggedIn || (!isFullAdmin && !isBlogAdmin)) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-[#003807] via-[#001D03] to-[#040805] flex items-center justify-center">
                 <CircleLoader size="lg" color="gold" />
@@ -353,10 +364,10 @@ export default function AdminLayout({ children }) {
                     {!sidebarCollapsed && (
                         <div className="flex items-center justify-between px-1">
                             <span className="text-[10px] font-mono tracking-[0.2em] text-gold/60 uppercase font-semibold block truncate">
-                                OFFIZIELL
+                                {isBlogAdmin ? 'BLOG REDAKTION' : 'OFFIZIELL'}
                             </span>
                             <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-mono shrink-0">
-                                <Crown className="w-2.5 h-2.5 text-gold" /> BUSINESS
+                                <Crown className="w-2.5 h-2.5 text-gold" /> {isBlogAdmin ? 'BLOG' : 'BUSINESS'}
                             </span>
                         </div>
                     )}
@@ -379,14 +390,14 @@ export default function AdminLayout({ children }) {
                             <>
                                 <div className="flex items-center gap-2 min-w-0">
                                     <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-forest to-[#002B06] text-gold font-extrabold text-[11px] flex items-center justify-center border border-gold/60 shadow-xs shrink-0">
-                                        CC
+                                        {isBlogAdmin ? 'BR' : 'CC'}
                                     </div>
                                     <div className="min-w-0 truncate text-left">
                                         <h5 className="text-xs font-bold text-white truncate leading-tight">
-                                            Campuna Club
+                                            {isBlogAdmin ? 'Blog Redaktion' : 'Campuna Club'}
                                         </h5>
                                         <p className="text-[10px] font-mono text-sand/60 truncate">
-                                            Admin
+                                            {isBlogAdmin ? 'Blog Admin' : 'Admin'}
                                         </p>
                                     </div>
                                 </div>

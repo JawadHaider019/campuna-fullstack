@@ -387,6 +387,9 @@ function AuthFormContent({ initialMode = 'login' }) {
                 if (user?.role === 'ADMIN') {
                     toast.success('Willkommen im Administrationsbereich!');
                     router.push('/admin');
+                } else if (user?.role === 'BLOG_ADMIN') {
+                    toast.success('Willkommen im Blog-Verwaltungsbereich!');
+                    router.push('/admin/blogs');
                 } else {
                     toast.success('Erfolgreich angemeldet!');
                     router.push('/mein-konto');

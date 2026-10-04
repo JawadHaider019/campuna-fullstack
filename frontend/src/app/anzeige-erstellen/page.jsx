@@ -25,6 +25,8 @@ function RedirectContent() {
                 ? `/admin/inserat-erstellen?edit=${editId}`
                 : '/admin/inserat-erstellen';
             router.replace(adminUrl);
+        } else if (user?.role === 'BLOG_ADMIN') {
+            router.replace('/admin/blogs');
         } else {
             const userUrl = editId
                 ? `/mein-konto?tab=create_listing&edit=${editId}`

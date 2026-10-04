@@ -42,9 +42,11 @@ import {
 } from 'lucide-react';
 import { getAdminDashboardStats } from '@/api/admin';
 import { getImageUrl } from '@/utils/imageUrl';
+import { useAuthStore } from '@/store/useAuthStore';
 
 export default function AdminDashboard() {
     const router = useRouter();
+    const user = useAuthStore((state) => state.user);
 
     // Stats and Data State
     const [stats, setStats] = useState(null);
@@ -58,6 +60,10 @@ export default function AdminDashboard() {
 
     // Fetch Dashboard Analytics
     const loadDashboardData = useCallback(async () => {
+        if (user?.role === 'BLOG_ADMIN') {
+            router.replace('/admin/blogs');
+            return;
+        }
         setLoading(true);
         try {
             const res = await getAdminDashboardStats();

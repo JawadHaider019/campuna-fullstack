@@ -1,5 +1,5 @@
 import express from 'express';
-import { authenticate, requireAdmin } from '../middleware/authenticate.js';
+import { authenticate, requireAdmin, requireBlogAdmin } from '../middleware/authenticate.js';
 import {
     getAdminUsers,
     getAdminUserById,
@@ -47,16 +47,16 @@ import { uploadSingleSafe } from '../middleware/upload.js';
 
 const router = express.Router();
 
-// All admin routes require valid auth + ADMIN role
-router.use(authenticate, requireAdmin);
+// ─── Blog Posts Endpoints (Accessible by full ADMIN and dedicated BLOG_ADMIN) ───
+router.get('/posts', authenticate, requireBlogAdmin, getAdminPosts);
+router.get('/posts/:id', authenticate, requireBlogAdmin, getAdminPostById);
+router.post('/posts', authenticate, requireBlogAdmin, createPost);
+router.put('/posts/:id', authenticate, requireBlogAdmin, updatePost);
+router.delete('/posts/:id', authenticate, requireBlogAdmin, deletePost);
+router.post('/posts/upload-image', authenticate, requireBlogAdmin, uploadSingleSafe, uploadPostImage);
 
-// Blog posts endpoints
-router.get('/posts', getAdminPosts);
-router.get('/posts/:id', getAdminPostById);
-router.post('/posts', createPost);
-router.put('/posts/:id', updatePost);
-router.delete('/posts/:id', deletePost);
-router.post('/posts/upload-image', uploadSingleSafe, uploadPostImage);
+// ─── All Other Admin Endpoints (STRICTLY REQUIRE FULL ADMIN ROLE) ───
+router.use(authenticate, requireAdmin);
 
 // Dashboard stats and tools
 router.get('/dashboard-stats', getAdminDashboardStats);

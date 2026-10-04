@@ -9,7 +9,7 @@ import {
     deletePost,
     uploadPostImage
 } from '../controllers/posts.js';
-import { authenticate, requireAdmin } from '../middleware/authenticate.js';
+import { authenticate, requireBlogAdmin } from '../middleware/authenticate.js';
 import { uploadSingleSafe } from '../middleware/upload.js';
 
 const router = express.Router();
@@ -18,12 +18,12 @@ const router = express.Router();
 router.get('/', getPublicPosts);
 router.get('/:slug', getPublicPostBySlug);
 
-// ─── ADMIN ROUTES (Protected) ───
-router.get('/admin/all', authenticate, requireAdmin, getAdminPosts);
-router.get('/admin/:id', authenticate, requireAdmin, getAdminPostById);
-router.post('/admin/create', authenticate, requireAdmin, createPost);
-router.put('/admin/:id', authenticate, requireAdmin, updatePost);
-router.delete('/admin/:id', authenticate, requireAdmin, deletePost);
-router.post('/admin/upload-image', authenticate, requireAdmin, uploadSingleSafe, uploadPostImage);
+// ─── ADMIN ROUTES (Protected - Accessible by ADMIN & BLOG_ADMIN) ───
+router.get('/admin/all', authenticate, requireBlogAdmin, getAdminPosts);
+router.get('/admin/:id', authenticate, requireBlogAdmin, getAdminPostById);
+router.post('/admin/create', authenticate, requireBlogAdmin, createPost);
+router.put('/admin/:id', authenticate, requireBlogAdmin, updatePost);
+router.delete('/admin/:id', authenticate, requireBlogAdmin, deletePost);
+router.post('/admin/upload-image', authenticate, requireBlogAdmin, uploadSingleSafe, uploadPostImage);
 
 export default router;

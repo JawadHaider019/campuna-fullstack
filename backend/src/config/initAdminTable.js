@@ -137,10 +137,37 @@ async function main() {
         console.log('✅ Admin inserted into admins table');
     } else {
         await pool.query(
-            `UPDATE admins SET password_hash = $1, updated_at = NOW() WHERE email = $2`,
+            `UPDATE admins SET password_hash = $1, role = 'ADMIN', updated_at = NOW() WHERE email = $2`,
             [hashPassword(adminPass), adminEmail]
         );
         console.log('✅ Admin password hash updated in admins table');
+    }
+
+    // Provision dedicated Blog / CMS Admin
+    const rawBlogEmail = process.env.CMS_ADMIN_EMAIL || process.env.BLOG_ADMIN_EMAIL || 'cmsadmin@campuna.com';
+    const rawBlogPass = process.env.CMS_ADMIN_PASSWORD || process.env.BLOG_ADMIN_PASSWORD || 'CMSCampuna';
+    const blogEmail = rawBlogEmail.replace(/^["']|["']$/g, '').trim().toLowerCase();
+    const blogPass = rawBlogPass.replace(/^["']|["']$/g, '').trim();
+
+    console.log(`2b. Provisioning CMS/Blog admin in 'admins' table for ${blogEmail}...`);
+    // Clean up old email if renamed
+    if (blogEmail !== 'blogadmin@campuna.com') {
+        await pool.query("DELETE FROM admins WHERE email = 'blogadmin@campuna.com' AND role = 'BLOG_ADMIN'").catch(() => {});
+    }
+
+    const existingBlogAdmin = await pool.query('SELECT * FROM admins WHERE email = $1', [blogEmail]);
+    if (existingBlogAdmin.rows.length === 0) {
+        await pool.query(
+            `INSERT INTO admins (email, password_hash, name, role) VALUES ($1, $2, 'Campuna CMS Redaktion', 'BLOG_ADMIN')`,
+            [blogEmail, hashPassword(blogPass)]
+        );
+        console.log('✅ CMS/Blog Admin inserted into admins table');
+    } else {
+        await pool.query(
+            `UPDATE admins SET password_hash = $1, role = 'BLOG_ADMIN', name = 'Campuna CMS Redaktion', updated_at = NOW() WHERE email = $2`,
+            [hashPassword(blogPass), blogEmail]
+        );
+        console.log('✅ CMS/Blog Admin password hash and role updated in admins table');
     }
 
     console.log('3. Synchronizing admin record to users and company_profiles tables...');

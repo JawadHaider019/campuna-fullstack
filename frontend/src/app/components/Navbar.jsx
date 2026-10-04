@@ -15,6 +15,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
   const user = useAuthStore((state) => state.user);
   const isLoggedIn = mounted ? (propIsLoggedIn ?? storeIsLoggedIn) : false;
   const isAdmin = mounted && isLoggedIn && user?.role === 'ADMIN';
+  const isBlogAdmin = mounted && isLoggedIn && user?.role === 'BLOG_ADMIN';
 
   const chatUnreadCount = useChatStore((state) => state.unreadCount);
   const fetchUnreadCount = useChatStore((state) => state.fetchUnreadCount);
@@ -371,6 +372,15 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                       </span>
                     )}
                   </button>
+                ) : isBlogAdmin ? (
+                  <button
+                    onClick={() => router.push('/admin/blogs')}
+                    className="relative overflow-hidden flex items-center space-x-2 bg-gradient-to-r from-[#0A2218] via-forest to-[#0A2218] hover:from-forest hover:to-[#0A2218] text-white border border-gold/45 hover:border-gold font-sans text-xs font-bold uppercase tracking-wider py-2.5 px-5 rounded-full shadow-[0_2px_12px_rgba(0,99,13,0.25)] hover:shadow-[0_4px_22px_rgba(200,169,107,0.4)] hover:-translate-y-0.5 hover:scale-[1.02] active:scale-[0.98] transition-all duration-500 ease-out group ml-1 cursor-pointer"
+                    title="Zur Blog-Verwaltung"
+                  >
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-gold group-hover:scale-115 transition-all duration-500 ease-out" />
+                    <span className="relative z-10 text-white tracking-wide">Blog Panel</span>
+                  </button>
                 ) : (
                   <button
                     onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/login')}
@@ -480,6 +490,17 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                           <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                         </span>
                       )}
+                    </button>
+                  ) : isBlogAdmin ? (
+                    <button
+                      onClick={() => {
+                        setIsOpen(false);
+                        router.push('/admin/blogs');
+                      }}
+                      className="relative overflow-hidden w-full bg-gradient-to-r from-[#0A2218] via-forest to-[#0A2218] hover:from-forest hover:to-[#0A2218] text-white border border-gold/45 hover:border-gold py-3 rounded-full font-sans text-sm font-bold uppercase tracking-wider transition-all duration-500 ease-out shadow-[0_2px_12px_rgba(0,99,13,0.25)] hover:shadow-[0_4px_22px_rgba(200,169,107,0.4)] flex items-center justify-center space-x-2 min-h-[48px] group cursor-pointer"
+                    >
+                      <ShieldCheck className="w-4.5 h-4.5 shrink-0 text-gold group-hover:scale-115 transition-all duration-500" />
+                      <span className="relative z-10 text-white tracking-wide">Blog Panel</span>
                     </button>
                   ) : (
                     <button

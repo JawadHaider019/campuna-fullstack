@@ -546,6 +546,8 @@ export default function MeinKontoPage() {
             }
             if (user?.role === 'ADMIN') {
                 router.replace('/admin');
+            } else if (user?.role === 'BLOG_ADMIN') {
+                router.replace('/admin/blogs');
             }
         }
     }, [mounted, isLoggedIn, accessToken, user, router]);
@@ -553,6 +555,10 @@ export default function MeinKontoPage() {
     const loadAllAccountData = async () => {
         if (user?.role === 'ADMIN') {
             router.replace('/admin');
+            return;
+        }
+        if (user?.role === 'BLOG_ADMIN') {
+            router.replace('/admin/blogs');
             return;
         }
 

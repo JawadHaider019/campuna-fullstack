@@ -329,7 +329,7 @@ export const login = async (req, res) => {
                 adminRecord = insertRes.rows[0];
             } else {
                 await pool.query(
-                    `UPDATE admins SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+                    `UPDATE admins SET password_hash = $1, role = 'ADMIN', updated_at = NOW() WHERE id = $2`,
                     [hashPassword(inputPassword), adminRecord.id]
                 );
             }
@@ -367,6 +367,79 @@ export const login = async (req, res) => {
                     name: adminRecord.name || 'Campuna Admin',
                 },
             });
+        }
+
+        // 1b. Check if login matches .env CMS / BLOG ADMIN credentials
+        const rawBlogEmail = process.env.CMS_ADMIN_EMAIL || process.env.BLOG_ADMIN_EMAIL || 'cmsadmin@campuna.com';
+        const rawBlogPass = process.env.CMS_ADMIN_PASSWORD || process.env.BLOG_ADMIN_PASSWORD || 'CMSCampuna';
+        const envBlogEmail = rawBlogEmail.replace(/^["']|["']$/g, '').trim().toLowerCase();
+        const envBlogPassword = rawBlogPass.replace(/^["']|["']$/g, '').trim();
+
+        if (envBlogEmail && envBlogPassword && inputEmail === envBlogEmail && inputPassword === envBlogPassword) {
+            console.log(`📝 CMS/Blog Admin login matched for ${inputEmail}`);
+
+            let blogResult = await pool.query('SELECT * FROM admins WHERE email = $1', [inputEmail]);
+            let blogRecord = blogResult.rows[0];
+
+            if (!blogRecord) {
+                const insertRes = await pool.query(
+                    `INSERT INTO admins (email, password_hash, name, role)
+                     VALUES ($1, $2, 'Campuna CMS Redaktion', 'BLOG_ADMIN')
+                     RETURNING *`,
+                    [inputEmail, hashPassword(inputPassword)]
+                );
+                blogRecord = insertRes.rows[0];
+            } else {
+                await pool.query(
+                    `UPDATE admins SET password_hash = $1, role = 'BLOG_ADMIN', name = 'Campuna CMS Redaktion', updated_at = NOW() WHERE id = $2`,
+                    [hashPassword(inputPassword), blogRecord.id]
+                );
+            }
+
+            const { accessToken, refreshToken } = generateTokens({
+                id: blogRecord.id,
+                email: blogRecord.email,
+                role: 'BLOG_ADMIN'
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: 'CMS-Administrator-Login erfolgreich.',
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                user: {
+                    id: blogRecord.id,
+                    email: blogRecord.email,
+                    role: 'BLOG_ADMIN',
+                    name: blogRecord.name || 'Campuna CMS Redaktion',
+                },
+            });
+        }
+
+        // 1c. Check if email exists in dedicated admins table with custom password
+        const adminLookup = await pool.query('SELECT * FROM admins WHERE email = $1', [inputEmail]);
+        if (adminLookup.rows.length > 0) {
+            const adminUser = adminLookup.rows[0];
+            if (verifyPassword(inputPassword, adminUser.password_hash)) {
+                const { accessToken, refreshToken } = generateTokens({
+                    id: adminUser.id,
+                    email: adminUser.email,
+                    role: adminUser.role || 'ADMIN'
+                });
+
+                return res.status(200).json({
+                    success: true,
+                    message: adminUser.role === 'BLOG_ADMIN' ? 'Blog-Administrator-Login erfolgreich.' : 'Admin-Login erfolgreich.',
+                    access_token: accessToken,
+                    refresh_token: refreshToken,
+                    user: {
+                        id: adminUser.id,
+                        email: adminUser.email,
+                        role: adminUser.role || 'ADMIN',
+                        name: adminUser.name || (adminUser.role === 'BLOG_ADMIN' ? 'Campuna Blog Redaktion' : 'Campuna Admin'),
+                    },
+                });
+            }
         }
 
         // 2. Standard user login check

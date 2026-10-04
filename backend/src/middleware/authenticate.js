@@ -37,8 +37,8 @@ export const authenticate = async (req, res, next) => {
             });
         }
 
-        // Check if token belongs to an admin from the dedicated 'admins' table
-        if (decoded.role === 'ADMIN') {
+        // Check if token belongs to an admin or blog admin from the dedicated 'admins' table
+        if (decoded.role === 'ADMIN' || decoded.role === 'BLOG_ADMIN') {
             const adminRes = await pool.query('SELECT * FROM admins WHERE id = $1', [decoded.id]);
             const admin = adminRes.rows[0];
             if (!admin) {
@@ -80,13 +80,26 @@ export const authenticate = async (req, res, next) => {
 };
 
 /**
- * Ensures the authenticated user has the 'ADMIN' role.
+ * Ensures the authenticated user has the full 'ADMIN' role.
  */
 export const requireAdmin = (req, res, next) => {
     if (!req.user || req.user.role !== 'ADMIN') {
         return res.status(403).json({
             success: false,
             error: 'Zugriff verweigert. Dieser Bereich ist nur für Administratoren zugänglich.',
+        });
+    }
+    next();
+};
+
+/**
+ * Ensures the authenticated user has either 'ADMIN' or 'BLOG_ADMIN' role.
+ */
+export const requireBlogAdmin = (req, res, next) => {
+    if (!req.user || (req.user.role !== 'ADMIN' && req.user.role !== 'BLOG_ADMIN')) {
+        return res.status(403).json({
+            success: false,
+            error: 'Zugriff verweigert. Du hast keine Berechtigung für die Blog-Verwaltung.',
         });
     }
     next();
@@ -117,7 +130,7 @@ export const optionalAuthenticate = async (req, res, next) => {
             return next();
         }
 
-        if (decoded.role === 'ADMIN') {
+        if (decoded.role === 'ADMIN' || decoded.role === 'BLOG_ADMIN') {
             const adminRes = await pool.query('SELECT * FROM admins WHERE id = $1', [decoded.id]);
             const admin = adminRes.rows[0];
             if (admin) {
