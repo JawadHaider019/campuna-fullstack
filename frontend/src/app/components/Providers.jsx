@@ -343,7 +343,9 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
         };
     }, [filteredProviders.length, constraints, x, shouldSlide]);
 
-    const selectedCategoryObj = PROVIDER_CATEGORIES.find(c => c.name === selectedCategory || c.id === selectedCategory);
+    const selectedCategoryObj = PROVIDER_CATEGORIES.find(
+        c => c.name === selectedCategory || c.id === selectedCategory || c.slug === selectedCategory
+    );
 
     return (
         <section id="campuna-spotlight" className="py-10 sm:py-16 bg-sand relative overflow-x-hidden scroll-mt-24 border-t border-forest/5">
@@ -511,16 +513,38 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                     </div>
                 ) : (
                     /* Fallback Card when category has no active spotlight partner */
-                    <div className="bg-white rounded-3xl border border-forest/10 p-8 sm:p-10 text-center max-w-xl mx-auto shadow-xs space-y-2">
-                        <div className="w-12 h-12 rounded-2xl bg-sand/60 text-forest mx-auto flex items-center justify-center">
-                            <Building2 className="w-6 h-6 text-gold" />
+                    <div className="bg-white rounded-3xl border border-forest/10 p-8 sm:p-10 text-center max-w-xl mx-auto shadow-sm space-y-4">
+                        <div className="w-14 h-14 rounded-2xl bg-sand/60 text-forest mx-auto flex items-center justify-center border border-forest/5 shadow-2xs">
+                            {React.createElement(selectedCategoryObj ? getCategoryIcon(selectedCategoryObj.iconName) : Building2, {
+                                className: "w-7 h-7 text-gold"
+                            })}
                         </div>
-                        <h3 className="font-display text-base sm:text-lg font-bold text-forest">
-                            Keine Anbieter gefunden
-                        </h3>
-                        <p className="font-sans text-xs sm:text-sm text-charcoal/60 max-w-md mx-auto font-light leading-relaxed">
-                            In dieser Kategorie sind aktuell keine Spotlight-Anbieter verfügbar.
-                        </p>
+                        <div className="space-y-1.5">
+                            <h3 className="font-display text-base sm:text-lg font-bold text-forest">
+                                {selectedCategory !== 'all' && selectedCategoryObj
+                                    ? `Keine Spotlight-Partner in „${selectedCategoryObj.shortName || selectedCategoryObj.name}“`
+                                    : 'Keine Spotlight-Partner gefunden'}
+                            </h3>
+                            <p className="font-sans text-xs sm:text-sm text-charcoal/70 max-w-md mx-auto font-light leading-relaxed">
+                                In dieser Kategorie sind aktuell keine Spotlight-Anbieter hervorgehoben. Entdecke alle eingetragenen Fachbetriebe und Partner im Verzeichnis.
+                            </p>
+                        </div>
+
+                        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const targetUrl = selectedCategory !== 'all' && selectedCategoryObj
+                                        ? `/anbieter?category=${selectedCategoryObj.slug}`
+                                        : (selectedCategory !== 'all' ? `/anbieter?category=${encodeURIComponent(selectedCategory)}` : '/anbieter');
+                                    router.push(targetUrl);
+                                }}
+                                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-forest text-sand hover:bg-forest/90 hover:text-gold text-xs sm:text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer group"
+                            >
+                                <span>Weitere Anbieter in dieser Kategorie ansehen</span>
+                                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
                     </div>
                 )}
 
