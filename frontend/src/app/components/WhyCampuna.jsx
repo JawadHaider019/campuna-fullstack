@@ -96,7 +96,7 @@ export default function WhyCampuna() {
                                         whileInView={{ opacity: 1, x: 0 }}
                                         viewport={{ once: true }}
                                         transition={{ delay: index * 0.1, duration: 0.5 }}
-                                        className="bg-white/5 border border-white/10 hover:border-gold/40 p-5 sm:p-6 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 flex items-start gap-4 sm:gap-5 group backdrop-blur-sm"
+                                        className="bg-white/10 backdrop-blur-md border border-white/15 hover:border-gold/40 hover:bg-white/[0.14] p-5 sm:p-6 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] transition-all duration-300 flex items-start gap-4 sm:gap-5 group"
                                     >
                                         <div className="p-3 sm:p-3.5 rounded-2xl bg-white/10 text-gold group-hover:bg-gold group-hover:text-forest transition-all duration-300 shrink-0 shadow-inner">
                                             <Icon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-110" />
@@ -168,7 +168,7 @@ export default function WhyCampuna() {
                         </motion.div>
 
                         {/* Dedicated Mission & Story Card */}
-                        <div className="bg-white/5 border border-white/10 hover:border-gold/30 rounded-3xl p-5 sm:p-6 backdrop-blur-sm space-y-3">
+                        <div className="bg-white/10 backdrop-blur-md border border-white/15 hover:border-gold/40 hover:bg-white/[0.14] rounded-3xl p-5 sm:p-6 shadow-[0_8px_32px_rgba(0,0,0,0.2)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.3)] transition-all duration-300 space-y-3">
                             <p className="font-sans text-xs sm:text-sm text-sand/90 font-light leading-relaxed">
                                 Vom Wohnmobil-Kauf über praktisches Zubehör bis hin zu Ratgebern und Stellplätzen: <span className="text-gold font-medium">Campuna vereint die gesamte Camping-Community</span> auf einer modernen, transparenten Plattform – von Campern für Camper entwickelt.
                             </p>
@@ -177,7 +177,7 @@ export default function WhyCampuna() {
                                     href="/uber-campuna"
                                     className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold uppercase tracking-wider text-white hover:text-gold transition-colors group"
                                 >
-                                    <span>Mehr über unsere Mission erfahren</span>
+                                    <span>Mehr über uns erfahren</span>
                                     <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform text-gold" />
                                 </Link>
                             </div>
