@@ -94,7 +94,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
     pathname?.startsWith('/konto') || 
     pathname?.startsWith('/de/konto');
 
-  const desktopNavLinks = [
+  const navLinks = [
     { label: 'Angebote', path: '/inserate' },
     { label: 'Kategorien', path: '/kategorien' },
     { label: 'Anbieter', path: '/anbieter' },
@@ -102,19 +102,6 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
     { label: 'Ratgeber', path: '/blog' },
     { label: 'Über uns', path: '/uber-campuna' },
   ];
-
-  const mobileNavLinks = [
-    { label: 'Angebote', path: '/inserate' },
-    { label: 'Kategorien', path: '/kategorien' },
-    { label: 'Anbieter', path: '/anbieter' },
-    { label: 'Spotlight', id: 'campuna-spotlight' },
-    { label: 'Ratgeber', path: '/blog' },
-    { label: 'Tools & Rechner', id: 'tool' },
-    { label: 'Über uns', path: '/uber-campuna' },
-    { label: 'So funktioniert’s', path: '/so-funktioniert-campuna' },
-  ];
-
-  const navLinks = desktopNavLinks;
 
 
   const scrollToSection = (id, behavior = 'smooth') => {
@@ -312,7 +299,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
             >
               {navLinks.map((link) => {
                 const isActive = link.path
-                  ? (pathname === link.path || (link.path === '/uber_campuna' && (pathname === '/about' || pathname === '/about_us')))
+                  ? (pathname === link.path || (link.path === '/uber-campuna' && (pathname === '/about' || pathname === '/about_us')))
                   : (isHomepage && activeSection === link.id);
                 return (
                   <motion.button
@@ -449,7 +436,7 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                 }}
                 className="px-6 py-6 flex flex-col space-y-4"
               >
-                {mobileNavLinks.map((link) => {
+                {navLinks.map((link) => {
                   const isActive = link.path
                     ? (pathname === link.path || (link.path === '/uber-campuna' && (pathname === '/about' || pathname === '/about_us')))
                     : (isHomepage && activeSection === link.id);

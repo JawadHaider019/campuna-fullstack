@@ -409,17 +409,15 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                         <button
                             type="button"
                             onClick={() => setSelectedCategory('all')}
-                            className={`group relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 shrink-0 cursor-pointer ${
-                                selectedCategory === 'all'
-                                    ? 'bg-forest text-white shadow-md'
-                                    : 'bg-white/90 hover:bg-white text-charcoal/75 hover:text-forest border border-forest/10 hover:border-forest/25'
-                            }`}
+                            className={`group relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 shrink-0 cursor-pointer ${selectedCategory === 'all'
+                                ? 'bg-forest text-white shadow-md'
+                                : 'bg-white/90 hover:bg-white text-charcoal/75 hover:text-forest border border-forest/10 hover:border-forest/25'
+                                }`}
                         >
                             <Sparkles className={`w-3.5 h-3.5 ${selectedCategory === 'all' ? 'text-gold' : 'text-charcoal/40 group-hover:text-forest'}`} />
                             <span>Alle Bereiche</span>
-                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                                selectedCategory === 'all' ? 'bg-white/20 text-gold' : 'bg-sand text-charcoal/60 border border-forest/5'
-                            }`}>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${selectedCategory === 'all' ? 'bg-white/20 text-gold' : 'bg-sand text-charcoal/60 border border-forest/5'
+                                }`}>
                                 {providersList.length}
                             </span>
                         </button>
@@ -435,18 +433,16 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                                     key={cat.id}
                                     type="button"
                                     onClick={() => setSelectedCategory(cat.name)}
-                                    className={`group relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold tracking-tight transition-all duration-200 shrink-0 cursor-pointer ${
-                                        isSelected
-                                            ? 'bg-forest text-white shadow-md'
-                                            : 'bg-white/90 hover:bg-white text-charcoal/75 hover:text-forest border border-forest/10 hover:border-forest/25'
-                                    }`}
+                                    className={`group relative inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold tracking-tight transition-all duration-200 shrink-0 cursor-pointer ${isSelected
+                                        ? 'bg-forest text-white shadow-md'
+                                        : 'bg-white/90 hover:bg-white text-charcoal/75 hover:text-forest border border-forest/10 hover:border-forest/25'
+                                        }`}
                                 >
                                     <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-gold' : 'text-charcoal/40 group-hover:text-gold'}`} />
                                     <span>{cat.shortName || cat.name}</span>
                                     {countInCat > 0 && (
-                                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
-                                            isSelected ? 'bg-white/20 text-gold' : 'bg-sand text-charcoal/60 border border-forest/5'
-                                        }`}>
+                                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${isSelected ? 'bg-white/20 text-gold' : 'bg-sand text-charcoal/60 border border-forest/5'
+                                            }`}>
                                             {countInCat}
                                         </span>
                                     )}
