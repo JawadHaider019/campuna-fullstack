@@ -33,7 +33,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
     return (
         <section
             id="hero"
-            className="relative min-h-[80vh] md:min-h-[82vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-30 sm:mt-30 mb-0 mx-4 md:mx-8 lg:mx-12 shadow-2xl"
+            className="relative min-h-[80vh] md:min-h-[82vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-18 sm:mt-20 mb-0 mx-4 md:mx-8 lg:mx-12 shadow-2xl"
         >
             {/* Background Cinematic Image with Zoom Animation */}
             <div className="absolute inset-0 z-0">
@@ -70,14 +70,14 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                 {/* Central Content Column */}
                 <div className="text-center max-w-6xl w-full mx-auto my-auto pt-6 pb-4">
                     {/* Luxury Hero Headline: 2 lines on Desktop/Laptop, 3 lines on Mobile/Tablet */}
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
                         className="font-display text-xl sm:text-2xl md:text-3xl lg:text-[25px] xl:text-[31px] 2xl:text-[36px] font-bold tracking-tight text-white mb-4 leading-tight sm:leading-snug w-full mx-auto"
                     >
                         <span className="block lg:whitespace-nowrap">Dein Camping-Marktplatz:</span>
-                        
+
                         {/* Mobile & Tablet: Clean 2 additional lines -> 3 lines total */}
                         <span className="block lg:hidden text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1 sm:mt-1.5">
                             <span className="block">Wir bringen Camping</span>

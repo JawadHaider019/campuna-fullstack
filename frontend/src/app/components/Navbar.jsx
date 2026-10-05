@@ -1,13 +1,26 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, User, Bell, ShieldCheck } from 'lucide-react';
+import { Menu, X, User, Bell, ShieldCheck, ChevronDown, ArrowRight } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import WelcomeBar from './WelcomeBar';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useChatStore } from '@/store/useChatStore';
+
+const TOOLS_ITEMS = [
+  {
+    title: 'Zuladungsrechner',
+    subtitle: 'Zuladung für Wohnmobil & Wohnwagen berechnen',
+    path: '/zuladungsrechner'
+  },
+  {
+    title: 'Reisekostenrechner',
+    subtitle: 'Sprit-, Maut- und Campingkosten kalkulieren',
+    path: '/reisekostenrechner'
+  }
+];
 
 export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAlertCount }) {
   const [mounted, setMounted] = useState(false);
@@ -29,6 +42,8 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('top');
+  const [toolsHovered, setToolsHovered] = useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -94,14 +109,70 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
     pathname?.startsWith('/konto') || 
     pathname?.startsWith('/de/konto');
 
-  const navLinks = [
-    { label: 'Angebote', path: '/inserate' },
-    { label: 'Kategorien', path: '/kategorien' },
-    { label: 'Anbieter', path: '/anbieter' },
-    { label: 'Spotlight', id: 'campuna-spotlight' },
-    { label: 'Ratgeber', path: '/blog' },
-    { label: 'Über uns', path: '/uber-campuna' },
-  ];
+  const navLinks = useMemo(() => {
+    const currentPath = pathname || '/';
+    const isHome = currentPath === '/' || currentPath === '/de';
+
+    if (isHome) {
+      // On Homepage: Do not show "Startseite" / Home link. Show all primary nav links.
+      return [
+        { id: 'offers', label: 'Angebote', path: '/inserate' },
+        { id: 'categories', label: 'Kategorien', path: '/kategorien' },
+        { id: 'providers', label: 'Anbieter', path: '/anbieter' },
+        { id: 'campuna-spotlight', label: 'Spotlight', id: 'campuna-spotlight' },
+        { id: 'tool', label: 'Tools & Rechner' },
+        { id: 'about', label: 'Über uns', path: '/uber-campuna' },
+        { id: 'how-it-works', label: "So funktioniert's", path: '/so-funktioniert-campuna' },
+      ];
+    }
+
+    // On Subpages: 1st item is ALWAYS "Startseite" (/),
+    // and hide the item that corresponds to the active page.
+    const allItems = [
+      { id: 'home', label: 'Startseite', path: '/' },
+      { 
+        id: 'offers', 
+        label: 'Angebote', 
+        path: '/inserate', 
+        isCurrent: currentPath === '/inserate' || currentPath.startsWith('/inserat') 
+      },
+      { 
+        id: 'categories', 
+        label: 'Kategorien', 
+        path: '/kategorien', 
+        isCurrent: currentPath === '/kategorien' || currentPath.startsWith('/kategorie') 
+      },
+      { 
+        id: 'providers', 
+        label: 'Anbieter', 
+        path: '/anbieter', 
+        isCurrent: currentPath === '/anbieter' || currentPath.startsWith('/anbieter/') 
+      },
+      { 
+        id: 'campuna-spotlight', 
+        label: 'Spotlight', 
+        id: 'campuna-spotlight' 
+      },
+      { 
+        id: 'tool', 
+        label: 'Tools & Rechner' 
+      },
+      { 
+        id: 'about', 
+        label: 'Über uns', 
+        path: '/uber-campuna', 
+        isCurrent: currentPath.startsWith('/uber-campuna') || currentPath === '/about' || currentPath === '/about_us' 
+      },
+      { 
+        id: 'how-it-works', 
+        label: "So funktioniert's", 
+        path: '/so-funktioniert-campuna', 
+        isCurrent: currentPath.startsWith('/so-funktioniert-campuna') 
+      },
+    ];
+
+    return allItems.filter((item) => !item.isCurrent);
+  }, [pathname]);
 
 
   const scrollToSection = (id, behavior = 'smooth') => {
@@ -295,9 +366,78 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                   }
                 }
               }}
-              className="hidden lg:flex items-center space-x-6 xl:space-x-8"
+              className="hidden lg:flex items-center space-x-3.5 xl:space-x-6 text-[13.5px] xl:text-sm"
             >
               {navLinks.map((link) => {
+                if (link.id === 'tool') {
+                  const isToolActive = pathname === '/zuladungsrechner' || pathname === '/reisekostenrechner';
+                  return (
+                    <div
+                      key="tools-nav-dropdown"
+                      className="relative py-1"
+                      onMouseEnter={() => setToolsHovered(true)}
+                      onMouseLeave={() => setToolsHovered(false)}
+                    >
+                      <button
+                        onClick={() => setToolsHovered(!toolsHovered)}
+                        className={`relative font-sans text-sm font-medium tracking-wide transition-colors duration-200 py-1 flex items-center gap-1 cursor-pointer ${
+                          isToolActive ? 'text-gold font-semibold' : 'text-forest hover:text-gold'
+                        }`}
+                      >
+                        <span>{link.label}</span>
+                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsHovered ? 'rotate-180 text-gold' : 'text-forest/60'}`} />
+                        {isToolActive && (
+                          <motion.div
+                            initial={{ opacity: 0, scaleX: 0.6 }}
+                            animate={{ opacity: 1, scaleX: 1 }}
+                            exit={{ opacity: 0, scaleX: 0.6 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute bottom-0 left-0 right-0 h-[2px] bg-gold rounded-full origin-center"
+                          />
+                        )}
+                      </button>
+
+                      <AnimatePresence>
+                        {toolsHovered && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                            transition={{ duration: 0.18, ease: 'easeOut' }}
+                            className="absolute top-full left-1/2 -translate-x-1/2 mt-1 w-72 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-forest/10 p-2 z-50"
+                          >
+                            <div className="space-y-1">
+                              {TOOLS_ITEMS.map((tool) => {
+                                const isCurrentTool = pathname === tool.path;
+                                return (
+                                  <button
+                                    key={tool.path}
+                                    onClick={() => {
+                                      setToolsHovered(false);
+                                      router.push(tool.path);
+                                    }}
+                                    className={`w-full flex flex-col p-2.5 rounded-xl transition-all duration-200 group/toolitem text-left cursor-pointer ${
+                                      isCurrentTool ? 'bg-sand/70 text-forest' : 'hover:bg-sand/60 text-charcoal'
+                                    }`}
+                                  >
+                                    <div className="font-display text-xs font-bold text-forest group-hover/toolitem:text-gold transition-colors flex items-center justify-between">
+                                      <span>{tool.title}</span>
+                                      <ArrowRight className="w-3 h-3 text-charcoal/30 group-hover/toolitem:text-forest group-hover/toolitem:translate-x-0.5 transition-all opacity-0 group-hover/toolitem:opacity-100" />
+                                    </div>
+                                    <p className="font-sans text-[11px] text-charcoal/60 leading-tight font-light line-clamp-1 mt-0.5">
+                                      {tool.subtitle}
+                                    </p>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                }
+
                 const isActive = link.path
                   ? (pathname === link.path || (link.path === '/uber-campuna' && (pathname === '/about' || pathname === '/about_us')))
                   : (isHomepage && activeSection === link.id);
@@ -437,6 +577,56 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                 className="px-6 py-6 flex flex-col space-y-4"
               >
                 {navLinks.map((link) => {
+                  if (link.id === 'tool') {
+                    const isToolActive = pathname === '/zuladungsrechner' || pathname === '/reisekostenrechner';
+                    return (
+                      <div key="mobile-tool-group" className="flex flex-col space-y-1">
+                        <button
+                          onClick={() => setMobileToolsOpen(!mobileToolsOpen)}
+                          className={`font-sans text-base font-medium text-left transition-colors duration-200 flex items-center justify-between py-1.5 cursor-pointer ${
+                            isToolActive ? 'text-gold font-bold' : 'text-forest hover:text-gold'
+                          }`}
+                        >
+                          <span>{link.label}</span>
+                          <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${mobileToolsOpen ? 'rotate-180 text-gold' : 'text-charcoal/50'}`} />
+                        </button>
+                        <AnimatePresence>
+                          {mobileToolsOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="pl-3 pr-1 py-1 space-y-1.5 overflow-hidden"
+                            >
+                              {TOOLS_ITEMS.map((tool) => {
+                                const isCurrentTool = pathname === tool.path;
+                                return (
+                                   <button
+                                     key={tool.path}
+                                     onClick={() => {
+                                       setIsOpen(false);
+                                       router.push(tool.path);
+                                     }}
+                                     className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-colors cursor-pointer ${
+                                       isCurrentTool ? 'bg-sand text-forest font-bold' : 'hover:bg-sand/60 text-charcoal/80 bg-sand/30'
+                                     }`}
+                                   >
+                                     <div className="flex-1 min-w-0 pr-2">
+                                       <span className="font-display text-xs font-semibold text-forest block truncate">{tool.title}</span>
+                                       <span className="font-sans text-[10px] text-charcoal/60 font-light block truncate">{tool.subtitle}</span>
+                                     </div>
+                                     <ArrowRight className="w-3.5 h-3.5 text-charcoal/40 shrink-0" />
+                                   </button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  }
+
                   const isActive = link.path
                     ? (pathname === link.path || (link.path === '/uber-campuna' && (pathname === '/about' || pathname === '/about_us')))
                     : (isHomepage && activeSection === link.id);
