@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -19,7 +20,8 @@ import {
     Home,
     Anchor,
     Sparkles,
-    CheckCircle2
+    CheckCircle2,
+    ChevronLeft
 } from 'lucide-react';
 import { getAllProfiles } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -206,7 +208,10 @@ ProviderCard.displayName = 'ProviderCard';
 function ProvidersContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { isLoggedIn } = useAuthStore();
+    const [mounted, setMounted] = useState(false);
+    const storeIsLoggedIn = useAuthStore((state) => state.isLoggedIn);
+    const user = useAuthStore((state) => state.user);
+    const isLoggedIn = mounted ? storeIsLoggedIn : false;
 
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
@@ -216,6 +221,10 @@ function ProvidersContent() {
 
     const [providers, setProviders] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Initialize from URL search query & category
     useEffect(() => {
@@ -414,9 +423,21 @@ function ProvidersContent() {
 
                 {/* Hero Content */}
                 <div className="relative z-10 max-w-4xl mx-auto px-6 py-10 sm:py-12 flex flex-col justify-center items-center w-full text-center">
-                    <span className="font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.35em] text-gold block mb-2">
+                    {/* Desktop: Category Sub-tag */}
+                    <span className="hidden lg:block font-sans text-[9px] md:text-[11px] font-bold uppercase tracking-[0.35em] text-gold mb-2">
                         CAMPUNA ANBIETER-VERZEICHNIS & NETZWERK
                     </span>
+
+                    {/* Mobile & Tablet: Left-aligned Back to Home Button */}
+                    <div className="w-full flex justify-start mb-2 lg:hidden">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 text-sand hover:text-white backdrop-blur-md border border-white/20 text-xs font-semibold tracking-wide transition-all duration-200 active:scale-95 shadow-sm"
+                        >
+                            <ChevronLeft className="w-3.5 h-3.5 text-gold shrink-0 -translate-x-0.5" />
+                            <span>Startseite</span>
+                        </Link>
+                    </div>
                     <motion.h1
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -441,13 +462,23 @@ function ProvidersContent() {
                         transition={{ duration: 0.6, delay: 0.3 }}
                         className="flex flex-wrap items-center justify-center gap-3"
                     >
-                        <button
-                            onClick={() => router.push(isLoggedIn ? '/mein-konto' : '/registrieren?type=commercial')}
-                            className="bg-gold hover:bg-white text-forest font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-2"
-                        >
-                            <Building2 className="w-4 h-4" />
-                            Als Anbieter registrieren
-                        </button>
+                        {!isLoggedIn ? (
+                            <button
+                                onClick={() => router.push('/registrieren?type=commercial')}
+                                className="bg-gold hover:bg-white text-forest font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-2"
+                            >
+                                <Building2 className="w-4 h-4" />
+                                <span>Als Anbieter registrieren</span>
+                            </button>
+                        ) : user?.account_type === 'COMMERCIAL' ? (
+                            <button
+                                onClick={() => router.push('/mein-konto')}
+                                className="bg-gold hover:bg-white text-forest font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full shadow-lg transition-all duration-300 cursor-pointer flex items-center gap-2"
+                            >
+                                <Building2 className="w-4 h-4" />
+                                <span>Zum Firmenprofil</span>
+                            </button>
+                        ) : null}
                         <button
                             onClick={() => router.push('/inserate')}
                             className="bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 font-bold text-xs uppercase tracking-wider py-3.5 px-7 rounded-full transition-all duration-300 cursor-pointer"

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,7 +24,8 @@ import {
     Tag,
     ShoppingBag,
     BookOpen,
-    Layers
+    Layers,
+    Building2
 } from 'lucide-react';
 import { getAllListings } from '@/api/listings';
 import { CATEGORIES, STATIC_LISTINGS } from '@/data';
@@ -1101,10 +1103,27 @@ function ListingsContent() {
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
-                        className="font-sans text-xs sm:text-sm md:text-base text-sand/90 leading-relaxed max-w-2xl mx-auto font-light drop-shadow-md"
+                        className="font-sans text-xs sm:text-sm md:text-base text-sand/90 leading-relaxed max-w-2xl mx-auto font-light drop-shadow-md mb-5"
                     >
                         Entdecke aktuelle Camping-Angebote für Wohnmobile, Wohnwagen, Campingzubehör, Stellplätze, Services, Tiny Houses und mehr. Von privaten und gewerblichen Anbietern auf Campuna, täglich neu.
                     </motion.p>
+
+                    {/* Hero Action Button: Anbieter Verzeichnis */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        className="flex items-center justify-center pt-1"
+                    >
+                        <Link
+                            href="/anbieter"
+                            className="inline-flex items-center gap-2 px-6 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md border border-white/20 hover:border-gold text-xs font-bold uppercase tracking-wider transition-all duration-300 shadow-md hover:scale-105 active:scale-95 group"
+                        >
+                            <Building2 className="w-4 h-4 text-gold group-hover:scale-110 transition-transform" />
+                            <span>Camping-Anbieter entdecken</span>
+                            <ArrowRight className="w-3.5 h-3.5 text-sand group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </motion.div>
                 </div>
             </section>
 

@@ -119,16 +119,18 @@ export default function CategoriesSection({
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: index * 0.03, duration: 0.4 }}
-                                whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                                className="bg-white border border-forest/10 hover:border-gold/40 p-2.5 sm:p-3 xl:p-2.5 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col items-center justify-center text-center cursor-pointer min-w-[100px] sm:min-w-[120px] lg:min-w-0 lg:w-full min-h-[105px] sm:min-h-[115px] xl:min-h-[110px] shrink-0 lg:shrink snap-start"
+                                whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                                className="bg-white border border-forest/10 hover:border-gold p-2.5 sm:p-3 xl:p-2.5 rounded-2xl shadow-xs hover:shadow-lg transition-all duration-300 group flex flex-col items-center justify-center text-center cursor-pointer min-w-[102px] sm:min-w-[120px] lg:min-w-0 lg:w-full min-h-[105px] sm:min-h-[115px] xl:min-h-[110px] shrink-0 lg:shrink snap-start relative overflow-hidden"
                             >
+                                <div className="absolute inset-0 bg-gradient-to-br from-gold/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
                                 <Link
                                     href={`/kategorie/${slug}`}
-                                    className="flex flex-col items-center justify-center text-center w-full h-full"
+                                    className="flex flex-col items-center justify-center text-center w-full h-full relative z-10"
                                     onClick={(e) => handleCategoryClick(e, cat.name)}
                                 >
-                                    <div className="p-2 sm:p-2.5 rounded-xl bg-forest/5 text-forest group-hover:bg-forest group-hover:text-gold transition-all duration-300 mb-2 shrink-0 shadow-inner">
-                                        <Icon className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
+                                    <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-forest/5 text-forest group-hover:bg-forest group-hover:text-gold transition-all duration-300 mb-2 shrink-0 flex items-center justify-center shadow-2xs group-hover:scale-105">
+                                        <Icon className="w-5 h-5 transition-transform duration-300" />
                                     </div>
 
                                     <h3 className="font-display text-[10.5px] sm:text-xs font-semibold text-charcoal group-hover:text-forest leading-tight tracking-tight transition-colors duration-300 line-clamp-2 h-[2.2em] flex items-center justify-center text-center">

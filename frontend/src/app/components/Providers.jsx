@@ -163,15 +163,23 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
 
 ProviderCard.displayName = 'ProviderCard';
 
-export default function Providers({ onPartnerClick, isLoggedIn }) {
+export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }) {
     const router = useRouter();
+    const [mounted, setMounted] = useState(false);
+    const storeIsLoggedIn = useAuthStore((state) => state.isLoggedIn);
+    const { user } = useAuthStore();
+    const isLoggedIn = mounted ? (propIsLoggedIn ?? storeIsLoggedIn) : false;
+
     const rowRef = useRef(null);
     const [constraints, setConstraints] = useState(0);
     const [isDesktop, setIsDesktop] = useState(false);
     const [authModalState, setAuthModalState] = useState({ isOpen: false, returnUrl: '' });
 
-    const { user } = useAuthStore();
     const [providersList, setProvidersList] = useState([]);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         const loadProviders = async () => {
@@ -318,18 +326,11 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                             Camping-Anbieter entdecken
                         </h2>
                         <p className="font-sans text-sm text-charcoal/65 leading-relaxed font-light">
-                            Finde verifizierte Händler, Werkstätten, Vermieter, Campingplätze und Fachbetriebe in ganz Deutschland oder präsentiere dein eigenes Unternehmen im Campuna-Verzeichnis.
+                            Finde verifizierte Händler, Werkstätten, Vermieter, Campingplätze und Fachbetriebe in ganz Deutschland oder präsentiere dein eigenes Unternehmen auf Campuna.
                         </p>
                     </div>
 
                     <div className="hidden lg:flex items-center gap-4 shrink-0 pb-1">
-                        <button
-                            onClick={() => router.push(isLoggedIn ? '/abo' : '/registrieren?type=commercial')}
-                            className="text-xs font-bold uppercase tracking-widest text-gold hover:text-forest transition-colors cursor-pointer"
-                        >
-                            Anbieter werden
-                        </button>
-                        <span className="text-charcoal/30">•</span>
                         <button
                             onClick={() => router.push('/anbieter')}
                             className="group flex items-center space-x-2 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer"
@@ -340,34 +341,64 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                     </div>
                 </div>
 
-                {/* ── 2. GENERAL PROVIDER CATEGORIES (Entry into Directory) ── */}
-                <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center sm:justify-center gap-2 sm:gap-2.5 mb-10 sm:mb-12">
-                    {/* Tab "Alle Bereiche" */}
-                    <button
-                        type="button"
+                {/* ── 2. GENERAL PROVIDER CATEGORIES (Entry into Directory as Small Cards) ── */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3 mb-10 sm:mb-12 max-w-8xl mx-auto">
+                    {/* 1. "Alle Bereiche" Card */}
+                    <div
                         onClick={() => handleCategoryNavigation('all')}
-                        className="group relative inline-flex items-center justify-center gap-1.5 px-3 py-2.5 sm:px-4 sm:py-2 rounded-full text-xs font-bold tracking-tight bg-white/90 hover:bg-white text-forest border border-forest/10 hover:border-gold hover:shadow-xs transition-all duration-200 w-full sm:w-auto shrink-0 cursor-pointer"
+                        className="group relative rounded-2xl bg-white border border-forest/10 hover:border-gold p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer select-none min-h-[96px] sm:min-h-[106px] overflow-hidden"
                     >
-                        <Building2 className="w-3.5 h-3.5 text-gold shrink-0" />
-                        <span className="truncate">Alle Bereiche</span>
-                        <ArrowRight className="hidden sm:inline-block w-3 h-3 text-charcoal/40 group-hover:text-forest group-hover:translate-x-0.5 transition-transform" />
-                    </button>
+                        <div className="absolute inset-0 bg-gradient-to-br from-gold/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-                    {/* Individual Category Chips */}
+                        <div className="flex items-center justify-between gap-2 relative z-10">
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-forest/5 text-forest flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform duration-300">
+                                <Building2 className="w-4 h-4" />
+                            </div>
+                            <div className="w-5 h-5 rounded-full bg-forest/5 group-hover:bg-gold/20 text-charcoal/40 group-hover:text-forest flex items-center justify-center transition-colors">
+                                <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                            </div>
+                        </div>
+
+                        <div className="relative z-10 pt-2">
+                            <h4 className="font-display text-xs sm:text-[13px] font-bold text-forest leading-snug line-clamp-1">
+                                Alle Bereiche
+                            </h4>
+                            <p className="font-sans text-[10px] text-charcoal/50 font-light truncate mt-0.5">
+                                Gesamtes Verzeichnis
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* 2. Individual Provider Category Small Cards */}
                     {PROVIDER_CATEGORIES.map((cat) => {
                         const Icon = getCategoryIcon(cat.iconName);
 
                         return (
-                            <button
+                            <div
                                 key={cat.id}
-                                type="button"
                                 onClick={() => handleCategoryNavigation(cat.slug)}
-                                className="group relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 py-2.5 sm:px-3.5 sm:py-2 rounded-full text-[11.5px] sm:text-xs font-medium tracking-tight bg-white/90 hover:bg-white text-charcoal/80 hover:text-forest border border-forest/10 hover:border-gold hover:shadow-xs transition-all duration-200 w-full sm:w-auto shrink-0 cursor-pointer"
+                                className="group relative rounded-2xl bg-white border border-forest/10 hover:border-gold p-3.5 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer select-none min-h-[96px] sm:min-h-[106px] overflow-hidden"
                             >
-                                <Icon className="w-3.5 h-3.5 text-forest/70 group-hover:text-gold transition-colors shrink-0" />
-                                <span className="truncate">{cat.shortName || cat.name}</span>
-                                <ArrowRight className="hidden sm:inline-block w-3 h-3 text-charcoal/30 group-hover:text-forest group-hover:translate-x-0.5 transition-all opacity-0 group-hover:opacity-100" />
-                            </button>
+                                <div className="absolute inset-0 bg-gradient-to-br from-gold/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+                                <div className="flex items-center justify-between gap-2 relative z-10">
+                                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-forest/5 text-forest group-hover:bg-forest group-hover:text-gold flex items-center justify-center shadow-2xs group-hover:scale-105 transition-all duration-300">
+                                        <Icon className="w-4 h-4" />
+                                    </div>
+                                    <div className="w-5 h-5 rounded-full bg-forest/5 group-hover:bg-gold/20 text-charcoal/40 group-hover:text-forest flex items-center justify-center transition-colors">
+                                        <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                    </div>
+                                </div>
+
+                                <div className="relative z-10 pt-2">
+                                    <h4 className="font-display text-xs sm:text-[13px] font-bold text-forest leading-snug line-clamp-1">
+                                        {cat.shortName || cat.name}
+                                    </h4>
+                                    <p className="font-sans text-[10px] text-charcoal/50 font-light truncate mt-0.5">
+                                        {cat.name}
+                                    </p>
+                                </div>
+                            </div>
                         );
                     })}
                 </div>
@@ -384,7 +415,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                                 Ausgewählte Anbieter mit besonderer Präsenz auf Campuna
                             </h3>
                             <p className="font-sans text-xs sm:text-sm text-charcoal/60 font-light">
-                                Empfohlene Fachpartner und Betriebe mit verifizierter Premium-Präsenz.
+                                Ausgewählte Anbieter und Betriebe mit besonderer Präsenz auf Campuna.
                             </p>
                         </div>
                     </div>
@@ -464,14 +495,7 @@ export default function Providers({ onPartnerClick, isLoggedIn }) {
                 </div>
 
                 {/* ── 4. FOOTER ACTION BAR (Mobile Only) ── */}
-                <div className="mt-8 pt-4 flex md:hidden items-center justify-center gap-3 text-xs">
-                    <button
-                        onClick={() => router.push(isLoggedIn ? '/abo' : '/registrieren?type=commercial')}
-                        className="font-bold uppercase tracking-widest text-gold hover:text-forest transition-colors cursor-pointer"
-                    >
-                        Anbieter werden
-                    </button>
-                    <span className="text-charcoal/30">•</span>
+                <div className="mt-8 pt-4 flex md:hidden items-center justify-center text-xs">
                     <button
                         onClick={() => router.push('/anbieter')}
                         className="group flex items-center space-x-1.5 font-bold uppercase tracking-widest text-forest cursor-pointer"

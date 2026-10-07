@@ -112,46 +112,41 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
   const navLinks = useMemo(() => {
     const currentPath = pathname || '/';
     const isHome = currentPath === '/' || currentPath === '/de';
+    const isInserate = currentPath.startsWith('/inserate') || currentPath.startsWith('/inserat');
+    const isAnbieter = currentPath.startsWith('/anbieter');
 
     if (isHome) {
-      // On Homepage: Do not show "Startseite" / Home link. Show all primary nav links.
+      // On Homepage: Exactly 6 primary nav links
       return [
         { id: 'offers', label: 'Angebote', path: '/inserate' },
         { id: 'categories', label: 'Kategorien', path: '/kategorien' },
         { id: 'providers', label: 'Anbieter', path: '/anbieter' },
-        { id: 'campuna-spotlight', label: 'Spotlight', id: 'campuna-spotlight' },
         { id: 'tool', label: 'Tools & Rechner' },
         { id: 'about', label: 'Über uns', path: '/uber-campuna' },
         { id: 'how-it-works', label: "So funktioniert's", path: '/so-funktioniert-campuna' },
       ];
     }
 
-    // On Subpages: 1st item is ALWAYS "Startseite" (/),
-    // and hide the item that corresponds to the active page.
+    // On Subpages: Exactly 6 items ("Startseite" replaces whichever page is currently active)
     const allItems = [
       { id: 'home', label: 'Startseite', path: '/' },
       { 
         id: 'offers', 
         label: 'Angebote', 
         path: '/inserate', 
-        isCurrent: currentPath === '/inserate' || currentPath.startsWith('/inserat') 
+        isCurrent: isInserate 
       },
       { 
         id: 'categories', 
         label: 'Kategorien', 
         path: '/kategorien', 
-        isCurrent: currentPath === '/kategorien' || currentPath.startsWith('/kategorie') 
+        isCurrent: currentPath.startsWith('/kategorien') || currentPath.startsWith('/kategorie') 
       },
       { 
         id: 'providers', 
         label: 'Anbieter', 
         path: '/anbieter', 
-        isCurrent: currentPath === '/anbieter' || currentPath.startsWith('/anbieter/') 
-      },
-      { 
-        id: 'campuna-spotlight', 
-        label: 'Spotlight', 
-        id: 'campuna-spotlight' 
+        isCurrent: isAnbieter 
       },
       { 
         id: 'tool', 
