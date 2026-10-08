@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { ShieldCheck, Building2, Briefcase, Rocket } from 'lucide-react';
+import { ShieldCheck, Building2, Briefcase, Rocket, CheckCircle2 } from 'lucide-react';
 import { getSellerBadgeInfo, isListingBoosted } from '@/utils/sellerBadge';
+import { isListingSold } from '@/utils/formatters';
 
 /**
  * Account badge component for Private / Gewerblich / Business
@@ -79,7 +80,32 @@ export function PromotedBadge({ className = '', size = 'sm' }) {
 }
 
 /**
+ * Sold listing badge: "Verkauft"
+ */
+export function SoldBadge({ className = '', size = 'sm' }) {
+    const sizeClasses = size === 'xs' 
+        ? 'text-[7px] px-2 py-0.5 gap-0.5' 
+        : size === 'md' 
+        ? 'text-[9px] sm:text-[10px] px-3.5 py-1.5 gap-1.5'
+        : 'text-[7.5px] sm:text-[8.5px] px-2.5 py-0.5 sm:py-1 gap-1';
+
+    const iconSize = size === 'xs' 
+        ? 'w-2 h-2' 
+        : size === 'md' 
+        ? 'w-3.5 h-3.5'
+        : 'w-2.5 h-2.5';
+
+    return (
+        <span className={`bg-rose-600 text-white font-black uppercase tracking-wider rounded-full shadow-md border border-rose-400/60 inline-flex items-center select-none backdrop-blur-md ${sizeClasses} ${className}`}>
+            <CheckCircle2 className={`${iconSize} text-white shrink-0`} />
+            <span>VERKAUFT</span>
+        </span>
+    );
+}
+
+/**
  * Combined badge row for listing cards
+ * - Sold listing → [VERKAUFT] + [PRIVAT/GEWERBLICH/BUSINESS]
  * - Private listing → [PRIVAT] (+ [HERVORGEHOBEN] if boosted)
  * - Commercial Free listing → [GEWERBLICH] (+ [HERVORGEHOBEN] if boosted)
  * - Commercial Business listing → [BUSINESS] (+ [HERVORGEHOBEN] if boosted)
@@ -88,11 +114,13 @@ export function PromotedBadge({ className = '', size = 'sm' }) {
 export function ListingBadgesRow({ item, className = '', size = 'sm' }) {
     const info = getSellerBadgeInfo(item);
     const showPromoted = isListingBoosted(item);
+    const sold = isListingSold(item);
 
     return (
         <div className={`flex items-center gap-1.5 flex-wrap pointer-events-none ${className}`}>
+            {sold && <SoldBadge size={size} />}
             {!info.isAdmin && <SellerAccountBadge item={item} size={size} />}
-            {showPromoted && <PromotedBadge size={size} />}
+            {showPromoted && !sold && <PromotedBadge size={size} />}
         </div>
     );
 }

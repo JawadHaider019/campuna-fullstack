@@ -27,7 +27,7 @@ import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
-import { PROVIDERS, STATIC_USERS, STATIC_LISTINGS } from '@/data';
+import { PROVIDERS, STATIC_USERS } from '@/data';
 import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
@@ -485,12 +485,7 @@ export default function ProviderDetails() {
                 setCoverSrc(matchedStaticUser.coverImage ? getImageUrl(matchedStaticUser.coverImage) : null);
                 setLogoSrc(matchedStaticUser.logo ? getImageUrl(matchedStaticUser.logo) : null);
 
-                // Find user's assigned listings from static marketplace dataset
-                const userListings = STATIC_LISTINGS.filter(l =>
-                    l.seller_user_id === matchedStaticUser.id ||
-                    l.seller?.name?.toLowerCase() === matchedStaticUser.name.toLowerCase()
-                );
-                setListings(userListings);
+                setListings([]);
                 setLoading(false);
                 return true;
             }
@@ -531,10 +526,7 @@ export default function ProviderDetails() {
                 setCoverSrc(matchedMock.coverImage ? getImageUrl(matchedMock.coverImage) : null);
                 setLogoSrc(matchedMock.logo ? getImageUrl(matchedMock.logo) : null);
 
-                const userListings = STATIC_LISTINGS.filter(l =>
-                    l.seller?.name?.toLowerCase() === matchedMock.name.toLowerCase()
-                );
-                setListings(userListings);
+                setListings([]);
                 setLoading(false);
                 return true;
             }
@@ -720,24 +712,18 @@ export default function ProviderDetails() {
                 <ScrollSectionWrapper delay={0.05}>
                     <section className="bg-white rounded-3xl overflow-hidden border border-forest/10 shadow-lg mb-10 will-change-transform">
 
-                        {/* Cover - Only for Commercial Business Users */}
-                        {provider.type !== 'Privat' && provider.isBusiness && (
-                            <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-gradient-to-br from-[#0c2e17] via-[#103d20] to-[#041a0b] flex items-center justify-center">
-                                {coverSrc ? (
-                                    <img
-                                        src={coverSrc}
-                                        alt={`${provider.name} Banner`}
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                                        referrerPolicy="no-referrer"
-                                    />
-                                ) : (
-                                    <div className="text-sand/30 font-display font-bold text-base md:text-xl tracking-widest uppercase select-none">
-                                        Campuna Partner
-                                    </div>
-                                )}
-                                {/* Subtle bottom gradient for readability */}
-                                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                        {/* Cover - Only for Commercial Business Users with custom uploaded cover */}
+                        {provider.type !== 'Privat' && provider.isBusiness && coverSrc && (
+                            <div className="relative w-full aspect-[3/1] md:aspect-[4.5/1] overflow-hidden bg-white border-b border-forest/10 flex items-center justify-center">
+                                <img
+                                    src={coverSrc}
+                                    alt={`${provider.name} Banner`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                    }}
+                                    referrerPolicy="no-referrer"
+                                />
                             </div>
                         )}
 

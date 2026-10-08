@@ -28,7 +28,7 @@ import {
     Building2
 } from 'lucide-react';
 import { getAllListings } from '@/api/listings';
-import { CATEGORIES, STATIC_LISTINGS } from '@/data';
+import { CATEGORIES } from '@/data';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import PriceRangeSlider from '@/app/components/PriceRangeSlider';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
@@ -39,6 +39,7 @@ import CircleLoader from '@/app/components/CircleLoader';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import { formatCondition, formatPrice, formatCleanLocation, isListingSold } from '@/utils/formatters';
 
 // Map API subcategory or tags to pre-defined mapping
 const CATEGORY_SUBCATEGORIES = {
@@ -537,6 +538,9 @@ function mapListing(item) {
         featured: isFeatured,
         boosted_until: item.boosted_until,
         is_boosted: isBoosted,
+        status: item.status,
+        condition: item.condition,
+        is_sold: Boolean(item.is_sold || item.sold || isListingSold(item)),
         created_at: item.created_at
     };
 }
@@ -562,9 +566,10 @@ const ListingCard = React.memo(function ListingCard({ item, index = 0 }) {
         router.push(`/inserate/${slug}`);
     }, [item.slug, item.title, item.id, router]);
 
-    const displayLoc = item.displayLocation || item.location || '';
+    const displayLoc = formatCleanLocation(item.displayLocation || item.location || '');
     const cityOnly = displayLoc.split(',')[0].trim();
     const isBoosted = isListingBoosted(item);
+    const isSold = isListingSold(item);
     const hasImage = item.images && item.images.length > 0 && !imgFailed;
 
     // Row-by-row staggered delay calculation (3 columns per row on desktop)
@@ -582,10 +587,13 @@ const ListingCard = React.memo(function ListingCard({ item, index = 0 }) {
             }}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
             onClick={handleCardClick}
-            className={`group relative flex flex-col rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer h-full select-none will-change-transform ${isBoosted
+            className={`group relative flex flex-col rounded-2xl md:rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer h-full select-none will-change-transform ${
+                isSold
+                    ? 'bg-slate-50/90 border border-slate-200 opacity-85 hover:opacity-100 hover:shadow-md'
+                    : isBoosted
                     ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
                     : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl'
-                }`}
+            }`}
         >
             {/* Image Container */}
             <div className="relative aspect-[16/10] w-full overflow-hidden bg-sand/20">
@@ -654,7 +662,7 @@ const ListingCard = React.memo(function ListingCard({ item, index = 0 }) {
                                 key={idx}
                                 className="text-[8px] md:text-[9.5px] text-charcoal/65 bg-sand px-2 py-0.5 rounded-md border border-forest/5 whitespace-nowrap"
                             >
-                                {feat}
+                                {formatCondition(feat)}
                             </span>
                         ))}
                         {item.isNegotiable && (
@@ -671,7 +679,7 @@ const ListingCard = React.memo(function ListingCard({ item, index = 0 }) {
                             {item.pricePeriod}
                         </span>
                         <span className="font-display text-xs md:text-base lg:text-lg font-extrabold text-forest">
-                            {item.price > 0 ? `${item.price.toLocaleString('de-DE')} €` : 'Preis VB'}
+                            {item.price > 0 ? formatPrice(item.price) : 'Preis VB'}
                         </span>
                     </div>
                     <span className="font-sans text-[9px] md:text-xs font-bold text-forest group-hover:text-gold flex items-center space-x-0.5 transition-colors">
@@ -787,11 +795,10 @@ function ListingsContent() {
         const fetchData = async () => {
             try {
                 const res = await getAllListings();
+                const rawList = res.data?.listings || res.listings || (Array.isArray(res.data) ? res.data : []);
                 let list = [];
-                if (res.success && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
-                    list = res.data.listings.map(mapListing).filter(Boolean);
-                } else {
-                    list = STATIC_LISTINGS.map(mapListing).filter(Boolean);
+                if (Array.isArray(rawList) && rawList.length > 0) {
+                    list = rawList.map(mapListing).filter(Boolean);
                 }
 
                 // Deduplicate listings by unique key (id or slug)
@@ -806,15 +813,7 @@ function ListingsContent() {
                 if (active) setListings(uniqueList);
             } catch (err) {
                 console.error("Error fetching listings from database:", err);
-                const fallbackList = STATIC_LISTINGS.map(mapListing).filter(Boolean);
-                const seen = new Set();
-                const uniqueFallback = fallbackList.filter(item => {
-                    const key = item?.id || item?.slug || item?.title;
-                    if (!key || seen.has(key)) return false;
-                    seen.add(key);
-                    return true;
-                });
-                if (active) setListings(uniqueFallback);
+                if (active) setListings([]);
             } finally {
                 if (active) setLoading(false);
             }
@@ -1029,15 +1028,22 @@ function ListingsContent() {
         });
     }, [listings, appliedFilters]);
 
-    // Sort filtered listings
+    // Sort filtered listings (Sold listings ALWAYS at the very end)
     const sortedListings = useMemo(() => {
         const list = [...filteredListings];
-        if (sortBy === 'price_asc') return list.sort((a, b) => a.price - b.price);
-        if (sortBy === 'price_desc') return list.sort((a, b) => b.price - a.price);
-
         const isItemBoosted = (item) => Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
 
         return list.sort((a, b) => {
+            // 1. Sold listings always placed at the very end of the listings page
+            const aSold = isListingSold(a) ? 1 : 0;
+            const bSold = isListingSold(b) ? 1 : 0;
+            if (aSold !== bSold) return aSold - bSold;
+
+            // 2. Custom price sorts
+            if (sortBy === 'price_asc') return a.price - b.price;
+            if (sortBy === 'price_desc') return b.price - a.price;
+
+            // 3. Default sort: Boosted first, then Featured, then Newest
             const aBoost = isItemBoosted(a) ? 1 : 0;
             const bBoost = isItemBoosted(b) ? 1 : 0;
             if (bBoost !== aBoost) return bBoost - aBoost;
@@ -1487,16 +1493,19 @@ function ListingsContent() {
                             )}
 
                         {/* Products Grid */}
-                        {loading && listings.length === 0 ? (
+                        {loading ? (
                             // Skeleton Loader
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                                 {Array.from({ length: 6 }).map((_, i) => (
-                                    <div key={i} className="rounded-3xl overflow-hidden border border-forest/5 animate-pulse bg-white">
-                                        <div className="aspect-[16/10] bg-sand/45" />
-                                        <div className="p-4 space-y-3">
-                                            <div className="h-5 bg-sand/50 rounded-full w-3/4 animate-pulse" />
-                                            <div className="h-3.5 bg-sand/35 rounded-full w-1/2 animate-pulse" />
-                                            <div className="h-6 bg-sand/50 rounded-full w-1/3 mt-4 animate-pulse" />
+                                    <div key={i} className="rounded-3xl overflow-hidden border border-forest/10 bg-white p-3.5 flex flex-col justify-between animate-pulse">
+                                        <div className="aspect-[16/10] bg-sand/40 rounded-2xl" />
+                                        <div className="p-3 space-y-2.5">
+                                            <div className="h-4 bg-sand/60 rounded-full w-3/4" />
+                                            <div className="h-3 bg-sand/40 rounded-full w-1/2" />
+                                            <div className="pt-3 border-t border-forest/5 flex items-center justify-between mt-2">
+                                                <div className="h-3 bg-sand/40 rounded-full w-12" />
+                                                <div className="h-5 bg-sand/60 rounded-full w-20" />
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

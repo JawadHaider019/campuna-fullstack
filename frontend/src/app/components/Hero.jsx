@@ -33,7 +33,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
     return (
         <section
             id="hero"
-            className="relative min-h-[80vh] md:min-h-[82vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-18 sm:mt-20 mb-0 mx-4 md:mx-8 lg:mx-12 shadow-2xl"
+            className="relative min-h-[80vh] md:min-h-[82vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[38px] md:rounded-[40px] lg:rounded-[48px] mt-24 sm:mt-28 mb-0 mx-4 md:mx-8 lg:mx-12 shadow-2xl"
         >
             {/* Background Cinematic Image with Zoom Animation */}
             <div className="absolute inset-0 z-0">

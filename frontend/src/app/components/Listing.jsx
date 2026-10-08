@@ -6,9 +6,10 @@ import { Heart, MapPin, ShieldCheck, Eye, ArrowRight, ChevronLeft, ChevronRight,
 import { useRouter } from 'next/navigation';
 import { getAllListings } from '@/api/listings';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
-import { STATIC_LISTINGS } from '@/data';
 import { getImageUrl } from '@/utils/imageUrl';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
+import { formatCondition, formatPrice, formatCleanLocation, isListingSold } from '@/utils/formatters';
+import { isListingBoosted } from '@/utils/sellerBadge';
 
 function normalizeListing(item) {
     if (!item) return null;
@@ -18,7 +19,7 @@ function normalizeListing(item) {
     const category = item.category || item.Category || 'Camping Zubehör';
     const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
     const pricePeriod = item.pricePeriod || 'Preis';
-    const location = item.location || "Deutschland";
+    const location = formatCleanLocation(item.location || item.displayLocation || "Deutschland");
 
     let images = [];
     if (Array.isArray(item.images) && item.images.length > 0) {
@@ -92,7 +93,10 @@ function normalizeListing(item) {
         features,
         featured: isFeatured,
         boosted_until: item.boosted_until,
-        is_boosted: isBoosted
+        is_boosted: isBoosted,
+        status: item.status,
+        condition: item.condition,
+        is_sold: Boolean(item.is_sold || item.sold || isListingSold(item))
     };
 }
 
@@ -223,7 +227,7 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
                                     key={idx}
                                     className="text-[10px] text-charcoal/60 bg-sand px-2 py-1 rounded-md border border-forest/5 whitespace-nowrap shrink-0 select-none"
                                 >
-                                    {feat}
+                                    {formatCondition(feat)}
                                 </span>
                             ))}
                         </div>
@@ -244,7 +248,7 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
                         {item.pricePeriod}
                     </span>
                     <span className="font-display text-lg font-bold text-forest">
-                        {item.price.toLocaleString('de-DE')} €
+                        {formatPrice(item.price)}
                     </span>
                 </div>
             </div>
@@ -272,32 +276,72 @@ export default function Listing({
     const [rowConstraints1, setRowConstraints1] = useState(0);
     const [rowConstraints2, setRowConstraints2] = useState(0);
     const [apiListings, setApiListings] = useState([]);
+    const [internalLoading, setInternalLoading] = useState(!propListings || propListings.length === 0);
 
     useEffect(() => {
+        if (propListings && propListings.length > 0) {
+            setInternalLoading(false);
+            return;
+        }
+
         const fetchListings = async () => {
+            setInternalLoading(true);
             try {
                 const res = await getAllListings();
-                if (res.success && Array.isArray(res.data?.listings)) {
-                    setApiListings(res.data.listings);
+                const raw = res.data?.listings || res.listings || (Array.isArray(res.data) ? res.data : []);
+                if (Array.isArray(raw) && raw.length > 0) {
+                    // Exclude all sold listings ('Verkauft' / 'SOLD') from the homepage
+                    const activeOnly = raw.filter(item => !isListingSold(item));
+
+                    // 1. Separate boosted / featured listings from regular listings
+                    const boosted = activeOnly.filter(item => isListingBoosted(item) || item.featured);
+                    const regular = activeOnly.filter(item => !(isListingBoosted(item) || item.featured));
+
+                    // 2. Shuffle boosted and regular separately
+                    const shuffledBoosted = [...boosted];
+                    for (let i = shuffledBoosted.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffledBoosted[i], shuffledBoosted[j]] = [shuffledBoosted[j], shuffledBoosted[i]];
+                    }
+
+                    const shuffledRegular = [...regular];
+                    for (let i = shuffledRegular.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffledRegular[i], shuffledRegular[j]] = [shuffledRegular[j], shuffledRegular[i]];
+                    }
+
+                    // 3. Featured & boosted listings MUST always be included; fill remaining slots up to 24 with random items
+                    const neededRegular = Math.max(0, 24 - shuffledBoosted.length);
+                    const selected24 = [...shuffledBoosted, ...shuffledRegular.slice(0, neededRegular)];
+
+                    // 4. Shuffle the selected 24 so boosted listings are naturally distributed across row 1 & row 2
+                    for (let i = selected24.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [selected24[i], selected24[j]] = [selected24[j], selected24[i]];
+                    }
+
+                    setApiListings(selected24);
                 } else {
                     setApiListings([]);
                 }
             } catch (err) {
                 console.error("Error loading listings from database:", err);
                 setApiListings([]);
+            } finally {
+                setInternalLoading(false);
             }
         };
         fetchListings();
-    }, []);
+    }, [propListings]);
 
     const activeListings = useMemo(() => {
         let rawList = [];
         if (propListings && propListings.length > 0) {
-            rawList = propListings;
+            rawList = propListings.filter(item => !isListingSold(item));
         } else if (apiListings && apiListings.length > 0) {
-            rawList = apiListings;
+            rawList = apiListings.filter(item => !isListingSold(item));
         } else {
-            rawList = STATIC_LISTINGS;
+            rawList = [];
         }
 
         // Deduplicate by id or slug
@@ -313,8 +357,9 @@ export default function Listing({
     const filteredListings = useMemo(() => {
         const seenKeys = new Set();
         return activeListings.filter((rawItem) => {
+            if (isListingSold(rawItem)) return false;
             const item = normalizeListing(rawItem);
-            if (!item) return false;
+            if (!item || isListingSold(item)) return false;
             const uniqueKey = item.id || item.slug || item.title;
             if (uniqueKey && seenKeys.has(uniqueKey)) return false;
             if (selectedCategoryFilter && item.category !== selectedCategoryFilter) return false;
@@ -337,10 +382,12 @@ export default function Listing({
         if (filteredListings.length <= 1) {
             return { row1Listings: filteredListings, row2Listings: [] };
         }
-        const countPerRow = Math.ceil(filteredListings.length / 2);
+        // Cap at 24 (12 in row 1, 12 in row 2)
+        const capped = filteredListings.slice(0, 24);
+        const countPerRow = Math.ceil(capped.length / 2);
         return {
-            row1Listings: filteredListings.slice(0, countPerRow),
-            row2Listings: filteredListings.slice(countPerRow)
+            row1Listings: capped.slice(0, countPerRow),
+            row2Listings: capped.slice(countPerRow)
         };
     }, [filteredListings]);
 
@@ -498,17 +545,20 @@ export default function Listing({
                     </div>
                 </div>
 
-                {isLoading ? (
+                {isLoading || internalLoading ? (
                     <div className="space-y-5 relative">
                         <div className="flex gap-5 overflow-hidden">
-                            {[1, 2, 3, 4].map(n => (
-                                <div key={`sk1-${n}`} className="flex-shrink-0 w-[300px] md:w-[320px] h-[300px] bg-sand/30 animate-pulse rounded-[24px] border border-forest/5 p-4 flex flex-col justify-between">
-                                    <div className="w-full h-40 bg-sand/60 rounded-[16px]" />
-                                    <div className="space-y-2 mt-4">
-                                        <div className="h-5 bg-sand/60 rounded w-3/4" />
-                                        <div className="h-4 bg-sand/40 rounded w-1/2" />
+                            {[1, 2, 3, 4, 5].map(n => (
+                                <div key={`sk1-${n}`} className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[320px] rounded-[24px] bg-white border border-forest/10 p-3.5 flex flex-col justify-between animate-pulse">
+                                    <div className="w-full aspect-[4/3] bg-sand/40 rounded-[18px]" />
+                                    <div className="space-y-2 mt-3.5">
+                                        <div className="h-4 bg-sand/60 rounded-full w-3/4" />
+                                        <div className="h-3 bg-sand/40 rounded-full w-1/2" />
                                     </div>
-                                    <div className="h-6 bg-sand/60 rounded w-1/3 mt-4" />
+                                    <div className="pt-3 border-t border-forest/5 flex items-center justify-between mt-3.5">
+                                        <div className="h-3 bg-sand/40 rounded-full w-12" />
+                                        <div className="h-5 bg-sand/60 rounded-full w-20" />
+                                    </div>
                                 </div>
                             ))}
                         </div>

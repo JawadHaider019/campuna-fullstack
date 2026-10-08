@@ -79,8 +79,8 @@ function getCategoryIcon(iconName) {
 const ProviderCard = React.memo(function ProviderCard({ partner, onAuthRequired, index = 0 }) {
     const router = useRouter();
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-    const hasCover = Boolean(partner.coverImage);
-    const hasLogo = Boolean(partner.logo);
+    const hasCover = Boolean(partner.coverImage && partner.coverImage.trim());
+    const hasLogo = Boolean(partner.logo && partner.logo.trim());
     const coverUrl = hasCover ? getImageUrl(partner.coverImage) : null;
     const logoUrl = hasLogo ? getImageUrl(partner.logo) : null;
 
@@ -111,21 +111,25 @@ const ProviderCard = React.memo(function ProviderCard({ partner, onAuthRequired,
             className="group relative flex flex-col bg-white rounded-3xl overflow-hidden border border-forest/10 hover:border-forest/25 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer h-full select-none will-change-transform"
         >
             {/* Cover Banner */}
-            <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-gradient-to-br from-[#0c2e17] via-[#103d20] to-[#041a0b] flex items-center justify-center">
+            <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-white border-b border-forest/10 flex items-center justify-center">
                 {coverUrl ? (
                     <img
                         src={coverUrl}
                         alt={`${partner.name} Cover`}
                         className="w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105 pointer-events-none"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                        }}
                         loading="lazy"
                     />
                 ) : (
-                    <div className="text-sand/30 font-display font-bold text-sm tracking-widest uppercase select-none">
-                        Campuna Partner
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-sand/15 p-4 text-center">
+                        <Building2 className="w-9 h-9 text-forest/25 mb-1" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-forest/40">
+                            {partner.providerCategory || 'Gewerblicher Partner'}
+                        </span>
                     </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/25 to-transparent pointer-events-none" />
 
                 {/* Top Badges */}
                 <div className="absolute top-3.5 right-3.5 z-10 flex items-center gap-1.5 pointer-events-none">

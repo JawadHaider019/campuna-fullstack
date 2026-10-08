@@ -50,7 +50,6 @@ import { getListingDetail, getAllListings, reportListing, deleteListing, toggleL
 import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { STATIC_LISTINGS } from '@/data';
 import { toast } from 'react-hot-toast';
 import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
@@ -58,9 +57,9 @@ import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 import { SellerAccountBadge, PromotedBadge, ListingBadgesRow } from '@/app/components/ListingBadge';
-import CategoriesSection from '@/app/components/CategoriesSection';
 import { isListingBoosted } from '@/utils/sellerBadge';
-import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import CategoriesSection from '@/app/components/CategoriesSection';
+import { formatCondition, formatPrice, formatViews, formatCleanLocation, isListingSold } from '@/utils/formatters';
 
 function slugifyTitle(title = '') {
     return title
@@ -458,40 +457,17 @@ export default function ListingDetailPage() {
                     }
                 }
 
-                // 3. If still not found, check static marketplace fixtures
-                if (!foundListing && STATIC_LISTINGS && STATIC_LISTINGS.length > 0) {
-                    const decodedSlug = slug.toLowerCase();
-                    const staticMatch = STATIC_LISTINGS.find(item => {
-                        const titleSlug = slugifyTitle(item.title);
-                        return (
-                            item.id?.toLowerCase() === decodedSlug ||
-                            item.slug?.toLowerCase() === decodedSlug ||
-                            titleSlug === decodedSlug ||
-                            item.id === listingId ||
-                            decodedSlug.includes(item.id?.toLowerCase())
-                        );
-                    });
-
-                    if (staticMatch) {
-                        foundListing = {
-                            ...staticMatch,
-                            displayLocation: staticMatch.location || 'Deutschland',
-                            user_id: staticMatch.seller_user_id || staticMatch.seller?.id || null
-                        };
-                    }
-                }
-
                 if (active && foundListing) {
                     setListing(foundListing);
                     setActiveImageIdx(0);
 
-                    // Fetch related listings from database or fallback to static
+                    // Fetch related listings from database
                     const currentId = String(foundListing.id || '').toLowerCase();
                     const currentTitleSlug = slugifyTitle(foundListing.title || '');
 
                     getAllListings().then(res => {
                         if (res.success && active && Array.isArray(res.data?.listings) && res.data.listings.length > 0) {
-                            const dbListings = res.data.listings;
+                            const dbListings = res.data.listings.filter(l => !isListingSold(l));
                             const mapped = dbListings.map(l => ({
                                 id: l.id,
                                 title: l.title || 'Camping Angebot',
@@ -518,29 +494,7 @@ export default function ListingDetailPage() {
                             }
                             setRelatedListings(related);
                         } else if (active) {
-                            const seenKeys = new Set();
-                            const related = [];
-                            for (const item of STATIC_LISTINGS) {
-                                const itemKey = String(item.id || '').toLowerCase();
-                                const itemTitleSlug = slugifyTitle(item.title || '');
-                                if (itemKey === currentId || itemTitleSlug === currentTitleSlug) continue;
-                                if (seenKeys.has(itemKey) || seenKeys.has(itemTitleSlug)) continue;
-                                seenKeys.add(itemKey);
-                                seenKeys.add(itemTitleSlug);
-                                related.push({
-                                    id: item.id,
-                                    title: item.title,
-                                    price: item.price,
-                                    pricePeriod: item.pricePeriod || 'Kaufpreis',
-                                    location: item.location,
-                                    displayLocation: item.location,
-                                    category: item.category,
-                                    features: item.features || [],
-                                    is_boosted: item.is_boosted,
-                                    images: item.images.map(img => getImageUrl(img)).filter(Boolean)
-                                });
-                            }
-                            setRelatedListings(related);
+                            setRelatedListings([]);
                         }
                     }).catch(err => {
                         if (active) {
@@ -665,6 +619,8 @@ export default function ListingDetailPage() {
         isNegotiable = true
     } = listing;
 
+    const cleanLocation = formatCleanLocation(displayLocation || listing.location);
+
     // Detect if this catalog item is flagged "sold" (either "verkauft" in title or status == 'Verkauft')
     const isSold = title.toLowerCase().includes('verkauft') || status.toLowerCase().includes('verkauft');
 
@@ -704,7 +660,7 @@ export default function ListingDetailPage() {
                 </span>
                 <div className="flex items-baseline gap-2">
                     <span className="font-display text-2xl sm:text-3xl font-extrabold text-forest">
-                        {price.toLocaleString('de-DE')} €
+                        {formatPrice(price)}
                     </span>
                     {isNegotiable && (
                         <span className="text-xs font-semibold text-gold bg-beige/50 border border-forest/5 px-2 py-0.5 rounded">
@@ -948,7 +904,7 @@ export default function ListingDetailPage() {
                             </span>
                         )}
                         <span className="bg-sand text-forest border border-forest/15 text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full shrink-0 whitespace-nowrap">
-                            Zustand: {condition}
+                            Zustand: {formatCondition(condition)}
                         </span>
                         <span className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider px-3 py-1 rounded-full border shrink-0 whitespace-nowrap ${
                             status === 'APPROVED' || status.toLowerCase() === 'aktiv'
@@ -1141,7 +1097,7 @@ export default function ListingDetailPage() {
                     <div className="flex flex-wrap items-center gap-y-3 gap-x-6 py-4.5 border-y border-forest/5 text-xs text-charcoal/60">
                         <div className="flex items-center gap-1.5 font-medium text-charcoal/80">
                             <MapPin className="w-4 h-4 text-gold shrink-0" />
-                            <span>{displayLocation}</span>
+                            <span>{cleanLocation}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <Calendar className="w-4 h-4 text-gold shrink-0" />
@@ -1153,8 +1109,12 @@ export default function ListingDetailPage() {
                         </div>
                         <div className="flex items-center gap-4 sm:ml-auto">
                             <span className="flex items-center gap-1.5 font-medium text-charcoal/75">
+                                <Eye className="w-3.5 h-3.5 text-forest" />
+                                <span>{formatViews(listing.views ?? listing.viewsCount ?? viewsCount ?? 0)} Aufrufe</span>
+                            </span>
+                            <span className="flex items-center gap-1.5 font-medium text-charcoal/75">
                                 <Heart className="w-3.5 h-3.5 text-rose-500" />
-                                <span>{likesCount} {likesCount === 1 ? 'Merkzettel' : 'Merkzettel'}</span>
+                                <span>{likesCount} Merkzettel</span>
                             </span>
                             <span className="flex items-center gap-1.5 font-medium text-charcoal/75">
                                 <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
@@ -1295,24 +1255,25 @@ export default function ListingDetailPage() {
                             className="space-y-4 pt-6 border-t border-forest/10"
                         >
                             <div className="flex items-center justify-between">
-                                <h2 className="font-display text-lg font-bold text-forest uppercase tracking-wider">
-                                    Standort (ungefähr)
-                                </h2>
-                                <span className="font-mono text-[9px] uppercase tracking-widest text-charcoal/40 bg-sand px-2.5 py-1 rounded border border-forest/5">
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="w-5 h-5 text-forest" />
+                                    <h2 className="font-display text-lg font-bold text-forest uppercase tracking-wider">
+                                        Standort
+                                    </h2>
+                                </div>
+                                <span className="font-mono text-[9px] uppercase tracking-widest text-charcoal/60 bg-sand px-2.5 py-1 rounded-full border border-forest/10 flex items-center gap-1">
+                                    <Shield className="w-3 h-3 text-forest" />
                                     PLZ-Schutz Aktiv
                                 </span>
                             </div>
-                            <p className="text-xs text-charcoal/50 leading-relaxed font-light">
-                                Um die Privatsphäre des Verkäufers zu schützen, wird das Fahrzeug in einem Radius von ca. 3 km um den tatsächlichen Standort angezeigt. Der exakte Übergabeort wird nach Absprache vereinbart.
+                            <p className="text-xs text-charcoal/60 leading-relaxed font-light">
+                                Um die Privatsphäre des Verkäufers zu schützen, wird das Inserat in einem ungefähren Radius von ca. 3 km um den Standort <strong className="font-semibold text-forest">{cleanLocation}</strong> angezeigt. Der exakte Übergabeort wird nach Absprache vereinbart.
                             </p>
 
                             {/* Render authentic Google Maps iframe */}
-                            <div className="w-full h-64 md:h-80 rounded-2xl overflow-hidden border border-forest/10 shadow-sm">
+                            <div className="relative w-full h-72 md:h-96 rounded-2xl overflow-hidden border border-forest/15 shadow-sm group">
                                 <iframe
-                                    src={anzeigeNr === 'CP-1067'
-                                        ? "https://maps.google.com/maps?q=52.4957342,8.3570299&t=&z=9&ie=UTF8&iwloc=&output=embed"
-                                        : `https://maps.google.com/maps?q=${encodeURIComponent(listing.location || 'Deutschland')}&t=&z=13&ie=UTF8&iwloc=&output=embed`
-                                    }
+                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(cleanLocation)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
                                     width="100%"
                                     height="100%"
                                     style={{ border: 0 }}
@@ -1320,7 +1281,19 @@ export default function ListingDetailPage() {
                                     loading="lazy"
                                     referrerPolicy="strict-origin-when-cross-origin"
                                     title="Campuna Standort Map"
+                                    className="w-full h-full"
                                 ></iframe>
+
+                                {/* Open in Google Maps Link */}
+                                <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanLocation)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="absolute bottom-3 right-3 bg-forest hover:bg-forest/90 text-white text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-md transition-all flex items-center gap-1.5 hover:scale-105 select-none z-10 cursor-pointer"
+                                >
+                                    <MapPin className="w-3.5 h-3.5 text-gold" />
+                                    In Google Maps öffnen
+                                </a>
                             </div>
                         </motion.section>
 

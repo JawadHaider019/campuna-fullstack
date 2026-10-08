@@ -13,6 +13,7 @@ import CircleLoader from '@/app/components/CircleLoader';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import { formatPrice } from '@/utils/formatters';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -234,7 +235,7 @@ export default function FavoritesPage() {
                                                     {item.pricePeriod || 'Kaufpreis'}
                                                 </span>
                                                 <span className="font-display text-base font-extrabold text-forest">
-                                                    {priceNum > 0 ? `${priceNum.toLocaleString('de-DE')} €` : 'Preis VB'}
+                                                    {priceNum > 0 ? formatPrice(priceNum) : 'Preis VB'}
                                                 </span>
                                             </div>
 

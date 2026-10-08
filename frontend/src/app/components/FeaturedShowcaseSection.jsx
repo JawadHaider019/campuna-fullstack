@@ -16,11 +16,12 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getAllListings } from '@/api/listings';
-import { STATIC_LISTINGS } from '@/data';
 import { getImageUrl } from '@/utils/imageUrl';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import { isListingBoosted } from '@/utils/sellerBadge';
+import { formatPrice, formatCondition, formatCleanLocation, isListingSold } from '@/utils/formatters';
 
 export default function FeaturedShowcaseSection() {
     const router = useRouter();
@@ -36,54 +37,62 @@ export default function FeaturedShowcaseSection() {
         const fetchFeatured = async () => {
             try {
                 const res = await getAllListings();
-                const listingList = res.data?.listings || res.listings || (Array.isArray(res.data) ? res.data : []);
+                const rawList = res.data?.listings || res.listings || (Array.isArray(res.data) ? res.data : []);
+                // Exclude all sold listings
+                const listingList = (Array.isArray(rawList) ? rawList : []).filter(l => !isListingSold(l));
 
-                if (Array.isArray(listingList) && listingList.length > 0) {
-                    // Priority 1: Boosted / Featured listing with at least one image
-                    // Priority 2: Any approved listing with images
-                    // Priority 3: First available approved listing in DB
-                    const candidate = listingList.find(l => (l.is_boosted || l.featured) && (l.images?.length > 0 || l['Main Image']))
-                        || listingList.find(l => (l.images?.length > 0 || l['Main Image']))
-                        || listingList[0];
+                if (listingList.length > 0) {
+                    // Filter listings with real images that are strictly BOOSTED or FEATURED
+                    const withImages = listingList.filter(l => (Array.isArray(l.images) && l.images.length > 0) || l['Main Image']);
+                    const boostedPool = withImages.filter(l => isListingBoosted(l) || l.featured || l.is_boosted);
 
-                    if (candidate && isMounted) {
-                        let imgs = [];
-                        if (Array.isArray(candidate.images) && candidate.images.length > 0) {
-                            imgs = candidate.images;
-                        } else if (typeof candidate.images === 'string') {
-                            try {
-                                imgs = JSON.parse(candidate.images);
-                            } catch {
-                                imgs = [candidate.images];
+                    // Strictly select ONLY from boosted/featured listings — never show a random unboosted listing
+                    if (boostedPool.length > 0) {
+                        const candidate = boostedPool[Math.floor(Math.random() * boostedPool.length)];
+
+                        if (candidate && isMounted) {
+                            let imgs = [];
+                            if (Array.isArray(candidate.images) && candidate.images.length > 0) {
+                                imgs = candidate.images;
+                            } else if (typeof candidate.images === 'string') {
+                                try {
+                                    imgs = JSON.parse(candidate.images);
+                                } catch {
+                                    imgs = [candidate.images];
+                                }
+                            } else if (candidate['Main Image']) {
+                                imgs = [candidate['Main Image']];
                             }
-                        } else if (candidate['Main Image']) {
-                            imgs = [candidate['Main Image']];
+
+                            imgs = (imgs || []).filter(Boolean).map(url => getImageUrl(url, null)).filter(Boolean);
+
+                            const rawPrice = typeof candidate.price === 'number' ? candidate.price : parseFloat(candidate.price) || 0;
+                            const candidateSlug = candidate.slug || (candidate.title ? candidate.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : candidate.id);
+
+                            setFeaturedItem({
+                                id: candidate.id || candidateSlug,
+                                slug: candidateSlug,
+                                title: candidate.title || 'Camping Angebot',
+                                category: candidate.category || 'Wohnmobile & Camper',
+                                condition: candidate.condition || 'Gepflegter Zustand',
+                                price: rawPrice,
+                                pricePeriod: candidate.negotiable ? 'Verhandlungsbasis' : 'Kaufpreis',
+                                location: formatCleanLocation(candidate.location || 'Deutschland'),
+                                description: candidate.description || 'Top Angebot auf Campuna.',
+                                images: imgs,
+                                seller: candidate.seller || {
+                                    name: candidate.listing_user_type === 'COMMERCIAL' ? 'Gewerblicher Anbieter' : 'Privater Verkäufer',
+                                    type: candidate.listing_user_type || 'Gewerblich',
+                                    verified: true
+                                },
+                                is_boosted: Boolean(candidate.is_boosted || candidate.featured)
+                            });
                         }
-
-                        imgs = (imgs || []).filter(Boolean).map(url => getImageUrl(url, null)).filter(Boolean);
-
-                        const rawPrice = typeof candidate.price === 'number' ? candidate.price : parseFloat(candidate.price) || 0;
-                        const candidateSlug = candidate.slug || (candidate.title ? candidate.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') : candidate.id);
-
-                        setFeaturedItem({
-                            id: candidate.id || candidateSlug,
-                            slug: candidateSlug,
-                            title: candidate.title || 'Camping Angebot',
-                            category: candidate.category || 'Wohnmobile & Camper',
-                            condition: candidate.condition || 'Gepflegter Zustand',
-                            price: rawPrice,
-                            pricePeriod: candidate.negotiable ? 'Verhandlungsbasis' : 'Kaufpreis',
-                            location: candidate.location || 'Deutschland',
-                            description: candidate.description || 'Top Angebot auf Campuna.',
-                            images: imgs,
-                            seller: candidate.seller || {
-                                name: candidate.listing_user_type === 'COMMERCIAL' ? 'Gewerblicher Anbieter' : 'Privater Verkäufer',
-                                type: candidate.listing_user_type || 'Gewerblich',
-                                verified: true
-                            },
-                            is_boosted: Boolean(candidate.is_boosted || candidate.featured)
-                        });
+                    } else if (isMounted) {
+                        setFeaturedItem(null);
                     }
+                } else if (isMounted) {
+                    setFeaturedItem(null);
                 }
             } catch (err) {
                 console.error("Error loading featured listing from DB:", err);
@@ -252,7 +261,7 @@ export default function FeaturedShowcaseSection() {
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <span className="text-[9px] sm:text-[10px] uppercase tracking-wider text-charcoal/45 block leading-none mb-0.5">Zustand</span>
-                                    <span className="font-semibold truncate block text-forest text-xs sm:text-sm">{featuredItem.condition || 'Gepflegt / Sehr gut'}</span>
+                                    <span className="font-semibold truncate block text-forest text-xs sm:text-sm">{formatCondition(featuredItem.condition)}</span>
                                 </div>
                             </div>
                         </div>
@@ -264,7 +273,7 @@ export default function FeaturedShowcaseSection() {
                                     {featuredItem.pricePeriod}
                                 </span>
                                 <span className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-forest">
-                                    {featuredItem.price > 0 ? `${featuredItem.price.toLocaleString('de-DE')} €` : 'Preis VB'}
+                                    {featuredItem.price > 0 ? formatPrice(featuredItem.price) : 'Preis VB'}
                                 </span>
                             </div>
 

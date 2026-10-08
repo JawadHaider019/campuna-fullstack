@@ -1,5 +1,3 @@
-import { STATIC_LISTINGS } from '@/data';
-
 function slugifyTitle(title = '') {
   return title
     .toLowerCase()
@@ -26,15 +24,6 @@ export async function generateMetadata({ params }) {
     }
   } catch (e) {
     // API error fallback
-  }
-
-  if (!listing) {
-    const staticMatch = STATIC_LISTINGS.find(
-      (item) =>
-        item.id?.toLowerCase() === decodedSlug.toLowerCase() ||
-        slugifyTitle(item.title) === decodedSlug.toLowerCase()
-    );
-    if (staticMatch) listing = staticMatch;
   }
 
   const title = listing?.title ? `${listing.title} | Campuna` : 'Camping-Inserat | Campuna';

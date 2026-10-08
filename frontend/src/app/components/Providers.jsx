@@ -46,8 +46,8 @@ function getCategoryIcon(iconName) {
 
 const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, router }) => {
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-    const hasCover = Boolean(partner.coverImage);
-    const hasLogo = Boolean(partner.logo);
+    const hasCover = Boolean(partner.coverImage && partner.coverImage.trim());
+    const hasLogo = Boolean(partner.logo && partner.logo.trim());
     const coverUrl = hasCover ? getImageUrl(partner.coverImage) : null;
     const logoUrl = hasLogo ? getImageUrl(partner.logo) : null;
 
@@ -81,22 +81,24 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
             className="provider-card group relative flex-shrink-0 w-[290px] sm:w-[320px] md:w-[340px] rounded-[28px] overflow-hidden cursor-pointer bg-white border-2 border-forest/10 hover:border-gold shadow-none hover:shadow-none hover:-translate-y-1.5 transition-all duration-300 select-none flex flex-col justify-between"
         >
             {/* Top Cover Image Area */}
-            <div className="relative h-[145px] sm:h-[160px] w-full bg-gradient-to-br from-forest via-[#133821] to-[#0a2213] overflow-hidden">
+            <div className="relative h-[145px] sm:h-[160px] w-full bg-white border-b border-forest/10 overflow-hidden flex items-center justify-center">
                 {coverUrl ? (
                     <img
                         src={coverUrl}
                         alt={partner.name}
-                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                        }}
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-20">
-                        <Building2 className="w-16 h-16 text-gold" />
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-sand/15 p-4 text-center">
+                        <Building2 className="w-10 h-10 text-forest/25 mb-1" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-forest/40">
+                            {partner.providerCategory || 'Gewerblicher Partner'}
+                        </span>
                     </div>
                 )}
-
-                {/* Subtle Image Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
                 {/* Pioneer Badge on Cover */}
                 {partner.isPioneer && (
@@ -108,16 +110,16 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
 
             {/* Overlapping Floating Circular Brand Avatar */}
             <div className="relative px-5 -mt-8 sm:-mt-9 md:-mt-10 z-10 flex items-end">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full bg-gradient-to-b from-sand to-gold p-1 shadow-md border-1 border-gold/40 group-hover:border-gold group-hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full bg-white p-1 shadow-md border-2 border-forest/15 group-hover:border-gold group-hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden shrink-0">
                     {logoUrl ? (
                         <img
                             src={logoUrl}
                             alt={`${partner.name} Logo`}
-                            className="w-full h-full object-cover rounded-full"
+                            className="w-full h-full object-contain rounded-full bg-white"
                             onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                     ) : (
-                        <div className="w-full h-full rounded-full bg-gradient-to-br from-forest to-[#0d381e] text-sand flex items-center justify-center font-display font-bold text-lg sm:text-xl">
+                        <div className="w-full h-full rounded-full bg-sand/30 text-forest flex items-center justify-center font-display font-bold text-lg sm:text-xl">
                             {partner.name?.slice(0, 2).toUpperCase() || 'CP'}
                         </div>
                     )}
@@ -198,9 +200,16 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
                         }
                     }
 
-                    setProvidersList(validSpotlightList);
+                    // Shuffle valid spotlight providers randomly on each page load
+                    const shuffled = [...validSpotlightList];
+                    for (let i = shuffled.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+                    }
+
+                    setProvidersList(shuffled);
                     if (typeof window !== 'undefined') {
-                        window.dispatchEvent(new CustomEvent('campuna-spotlight-status', { detail: { hasSpotlight: validSpotlightList.length > 0 } }));
+                        window.dispatchEvent(new CustomEvent('campuna-spotlight-status', { detail: { hasSpotlight: shuffled.length > 0 } }));
                     }
                 } else {
                     setProvidersList([]);
@@ -403,25 +412,25 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
                     })}
                 </div>
 
-                {/* ── 3. SPOTLIGHT SUB-SECTION ── */}
-                <div id="campuna-spotlight" className="pt-8 border-t border-forest/10 scroll-mt-24">
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-2">
-                        <div className="space-y-1">
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gold/15 text-forest border border-gold/30 text-[10px] font-bold uppercase tracking-wider">
-                                <Sparkles className="w-3 h-3 text-gold" />
-                                <span>IM SPOTLIGHT</span>
+                {/* ── 3. SPOTLIGHT SUB-SECTION (Shown only if active spotlight partners exist) ── */}
+                {providersList && providersList.length > 0 && (
+                    <div id="campuna-spotlight" className="pt-8 border-t border-forest/10 scroll-mt-24">
+                        <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-2">
+                            <div className="space-y-1">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gold/15 text-forest border border-gold/30 text-[10px] font-bold uppercase tracking-wider">
+                                    <Sparkles className="w-3 h-3 text-gold" />
+                                    <span>IM SPOTLIGHT</span>
+                                </div>
+                                <h3 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-forest">
+                                    Ausgewählte Anbieter mit besonderer Präsenz auf Campuna
+                                </h3>
+                                <p className="font-sans text-xs sm:text-sm text-charcoal/60 font-light">
+                                    Ausgewählte Anbieter und Betriebe mit besonderer Präsenz auf Campuna.
+                                </p>
                             </div>
-                            <h3 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-forest">
-                                Ausgewählte Anbieter mit besonderer Präsenz auf Campuna
-                            </h3>
-                            <p className="font-sans text-xs sm:text-sm text-charcoal/60 font-light">
-                                Ausgewählte Anbieter und Betriebe mit besonderer Präsenz auf Campuna.
-                            </p>
                         </div>
-                    </div>
 
-                    {/* Spotlight Sliding Carousel / Cards */}
-                    {providersList.length > 0 ? (
+                        {/* Spotlight Sliding Carousel / Cards */}
                         <div className="relative">
                             {shouldSlide && (
                                 <>
@@ -465,34 +474,8 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
                                 </motion.div>
                             </div>
                         </div>
-                    ) : (
-                        /* Fallback Card when no spotlight partner is active */
-                        <div className="bg-white rounded-3xl border border-forest/10 p-8 sm:p-10 text-center max-w-xl mx-auto shadow-sm space-y-4">
-                            <div className="w-14 h-14 rounded-2xl bg-sand/60 text-forest mx-auto flex items-center justify-center border border-forest/5 shadow-2xs">
-                                <Building2 className="w-7 h-7 text-gold" />
-                            </div>
-                            <div className="space-y-1.5">
-                                <h4 className="font-display text-base sm:text-lg font-bold text-forest">
-                                    Jetzt als Partner im Spotlight präsentieren
-                                </h4>
-                                <p className="font-sans text-xs sm:text-sm text-charcoal/70 max-w-md mx-auto font-light leading-relaxed">
-                                    Präsentiere dein Camping-Unternehmen prominent auf der Campuna Startseite und im bundesweiten Anbieterverzeichnis.
-                                </p>
-                            </div>
-
-                            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => router.push(isLoggedIn ? '/abo' : '/registrieren?type=commercial')}
-                                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-forest text-sand hover:bg-forest/90 hover:text-gold text-xs sm:text-sm font-bold transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer group"
-                                >
-                                    <span>Jetzt Anbieter werden</span>
-                                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
                 {/* ── 4. FOOTER ACTION BAR (Mobile Only) ── */}
                 <div className="mt-8 pt-4 flex md:hidden items-center justify-center text-xs">

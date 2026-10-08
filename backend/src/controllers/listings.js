@@ -306,6 +306,7 @@ export const getMyListings = async (req, res) => {
 
             const favoritesCount = parseInt(row.favorites_count || 0, 10);
             const conversationsCount = parseInt(row.conversations_count || 0, 10);
+            const viewsCount = parseInt(row.views || 0, 10);
 
             return {
                 ...row,
@@ -316,6 +317,9 @@ export const getMyListings = async (req, res) => {
                 conversations_count: conversationsCount,
                 likes_count: favoritesCount,
                 chats_count: conversationsCount,
+                views: viewsCount,
+                views_count: viewsCount,
+                viewsCount: viewsCount,
                 images: imagesArray,
                 ai_score: row.ai_score !== null && row.ai_score !== undefined ? parseInt(row.ai_score, 10) : null,
                 ai_decision: row.ai_decision || null,
@@ -359,6 +363,7 @@ export const getAllListings = async (req, res) => {
                 l.boosted_until,
                 (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted,
                 l.images,
+                COALESCE(l.views, 0) as views,
                 l.created_at,
                 l.updated_at,
                 u.user_type as seller_type,
@@ -416,6 +421,7 @@ export const getAllListings = async (req, res) => {
 
             const favoritesCount = parseInt(row.favorites_count || 0, 10);
             const conversationsCount = parseInt(row.conversations_count || 0, 10);
+            const viewsCount = parseInt(row.views || 0, 10);
 
             return {
                 id: row.id,
@@ -438,6 +444,9 @@ export const getAllListings = async (req, res) => {
                 conversations_count: conversationsCount,
                 likes_count: favoritesCount,
                 chats_count: conversationsCount,
+                views: viewsCount,
+                views_count: viewsCount,
+                viewsCount: viewsCount,
                 images: imagesArray,
                 seller_role: row.seller_role,
                 role: row.seller_role,
@@ -538,6 +547,10 @@ export const getListingDetail = async (req, res) => {
         }
 
         const listing = result.rows[0];
+
+        // Increment views asynchronously in background
+        pool.query('UPDATE listings SET views = COALESCE(views, 0) + 1 WHERE id = $1', [listing.id]).catch(() => {});
+        const currentViews = parseInt(listing.views || 0, 10) + 1;
 
         // Access Control: Non-approved listings are strictly visible ONLY to the creator (owner) and admins
         if (listing.status !== 'APPROVED') {
@@ -666,6 +679,9 @@ export const getListingDetail = async (req, res) => {
                 conversations_count: conversationsCount,
                 likes_count: favoritesCount,
                 chats_count: conversationsCount,
+                views: currentViews,
+                views_count: currentViews,
+                viewsCount: currentViews,
                 images: imagesArray,
                 seller_role: user.role,
                 role: user.role,

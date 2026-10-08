@@ -26,32 +26,17 @@ import './config/initReportsTable.js';
 import { initBroadcastsTable } from './config/initBroadcastsTable.js';
 import { initBlogPostsTable } from './config/initBlogPostsTable.js';
 import { initFeedbackTable } from './config/initFeedbackTable.js';
-import pool from './config/database.js';
-import { seedMarketplaceData } from './config/seedMarketplaceData.js';
-
 import path from 'path';
 import fs from 'fs';
 
 // Initialize broadcasts table
 initBroadcastsTable().catch(e => console.error('Broadcasts init error:', e.message));
 
-// Initialize blog posts table and seed
+// Initialize blog posts table
 initBlogPostsTable().catch(e => console.error('Blog posts init error:', e.message));
 
 // Initialize user feedback table
 initFeedbackTable().catch(e => console.error('Feedback init error:', e.message));
-
-// Auto-seed sample marketplace data if DB has fewer than 5 listings
-pool.query('SELECT count(*) FROM listings')
-  .then(res => {
-    const count = parseInt(res.rows[0]?.count || 0, 10);
-    if (count < 5) {
-      console.log('📦 Marketplace listings sparse or empty, seeding authentic German marketplace data...');
-      seedMarketplaceData().catch(e => console.error('Seed error:', e.message));
-    }
-  })
-  .catch(() => {});
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 

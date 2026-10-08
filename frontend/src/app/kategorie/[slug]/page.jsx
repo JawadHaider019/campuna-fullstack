@@ -15,6 +15,7 @@ import ScrollSectionWrapper from '@/app/components/ScrollSectionWrapper';
 import { getImageUrl } from '@/utils/imageUrl';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
+import { formatPrice, formatCondition, formatCleanLocation, isListingSold } from '@/utils/formatters';
 
 // ─── XSS-Safe JSON-LD Serializer ─────────────────────────────────────────────
 function safeJsonLd(obj) {
@@ -267,6 +268,9 @@ function mapListing(item) {
         featured: isFeatured,
         boosted_until: item.boosted_until,
         is_boosted: isBoosted,
+        status: item.status,
+        condition: item.condition,
+        is_sold: Boolean(item.is_sold || item.sold || isListingSold(item)),
         created_at: item.created_at
     };
 }
@@ -297,6 +301,7 @@ const ListingCard = memo(function ListingCard({ item }) {
     const displayLoc = item.displayLocation || item.location || '';
     const cityOnly = displayLoc.split(',')[0].trim();
     const isBoosted = isListingBoosted(item);
+    const isSold = isListingSold(item);
     const hasImage = item.images && item.images.length > 0 && !imgFailed;
 
     return (
@@ -305,10 +310,13 @@ const ListingCard = memo(function ListingCard({ item }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
             onClick={handleCardClick}
-            className={`group relative flex flex-col rounded-[16px] sm:rounded-[24px] overflow-hidden transition-all duration-300 cursor-pointer h-full select-none will-change-transform ${isBoosted
+            className={`group relative flex flex-col rounded-[16px] sm:rounded-[24px] overflow-hidden transition-all duration-300 cursor-pointer h-full select-none will-change-transform ${
+                isSold
+                ? 'bg-slate-50/90 border border-slate-200 opacity-85 hover:opacity-100 hover:shadow-md'
+                : isBoosted
                 ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
                 : 'bg-white border border-forest/5 hover:border-forest/10 hover:shadow-xl'
-                }`}
+            }`}
         >
             {/* Image Area */}
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
@@ -387,7 +395,7 @@ const ListingCard = memo(function ListingCard({ item }) {
                             {item.pricePeriod}
                         </span>
                         <span className="font-display text-sm sm:text-xl font-extrabold text-forest">
-                            {item.price > 0 ? `${item.price.toLocaleString('de-DE')} €` : 'Preis VB'}
+                            {item.price > 0 ? formatPrice(item.price) : 'Preis VB'}
                         </span>
                     </div>
                     <span className="font-sans text-[8px] sm:text-xs font-bold text-forest group-hover:text-gold flex items-center space-x-1 transition-colors">
@@ -531,6 +539,12 @@ export default function CategoryPage() {
         const isItemBoosted = (item) => Boolean(item.is_boosted || (item.boosted_until && new Date(item.boosted_until) > new Date()));
 
         return filtered.sort((a, b) => {
+            // 1. Sold listings always placed at the very end
+            const aSold = isListingSold(a) ? 1 : 0;
+            const bSold = isListingSold(b) ? 1 : 0;
+            if (aSold !== bSold) return aSold - bSold;
+
+            // 2. Default: Boosted first, then Featured, then Newest
             const aBoost = isItemBoosted(a) ? 1 : 0;
             const bBoost = isItemBoosted(b) ? 1 : 0;
             if (bBoost !== aBoost) return bBoost - aBoost;
