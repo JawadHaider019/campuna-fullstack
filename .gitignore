@@ -49,12 +49,11 @@ Thumbs.db
 # Vercel / Deployment
 .vercel
 
-# Local documentation and agent configurations
+# Local documentation, agent configurations, and data dumps
 .agents/
 agents/
 docs/
-"Content Files"
-Content\ Files/
-"previous data"
-previous\ data/
+Content Files/
+new content/
 previous data/
+Campuna_Complete_Technical_Blueprint.docx
