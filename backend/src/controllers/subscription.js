@@ -1,4 +1,5 @@
 import { db } from '../prisma/db.js';
+import { checkAndAwardReferralCreditsOnBusinessSubscription } from './referral.js';
 
 // ─── Internal Helper ─────────────────────────────────────────────────────────
 
@@ -370,6 +371,13 @@ export const subscribe = async (req, res) => {
                 new_balance: newBalance,
             };
         });
+
+        // Trigger referral check if Business plan subscribed with payment (totalCost > 0)
+        if (planNameUpper === 'BUSINESS' && totalCost > 0) {
+            checkAndAwardReferralCreditsOnBusinessSubscription(userId).catch((err) => {
+                console.error('Referral check on Business subscription error:', err.message);
+            });
+        }
 
         return res.status(201).json({
             success: true,

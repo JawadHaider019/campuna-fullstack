@@ -560,6 +560,44 @@ export default function AgbClient() {
                         </p>
                     </section>
 
+                    <hr className="border-forest/10" />
+
+                    {/* § 18 */}
+                    <section id="empfehlungen" className="space-y-4 pt-2">
+                        <h2 className="font-display text-xl sm:text-2xl font-bold text-forest">
+                            § 18 Campuna Credits &amp; Empfehlungsprogramm (Referral-System)
+                        </h2>
+                        <p>
+                            (1) Der Plattformbetreiber stellt registrierten Nutzern ein Empfehlungsprogramm zur Verfügung. Nutzer können über ihren persönlichen Empfehlungslink bzw. Empfehlungscode neue Nutzer werben und hierfür zweckgebundene Plattform-Credits („Campuna Credits“ oder „CC“) erhalten.
+                        </p>
+                        <p>
+                            (2) <strong>Gegenwert &amp; Zweckbindung:</strong> 1 Campuna Credit (CC) entspricht einem Plattform-Gegenwert von 1 Cent (100 CC = 1,00 €). Campuna Credits sind ausschließlich für interne Plattform-Zusatzleistungen (z. B. Inserate-Highlights, Booster und Spotlight-Buchungen) einsetzbar. Eine Auszahlung in bar, eine Rückerstattung oder eine Übertragung auf Drittkonten ist ausgeschlossen.
+                        </p>
+                        <p>
+                            (3) <strong>Einseitige Belohnung:</strong> Die Gutschrift von Campuna Credits erfolgt ausschließlich zugunsten des werbenden Nutzers (Referrer). Geworbene Neukunden erhalten durch die reine Vermittlung keine gesonderten Credits.
+                        </p>
+                        <p>
+                            (4) <strong>Qualifikationsvoraussetzungen:</strong> Die Gutschrift an den Werber erfolgt vollautomatisiert, sobald der geworbene Nutzer folgende Voraussetzungen kumulativ erfüllt hat:
+                        </p>
+                        <ul className="list-disc pl-6 space-y-2 font-normal text-forest">
+                            <li>
+                                <strong>Privatkunden (500 CC):</strong> Der geworbene private Nutzer hat sich über den Empfehlungslink/Code registriert, seine E-Mail-Adresse verifiziert und sein erstes Inserat erfolgreich veröffentlicht (Status: geprüft und freigeschaltet).
+                            </li>
+                            <li>
+                                <strong>Gewerbliche Partner – Free (1.000 CC):</strong> Der geworbene gewerbliche Nutzer hat sich über den Empfehlungslink/Code registriert, seine E-Mail-Adresse verifiziert, ein vollständiges Firmenprofil angelegt und mindestens ein Inserat erfolgreich freigeschaltet.
+                            </li>
+                            <li>
+                                <strong>Gewerbliche Partner – Business (1.000 CC):</strong> Der geworbene gewerbliche Nutzer hat sich über den Empfehlungslink/Code registriert, seine E-Mail-Adresse verifiziert, ein vollständiges Firmenprofil angelegt und das kostenpflichtige Campuna Business-Abonnement (29 € / Monat) gebucht sowie die erste Zahlung erfolgreich abgeschlossen. Die Veröffentlichung eines Inserats ist in diesem Fall nicht erforderlich.
+                            </li>
+                        </ul>
+                        <p>
+                            (5) <strong>Einmaligkeit:</strong> Pro geworbenem Nutzer bzw. Unternehmen kann maximal eine Empfehlungsprämie generiert werden. Die Qualifikation über Free und Business schließt Mehrfachvergütungen für denselben geworbenen Nutzer aus.
+                        </p>
+                        <p>
+                            (6) <strong>Missbrauchsschutz &amp; Ausschluss:</strong> Eigenwerbung (Self-Referrals), Mehrfachanmeldungen derselben Person/Firma, Schein-Inserate sowie betrügerische Manipulationen sind untersagt. Bei begründetem Missbrauchsverdacht ist der Plattformbetreiber berechtigt, gutgeschriebene Credits ersatzlos zu stornieren und betreffende Nutzerkonten ganz oder teilweise zu sperren.
+                        </p>
+                    </section>
+
                 </div>
             </main>
         </div>

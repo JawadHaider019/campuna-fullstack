@@ -1,4 +1,5 @@
 import { db } from '../prisma/db.js';
+import { checkAndAwardReferralCreditsOnBusinessSubscription } from './referral.js';
 import {
     stripe,
     isStripeConfigured,
@@ -222,6 +223,13 @@ export const fulfillSession = async (session) => {
                     .catch(() => { });
             }
         });
+
+        // Trigger referral reward for Business subscription if totalPriceCents > 0 (paid conversion)
+        if (totalPriceCents > 0) {
+            checkAndAwardReferralCreditsOnBusinessSubscription(userId).catch((err) => {
+                console.error('Error in referral evaluation after Stripe subscription:', err.message);
+            });
+        }
 
         return { success: true, type: 'SUBSCRIPTION', invoiceNumber };
     }

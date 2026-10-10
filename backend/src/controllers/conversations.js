@@ -20,6 +20,27 @@ function parseImages(raw) {
 const isUUID = (str) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
 
 /**
+ * Formats user display name for chat.
+ * For COMMERCIAL accounts:
+ * - If both contact name and company name exist: "First Last (Company Name)"
+ * - If only company name exists: "Company Name"
+ * - If only contact name exists: "First Last"
+ * For PRIVATE accounts: "First Last" (or fallback)
+ */
+export const formatChatUserName = (userType, ppFirstName, ppLastName, cpFirstName, cpLastName, cpCompanyName, fallbackPrivate = 'Privatnutzer', fallbackCommercial = 'Gewerblicher Partner') => {
+    if (userType === 'COMMERCIAL') {
+        const company = (cpCompanyName || '').trim();
+        const contact = `${cpFirstName || ppFirstName || ''} ${cpLastName || ppLastName || ''}`.trim();
+        if (contact && company) {
+            return `${contact} (${company})`;
+        }
+        return company || contact || fallbackCommercial;
+    }
+    const privateName = `${ppFirstName || ''} ${ppLastName || ''}`.trim();
+    return privateName || fallbackPrivate;
+};
+
+/**
  * POST /api/conversations
  * Creates or fetches an existing conversation for a listing between the logged-in buyer and seller.
  * Optionally sends an initial message.
@@ -321,6 +342,8 @@ export const getConversations = async (req, res) => {
                 pp_b.last_name as buyer_last_name,
                 pp_b.profile_image_url as buyer_avatar,
                 cp_b.company_name as buyer_company_name,
+                cp_b.first_name as buyer_cp_first_name,
+                cp_b.last_name as buyer_cp_last_name,
                 cp_b.logo_url as buyer_logo,
                 -- Seller details
                 u_s.user_type as seller_type,
@@ -328,6 +351,8 @@ export const getConversations = async (req, res) => {
                 pp_s.last_name as seller_last_name,
                 pp_s.profile_image_url as seller_avatar,
                 cp_s.company_name as seller_company_name,
+                cp_s.first_name as seller_cp_first_name,
+                cp_s.last_name as seller_cp_last_name,
                 cp_s.logo_url as seller_logo,
                 -- Last message
                 lm.id as last_message_id,
@@ -367,15 +392,36 @@ export const getConversations = async (req, res) => {
             const isBuyer = String(row.buyer_id).toLowerCase() === String(userId).toLowerCase();
             const isSeller = String(row.seller_id).toLowerCase() === String(userId).toLowerCase();
             
+            const buyerDisplayName = formatChatUserName(
+                row.buyer_type,
+                row.buyer_first_name,
+                row.buyer_last_name,
+                row.buyer_cp_first_name,
+                row.buyer_cp_last_name,
+                row.buyer_company_name,
+                'Interessent',
+                'Gewerblicher Interessent'
+            );
+
+            const sellerDisplayName = formatChatUserName(
+                row.seller_type,
+                row.seller_first_name,
+                row.seller_last_name,
+                row.seller_cp_first_name,
+                row.seller_cp_last_name,
+                row.seller_company_name,
+                'Privatverkäufer',
+                'Gewerblicher Anbieter'
+            );
+
             // Determine other party info
             let otherUser;
             if (isBuyer) {
                 otherUser = {
                     id: row.seller_id,
                     role_in_chat: 'SELLER',
-                    name: row.seller_type === 'COMMERCIAL'
-                        ? (row.seller_company_name || 'Campuna Club')
-                        : (`${row.seller_first_name || ''} ${row.seller_last_name || ''}`.trim() || 'Privatverkäufer'),
+                    name: sellerDisplayName,
+                    company_name: row.seller_company_name || null,
                     type: row.seller_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                     avatar: row.seller_type === 'COMMERCIAL' ? (row.seller_logo || row.seller_avatar) : row.seller_avatar
                 };
@@ -383,9 +429,8 @@ export const getConversations = async (req, res) => {
                 otherUser = {
                     id: row.buyer_id,
                     role_in_chat: 'BUYER',
-                    name: row.buyer_type === 'COMMERCIAL'
-                        ? (row.buyer_company_name || 'Gewerblicher Interessent')
-                        : (`${row.buyer_first_name || ''} ${row.buyer_last_name || ''}`.trim() || 'Interessent'),
+                    name: buyerDisplayName,
+                    company_name: row.buyer_company_name || null,
                     type: row.buyer_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                     avatar: row.buyer_type === 'COMMERCIAL' ? (row.buyer_logo || row.buyer_avatar) : row.buyer_avatar
                 };
@@ -394,9 +439,8 @@ export const getConversations = async (req, res) => {
                 otherUser = {
                     id: row.buyer_id,
                     role_in_chat: 'BUYER',
-                    name: row.buyer_type === 'COMMERCIAL'
-                        ? (row.buyer_company_name || 'Gewerblicher Interessent')
-                        : (`${row.buyer_first_name || ''} ${row.buyer_last_name || ''}`.trim() || 'Interessent'),
+                    name: buyerDisplayName,
+                    company_name: row.buyer_company_name || null,
                     type: row.buyer_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                     avatar: row.buyer_type === 'COMMERCIAL' ? (row.buyer_logo || row.buyer_avatar) : row.buyer_avatar
                 };
@@ -523,6 +567,8 @@ export const getConversationDetail = async (req, res) => {
                 pp_b.last_name as buyer_last_name,
                 pp_b.profile_image_url as buyer_avatar,
                 cp_b.company_name as buyer_company_name,
+                cp_b.first_name as buyer_cp_first_name,
+                cp_b.last_name as buyer_cp_last_name,
                 cp_b.logo_url as buyer_logo,
                 -- Seller
                 u_s.user_type as seller_type,
@@ -530,6 +576,8 @@ export const getConversationDetail = async (req, res) => {
                 pp_s.last_name as seller_last_name,
                 pp_s.profile_image_url as seller_avatar,
                 cp_s.company_name as seller_company_name,
+                cp_s.first_name as seller_cp_first_name,
+                cp_s.last_name as seller_cp_last_name,
                 cp_s.logo_url as seller_logo
             FROM conversations c
             LEFT JOIN listings l ON c.listing_id = l.id
@@ -588,22 +636,42 @@ export const getConversationDetail = async (req, res) => {
             created_at: m.created_at
         }));
 
+        const buyerDisplayName = formatChatUserName(
+            row.buyer_type,
+            row.buyer_first_name,
+            row.buyer_last_name,
+            row.buyer_cp_first_name,
+            row.buyer_cp_last_name,
+            row.buyer_company_name,
+            'Interessent',
+            'Gewerblicher Interessent'
+        );
+
+        const sellerDisplayName = formatChatUserName(
+            row.seller_type,
+            row.seller_first_name,
+            row.seller_last_name,
+            row.seller_cp_first_name,
+            row.seller_cp_last_name,
+            row.seller_company_name,
+            'Privatverkäufer',
+            'Gewerblicher Anbieter'
+        );
+
         const otherUser = isBuyer
             ? {
                 id: row.seller_id,
                 role_in_chat: 'SELLER',
-                name: row.seller_type === 'COMMERCIAL'
-                    ? (row.seller_company_name || 'Gewerblicher Anbieter')
-                    : (`${row.seller_first_name || ''} ${row.seller_last_name || ''}`.trim() || 'Privatverkäufer'),
+                name: sellerDisplayName,
+                company_name: row.seller_company_name || null,
                 type: row.seller_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                 avatar: row.seller_type === 'COMMERCIAL' ? (row.seller_logo || row.seller_avatar) : row.seller_avatar
             }
             : {
                 id: row.buyer_id,
                 role_in_chat: 'BUYER',
-                name: row.buyer_type === 'COMMERCIAL'
-                    ? (row.buyer_company_name || 'Gewerblicher Interessent')
-                    : (`${row.buyer_first_name || ''} ${row.buyer_last_name || ''}`.trim() || 'Interessent'),
+                name: buyerDisplayName,
+                company_name: row.buyer_company_name || null,
                 type: row.buyer_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                 avatar: row.buyer_type === 'COMMERCIAL' ? (row.buyer_logo || row.buyer_avatar) : row.buyer_avatar
             };

@@ -605,11 +605,8 @@ function AdminMessagesContent() {
                                         </span>
                                     </div>
 
-                                    {/* Badges */}
+                                    {/* Listings count badge */}
                                     <div className="flex items-center gap-1.5 mb-1">
-                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-sand text-forest uppercase shrink-0">
-                                            {contactGroup.user?.type || 'Interessent'}
-                                        </span>
                                         <span className="text-[10px] font-bold text-forest bg-forest/5 px-1.5 py-0.2 rounded flex items-center gap-1 shrink-0">
                                             <Layers className="w-2.5 h-2.5" />
                                             {listingsCount} {listingsCount === 1 ? 'Inserat' : 'Inserate'}
@@ -703,14 +700,9 @@ function AdminMessagesContent() {
                             )}
                         </div>
                         <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-display font-bold text-sm text-charcoal truncate">
-                                    {activeContactGroup.user?.name}
-                                </h3>
-                                <span className="text-[9px] font-bold bg-sand text-forest px-1.5 py-0.2 rounded uppercase">
-                                    {activeContactGroup.user?.type}
-                                </span>
-                            </div>
+                            <h3 className="font-display font-bold text-sm text-charcoal truncate">
+                                {activeContactGroup.user?.name}
+                            </h3>
                             <p className="text-[11px] text-charcoal/50 truncate">
                                 {activeContactGroup.conversations.length}{' '}
                                 {activeContactGroup.conversations.length === 1 ? 'aktives Inserat' : 'aktive Inserate'}
@@ -878,14 +870,9 @@ function AdminMessagesContent() {
 
                         {/* Participant Title */}
                         <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                                <h3 className="font-display font-bold text-xs sm:text-sm text-charcoal truncate">
-                                    {activeConversation.other_user?.name}
-                                </h3>
-                                <span className="text-[9px] font-bold bg-sand text-forest px-1.5 py-0.2 rounded-full shrink-0 uppercase">
-                                    {activeConversation.other_user?.type || 'Interessent'}
-                                </span>
-                            </div>
+                            <h3 className="font-display font-bold text-xs sm:text-sm text-charcoal truncate">
+                                {activeConversation.other_user?.name}
+                            </h3>
                             <p className="text-[11px] font-medium text-forest truncate max-w-[200px] sm:max-w-sm" title={activeConversation.listing?.title}>
                                 {activeConversation.listing?.title || 'Direktanfrage'}
                             </p>

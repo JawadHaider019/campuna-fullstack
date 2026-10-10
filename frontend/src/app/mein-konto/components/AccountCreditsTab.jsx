@@ -238,8 +238,8 @@ export default function AccountCreditsTab({
                                             <span>{copiedLink ? 'Kopiert!' : 'Kopieren'}</span>
                                         </motion.button>
                                     </div>
-                                    <p className="text-[11px] text-charcoal/50 leading-relaxed font-sans">
-                                        Sobald sich jemand über deinen Link anmeldet und qualifiziert (1. freigeschaltetes Inserat oder vollständiges Profil), erhaltet ihr beide sofort Credit-Gutschriften!
+                                    <p className="text-[11px] text-charcoal/60 leading-relaxed font-sans">
+                                        Sobald sich dein Kontakt über deinen Link registriert, seine E-Mail verifiziert und sich qualifiziert, werden dir die Campuna Credits automatisch und sofort gutgeschrieben.
                                     </p>
                                 </div>
                             )}
@@ -251,7 +251,7 @@ export default function AccountCreditsTab({
                                     className="p-3.5 bg-[#faf8f3] rounded-xl border border-beige text-left space-y-1 shadow-2xs"
                                 >
                                     <span className="text-xs font-black text-forest font-mono block">1. Teilen</span>
-                                    <p className="text-[11px] text-charcoal/70 leading-relaxed font-sans">Gib deinen Link oder Code an Camping-Freunde und Partner weiter.</p>
+                                    <p className="text-[11px] text-charcoal/70 leading-relaxed font-sans">Gib deinen persönlichen Link oder Code an Camping-Freunde oder gewerbliche Partner weiter.</p>
                                 </motion.div>
 
                                 <motion.div
@@ -259,7 +259,7 @@ export default function AccountCreditsTab({
                                     className="p-3.5 bg-[#faf8f3] rounded-xl border border-beige text-left space-y-1 shadow-2xs"
                                 >
                                     <span className="text-xs font-black text-forest font-mono block">2. Registrieren</span>
-                                    <p className="text-[11px] text-charcoal/70 leading-relaxed font-sans">Dein Kontakt meldet sich mit deinem Code bei Campuna an.</p>
+                                    <p className="text-[11px] text-charcoal/70 leading-relaxed font-sans">Dein Kontakt meldet sich an und bestätigt seine E-Mail-Adresse.</p>
                                 </motion.div>
 
                                 <motion.div
@@ -267,8 +267,23 @@ export default function AccountCreditsTab({
                                     className="p-3.5 bg-[#faf8f3] rounded-xl border border-beige text-left space-y-1 shadow-2xs"
                                 >
                                     <span className="text-xs font-black text-forest font-mono block">3. Belohnung</span>
-                                    <p className="text-[11px] text-charcoal/70 leading-relaxed font-sans">Privat: 500 CC nach 1. Inserat. Gewerblich: 1.000 CC nach Firmenprofil.</p>
+                                    <p className="text-[11px] text-charcoal/70 leading-relaxed font-sans">
+                                        <strong>500 CC</strong> (Privat, nach 1. Inserat) · <strong>1.000 CC</strong> (Gewerblich Free mit Inserat oder Business-Abo).
+                                    </p>
                                 </motion.div>
+                            </div>
+
+                            {/* Legal notice & terms link */}
+                            <div className="pt-2 px-1 text-[11px] text-charcoal/50 leading-relaxed font-sans flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-t border-beige/60">
+                                <span>1 Credit = 1 Cent Plattform-Gegenwert (100 CC = 1,00 €). Keine Barauszahlung möglich.</span>
+                                <a
+                                    href="/de/agb#empfehlungen"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-forest hover:text-forest/80 font-bold underline inline-flex items-center gap-1 shrink-0"
+                                >
+                                    Empfehlungs- & Credit-Bedingungen
+                                </a>
                             </div>
                         </div>
                     ) : (

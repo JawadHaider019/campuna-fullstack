@@ -3,6 +3,7 @@ import { db } from '../prisma/db.js';
 import pool from '../config/database.js';
 import crypto from 'crypto';
 import { checkAndAwardPioneerBadge } from './badge.js';
+import { checkAndAwardReferralCreditsOnEmailVerification } from './referral.js';
 import jwt from 'jsonwebtoken';
 import { sendVerificationEmail, sendPasswordResetOtpEmail } from '../services/email.services.js';
 
@@ -194,7 +195,11 @@ export const register = async (req, res) => {
                 const referrer = await tx.orm.public.User
                     .where((u) => u.referral_code.eq(referred_by_code.trim().toUpperCase()))
                     .first();
-                if (referrer) {
+                if (
+                    referrer &&
+                    referrer.id !== newUser.id &&
+                    referrer.email?.toLowerCase() !== normalizedEmail.toLowerCase()
+                ) {
                     await tx.orm.public.Referral.create({
                         referrer_id: referrer.id,
                         referred_id: newUser.id,
@@ -620,6 +625,11 @@ export const verifyEmail = async (req, res) => {
         // Trigger Pioneer Badge check
         await checkAndAwardPioneerBadge(user.id).catch(err => {
             console.error('Pioneer check during email verification error:', err.message);
+        });
+
+        // Trigger Referral Reward check if qualifications were already fulfilled
+        await checkAndAwardReferralCreditsOnEmailVerification(user.id).catch(err => {
+            console.error('Referral check during email verification error:', err.message);
         });
 
         const { accessToken, refreshToken } = generateTokens(user);
