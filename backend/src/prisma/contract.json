@@ -2091,17 +2091,14 @@
               "columns": {
                 "bio": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "company_address": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "company_email": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "company_name": {
@@ -2110,12 +2107,10 @@
                     "kind": "literal",
                     "value": ""
                   },
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "cover_image_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "created_at": {
@@ -2124,17 +2119,14 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "facebook_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "first_name": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "id": {
@@ -2143,17 +2135,14 @@
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "impressum": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "instagram_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "is_strategic_partner": {
@@ -2162,42 +2151,34 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "last_name": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "linkedin_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "location": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "logo_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "phone": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "privacy_policy_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "spotlight_until": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "tier": {
@@ -2206,27 +2187,22 @@
                     "kind": "literal",
                     "value": "FREE"
                   },
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "updated_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "user_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "vat_id": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "website_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 }
               },
@@ -2266,7 +2242,6 @@
               "columns": {
                 "buyer_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "created_at": {
@@ -2275,22 +2250,18 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "listing_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "seller_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "updated_at": {
@@ -2299,7 +2270,6 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 }
               },
@@ -2400,7 +2370,6 @@
               "columns": {
                 "amount": {
                   "codecId": "pg/int4@1",
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "created_at": {
@@ -2409,12 +2378,10 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "description": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "id": {
@@ -2423,17 +2390,14 @@
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "type": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "user_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 }
               },
@@ -2476,7 +2440,6 @@
               "columns": {
                 "admin_note": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "created_at": {
@@ -2485,42 +2448,34 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "description": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "listing_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "reason": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "reporter_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "reviewed_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "reviewed_by_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": true
                 },
                 "status": {
@@ -2529,7 +2484,6 @@
                     "kind": "literal",
                     "value": "PENDING"
                   },
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "updated_at": {
@@ -2538,7 +2492,6 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 }
               },
@@ -2646,22 +2599,18 @@
               "columns": {
                 "boosted_until": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "category": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "category_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": true
                 },
                 "condition": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "created_at": {
@@ -2670,12 +2619,10 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "description": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "featured": {
@@ -2684,12 +2631,10 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "images": {
@@ -2699,12 +2644,10 @@
                     "value": []
                   },
                   "many": true,
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "location": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "negotiable": {
@@ -2713,37 +2656,30 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "phone": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "price": {
                   "codecId": "pg/numeric@1",
-                  "nativeType": "numeric",
                   "nullable": true
                 },
                 "reviewed_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "reviewed_by_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": true
                 },
                 "reviewed_by_type": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "slug": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "status": {
@@ -2752,37 +2688,30 @@
                     "kind": "literal",
                     "value": "REVIEW"
                   },
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "subcategory": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "subcategory_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": true
                 },
                 "title": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "type_of_offer": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "updated_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "user_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 }
               },
@@ -2851,12 +2780,10 @@
               "columns": {
                 "content": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "conversation_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "created_at": {
@@ -2865,12 +2792,10 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "is_read": {
@@ -2879,12 +2804,10 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "sender_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 }
               },
@@ -2953,7 +2876,6 @@
               "columns": {
                 "description": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "description_limit": {
@@ -2962,7 +2884,6 @@
                     "kind": "literal",
                     "value": 150
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "has_cover_image": {
@@ -2971,7 +2892,6 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "has_csv_import": {
@@ -2980,7 +2900,6 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "has_spotlight": {
@@ -2989,7 +2908,6 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "has_statistics": {
@@ -2998,7 +2916,6 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "id": {
@@ -3007,7 +2924,6 @@
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "is_active": {
@@ -3016,7 +2932,6 @@
                     "kind": "literal",
                     "value": true
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "listing_limit": {
@@ -3025,12 +2940,10 @@
                     "kind": "literal",
                     "value": 3
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "name": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "price_cents": {
@@ -3039,7 +2952,6 @@
                     "kind": "literal",
                     "value": 0
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 }
               },
@@ -3062,12 +2974,10 @@
               "columns": {
                 "bio": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "cover_image_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "created_at": {
@@ -3076,7 +2986,6 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "first_name": {
@@ -3085,7 +2994,6 @@
                     "kind": "literal",
                     "value": ""
                   },
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "id": {
@@ -3094,7 +3002,6 @@
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "last_name": {
@@ -3103,32 +3010,26 @@
                     "kind": "literal",
                     "value": ""
                   },
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "location": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "phone": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "profile_image_url": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "updated_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "user_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 }
               },
@@ -3172,7 +3073,6 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "id": {
@@ -3181,17 +3081,14 @@
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "referred_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "referrer_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "status": {
@@ -3200,7 +3097,6 @@
                     "kind": "literal",
                     "value": "PENDING"
                   },
-                  "nativeType": "text",
                   "nullable": false
                 }
               },
@@ -3228,12 +3124,10 @@
                     "kind": "literal",
                     "value": 0
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "cancelled_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "created_at": {
@@ -3242,17 +3136,14 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "credit_tx_id": {
                   "codecId": "pg/int4@1",
-                  "nativeType": "int4",
                   "nullable": true
                 },
                 "expires_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": true
                 },
                 "id": {
@@ -3261,22 +3152,18 @@
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "notes": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "payment_method": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "plan_id": {
                   "codecId": "pg/int4@1",
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "started_at": {
@@ -3285,7 +3172,6 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "status": {
@@ -3294,7 +3180,6 @@
                     "kind": "literal",
                     "value": "ACTIVE"
                   },
-                  "nativeType": "text",
                   "nullable": false,
                   "valueSet": {
                     "entityKind": "valueSet",
@@ -3305,12 +3190,10 @@
                 },
                 "updated_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "user_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 }
               },
@@ -3378,7 +3261,6 @@
               "columns": {
                 "badge_key": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "earned_at": {
@@ -3387,7 +3269,6 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "id": {
@@ -3396,17 +3277,14 @@
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "position": {
                   "codecId": "pg/int4@1",
-                  "nativeType": "int4",
                   "nullable": true
                 },
                 "user_id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 }
               },
@@ -3473,12 +3351,10 @@
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "email": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "email_verified": {
@@ -3487,12 +3363,10 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "id": {
                   "codecId": "pg/uuid@1",
-                  "nativeType": "uuid",
                   "nullable": false
                 },
                 "is_suspended": {
@@ -3501,22 +3375,18 @@
                     "kind": "literal",
                     "value": false
                   },
-                  "nativeType": "bool",
                   "nullable": false
                 },
                 "password_hash": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": false
                 },
                 "referral_code": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "referred_by_code": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
                   "nullable": true
                 },
                 "role": {
@@ -3525,7 +3395,6 @@
                     "kind": "literal",
                     "value": "USER"
                   },
-                  "nativeType": "text",
                   "nullable": false,
                   "valueSet": {
                     "entityKind": "valueSet",
@@ -3536,7 +3405,6 @@
                 },
                 "updated_at": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "user_type": {
@@ -3545,7 +3413,6 @@
                     "kind": "literal",
                     "value": "PRIVATE"
                   },
-                  "nativeType": "text",
                   "nullable": false,
                   "valueSet": {
                     "entityKind": "valueSet",
