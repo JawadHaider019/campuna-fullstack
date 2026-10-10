@@ -224,14 +224,14 @@ export default function FeaturedShowcaseSection() {
                         {/* Campuna Fundstück der Woche Badge & Headline */}
                         <div className="space-y-2 sm:space-y-3">
                             <div className="flex flex-wrap items-center gap-2">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest text-gold text-[10px] sm:text-[11px] font-bold uppercase tracking-wider shadow-xs max-w-full">
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider shadow-xs max-w-full">
                                     <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                                     <span className="truncate">Campuna Fundstück der Woche</span>
                                 </span>
                             </div>
 
                             {/* Headline (Capped at 2 lines with ellipsis, breaks words cleanly on small mobile) */}
-                            <h3 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight leading-snug sm:leading-tight line-clamp-2 break-words" title={featuredItem.title}>
+                            <h3 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-forest tracking-tight leading-snug sm:leading-tight line-clamp-2 break-words" title={featuredItem.title}>
                                 {featuredItem.title}
                             </h3>
 
@@ -272,7 +272,7 @@ export default function FeaturedShowcaseSection() {
                                 <span className="block text-[10px] sm:text-[11px] uppercase tracking-widest text-charcoal/50 font-mono leading-none mb-1">
                                     {featuredItem.pricePeriod}
                                 </span>
-                                <span className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-forest">
+                                <span className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold text-forest">
                                     {featuredItem.price > 0 ? formatPrice(featuredItem.price) : 'Preis VB'}
                                 </span>
                             </div>

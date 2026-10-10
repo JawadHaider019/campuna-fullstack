@@ -317,7 +317,7 @@ export const getAdminUserById = async (req, res) => {
                 location: isCommercial ? (row.company_location || '') : (row.private_location || ''),
                 phone: row.company_phone || '',
                 website: row.company_website || '',
-                bio: isCommercial ? (row.company_description || '') : (row.private_bio || ''),
+                bio: isCommercial ? (row.company_description || '') : null,
                 tier: row.company_tier || 'FREE',
                 provider_category: isCommercial ? (row.company_provider_category || 'Wohnmobil- & Wohnwagenhändler') : null,
                 referral_code: row.referral_code,

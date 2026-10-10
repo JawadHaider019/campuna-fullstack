@@ -10,6 +10,7 @@ import { getImageUrl } from '@/utils/imageUrl';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import { formatPrice, formatCleanLocation } from '@/utils/formatters';
 
 /**
  * Safely generate deterministic URL slug without prototype pollution or XSS vectors
@@ -147,8 +148,7 @@ const FavoriteListingCard = memo(function FavoriteListingCard({ item: rawItem, o
 
     if (!item) return null;
 
-    const displayLoc = item.displayLocation || item.location || '';
-    const cityOnly = displayLoc.split(',')[0].trim();
+    const displayLoc = formatCleanLocation(item.displayLocation || item.location || '');
     const isBoosted = item.is_boosted;
     const hasImage = item.images && item.images.length > 0 && !imgFailed;
 
@@ -200,10 +200,7 @@ const FavoriteListingCard = memo(function FavoriteListingCard({ item: rawItem, o
                 <div className="absolute bottom-2.5 sm:bottom-3 right-2.5 sm:right-3 flex items-center pointer-events-none text-white/95 max-w-[85%] z-10">
                     <div className="bg-black/45 backdrop-blur-md px-2.5 py-1 rounded-full text-[8.5px] sm:text-[9px] flex items-center gap-1 truncate">
                         <MapPin className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-gold shrink-0" />
-                        <span className="truncate">
-                            <span className="inline md:hidden">{cityOnly}</span>
-                            <span className="hidden md:inline">{displayLoc}</span>
-                        </span>
+                        <span className="truncate">{displayLoc}</span>
                     </div>
                 </div>
 
@@ -245,7 +242,7 @@ const FavoriteListingCard = memo(function FavoriteListingCard({ item: rawItem, o
                             {item.pricePeriod}
                         </span>
                         <span className="font-display text-sm sm:text-base lg:text-lg font-extrabold text-forest">
-                            {item.price > 0 ? `${item.price.toLocaleString('de-DE')} €` : 'Preis VB'}
+                            {item.price > 0 ? formatPrice(item.price) : 'Preis VB'}
                         </span>
                     </div>
                     <span className="font-sans text-[9px] sm:text-xs font-bold text-forest group-hover:text-gold flex items-center space-x-0.5 transition-colors">

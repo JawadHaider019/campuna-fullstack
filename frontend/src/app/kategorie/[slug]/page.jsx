@@ -355,10 +355,7 @@ const ListingCard = memo(function ListingCard({ item }) {
                 <div className="absolute bottom-2 sm:bottom-4 right-0 inset-x-2 sm:inset-x-4 flex items-center justify-end pointer-events-none text-white/90 max-w-full z-10">
                     <div className="bg-black/40 backdrop-blur-md px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[8px] sm:text-[9px] flex items-center gap-1 truncate max-w-[90%]">
                         <MapPin className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-gold shrink-0" />
-                        <span className="truncate">
-                            <span className="inline md:hidden">{cityOnly}</span>
-                            <span className="hidden md:inline">{displayLoc}</span>
-                        </span>
+                        <span className="truncate">{displayLoc}</span>
                     </div>
                 </div>
 

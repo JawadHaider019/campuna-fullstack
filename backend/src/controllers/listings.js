@@ -362,8 +362,10 @@ export const getAllListings = async (req, res) => {
                 l.featured,
                 l.boosted_until,
                 (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted,
+                cp.spotlight_until as company_spotlight_until,
                 l.images,
-                COALESCE(l.views, 0) as views,
+                GREATEST(COALESCE(l.views, 0), COALESCE(l.views_count, 0)) as views,
+                GREATEST(COALESCE(l.views, 0), COALESCE(l.views_count, 0)) as views_count,
                 l.created_at,
                 l.updated_at,
                 u.user_type as seller_type,
@@ -542,15 +544,19 @@ export const getListingDetail = async (req, res) => {
         }
 
         const result = await pool.query(query, params);
-        if (result.rowCount === 0) {
+        if (result.rowCount === 0 || !result.rows[0]) {
             return res.status(404).json({ success: false, error: 'Inserat nicht gefunden.' });
         }
-
         const listing = result.rows[0];
 
-        // Increment views asynchronously in background
-        pool.query('UPDATE listings SET views = COALESCE(views, 0) + 1 WHERE id = $1', [listing.id]).catch(() => {});
-        const currentViews = parseInt(listing.views || 0, 10) + 1;
+        // Increment views asynchronously in background (sync both views and views_count)
+        const shouldTrackView = req.query.track_view !== 'false' && req.query.track !== '0';
+        let currentViews = Math.max(parseInt(listing.views || 0, 10), parseInt(listing.views_count || 0, 10));
+
+        if (shouldTrackView) {
+            pool.query('UPDATE listings SET views = GREATEST(COALESCE(views, 0), COALESCE(views_count, 0)) + 1, views_count = GREATEST(COALESCE(views, 0), COALESCE(views_count, 0)) + 1 WHERE id = $1', [listing.id]).catch(() => {});
+            currentViews += 1;
+        }
 
         // Access Control: Non-approved listings are strictly visible ONLY to the creator (owner) and admins
         if (listing.status !== 'APPROVED') {
@@ -731,8 +737,18 @@ export const getListingsByUser = async (req, res) => {
         const query = `
             SELECT 
                 l.*,
-                (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted
+                (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) as is_boosted,
+                cp.spotlight_until as company_spotlight_until,
+                u.user_type as seller_type,
+                u.role as seller_role,
+                cp.company_name,
+                cp.tier as company_tier,
+                pp.first_name,
+                pp.last_name
             FROM listings l
+            LEFT JOIN users u ON l.user_id = u.id
+            LEFT JOIN company_profiles cp ON u.id = cp.user_id
+            LEFT JOIN private_profiles pp ON u.id = pp.user_id
             WHERE l.user_id = $1 AND l.status = 'APPROVED'
             ORDER BY 
                 (l.boosted_until IS NOT NULL AND l.boosted_until > NOW()) DESC,
@@ -753,11 +769,20 @@ export const getListingsByUser = async (req, res) => {
                 }
             }
 
+            const sellerTypeFormatted = row.seller_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat';
+
             return {
                 ...row,
                 price: parseFloat(row.price) || 0,
                 featured: Boolean(row.featured),
                 is_boosted: Boolean(row.is_boosted),
+                seller_type: sellerTypeFormatted,
+                listing_user_type: sellerTypeFormatted,
+                seller: {
+                    type: sellerTypeFormatted,
+                    tier: row.company_tier || 'FREE',
+                    name: row.company_name || `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Verkäufer'
+                },
                 images: imagesArray
             };
         });

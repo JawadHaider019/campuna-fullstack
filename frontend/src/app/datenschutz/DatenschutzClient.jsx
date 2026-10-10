@@ -251,7 +251,7 @@ export default function DatenschutzClient() {
                             11. Nutzerprofile
                         </h2>
                         <p>
-                            Die Plattform verarbeitet Profilangaben privater und gewerblicher Nutzer. Öffentlich sichtbar sind u. a. Benutzername, Vor- und Nachname, Profilbild, Bio, Social-Links sowie bei gewerblichen Anbietern Firmenname, Anschrift, USt-ID und Impressumsangaben. Sensible Kontaktdaten wie private Telefonnummern und Adressen sind nicht öffentlich einsehbar.
+                            Die Plattform verarbeitet Profilangaben privater und gewerblicher Nutzer. Öffentlich sichtbar sind u. a. Vor- und Nachname, Profilbild sowie bei gewerblichen Anbietern Firmenname, Unternehmensbeschreibung (Bio), Social-Links, Anschrift, USt-ID und Impressumsangaben. Sensible Kontaktdaten wie private Telefonnummern und Adressen sind nicht öffentlich einsehbar.
                         </p>
                     </section>
 

@@ -667,7 +667,7 @@ function AuthFormContent({ initialMode = 'login' }) {
                                         Bitte bestätige deine E-Mail
                                     </h1>
                                     <p className="font-sans text-xs text-white/70 leading-relaxed max-w-[340px] mx-auto">
-                                        Wir haben einen Bestätigungslink an <strong className="text-white">{signupEmail}</strong> gesendet. Bitte klicke auf diesen Link, um dein Campuna-Konto freizuschalten.
+                                        Wir haben einen Bestätigungslink an <strong className="text-white">{signupEmail}</strong> gesendet. Bitte klicke <span className="text-gold font-medium">innerhalb von 15 Minuten</span> auf den Link, um dein Campuna-Konto freizuschalten.
                                     </p>
                                 </div>
 
@@ -929,7 +929,7 @@ function AuthFormContent({ initialMode = 'login' }) {
                                                     Bitte bestätige deine E-Mail-Adresse
                                                 </p>
                                                 <p className="font-sans text-[11px] text-white/85 leading-relaxed mt-0.5">
-                                                    Wir haben einen Bestätigungslink an <strong className="text-white underline">{verificationNotice.email}</strong> gesendet. Klicke auf den Link in der E-Mail, um dein Konto zu aktivieren.
+                                                    Wir haben einen Bestätigungslink an <strong className="text-white underline">{verificationNotice.email}</strong> gesendet. Klicke bitte <span className="text-emerald-200 font-semibold">innerhalb von 15 Minuten</span> auf den Link in der E-Mail, um dein Konto zu aktivieren.
                                                 </p>
                                             </div>
                                         </div>

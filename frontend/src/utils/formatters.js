@@ -37,50 +37,52 @@ export function formatCondition(cond) {
 }
 
 /**
- * Formats price with 2 decimal places and comma WITHOUT thousand period '.' (e.g. 54950,00 € or 57900,00 €).
+ * Formats price with 2 decimal places, comma, and NO thousand separator dot (e.g. 8000,00 € or 54950,00 €).
+ * Returns 'Preis VB' if price is 0 or null/empty.
  */
 export function formatPrice(price, includeCurrency = true) {
+    if (price === null || price === undefined || price === '' || isNaN(Number(price))) {
+        return 'Preis VB';
+    }
     const num = typeof price === 'number' ? price : parseFloat(price) || 0;
+    if (num <= 0) return 'Preis VB';
+
     const formatted = num.toFixed(2).replace('.', ',');
     return includeCurrency ? `${formatted} €` : formatted;
 }
 
 /**
- * Cleans messy raw location strings by removing duplicate postal codes, raw coordinates, and prefixes.
- * E.g. "46047, 46047 Oberhausen, Deutschland" -> "Oberhausen, Deutschland"
- *      "65232 Taunusstein, Deutschland" -> "Taunusstein, Deutschland"
- *      "04 Schkeuditz, Deutschland" -> "Schkeuditz, Deutschland"
+ * Cleans messy raw location strings by removing postal codes, street prefixes, coordinates, etc.
+ * Always formats cleanly to 'City, Country' (e.g. 'Dorsten, Deutschland', 'Zürich, Schweiz').
  */
 export function formatCleanLocation(location) {
     if (!location) return 'Deutschland';
-    const loc = typeof location === 'string' ? location.trim() : (location.address || 'Deutschland');
+    let loc = typeof location === 'string' ? location.trim() : (location.address || 'Deutschland');
+    if (!loc || /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(loc)) return 'Deutschland';
 
-    if (!loc || /^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(loc)) {
-        return 'Deutschland';
-    }
+    const rawParts = loc.split(',').map(p => p.trim()).filter(Boolean);
+    if (rawParts.length === 0) return 'Deutschland';
 
-    const parts = loc.split(',').map(p => p.trim()).filter(Boolean);
-    if (parts.length === 0) return 'Deutschland';
+    const country = rawParts[rawParts.length - 1].replace(/^\d+[\s\-]*/, '').trim() || 'Deutschland';
 
-    const country = parts.length > 1 ? parts[parts.length - 1] : '';
-    let cityPart = parts.length > 1 ? parts[parts.length - 2] : parts[0];
+    let cityPart = rawParts.length > 1 ? rawParts[rawParts.length - 2] : rawParts[0];
 
-    // Strip leading postal codes / numbers
-    cityPart = cityPart.replace(/^[\d\s]+/, '').trim();
+    // Strip postal codes (e.g. 5 digits, 4 digits, 2 digits like '02 Großschönau', '46286 Dorsten', '99 Erfurt')
+    cityPart = cityPart.replace(/^[\d\s\-_]+/, '').trim();
 
-    if (!cityPart || /^\d+$/.test(cityPart)) {
-        for (let i = parts.length - 1; i >= 0; i--) {
-            const candidate = parts[i].replace(/^[\d\s]+/, '').trim();
-            if (candidate && candidate.toLowerCase() !== country.toLowerCase() && !/^\d+$/.test(candidate)) {
+    if (!cityPart) {
+        for (let i = rawParts.length - 1; i >= 0; i--) {
+            const candidate = rawParts[i].replace(/^[\d\s\-_]+/, '').trim();
+            if (candidate && candidate.toLowerCase() !== country.toLowerCase()) {
                 cityPart = candidate;
                 break;
             }
         }
     }
 
-    if (!cityPart) cityPart = 'Deutschland';
+    if (!cityPart) cityPart = country;
 
-    if (country && country.toLowerCase() !== cityPart.toLowerCase() && !/^\d+$/.test(country)) {
+    if (country.toLowerCase() !== cityPart.toLowerCase() && !/^\d+$/.test(country)) {
         return `${cityPart}, ${country}`;
     }
     return cityPart;

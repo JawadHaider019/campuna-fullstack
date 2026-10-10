@@ -76,7 +76,7 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                         transition={{ duration: 0.8, ease: [0.21, 0.47, 0.32, 0.98] }}
                         className="font-display font-bold tracking-tight text-white mb-4 w-full mx-auto"
                     >
-                        <span className="block text-base sm:text-lg md:text-xl lg:text-[24px] xl:text-[28px] font-medium text-sand/90 tracking-wide mb-1 sm:mb-1.5 lg:whitespace-nowrap">
+                        <span className="block text-base sm:text-lg md:text-xl lg:text-[22px] xl:text-[24px] font-medium text-sand/90 tracking-wide mb-1 sm:mb-1.5">
                             Dein Camping-Marktplatz:
                         </span>
 
@@ -86,8 +86,8 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                             <span className="block">an einem Ort zusammen.</span>
                         </span>
 
-                        {/* Laptop & Desktop: High-impact main message 48-54px */}
-                        <span className="hidden lg:block text-[44px] xl:text-[50px] 2xl:text-[54px] font-bold leading-[1.12] text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1 lg:whitespace-nowrap drop-shadow-sm">
+                        {/* Laptop & Desktop: High-impact main message in 1 single line */}
+                        <span className="hidden lg:inline-block text-[30px] lg:text-[32px] xl:text-[42px] 2xl:text-[48px] font-bold leading-normal text-transparent bg-clip-text bg-gradient-to-r from-gold via-beige to-white mt-1 drop-shadow-sm whitespace-nowrap px-1">
                             Wir bringen Camping an einem Ort zusammen.
                         </span>
                     </motion.h1>

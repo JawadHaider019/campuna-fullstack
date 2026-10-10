@@ -1104,7 +1104,7 @@ export default function AdminListingsPage() {
                                                         {item.negotiable || item.isNegotiable ? 'Verhandlungsbasis' : 'Festpreis'}
                                                     </span>
                                                     <span className="font-display text-base sm:text-lg font-bold text-forest">
-                                                        {parseFloat(item.price || 0).toLocaleString('de-DE')} €
+                                                        {formatPrice(item.price)}
                                                     </span>
                                                 </div>
                                             </div>

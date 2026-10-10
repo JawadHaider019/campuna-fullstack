@@ -323,6 +323,7 @@ export default function ListingDetailPage() {
     };
 
     const listingId = parseListingId(slug);
+    const trackedViewsRef = useRef(new Set());
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -336,10 +337,12 @@ export default function ListingDetailPage() {
             try {
                 let foundListing = null;
 
-                // 1. Try getListingDetail by ID or Slug
+                // 1. Try getListingDetail by ID or Slug (prevent double-counting views in React StrictMode/re-mounts)
                 if (listingId) {
                     try {
-                        const res = await getListingDetail(listingId);
+                        const alreadyTracked = trackedViewsRef.current.has(slug);
+                        trackedViewsRef.current.add(slug);
+                        const res = await getListingDetail(listingId, { track_view: alreadyTracked ? 'false' : 'true' });
                         if (res.success && res.data?.listing) {
                             const apiMatch = res.data.listing;
                             const rawImages = Array.isArray(apiMatch.images)
@@ -375,8 +378,9 @@ export default function ListingDetailPage() {
                                 description: apiMatch.description || '',
                                 publishedDate: apiMatch.createdAt ? new Date(apiMatch.createdAt).toLocaleDateString('de-DE') : 'Neu eingestellt',
                                 anzeigeNr: `CP-${apiMatch.id ? apiMatch.id.slice(-4).toUpperCase() : '1000'}`,
-                                viewsCount: apiMatch.viewsCount || 1,
-                                    likesCount: parseInt(apiMatch.likes_count ?? apiMatch.favorites_count ?? 0, 10),
+                                views: parseInt(apiMatch.views ?? apiMatch.views_count ?? apiMatch.viewsCount ?? 0, 10),
+                                viewsCount: parseInt(apiMatch.views ?? apiMatch.views_count ?? apiMatch.viewsCount ?? 0, 10),
+                                likesCount: parseInt(apiMatch.likes_count ?? apiMatch.favorites_count ?? 0, 10),
                                     chatsCount: parseInt(apiMatch.chats_count ?? apiMatch.conversations_count ?? 0, 10),
                                 condition: apiMatch.condition || 'Sehr gut',
                                 status: apiMatch.status || 'Aktiv',
@@ -443,7 +447,8 @@ export default function ListingDetailPage() {
                                     description: match.description || '',
                                     publishedDate: match.createdAt ? new Date(match.createdAt).toLocaleDateString('de-DE') : 'Neu eingestellt',
                                     anzeigeNr: `CP-${match.id ? match.id.slice(-4).toUpperCase() : '1000'}`,
-                                    viewsCount: match.viewsCount || 1,
+                                    views: parseInt(match.views ?? match.views_count ?? match.viewsCount ?? 0, 10),
+                                    viewsCount: parseInt(match.views ?? match.views_count ?? match.viewsCount ?? 0, 10),
                                     likesCount: parseInt(match.likes_count ?? match.favorites_count ?? 0, 10),
                                     chatsCount: parseInt(match.chats_count ?? match.conversations_count ?? 0, 10),
                                     condition: match.condition || 'Sehr gut',
@@ -1434,7 +1439,7 @@ export default function ListingDetailPage() {
                                                         {item.pricePeriod || 'Kaufpreis'}
                                                     </span>
                                                     <span className="font-display text-sm font-extrabold text-forest">
-                                                        {item.price.toLocaleString('de-DE')} €
+                                                        {formatPrice(item.price)}
                                                     </span>
                                                 </div>
 
@@ -1597,7 +1602,7 @@ export default function ListingDetailPage() {
                                     </h4>
                                     <div className="flex items-center gap-2 mt-0.5">
                                         <span className="font-display font-extrabold text-forest text-base">
-                                            {price.toLocaleString('de-DE')} €
+                                            {formatPrice(price)}
                                         </span>
                                         {displayLocation && (
                                             <span className="text-[11px] text-charcoal/60 flex items-center gap-0.5 truncate">

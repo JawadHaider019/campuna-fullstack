@@ -19,7 +19,11 @@ import {
     Heart,
     ChevronLeft,
     ChevronRight,
-    X
+    X,
+    ShieldCheck,
+    CheckCircle2,
+    Calendar,
+    Shield
 } from 'lucide-react';
 import { getPublicProfile } from '@/api/profile';
 import { getListingsByUser } from '@/api/listings';
@@ -37,6 +41,7 @@ import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import ScrollSectionWrapper from '@/app/components/ScrollSectionWrapper';
+import { formatPrice, formatCleanLocation, formatCondition, isListingSold } from '@/utils/formatters';
 
 // Helper to escape characters for safe JSON-LD embedding (XSS protection)
 function safeJsonLd(obj) {
@@ -120,7 +125,7 @@ function normalizeListing(item) {
     const category = item.category || item.Category || 'Camping Zubehör';
     const price = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
     const pricePeriod = item.pricePeriod || 'Preis';
-    const location = item.location || "Deutschland";
+    const location = formatCleanLocation(item.location || "Deutschland");
     const slug = item.slug || buildListingSlug(title, id);
 
     let images = [];
@@ -136,8 +141,10 @@ function normalizeListing(item) {
         .map(img => getImageUrl(img, null))
         .filter(Boolean);
 
-    const sellerType = item.seller?.type || item.listing_user_type || 'Gewerblich';
-    const sellerTier = item.seller?.tier || item.company_tier || item.seller_tier || item.tier || 'FREE';
+    const rawType = item.seller?.type || item.seller_type || item.listing_user_type || item.user_type || (item.company_name ? 'Gewerblich' : 'Privat');
+    const sellerType = (rawType === 'COMMERCIAL' || rawType === 'Gewerblich') ? 'Gewerblich' : 'Privat';
+    const sellerTier = sellerType === 'Gewerblich' ? (item.seller?.tier || item.company_tier || item.seller_tier || item.tier || 'FREE') : 'FREE';
+    const isAdmin = item.seller_role === 'ADMIN' || item.role === 'ADMIN' || item.seller?.role === 'ADMIN';
 
     let features = [];
     if (Array.isArray(item.features) && item.features.length > 0) {
@@ -167,13 +174,18 @@ function normalizeListing(item) {
         location,
         images,
         sellerType,
+        seller_type: sellerType,
+        listing_user_type: sellerType,
         seller_tier: sellerTier,
         company_tier: sellerTier,
         tier: sellerTier,
+        role: isAdmin ? 'ADMIN' : 'USER',
+        seller_role: isAdmin ? 'ADMIN' : 'USER',
         seller: {
-            name: item.seller?.name || (sellerType === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatanbieter'),
+            name: item.seller?.name || (sellerType === 'Gewerblich' ? 'Gewerblicher Anbieter' : 'Privatverkäufer'),
             type: sellerType,
             tier: sellerTier,
+            role: isAdmin ? 'ADMIN' : 'USER',
             verified: true
         },
         features,
@@ -337,7 +349,7 @@ const ListingCard = React.memo(({ item: rawItem }) => {
                         {item.pricePeriod}
                     </span>
                     <span className="font-display text-lg font-bold text-forest">
-                        {item.price.toLocaleString('de-DE')} €
+                        {formatPrice(item.price)}
                     </span>
                 </div>
             </div>
@@ -584,7 +596,15 @@ export default function ProviderDetails() {
                         setLogoSrc(logo ? getImageUrl(logo) : null);
 
                         if (listingsRes.success && Array.isArray(listingsRes.data?.listings)) {
-                            setListings(listingsRes.data.listings);
+                            const rawListings = listingsRes.data.listings;
+                            const seen = new Set();
+                            const uniqueListings = rawListings.filter(item => {
+                                const key = item.id || `${item.title}_${item.price}`;
+                                if (seen.has(key)) return false;
+                                seen.add(key);
+                                return true;
+                            });
+                            setListings(uniqueListings);
                         }
 
                         setLoading(false);
@@ -727,104 +747,77 @@ export default function ProviderDetails() {
                             </div>
                         )}
 
-                        {/* Private Profile Layout: Logo, Name & Bio in a single row */}
+                        {/* Private Profile Layout: Compact, Elegant & Balanced User Card */}
                         {provider.type === 'Privat' ? (
-                            <div className="px-6 md:px-12 py-8 flex flex-col lg:flex-row justify-between gap-8 items-start lg:items-stretch">
-                                <div className="flex flex-col sm:flex-row items-start gap-6 flex-1 max-w-3xl min-w-0">
-                                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-4 border-white bg-white shadow-xl overflow-hidden flex items-center justify-center shrink-0 select-none">
+                            <div className="p-6 sm:p-8 md:p-9 bg-gradient-to-br from-white via-[#fcfbf9] to-[#faf7f0] flex flex-col md:flex-row items-center md:items-center justify-between gap-6 md:gap-8">
+                                <div className="flex flex-col sm:flex-row items-center sm:items-center gap-5 sm:gap-6 flex-1 min-w-0 text-center sm:text-left">
+                                    {/* Avatar */}
+                                    <div className="w-20 h-20 sm:w-22 sm:h-22 md:w-24 md:h-24 rounded-full border-3 border-white bg-white shadow-md overflow-hidden flex items-center justify-center shrink-0 select-none">
                                         {logoSrc ? (
                                             <img
                                                 src={logoSrc}
-                                                alt={`${provider.name} Logo`}
+                                                alt={`${provider.name} Avatar`}
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
                                                 referrerPolicy="no-referrer"
                                             />
                                         ) : (
-                                            <div className="w-full h-full rounded-full bg-gradient-to-br from-forest to-[#0d381e] text-sand flex items-center justify-center font-display font-bold text-2xl">
+                                            <div className="w-full h-full rounded-full bg-gradient-to-br from-forest to-[#0d381e] text-sand flex items-center justify-center font-display font-extrabold text-2xl sm:text-3xl tracking-wide">
                                                 {provider.name?.slice(0, 2).toUpperCase() || 'CP'}
                                             </div>
                                         )}
                                     </div>
-                                    <div className="space-y-3 flex-1 min-w-0">
-                                        {/* Name */}
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
+
+                                    {/* Info Column */}
+                                    <div className="space-y-2 flex-1 min-w-0">
+                                        {/* Name & Badges */}
+                                        <div className="flex items-center justify-center sm:justify-start gap-2.5 flex-wrap">
+                                            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-forest tracking-tight">
                                                 {provider.name}
                                             </h1>
+                                            <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200/80 shadow-xs">
+                                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                                Privatverkäufer
+                                            </span>
                                             {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
                                                 <PioneerBadge size="sm" text="Pioneer" />
                                             )}
                                         </div>
 
-                                        {/* Location */}
-                                        {provider.location && (
-                                            <div className="flex flex-wrap items-center gap-4 text-xs text-charcoal/55 font-medium">
-                                                <span className="flex items-center gap-1">
+                                        {/* Metadata Row: Member since, Location, Listings Count */}
+                                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 text-xs text-charcoal/70">
+                                            <span className="inline-flex items-center gap-1 font-medium">
+                                                <Calendar className="w-3.5 h-3.5 text-gold shrink-0" />
+                                                Mitglied seit {provider.memberSince || '2024'}
+                                            </span>
+                                            {provider.location && (
+                                                <span className="inline-flex items-center gap-1 font-medium">
                                                     <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
                                                     {provider.location}
                                                 </span>
-                                            </div>
-                                        )}
-
-                                        {/* Contact row */}
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 text-xs md:text-sm text-charcoal/70 pt-0.5">
-                                            {provider.email && (
-                                                <a href={`mailto:${provider.email}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
-                                                    <Mail className="w-4 h-4 text-gold shrink-0" />
-                                                    {provider.email}
-                                                </a>
                                             )}
-                                            {provider.phone && (
-                                                <a href={`tel:${provider.phone}`} className="flex items-center gap-1.5 hover:text-forest transition-colors font-medium">
-                                                    <Phone className="w-4 h-4 text-gold shrink-0" />
-                                                    {provider.phone}
-                                                </a>
-                                            )}
+                                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-forest/5 text-forest font-bold text-[11px] border border-forest/10">
+                                                <Star className="w-3 h-3 text-gold fill-gold shrink-0" />
+                                                {listings.length === 1 ? '1 Inserat' : `${listings.length} Inserate`}
+                                            </span>
                                         </div>
-
-                                        {/* Bio */}
-                                        {provider.bio && (
-                                            <div className="pt-2">
-                                                <p className="text-xs md:text-sm text-charcoal/80 leading-relaxed font-light whitespace-pre-line">
-                                                    {provider.bio}
-                                                </p>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
 
-                                {/* Right Column: Top Right Badges & Bottom Right CTA */}
-                                <div className="w-full lg:w-auto lg:min-w-[260px] flex flex-col justify-between items-start lg:items-end gap-6 shrink-0 self-stretch">
-                                    {/* Right Top: Badges */}
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-sand text-forest border border-beige shadow-sm">
-                                            Privatverkäufer
-                                        </span>
-                                    </div>
-
-                                    {/* Right Bottom: CTA & Listing count */}
-                                    <div className="w-full flex flex-col items-stretch lg:items-end gap-3 mt-auto pt-2">
-                                        <div className="w-full">
-                                            <button
-                                                type="button"
-                                                onClick={handleOpenContactModal}
-                                                className="w-full bg-forest hover:bg-gold text-white hover:text-forest transition-colors duration-300 font-sans font-bold py-3.5 px-7 rounded-full shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
-                                            >
-                                                <MessageSquare className="w-4 h-4 shrink-0" />
-                                                Anbieter kontaktieren
-                                            </button>
-                                            <span className="block mt-1.5 text-center text-[10px] text-charcoal/40 font-medium">
-                                                Direkt im Campuna Chat schreiben
-                                            </span>
-                                        </div>
-
-                                        {/* Listing count badge */}
-                                        <div className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-forest/15 bg-forest/5 text-forest rounded-full text-xs font-bold">
-                                            <Star className="w-3.5 h-3.5 text-gold fill-gold shrink-0" />
-                                            {listings.length === 1 ? '1 Inserat' : `${listings.length} Inserate`}
-                                        </div>
-                                    </div>
+                                {/* Right Column: Contact CTA */}
+                                <div className="flex flex-col items-center md:items-end gap-2 shrink-0 w-full sm:w-auto">
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenContactModal}
+                                        className="w-full sm:w-auto md:min-w-[230px] bg-forest hover:bg-forest/90 text-white hover:text-sand transition-all duration-300 font-sans font-bold py-3.5 px-6 rounded-full shadow-md text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                                    >
+                                        <MessageSquare className="w-4 h-4 text-sand shrink-0" />
+                                        <span>Anbieter kontaktieren</span>
+                                    </button>
+                                    <span className="text-[11px] text-charcoal/50 font-medium flex items-center gap-1">
+                                        <ShieldCheck className="w-3 h-3 text-emerald-600 shrink-0" />
+                                        Direkt im Campuna Chat schreiben
+                                    </span>
                                 </div>
                             </div>
                         ) : (

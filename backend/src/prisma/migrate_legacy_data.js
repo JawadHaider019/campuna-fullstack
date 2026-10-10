@@ -573,6 +573,18 @@ async function migrate() {
           .replace(/^-+|-+$/g, '');
         const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 7)}`;
 
+        // Check if listing already exists for this user to prevent duplicates on migration re-runs
+        const existingListing = await pool.query(
+          'SELECT id FROM listings WHERE user_id = $1 AND title = $2 LIMIT 1',
+          [userId, title]
+        );
+        if (existingListing.rows.length > 0) {
+          if (item['unique id']) {
+            bubbleListingIdToUuidMap.set(item['unique id'].trim(), existingListing.rows[0].id);
+          }
+          continue;
+        }
+
         // Generate listing UUID
         const newListingId = crypto.randomUUID();
 

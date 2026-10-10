@@ -46,6 +46,7 @@ import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import { formatPrice } from '@/utils/formatters';
 import { PROVIDER_CATEGORIES } from '@/data';
 
 
@@ -451,7 +452,7 @@ export default function MeinKontoPage() {
         if (isCommercial) {
             return Boolean(commercialPioneerCriteria?.isProfileOnlyComplete);
         }
-        return Boolean(profile.first_name && profile.last_name && profile.bio && profile.location);
+        return Boolean(profile.first_name && profile.last_name && profile.location);
     }, [profile, isCommercial, commercialPioneerCriteria]);
 
     // Spotlight Requirements Evaluation (Spotlight requires active Business subscription + complete profile)
@@ -551,6 +552,19 @@ export default function MeinKontoPage() {
             }
         }
     }, [mounted, isLoggedIn, accessToken, user, router]);
+
+    // Safety fallback: only paid commercial users can access business_cockpit
+    useEffect(() => {
+        if (!loading && activeTab === 'business_cockpit') {
+            const isPaidBusiness = Boolean(isCommercial && subDetails?.is_business);
+            if (!isPaidBusiness) {
+                setActiveTab('dashboard');
+                try {
+                    localStorage.setItem('campuna_active_account_tab', 'dashboard');
+                } catch (_) {}
+            }
+        }
+    }, [loading, activeTab, isCommercial, subDetails?.is_business]);
 
     const loadAllAccountData = async () => {
         if (user?.role === 'ADMIN') {
@@ -1296,7 +1310,6 @@ export default function MeinKontoPage() {
     const effectiveProfile = profile || {
         first_name: user?.email?.split('@')[0] || 'Camper',
         last_name: '',
-        bio: 'Willkommen bei Campuna!',
         location: 'Deutschland',
         created_at: new Date().toISOString(),
     };
@@ -1715,101 +1728,26 @@ export default function MeinKontoPage() {
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════
-                                TAB 0: PREMIUM BUSINESS DASHBOARD (FOR SUBSCRIBERS)
+                                TAB 0: PREMIUM BUSINESS DASHBOARD (FOR PAID BUSINESS USERS ONLY)
                                ═════════════════════════════════════════════════════════════ */}
-                            {activeTab === 'business_cockpit' && (
-                                subDetails.is_business ? (
-                                    <UserDashboard
-                                        subDetails={subDetails}
-                                        profile={profile}
-                                        profileType={profileType}
-                                        creditBalance={creditBalance}
-                                        userListings={userListings}
-                                        onRefreshData={loadAllAccountData}
-                                        onOpenInvoices={handleOpenInvoices}
-                                        onOpenCancelModal={() => setCancelSubModalOpen(true)}
-                                        onOpenBoostModal={handleOpenBoostModal}
-                                        onCreateListing={handleCreateListingClick}
-                                        onEditListing={handleEditListing}
-                                        onDeleteListing={item => setDeleteConfirmListing(item)}
-                                        onOpenSpotlightModal={() => setSpotlightModalOpen(true)}
-                                        onNavigateTab={(tab) => setActiveTab(tab)}
-                                        user={user}
-                                    />
-                                ) : (
-
-                                    <div className="space-y-6">
-                                        <TabHeader
-                                            title="Campuna Business Cockpit"
-                                            subtitle="Schalte professionelle Business-Werkzeuge, Firmen-Cover und Live-Analysen frei"
-                                            icon={CreditCard}
-                                            badge={
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-gold/20 text-gold-dark border border-gold/40">
-                                                    Upgrade verfügbar
-                                                </span>
-                                            }
-                                        />
-
-                                        {/* Business Teaser Hero */}
-                                        <div className="rounded-3xl bg-gradient-to-br from-[#003808] via-[#002204] to-[#011403] border border-gold/30 p-8 text-white shadow-xl relative overflow-hidden space-y-6">
-                                            <Sparkles className="absolute right-6 bottom-4 w-60 h-60 text-white/[0.03] pointer-events-none stroke-[1]" />
-                                            <div className="relative z-10 max-w-2xl space-y-4">
-                                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase bg-gold text-forest shadow-md">
-                                                    <Sparkles className="w-3.5 h-3.5 fill-forest" />
-                                                    Exklusiv für Unternehmen & professionelle Anbieter
-                                                </span>
-                                                <h2 className="text-3xl sm:text-4xl font-black text-sand font-display tracking-tight">
-                                                    Maximiere deinen Camping-Erfolg mit dem Campuna Business Plan
-                                                </h2>
-                                                <p className="text-sm text-sand/80 leading-relaxed font-sans">
-                                                    Erhalte Zugriff auf ein professionelles Firmenprofil mit individuellem Cover & Bio, Echtzeit-Reichweitenanalysen, direkte Kundenanfragen-Pipeline sowie die exklusive Berechtigung zur flexiblen Spotlight-Buchung.
-                                                </p>
-                                                <div className="pt-2 flex flex-col sm:flex-row items-center gap-4">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => router.push('/abo/kasse')}
-                                                        className="w-full sm:w-auto px-6 py-3.5 bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider rounded-2xl transition-all duration-300 shadow-lg hover:shadow-gold/30 flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02] active:scale-[0.98] group"
-                                                    >
-                                                        <span>Jetzt Business freischalten (29 € / Monat)</span>
-                                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {/* 4 Pillars Grid */}
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-white/10 relative z-10">
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                                                    <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
-                                                        <Rocket className="w-4 h-4" />
-                                                    </div>
-                                                    <h4 className="font-bold text-sm text-sand">Maximale Reichweite</h4>
-                                                    <p className="text-xs text-sand/60">Profitiere von bevorzugter Auffindbarkeit und regionaler Sichtbarkeit.</p>
-                                                </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                                                    <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
-                                                        <Sparkles className="w-4 h-4" />
-                                                    </div>
-                                                    <h4 className="font-bold text-sm text-sand">Spotlight-Berechtigung</h4>
-                                                    <p className="text-xs text-sand/60">Exklusiver Zugang zur flexiblen Buchung reichweitenstarker Homepage-Spotlights.</p>
-                                                </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                                                    <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
-                                                        <TrendingUp className="w-4 h-4" />
-                                                    </div>
-                                                    <h4 className="font-bold text-sm text-sand">Echtzeit-KPI Analysen</h4>
-                                                    <p className="text-xs text-sand/60">Detaillierte Aufruf- und Lead-Statistiken, CTR und Besucherdaten.</p>
-                                                </div>
-                                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-                                                    <div className="p-2 rounded-xl bg-gold/20 text-gold w-fit">
-                                                        <ShieldCheck className="w-4 h-4" />
-                                                    </div>
-                                                    <h4 className="font-bold text-sm text-sand">Firmen-Cover & Business-Kennzeichnung</h4>
-                                                    <p className="text-xs text-sand/60">Individuelles Firmen-Cover, 1.000 Zeichen Bio und exklusive Business-Präsenz.</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )
+                            {activeTab === 'business_cockpit' && isCommercial && subDetails.is_business && (
+                                <UserDashboard
+                                    subDetails={subDetails}
+                                    profile={profile}
+                                    profileType={profileType}
+                                    creditBalance={creditBalance}
+                                    userListings={userListings}
+                                    onRefreshData={loadAllAccountData}
+                                    onOpenInvoices={handleOpenInvoices}
+                                    onOpenCancelModal={() => setCancelSubModalOpen(true)}
+                                    onOpenBoostModal={handleOpenBoostModal}
+                                    onCreateListing={handleCreateListingClick}
+                                    onEditListing={handleEditListing}
+                                    onDeleteListing={item => setDeleteConfirmListing(item)}
+                                    onOpenSpotlightModal={() => setSpotlightModalOpen(true)}
+                                    onNavigateTab={(tab) => setActiveTab(tab)}
+                                    user={user}
+                                />
                             )}
 
                             {/* ═════════════════════════════════════════════════════════════
@@ -1965,16 +1903,18 @@ export default function MeinKontoPage() {
                                                                     </div>
                                                             )}
 
-                                                            <FormField
-                                                                label="Über mich / Firmen-Info"
-                                                                value={profile?.bio}
-                                                                editValue={draft.bio}
-                                                                isEditing={true}
-                                                                onChange={v => setDraft(d => ({ ...d, bio: v }))}
-                                                                placeholder={subDetails.is_business ? "Beschreibe dein Angebot (bis zu 1.000 Zeichen)..." : "Beschreibe dein Angebot (bis zu 500 Zeichen)..."}
-                                                                multiline
-                                                                maxLength={subDetails.is_business ? 1000 : 500}
-                                                            />
+                                                            {isCommercial && (
+                                                                <FormField
+                                                                    label="Firmenbeschreibung / Info"
+                                                                    value={profile?.bio}
+                                                                    editValue={draft.bio}
+                                                                    isEditing={true}
+                                                                    onChange={v => setDraft(d => ({ ...d, bio: v }))}
+                                                                    placeholder={subDetails.is_business ? "Beschreibe dein gewerbliches Angebot (bis zu 1.000 Zeichen)..." : "Beschreibe dein Unternehmen (bis zu 500 Zeichen)..."}
+                                                                    multiline
+                                                                    maxLength={subDetails.is_business ? 1000 : 500}
+                                                                />
+                                                            )}
 
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                                 <FormField label="Standort" value={profile?.location} editValue={draft.location}
@@ -2053,7 +1993,7 @@ export default function MeinKontoPage() {
                                                                 )}
                                                             </div>
 
-                                                            {profile?.bio && (
+                                                            {isCommercial && profile?.bio && (
                                                                 <div className="text-xs sm:text-sm text-charcoal/80 leading-relaxed text-center sm:text-left pt-0.5">
                                                                     {profile.bio.length <= 250 || isBioExpanded ? (
                                                                         <span>{profile.bio}</span>
@@ -2970,7 +2910,7 @@ export default function MeinKontoPage() {
                                                                         {item.negotiable || item.isNegotiable ? 'VB' : 'Festpreis'}
                                                                     </span>
                                                                     <span className="font-display text-sm sm:text-base font-black text-forest">
-                                                                        {parseFloat(item.price || 0).toLocaleString('de-DE')} €
+                                                                        {formatPrice(item.price)}
                                                                     </span>
                                                                 </div>
                                                             </div>
@@ -3992,7 +3932,7 @@ export default function MeinKontoPage() {
                             <div className="bg-[#faf8f3] p-3.5 rounded-2xl border border-beige/80 text-xs text-charcoal/80 space-y-1">
                                 <p className="font-semibold text-charcoal truncate">{deleteConfirmListing.title || 'Dieses Inserat'}</p>
                                 <p className="text-charcoal/50 text-[11px] font-mono">
-                                    {deleteConfirmListing.price ? `${parseFloat(deleteConfirmListing.price).toLocaleString('de-DE')} €` : ''} • {deleteConfirmListing.category || 'Inserat'}
+                                    {deleteConfirmListing.price ? `${formatPrice(deleteConfirmListing.price)}` : ''} • {deleteConfirmListing.category || 'Inserat'}
                                 </p>
                             </div>
 

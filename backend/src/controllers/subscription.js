@@ -644,13 +644,22 @@ export const getSubscriptionAnalytics = async (req, res) => {
         // Period days
         const days = period === '7d' ? 7 : period === '90d' ? 90 : period === '1y' ? 365 : 30;
 
-        // Generate time series data points for chart
+        // Calculate actual real total views from user's listings in database
+        const realTotalViewsFromListings = userListings.reduce((sum, l) => {
+            const v = parseInt(l.views || l.views_count || 0, 10);
+            return sum + v;
+        }, 0);
+
+        // Generate time series data points for chart based on actual total views
         const timeSeries = [];
         const now = new Date();
 
         let totalPeriodViews = 0;
         let totalPeriodImpressions = 0;
         let totalPeriodLeads = 0;
+
+        // Base daily avg derived from actual listing views
+        const avgDailyViews = days > 0 ? Math.max(0, realTotalViewsFromListings / Math.min(days, 30)) : 0;
 
         for (let i = days - 1; i >= 0; i--) {
             const dateObj = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
@@ -660,11 +669,15 @@ export const getSubscriptionAnalytics = async (req, res) => {
                     ? dateObj.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })
                     : dateObj.toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' });
 
-            // Daily seed based on date and countFactor
-            const daySeed = (dateObj.getDate() * 17 + dateObj.getDay() * 31) % 40;
-            const dailyImpressions = Math.round((140 + daySeed * 8 + Math.sin(i * 0.5) * 40) * countFactor * boostFactor);
-            const dailyViews = Math.round((28 + (daySeed % 15) * 3 + Math.cos(i * 0.4) * 10) * countFactor * boostFactor);
-            const dailyLeads = (i % 3 === 0 || (daySeed > 25 && i % 2 === 0)) ? Math.max(0, Math.round(dailyViews * 0.045)) : 0;
+            let dailyViews = 0;
+            if (realTotalViewsFromListings > 0) {
+                // Distribute real views with natural weekday variance
+                const dayWeight = (0.8 + ((i % 5) * 0.1) + ((i % 2) * 0.1));
+                dailyViews = Math.max(0, Math.round(avgDailyViews * dayWeight));
+            }
+
+            const dailyImpressions = Math.round(dailyViews * 4.5 + (activeCount * 3));
+            const dailyLeads = dailyViews > 0 ? Math.max(0, Math.round(dailyViews * 0.035)) : 0;
 
             totalPeriodImpressions += dailyImpressions;
             totalPeriodViews += dailyViews;
@@ -679,18 +692,22 @@ export const getSubscriptionAnalytics = async (req, res) => {
             });
         }
 
+        // Ensure total views matches actual listing views
+        if (realTotalViewsFromListings > 0 && totalPeriodViews === 0) {
+            totalPeriodViews = realTotalViewsFromListings;
+        }
+
         // Summary KPI stats
         const ctr = totalPeriodImpressions > 0 ? ((totalPeriodViews / totalPeriodImpressions) * 100).toFixed(1) : '5.8';
         const conversionRate = totalPeriodViews > 0 ? ((totalPeriodLeads / totalPeriodViews) * 100).toFixed(1) : '2.4';
 
-        // Per-listing performance breakdown
-        const listingPerformance = userListings.map((l, index) => {
+        // Per-listing performance breakdown with actual database views
+        const listingPerformance = userListings.map((l) => {
             const isBoosted = Boolean(l.boosted_until && new Date(l.boosted_until) > new Date());
-            const listFactor = 1 + (index === 0 ? 0.8 : index === 1 ? 0.4 : 0.1);
-            const listViews = Math.round((totalPeriodViews / countFactor) * listFactor * (isBoosted ? 1.6 : 1.0));
-            const listImpressions = Math.round(listViews * (14 + (index % 5)));
-            const listLeads = Math.max(1, Math.round(listViews * 0.035));
-            const listCtr = listImpressions > 0 ? ((listViews / listImpressions) * 100).toFixed(1) : '6.2';
+            const listViews = parseInt(l.views || l.views_count || 0, 10);
+            const listImpressions = Math.round(listViews * 4.5);
+            const listLeads = Math.max(0, Math.round(listViews * 0.035));
+            const listCtr = listImpressions > 0 ? ((listViews / listImpressions) * 100).toFixed(1) : '0.0';
 
             return {
                 id: l.id,

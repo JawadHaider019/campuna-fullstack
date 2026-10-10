@@ -13,7 +13,7 @@ import CircleLoader from '@/app/components/CircleLoader';
 import { ListingBadgesRow } from '@/app/components/ListingBadge';
 import { isListingBoosted } from '@/utils/sellerBadge';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
-import { formatPrice } from '@/utils/formatters';
+import { formatPrice, formatCleanLocation } from '@/utils/formatters';
 
 function buildListingSlug(title = '', id = '') {
     const cleanTitle = title
@@ -222,7 +222,7 @@ export default function FavoritesPage() {
                                                 {item.location && (
                                                     <div className="flex items-center gap-1 text-[11px] text-charcoal/60 mb-2">
                                                         <MapPin className="w-3.5 h-3.5 text-gold shrink-0" />
-                                                        <span className="truncate">{item.location}</span>
+                                                        <span className="truncate">{formatCleanLocation(item.location)}</span>
                                                     </div>
                                                 )}
                                             </div>

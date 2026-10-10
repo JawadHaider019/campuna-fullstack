@@ -10,6 +10,7 @@ import CircleLoader from '@/app/components/CircleLoader';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 import { getImageUrl } from '@/utils/imageUrl';
+import { formatPrice } from '@/utils/formatters';
 
 function BoostenRouter() {
     const router = useRouter();
@@ -152,7 +153,7 @@ function BoostenRouter() {
                                             {item.title}
                                         </h4>
                                         <span className="text-xs font-extrabold text-forest font-mono">
-                                            {item.price ? `${parseFloat(item.price).toLocaleString('de-DE')} €` : 'VB'}
+                                            {formatPrice(item.price)}
                                         </span>
                                     </div>
                                     <div className="w-9 h-9 rounded-full bg-sand/40 group-hover:bg-forest group-hover:text-sand flex items-center justify-center transition-colors shrink-0">

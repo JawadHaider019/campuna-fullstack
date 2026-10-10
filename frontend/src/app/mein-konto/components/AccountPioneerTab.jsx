@@ -36,7 +36,7 @@ export default function AccountPioneerTab({
             {
                 id: 'profile',
                 label: 'Profil vollständig ausgefüllt',
-                detail: 'Vorname, Nachname, Bio und Standort hinterlegt',
+                detail: 'Vorname, Nachname und Standort hinterlegt',
                 met: Boolean(isProfileComplete)
             },
             {

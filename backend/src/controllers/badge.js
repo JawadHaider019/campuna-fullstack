@@ -32,7 +32,6 @@ export const checkAndAwardPioneerBadge = async (userId) => {
             if (profile && 
                 profile.first_name && profile.first_name.trim() !== '' &&
                 profile.last_name && profile.last_name.trim() !== '' &&
-                profile.bio && profile.bio.trim() !== '' &&
                 profile.location && profile.location.trim() !== ''
             ) {
                 isProfileComplete = true;
@@ -57,7 +56,7 @@ export const checkAndAwardPioneerBadge = async (userId) => {
                 success: false, 
                 error: user.user_type === 'COMMERCIAL'
                     ? 'Unternehmensprofil ist unvollständig (Firmenname, Logo, Beschreibung ab 20 Zeichen, Telefon und Standort erforderlich).'
-                    : 'Profil ist unvollständig. Bitte Vorname, Nachname, Info und Standort ausfüllen.' 
+                    : 'Profil ist unvollständig. Bitte Vorname, Nachname und Standort ausfüllen.' 
             };
         }
 

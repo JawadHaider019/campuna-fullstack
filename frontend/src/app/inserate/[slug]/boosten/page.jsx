@@ -34,6 +34,7 @@ import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
 import AuthRequiredModal from '@/app/components/AuthRequiredModal';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import { formatPrice } from '@/utils/formatters';
 
 const BOOST_PACKAGES = [
     {
@@ -443,7 +444,7 @@ export default function BoostListingPage() {
                                 </h3>
                                 <div className="flex items-center gap-2 mt-1">
                                     <span className="font-display font-extrabold text-forest text-sm sm:text-base">
-                                        {listing.price ? `${parseFloat(listing.price).toLocaleString('de-DE')} €` : 'Preis auf Anfrage'}
+                                        {formatPrice(listing.price)}
                                     </span>
                                     {listing.location && (
                                         <span className="text-[11px] text-charcoal/60 flex items-center gap-0.5 truncate">
@@ -714,7 +715,7 @@ export default function BoostListingPage() {
                                     </h4>
                                     <div className="flex items-center justify-between">
                                         <span className="font-display font-extrabold text-forest text-sm">
-                                            {listing.price ? `${parseFloat(listing.price).toLocaleString('de-DE')} €` : 'VB'}
+                                            {formatPrice(listing.price)}
                                         </span>
                                         <span className="text-[10px] text-charcoal/60">
                                             {listing.location || 'Deutschland'}

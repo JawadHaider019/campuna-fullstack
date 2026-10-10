@@ -34,8 +34,8 @@ export const getAllListings = async () => {
     return api.get('/listings');
 };
 
-export const getListingDetail = async (id) => {
-    return api.get(`/listings/${id}`);
+export const getListingDetail = async (id, params = {}) => {
+    return api.get(`/listings/${id}`, { params });
 };
 
 /**

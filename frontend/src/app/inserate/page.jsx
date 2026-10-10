@@ -634,10 +634,7 @@ const ListingCard = React.memo(function ListingCard({ item, index = 0 }) {
                 <div className="absolute bottom-3 right-3 flex items-center pointer-events-none text-white/95 max-w-[85%] z-10">
                     <div className="bg-black/45 backdrop-blur-md px-2.5 py-1 rounded-full text-[8.5px] flex items-center gap-1 truncate">
                         <MapPin className="w-2.5 h-2.5 text-gold shrink-0" />
-                        <span className="truncate">
-                            <span className="inline md:hidden">{cityOnly}</span>
-                            <span className="hidden md:inline">{displayLoc}</span>
-                        </span>
+                        <span className="truncate">{displayLoc}</span>
                     </div>
                 </div>
 
@@ -1589,9 +1586,9 @@ function ListingsContent() {
                                     ))}
                                 </div>
 
-                                {/* Load More Button & Crawler-Safe Pagination Fallback */}
+                                {/* Load More Button */}
                                 {sortedListings.length > visibleCount && (
-                                    <div className="flex flex-col items-center justify-center mt-12 gap-2">
+                                    <div className="flex items-center justify-center mt-12">
                                         <button
                                             type="button"
                                             onClick={() => setVisibleCount(prev => prev + 12)}
@@ -1599,12 +1596,6 @@ function ListingsContent() {
                                         >
                                             Weitere Angebote laden
                                         </button>
-                                        <p className="text-xs text-charcoal/50 font-light">
-                                            Oder blättern:{' '}
-                                            <a href="/inserate?seite=2" className="text-forest hover:text-gold underline font-medium">
-                                                Seite 2 ansehen
-                                            </a>
-                                        </p>
                                     </div>
                                 )}
                             </>

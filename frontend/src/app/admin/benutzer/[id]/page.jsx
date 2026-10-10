@@ -539,9 +539,9 @@ export default function AdminUserDetailPage() {
                     )}
                 </div>
 
-                {user.bio && (
+                {isCommercial && user.bio && (
                     <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F8F9FB] border border-[#E8EAEF] space-y-1">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block">Über das Profil / Beschreibung</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">Über das Unternehmen / Beschreibung</span>
                         <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">{user.bio}</p>
                     </div>
                 )}

@@ -60,6 +60,7 @@ import {
 } from '@/api/profile';
 import CoinIcon from '@/app/components/CoinIcon';
 import { getImageUrl } from '@/utils/imageUrl';
+import { formatPrice } from '@/utils/formatters';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
 
 export default function UserDashboard({
@@ -172,32 +173,49 @@ export default function UserDashboard({
         return userListings.filter(l => l.status === 'REVIEW').length;
     }, [userListings]);
 
+    // Actual real user listings views sum from database
+    const actualListingViewsSum = useMemo(() => {
+        return (userListings || []).reduce((sum, l) => {
+            const v = parseInt(l.views ?? l.views_count ?? l.viewsCount ?? 0, 10);
+            return sum + (isNaN(v) ? 0 : v);
+        }, 0);
+    }, [userListings]);
+
     // Time-series points
     const timeSeries = useMemo(() => {
         if (analyticsData?.time_series && analyticsData.time_series.length > 0) {
             return analyticsData.time_series;
         }
-        // Fallback realistic smooth curve data
+        // Base time series on actual listing views from database
         const days = analyticsPeriod === '7d' ? 7 : analyticsPeriod === '90d' ? 12 : 14;
         const now = new Date();
         const pts = [];
+        const baseDaily = days > 0 ? (actualListingViewsSum / days) : 0;
+
         for (let i = days - 1; i >= 0; i--) {
             const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
             const dateStr = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
-            const views = Math.floor(210 + Math.sin(i * 1.1) * 85 + (i % 3 === 0 ? 45 : 10));
-            const leadsCount = Math.floor(Math.max(1, (views / 40) + (i % 4 === 0 ? 2 : 0)));
-            const impressions = views * 4 + Math.floor(views * 0.6);
-            const ctr = ((views / impressions) * 100).toFixed(1);
+            let views = 0;
+            if (actualListingViewsSum > 0) {
+                const variance = 0.8 + ((i % 4) * 0.12);
+                views = Math.max(0, Math.round(baseDaily * variance));
+            }
+            const leadsCount = views > 0 ? Math.max(0, Math.round(views * 0.035)) : 0;
+            const impressions = Math.round(views * 4.5);
+            const ctr = impressions > 0 ? ((views / impressions) * 100).toFixed(1) : '0.0';
             pts.push({ date: dateStr, views, leads: leadsCount, impressions, ctr: parseFloat(ctr) });
         }
         return pts;
-    }, [analyticsData, analyticsPeriod]);
+    }, [analyticsData, analyticsPeriod, actualListingViewsSum]);
 
     // Metric Calculations
     const totalViews = useMemo(() => {
-        if (analyticsData?.summary?.total_views) return analyticsData.summary.total_views;
+        if (analyticsData?.summary?.total_views !== undefined && analyticsData?.summary?.total_views !== null) {
+            return analyticsData.summary.total_views;
+        }
+        if (actualListingViewsSum > 0) return actualListingViewsSum;
         return timeSeries.reduce((acc, curr) => acc + (curr.views || 0), 0);
-    }, [analyticsData, timeSeries]);
+    }, [analyticsData, actualListingViewsSum, timeSeries]);
 
     const totalImpressions = useMemo(() => {
         if (analyticsData?.summary?.total_impressions) return analyticsData.summary.total_impressions;
@@ -914,7 +932,7 @@ export default function UserDashboard({
                                                     <span className="font-bold text-charcoal truncate max-w-[200px]">{listing.title}</span>
                                                 </div>
                                                 <span className="font-mono font-black text-forest shrink-0">
-                                                    {parseFloat(listing.price || 0).toLocaleString('de-DE')} €
+                                                    {formatPrice(listing.price)}
                                                 </span>
                                             </div>
 
@@ -1236,7 +1254,7 @@ export default function UserDashboard({
                                                 
                                                 <div className="flex items-center gap-3 text-xs">
                                                     <span className="font-black text-forest font-mono">
-                                                        {parseFloat(item.price || 0).toLocaleString('de-DE')} €
+                                                        {formatPrice(item.price)}
                                                     </span>
                                                     {item.location && (
                                                         <span className="text-[10px] text-charcoal/50 flex items-center gap-0.5">

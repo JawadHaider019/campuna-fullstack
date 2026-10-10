@@ -10,7 +10,6 @@ import { isValidPhoneNumber } from '../utils/validation.js';
 const PRIVATE_ALLOWED_FIELDS = [
     'first_name',
     'last_name',
-    'bio',
     'location',
     'phone',
     'profile_image_url',
@@ -201,6 +200,10 @@ export const getMyProfile = async (req, res) => {
             });
         }
 
+        if (profile && profile.bio !== undefined) {
+            delete profile.bio;
+        }
+
         return res.status(200).json({
             success: true,
             profile_type: 'PRIVATE',
@@ -325,13 +328,6 @@ export const updateMyProfile = async (req, res) => {
             });
         }
 
-        if (updates.bio && updates.bio.length > 500) {
-            return res.status(400).json({
-                success: false,
-                error: 'Die Beschreibung ist im kostenlosen Tarif auf 500 Zeichen begrenzt.'
-            });
-        }
-
         if (updates.phone !== undefined && updates.phone !== null && String(updates.phone).trim() !== '') {
             if (!isValidPhoneNumber(String(updates.phone))) {
                 return res.status(400).json({
@@ -431,7 +427,7 @@ export const getPublicProfile = async (req, res) => {
                 return res.status(404).json({ success: false, error: 'Profil nicht gefunden.' });
             }
 
-            const { id, user_id, created_at, updated_at, ...publicFields } = profile;
+            const { id, user_id, created_at, updated_at, bio, ...publicFields } = profile;
 
             return res.status(200).json({
                 success: true,
