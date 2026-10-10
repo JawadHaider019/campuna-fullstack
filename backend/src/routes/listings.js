@@ -31,6 +31,9 @@ router.get('/user/:userId', getListingsByUser);
 // GET /api/listings → Retrieve all approved listings (public)
 router.get('/', getAllListings);
 
+// GET /api/listings/slug/:id → Retrieve listing detail by Slug
+router.get('/slug/:id', optionalAuthenticate, getListingDetail);
+
 // GET /api/listings/:id → Retrieve listing detail by ID or Slug (public if approved, creator/admin if unapproved)
 router.get('/:id', optionalAuthenticate, getListingDetail);
 
