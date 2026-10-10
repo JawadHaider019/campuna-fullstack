@@ -3,6 +3,7 @@ import 'express-async-errors';
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import pool from './config/database.js';
 import { initSocketServer } from './socket.js';
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
