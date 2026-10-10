@@ -10,7 +10,7 @@
     "seed": "node src/prisma/seed.js",
     "migrate:legacy": "node src/prisma/migrate_legacy_data.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "contract:emit": "prisma contract emit --config prisma.config.js",
+    "contract:emit": "node src/scripts/emit-contract.js",
     "prisma": "prisma --config prisma.config.js"
   },
   "keywords": [
