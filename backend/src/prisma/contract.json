@@ -350,6 +350,9 @@
                 "privacy_policy_url": {
                   "column": "privacy_policy_url"
                 },
+                "spotlight_until": {
+                  "column": "spotlight_until"
+                },
                 "tier": {
                   "column": "tier"
                 },
@@ -3603,7 +3606,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "3e9e66cb0714df479d16c704419550c7e8dce96371aad4e809345ec467a54a8f"
+    "storageHash": "e0ec4871611b22ea0112b7d02a7ec5b51252550687afdc07f0b0a679fc728ca4"
   },
   "execution": {
     "executionHash": "85e767769a3d8fcd72695eb67374a9d8a155f8dd7ef11d2f5b873065e56752cc",

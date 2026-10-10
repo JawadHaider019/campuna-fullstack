@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'3e9e66cb0714df479d16c704419550c7e8dce96371aad4e809345ec467a54a8f'>;
+  StorageHashBase<'e0ec4871611b22ea0112b7d02a7ec5b51252550687afdc07f0b0a679fc728ca4'>;
 export type ExecutionHash =
   ExecutionHashBase<'85e767769a3d8fcd72695eb67374a9d8a155f8dd7ef11d2f5b873065e56752cc'>;
 export type ProfileHash =
@@ -263,6 +263,7 @@ export type FieldOutputTypes = {
       readonly linkedin_url: CodecTypes['pg/text@1']['output'] | null;
       readonly logo_url: CodecTypes['pg/text@1']['output'] | null;
       readonly cover_image_url: CodecTypes['pg/text@1']['output'] | null;
+      readonly spotlight_until: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
     };
@@ -423,6 +424,7 @@ export type FieldInputTypes = {
       readonly linkedin_url: CodecTypes['pg/text@1']['input'] | null;
       readonly logo_url: CodecTypes['pg/text@1']['input'] | null;
       readonly cover_image_url: CodecTypes['pg/text@1']['input'] | null;
+      readonly spotlight_until: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly created_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
     };
@@ -580,6 +582,7 @@ export type StorageColumnTypes = {
       readonly logo_url: CodecTypes['pg/text@1']['output'] | null;
       readonly phone: CodecTypes['pg/text@1']['output'] | null;
       readonly privacy_policy_url: CodecTypes['pg/text@1']['output'] | null;
+      readonly spotlight_until: CodecTypes['pg/timestamptz-string@1']['output'] | null;
       readonly tier: CodecTypes['pg/text@1']['output'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['output'];
       readonly user_id: CodecTypes['pg/uuid@1']['output'];
@@ -740,6 +743,7 @@ export type StorageColumnInputTypes = {
       readonly logo_url: CodecTypes['pg/text@1']['input'] | null;
       readonly phone: CodecTypes['pg/text@1']['input'] | null;
       readonly privacy_policy_url: CodecTypes['pg/text@1']['input'] | null;
+      readonly spotlight_until: CodecTypes['pg/timestamptz-string@1']['input'] | null;
       readonly tier: CodecTypes['pg/text@1']['input'];
       readonly updated_at: CodecTypes['pg/timestamptz-string@1']['input'];
       readonly user_id: CodecTypes['pg/uuid@1']['input'];
@@ -1018,6 +1022,11 @@ type ContractBase = Omit<
                 readonly cover_image_url: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
+                  readonly nullable: true;
+                };
+                readonly spotlight_until: {
+                  readonly nativeType: 'timestamptz';
+                  readonly codecId: 'pg/timestamptz-string@1';
                   readonly nullable: true;
                 };
                 readonly created_at: {
@@ -2243,6 +2252,13 @@ type ContractBase = Omit<
                 readonly nullable: true;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
               };
+              readonly spotlight_until: {
+                readonly nullable: true;
+                readonly type: {
+                  readonly kind: 'scalar';
+                  readonly codecId: 'pg/timestamptz-string@1';
+                };
+              };
               readonly created_at: {
                 readonly nullable: false;
                 readonly type: {
@@ -2293,6 +2309,7 @@ type ContractBase = Omit<
                 readonly linkedin_url: { readonly column: 'linkedin_url' };
                 readonly logo_url: { readonly column: 'logo_url' };
                 readonly cover_image_url: { readonly column: 'cover_image_url' };
+                readonly spotlight_until: { readonly column: 'spotlight_until' };
                 readonly created_at: { readonly column: 'created_at' };
                 readonly updated_at: { readonly column: 'updated_at' };
               };
