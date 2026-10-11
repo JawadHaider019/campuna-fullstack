@@ -277,7 +277,7 @@ export default function AccountCreditsTab({
                             <div className="pt-2 px-1 text-[11px] text-charcoal/50 leading-relaxed font-sans flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-t border-beige/60">
                                 <span>1 Credit = 1 Cent Plattform-Gegenwert (100 CC = 1,00 €). Keine Barauszahlung möglich.</span>
                                 <a
-                                    href="/de/agb#empfehlungen"
+                                    href="/agb#empfehlungen"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-forest hover:text-forest/80 font-bold underline inline-flex items-center gap-1 shrink-0"

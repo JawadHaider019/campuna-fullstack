@@ -20,6 +20,17 @@ const nextConfig = {
   },
   async redirects() {
     return [
+      // Normalize /de prefix
+      {
+        source: '/de',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/de/:path*',
+        destination: '/:path*',
+        permanent: true,
+      },
       // Standardize Auth
       {
         source: '/register',

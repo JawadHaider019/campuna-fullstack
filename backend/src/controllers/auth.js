@@ -90,27 +90,18 @@ const generateVerificationToken = (userId) =>
  * Delete an unverified user and all associated records (profiles, referrals)
  */
 const deleteUnverifiedUser = async (userId) => {
-    await db.transaction(async (tx) => {
-        await tx.execute(
-            tx.sql.public.private_profiles.delete()
-                .where((f, fns) => fns.eq(f.user_id, userId)).build()
-        ).catch(() => { });
-
-        await tx.execute(
-            tx.sql.public.company_profiles.delete()
-                .where((f, fns) => fns.eq(f.user_id, userId)).build()
-        ).catch(() => { });
-
-        await tx.execute(
-            tx.sql.public.referrals.delete()
-                .where((f, fns) => fns.or(fns.eq(f.referrer_id, userId), fns.eq(f.referred_id, userId))).build()
-        ).catch(() => { });
-
-        await tx.execute(
-            tx.sql.public.users.delete()
-                .where((f, fns) => fns.eq(f.id, userId)).build()
-        );
-    });
+    if (!userId) return;
+    try {
+        await pool.query('DELETE FROM private_profiles WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM company_profiles WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM referrals WHERE referrer_id = $1 OR referred_id = $1', [userId]);
+        await pool.query('DELETE FROM credit_transactions WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM user_achievements WHERE user_id = $1', [userId]);
+        await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+        console.log(`🗑️ Deleted unverified expired user: ${userId}`);
+    } catch (err) {
+        console.warn('⚠️ deleteUnverifiedUser notice:', err.message);
+    }
 };
 
 // Periodic cleanup of unverified users disabled: all users are auto-verified
@@ -261,9 +252,9 @@ export const getVerificationStatus = async (req, res) => {
             return res.status(400).json({ success: false, error: 'E-Mail-Parameter fehlt.' });
         }
 
-        const user = await db.orm.public.User
-            .where((u) => u.email.eq(normalizeEmail(email)))
-            .first();
+        const normalizedEmail = normalizeEmail(email);
+        const userRes = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
+        const user = userRes.rows[0];
 
         if (!user) {
             return res.status(404).json({ success: false, error: 'Benutzer nicht gefunden.' });
@@ -595,16 +586,29 @@ export const verifyEmail = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Ungültiger Token-Typ.' });
         }
 
-        const user = await db.orm.public.User
-            .where((u) => u.id.eq(decoded.id))
-            .first();
+        const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+        const user = userRes.rows[0];
 
         if (!user) {
             return res.status(404).json({ success: false, error: 'Benutzerkonto nicht gefunden oder Frist abgelaufen.' });
         }
 
         if (user.email_verified) {
-            return res.status(200).json({ success: true, message: 'E-Mail-Adresse ist bereits verifiziert.' });
+            const { accessToken, refreshToken } = generateTokens(user);
+            return res.status(200).json({
+                success: true,
+                message: 'E-Mail-Adresse ist bereits verifiziert.',
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    account_type: user.user_type,
+                    referral_code: user.referral_code,
+                    email_verified: true,
+                },
+            });
         }
 
         // Check if user was created > 15 minutes ago
@@ -617,22 +621,24 @@ export const verifyEmail = async (req, res) => {
             });
         }
 
-        // Set email_verified to true
-        await db.orm.public.User
-            .where((u) => u.id.eq(user.id))
-            .update({ email_verified: true });
+        // Set email_verified to true using direct atomic PostgreSQL update
+        const updatedRes = await pool.query(
+            'UPDATE users SET email_verified = TRUE, updated_at = NOW() WHERE id = $1 RETURNING *',
+            [user.id]
+        );
+        const updatedUser = updatedRes.rows[0] || { ...user, email_verified: true };
 
-        // Trigger Pioneer Badge check
-        await checkAndAwardPioneerBadge(user.id).catch(err => {
+        // Trigger Pioneer Badge check (non-blocking)
+        checkAndAwardPioneerBadge(user.id).catch(err => {
             console.error('Pioneer check during email verification error:', err.message);
         });
 
-        // Trigger Referral Reward check if qualifications were already fulfilled
-        await checkAndAwardReferralCreditsOnEmailVerification(user.id).catch(err => {
+        // Trigger Referral Reward check if qualifications were already fulfilled (non-blocking)
+        checkAndAwardReferralCreditsOnEmailVerification(user.id).catch(err => {
             console.error('Referral check during email verification error:', err.message);
         });
 
-        const { accessToken, refreshToken } = generateTokens(user);
+        const { accessToken, refreshToken } = generateTokens(updatedUser);
 
         return res.status(200).json({
             success: true,
@@ -640,18 +646,18 @@ export const verifyEmail = async (req, res) => {
             access_token: accessToken,
             refresh_token: refreshToken,
             user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                account_type: user.user_type,
-                referral_code: user.referral_code,
+                id: updatedUser.id,
+                email: updatedUser.email,
+                role: updatedUser.role,
+                account_type: updatedUser.user_type,
+                referral_code: updatedUser.referral_code,
                 email_verified: true,
             },
         });
 
     } catch (error) {
-        console.error('❌ Email verification error:', error.message);
-        return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten.' });
+        console.error('❌ Email verification error:', error);
+        return res.status(500).json({ success: false, error: 'Ein Fehler ist aufgetreten: ' + (error.message || 'Serverfehler') });
     }
 };
 
@@ -667,9 +673,8 @@ export const resendVerificationEmail = async (req, res) => {
         }
 
         const normalizedEmail = normalizeEmail(email);
-        const user = await db.orm.public.User
-            .where((u) => u.email.eq(normalizedEmail))
-            .first();
+        const userRes = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
+        const user = userRes.rows[0];
 
         if (!user) {
             return res.status(404).json({ success: false, error: 'Kein Benutzer mit dieser E-Mail-Adresse gefunden.' });
