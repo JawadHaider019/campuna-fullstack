@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { db } from '../prisma/db.js';
+import { toJsDate } from '../utils/temporal.js';
 import pool from '../config/database.js';
 import crypto from 'crypto';
 import { checkAndAwardPioneerBadge } from './badge.js';
@@ -612,7 +613,7 @@ export const verifyEmail = async (req, res) => {
         }
 
         // Check if user was created > 15 minutes ago
-        const isExpired = (Date.now() - new Date(user.created_at).getTime()) > VERIFICATION_EXPIRY_MS;
+        const isExpired = (Date.now() - (toJsDate(user.created_at)?.getTime() || Date.now())) > VERIFICATION_EXPIRY_MS;
         if (isExpired) {
             await deleteUnverifiedUser(user.id);
             return res.status(410).json({

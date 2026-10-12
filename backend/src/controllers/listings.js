@@ -1,5 +1,6 @@
 import pool from '../config/database.js';
 import { db } from '../prisma/db.js';
+import { toJsDate } from '../utils/temporal.js';
 import { getUserFeatures } from './subscription.js';
 import { isValidPhoneNumber } from '../utils/validation.js';
 import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
@@ -896,7 +897,7 @@ export const boostListing = async (req, res) => {
 
         // Calculate new boosted_until
         let newBoostedUntil;
-        const currentBoosted = listing.boosted_until ? new Date(listing.boosted_until) : null;
+        const currentBoosted = listing.boosted_until ? toJsDate(listing.boosted_until) : null;
         const now = new Date();
 
         if (currentBoosted && currentBoosted > now) {
@@ -1400,7 +1401,7 @@ export const exportListingsToCsv = async (req, res) => {
                 `"${(r.location || '').replace(/"/g, '""')}"`,
                 `"${(r.condition || '').replace(/"/g, '""')}"`,
                 `"${r.status || 'REVIEW'}"`,
-                `"${new Date(r.created_at).toISOString().split('T')[0]}"`,
+                `"${(toJsDate(r.created_at) || new Date()).toISOString().split('T')[0]}"`,
             ];
             csvRows.push(rowValues.join(';'));
         }

@@ -80,8 +80,8 @@ async function request(endpoint, options = {}) {
         ...options.headers,
     };
 
-    // Add 12s timeout controller to prevent hanging requests
-    const timeout = options.timeout || 12000;
+    // Generous timeout: 120s for multipart FormData uploads, 25s for JSON requests
+    const timeout = options.timeout || (isFormData ? 120000 : 25000);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -115,7 +115,9 @@ async function request(endpoint, options = {}) {
 
             return {
                 success: false,
-                error: data.error || data.message || `Fehler ${response.status}`,
+                error: data.error || data.message || (response.status === 413 ? 'Die ausgewählten Fotos sind leider zu groß. Bitte wähle kleinere Bilder aus.' : 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.'),
+                data,
+                upgrade_required: Boolean(data.upgrade_required),
                 status: response.status,
             };
         }
@@ -124,9 +126,9 @@ async function request(endpoint, options = {}) {
     } catch (err) {
         clearTimeout(timeoutId);
         if (err.name === 'AbortError') {
-            return { success: false, error: 'Die Server-Anfrage hat zu lange gedauert (Timeout).' };
+            return { success: false, error: 'Die Übertragung hat etwas zu lange gedauert. Bitte überprüfe deine Internetverbindung und versuche es erneut.' };
         }
-        return { success: false, error: 'Netzwerkfehler. Bitte überprüfe deine Verbindung.' };
+        return { success: false, error: 'Verbindung unterbrochen. Bitte überprüfe deine Internetverbindung und versuche es erneut.' };
     }
 }
 

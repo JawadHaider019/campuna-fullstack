@@ -232,7 +232,7 @@ export default function BroadcastBanner() {
             {broadcasts.length > 0 && (
                 <button
                     onClick={() => setModalOpen(true)}
-                    className="fixed bottom-6 right-6 z-40 p-3.5 rounded-full bg-forest text-sand shadow-2xl hover:bg-forest/90 border-2 border-gold flex items-center justify-center group cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                    className="fixed bottom-20 sm:bottom-6 left-5 sm:left-auto sm:right-6 z-40 p-3.5 rounded-full bg-forest text-sand shadow-2xl hover:bg-forest/90 border-2 border-gold flex items-center justify-center group cursor-pointer transition-transform hover:scale-105 active:scale-95"
                     title="Mitteilungen von Campuna"
                 >
                     <Bell className="w-5 h-5 text-gold group-hover:rotate-12 transition-transform" />

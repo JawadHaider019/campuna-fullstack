@@ -22,6 +22,7 @@ import {
     Lightbulb
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import {
     submitUserFeedback,
     getUserFeedbackList
@@ -104,7 +105,7 @@ export default function AccountFeedbackTab({ user = null, isCommercial = false, 
             }
         } catch (err) {
             console.error('Error fetching feedbacks:', err);
-            if (!silent) toast.error('Fehler beim Laden deiner Feedbacks.');
+            if (!silent) toast.error(getFriendlyErrorMessage(err, 'Deine Feedback-Einträge konnten nicht geladen werden. Bitte versuche es gleich noch einmal.'));
         } finally {
             if (!silent) setLoading(false);
             setRefreshing(false);
@@ -119,7 +120,7 @@ export default function AccountFeedbackTab({ user = null, isCommercial = false, 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!message.trim()) {
-            toast.error('Bitte gib eine Nachricht ein.');
+            toast.error('Bitte teile uns kurz deine Gedanken oder Wünsche mit.');
             return;
         }
 
@@ -138,7 +139,7 @@ export default function AccountFeedbackTab({ user = null, isCommercial = false, 
             const newFb = res?.data?.feedback || res?.feedback;
 
             if (isSuccess) {
-                toast.success('Vielen Dank für dein Feedback! Dein Beitrag wurde erfolgreich übermittelt.', {
+                toast.success('Vielen Dank für deine wertvolle Idee! Wir schauen uns deinen Vorschlag genau an.', {
                     duration: 4500
                 });
 
@@ -155,11 +156,11 @@ export default function AccountFeedbackTab({ user = null, isCommercial = false, 
                 setIsCategoryDropdownOpen(false);
                 setIsCreateModalOpen(false);
             } else {
-                toast.error(res?.error || res?.data?.error || 'Fehler beim Absenden des Feedbacks.');
+                toast.error(getFriendlyErrorMessage(res?.error || res?.data?.error, 'Dein Feedback konnte leider nicht übermittelt werden. Bitte versuche es gleich noch einmal.'));
             }
         } catch (err) {
             console.error('Error submitting feedback:', err);
-            toast.error(err.response?.data?.error || 'Fehler beim Übermitteln des Feedbacks.');
+            toast.error(getFriendlyErrorMessage(err, 'Dein Feedback konnte gerade nicht gesendet werden. Bitte versuche es gleich noch einmal.'));
         } finally {
             setSubmitting(false);
         }

@@ -1,19 +1,25 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowUpRight, Calendar, ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUpRight, Calendar, ArrowRight, BookOpen, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BLOG_POSTS } from '@/data';
 import { getPublicPosts } from '@/api/posts';
+import { getPublicTips } from '@/api/tips';
 import { getImageUrl } from '@/utils/imageUrl';
+import TipCard from './TipCard';
 
 export default function BlogSection() {
     const router = useRouter();
     const [posts, setPosts] = useState(BLOG_POSTS || []);
+    const [tips, setTips] = useState([]);
+    const [activeTab, setActiveTab] = useState('blogs'); // 'blogs' | 'tipps'
 
     useEffect(() => {
         let isMounted = true;
+
+        // Fetch posts
         getPublicPosts({ limit: 4 })
             .then(res => {
                 if (isMounted && res.data?.success && res.data.posts?.length > 0) {
@@ -31,15 +37,31 @@ export default function BlogSection() {
             })
             .catch(() => { });
 
+        // Fetch tips from backend
+        getPublicTips({ limit: 6 })
+            .then(res => {
+                if (isMounted && res.data?.success && Array.isArray(res.data.tips)) {
+                    setTips(res.data.tips);
+                }
+            })
+            .catch(() => {
+                if (isMounted) setTips([]);
+            });
+
         return () => {
             isMounted = false;
         };
     }, []);
 
+    // If there are no tips and activeTab was 'tipps', reset to 'blogs'
+    useEffect(() => {
+        if (tips.length === 0 && activeTab === 'tipps') {
+            setActiveTab('blogs');
+        }
+    }, [tips, activeTab]);
+
     const featuredPost = posts && posts.length > 0 ? posts[0] : null;
     const secondaryPosts = posts && posts.length > 1 ? posts.slice(1) : [];
-
-    if (!featuredPost) return null;
 
     // Reusable Blog Card Component for non-featured state
     const BlogCardSmall = ({ post, index, isFirst = false }) => (
@@ -48,7 +70,7 @@ export default function BlogSection() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: index * 0.1 }}
-            onClick={() => router.push(`/post/${post.slug}`)}
+            onClick={() => router.push(`/blog/${post.slug}`)}
             className={`group flex flex-row gap-3 sm:gap-4 cursor-pointer border-b border-forest/5 pb-3 last:border-0 last:pb-0 w-full ${isFirst ? 'lg:hidden' : ''}`}
         >
             <div className="relative w-24 sm:w-32 h-20 sm:h-24 rounded-2xl overflow-hidden shrink-0 shadow-md">
@@ -78,11 +100,11 @@ export default function BlogSection() {
     return (
         <section id="journal" className="py-10 sm:py-16 bg-white overflow-hidden scroll-mt-24">
             <div className="max-w-7xl mx-auto px-6 md:px-12">
-                {/* Section Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                {/* Section Header with Tabs */}
+                <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
                     <div className="space-y-2">
                         <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-gold block">
-                            Campuna Ratgeber
+                            Campuna Ratgeber & Praxiswissen
                         </span>
                         <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-black">
                             Camping-Ratgeber & Tipps
@@ -91,77 +113,131 @@ export default function BlogSection() {
                             Kaufberatung, Verkaufstipps, Technik und Praxiswissen: Im Ratgeber beantworten wir die Fragen, die sich Camper wirklich stellen.
                         </p>
                     </div>
-                    {/* Desktop View All - Hidden on Mobile & Tablet */}
-                    <div className="hidden lg:block">
-                        <button onClick={() => router.push('/all_blogs')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
-                            <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Artikel ansehen</span>
-                            <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </div>
+
+                    {/* Interactive Tab Switcher - Only show if tips exist in backend */}
+                    {tips.length > 0 && (
+                        <div className="flex items-center gap-1.5 p-1.5 bg-sand/30 border border-forest/10 rounded-full self-start md:self-end shrink-0 shadow-2xs">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('blogs')}
+                                className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${activeTab === 'blogs'
+                                    ? 'bg-forest text-sand shadow-sm'
+                                    : 'text-forest/75 hover:text-forest hover:bg-white/60'
+                                    }`}
+                            >
+                                <BookOpen className="w-3.5 h-3.5 text-gold" />
+                                <span>Ratgeber</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('tipps')}
+                                className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer ${activeTab === 'tipps'
+                                    ? 'bg-forest text-sand shadow-sm'
+                                    : 'text-forest/75 hover:text-forest hover:bg-white/60'
+                                    }`}
+                            >
+                                <Sparkles className="w-3.5 h-3.5 text-gold" />
+                                <span>Tipps</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
 
-                {/* Magazine Grid Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6 items-start">
+                {/* Tab Content Display */}
+                <AnimatePresence mode="wait">
+                    {activeTab === 'blogs' || tips.length === 0 ? (
+                        <motion.div
+                            key="blogs-tab"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-8"
+                        >
+                            {/* Magazine Grid Layout */}
+                            {featuredPost ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6 items-start">
+                                    {/* Large Featured Article - Desktop */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 0.8 }}
+                                        onClick={() => router.push(`/blog/${featuredPost.slug}`)}
+                                        className="hidden lg:block lg:col-span-3 group cursor-pointer w-full"
+                                    >
+                                        <div className="relative aspect-[16/10] w-full rounded-[32px] overflow-hidden shadow-2xl">
+                                            <img
+                                                src={getImageUrl(featuredPost.image || featuredPost.image_url)}
+                                                alt={featuredPost.title}
+                                                className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
+                                                loading="lazy"
+                                                decoding="async"
+                                                referrerPolicy="no-referrer"
+                                                onError={(e) => { e.currentTarget.src = '/collection/camping-zubehoer-hero.png'; }}
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
 
-                    {/* Large Featured Article - ONLY visible on Desktop (lg+) */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                        onClick={() => router.push(`/post/${featuredPost.slug}`)}
-                        className="hidden lg:block lg:col-span-3 group cursor-pointer w-full"
-                    >
-                        <div className="relative aspect-[16/10] w-full rounded-[32px] overflow-hidden shadow-2xl">
-                            <img
-                                src={getImageUrl(featuredPost.image || featuredPost.image_url)}
-                                alt={featuredPost.title}
-                                className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
-                                loading="lazy"
-                                decoding="async"
-                                referrerPolicy="no-referrer"
-                                onError={(e) => { e.currentTarget.src = '/collection/camping-zubehoer-hero.png'; }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
+                                            <div className="absolute inset-x-10 bottom-10 space-y-4">
+                                                <h3 className="font-display text-3xl font-extrabold text-white leading-snug">
+                                                    {featuredPost.title}
+                                                </h3>
 
-                            <div className="absolute inset-x-10 bottom-10 space-y-4">
-                                <h3 className="font-display text-3xl font-extrabold text-white">
-                                    {featuredPost.title}
-                                </h3>
+                                                <div className="pt-2 flex items-center justify-between border-t border-white/10 gap-4">
+                                                    <div className="flex items-center gap-4 text-[11px] text-white/60 font-mono">
+                                                        <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-gold" />{featuredPost.date}</span>
+                                                        <span className="w-1 h-1 bg-white/20 rounded-full" />
+                                                        <span>Aktualisiert {featuredPost.updateDate}</span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-2 bg-white text-forest px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest group-hover:bg-gold transition-colors shadow-lg">
+                                                        <span>Artikel lesen</span>
+                                                        <ArrowUpRight className="w-4 h-4" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </motion.div>
 
-                                <div className="pt-2 flex items-center justify-between border-t border-white/10 gap-4">
-                                    <div className="flex items-center gap-4 text-[11px] text-white/60 font-mono">
-                                        <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-gold" />{featuredPost.date}</span>
-                                        <span className="w-1 h-1 bg-white/20 rounded-full" />
-                                        <span>Aktualisiert {featuredPost.updateDate}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-2 bg-white text-forest px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest group-hover:bg-gold transition-colors shadow-lg">
-                                        <span>Artikel lesen</span>
-                                        <ArrowUpRight className="w-4 h-4" />
+                                    {/* Unified Stack for Tablet & Mobile (Featured + Rest) */}
+                                    <div className="lg:col-span-2 space-y-6 flex flex-col w-full">
+                                        <BlogCardSmall post={featuredPost} index={0} isFirst={true} />
+                                        {secondaryPosts.map((post, index) => (
+                                            <BlogCardSmall key={post.id} post={post} index={index + 1} />
+                                        ))}
                                     </div>
                                 </div>
+                            ) : null}
+
+                            {/* View All Blogs Link */}
+                            <div className="pt-2 flex justify-center">
+                                <button
+                                    onClick={() => router.push('/blog')}
+                                    className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer bg-forest/5 hover:bg-forest hover:text-sand px-6 py-3.5 rounded-full transition-all duration-300"
+                                >
+                                    <span>Alle Artikel ansehen</span>
+                                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                                </button>
                             </div>
-                        </div>
-                    </motion.div>
-
-                    {/* Unified Stack for Tablet & Mobile (Featured + Rest) */}
-                    <div className="lg:col-span-2 space-y-6 flex flex-col w-full">
-                        {/* Show Featured Post as a small card on Tablet/Mobile */}
-                        <BlogCardSmall post={featuredPost} index={0} isFirst={true} />
-
-                        {secondaryPosts.map((post, index) => (
-                            <BlogCardSmall key={post.id} post={post} index={index + 1} />
-                        ))}
-                    </div>
-                </div>
-
-                {/* Mobile & Tablet Only View All - Bottom Center */}
-                <div className="mt-7 flex justify-center lg:hidden">
-                    <button onClick={() => router.push('/all_blogs')} className="group flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-forest cursor-pointer">
-                        <span className="pb-0.5 border-b-2 border-gold/50 group-hover:border-gold transition-colors">Alle Artikel ansehen</span>
-                        <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                    </button>
-                </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="tipps-tab"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                            className="space-y-8"
+                        >
+                            {/* Tips Cards Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                                {tips.slice(0, 3).map((tip, index) => (
+                                    <TipCard key={tip.id} tip={tip} index={index} />
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </section>
     );

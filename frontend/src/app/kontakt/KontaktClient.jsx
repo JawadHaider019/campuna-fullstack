@@ -19,6 +19,7 @@ import {
     Building2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import Breadcrumbs from '../components/Breadcrumbs';
 import CTA from '../components/CTA';
 import api from '@/api/client';
@@ -105,7 +106,7 @@ function KontaktFormInner() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
-            toast.error('Bitte fülle alle Pflichtfelder aus.');
+            toast.error('Bitte teile uns noch deinen Namen, deine E-Mail und dein Anliegen mit.');
             return;
         }
 
@@ -121,13 +122,13 @@ function KontaktFormInner() {
 
             if (res.success) {
                 setIsSubmitted(true);
-                toast.success(res.data?.message || 'Deine Nachricht wurde erfolgreich übermittelt!');
+                toast.success('Vielen Dank für deine Nachricht! Wir melden uns schnellstmöglich bei dir.');
             } else {
-                toast.error(res.error || 'Fehler beim Senden. Bitte versuche es erneut.');
+                toast.error(getFriendlyErrorMessage(res.error, 'Deine Nachricht konnte gerade nicht übermittelt werden. Bitte versuche es kurz erneut.'));
             }
         } catch (err) {
             console.error('Contact submit error:', err);
-            toast.error('Verbindungsfehler. Bitte überprüfe deine Internetverbindung.');
+            toast.error(getFriendlyErrorMessage(err, 'Deine Nachricht konnte gerade nicht übermittelt werden. Bitte überprüfe deine Internetverbindung.'));
         } finally {
             setIsSubmitting(false);
         }

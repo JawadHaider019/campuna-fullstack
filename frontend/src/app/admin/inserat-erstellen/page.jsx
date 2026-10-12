@@ -37,9 +37,10 @@ import { CATEGORIES } from '@/data';
 import { createListing, updateListing, getListingDetail } from '@/api/listings';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
-import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALIDATION_ERROR } from '@/utils/validation';
+import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALIDATION_ERROR, getFriendlyErrorMessage } from '@/utils/validation';
 import { generateAutoDescription, generateOrImproveDescription } from '@/utils/autoDescription';
 import { getImageUrl } from '@/utils/imageUrl';
+import { compressImages } from '@/utils/imageCompression';
 
 // Map of subcategories based on categories
 const SUBCATEGORIES_MAP = {
@@ -167,12 +168,12 @@ function AdminListingFormContent() {
                         setExistingImages(currentImgs);
                         setPreviewUrls(currentImgs.map(img => getImageUrl(img)));
                     } else {
-                        toast.error('Inserat konnte nicht geladen werden.');
+                        toast.error('Das Inserat konnte leider nicht geladen werden.');
                     }
                 })
                 .catch(err => {
                     console.error('Failed to load listing for edit:', err);
-                    toast.error('Fehler beim Laden des Inserats.');
+                    toast.error(getFriendlyErrorMessage(err, 'Das Inserat konnte leider nicht geladen werden. Bitte versuche es kurz erneut.'));
                 })
                 .finally(() => {
                     setFetchingDetail(false);
@@ -228,13 +229,13 @@ function AdminListingFormContent() {
                     icon: '✨'
                 });
             } else if (result.error) {
-                toast.error(result.error, { id: toastId, duration: 4500 });
+                toast.error(getFriendlyErrorMessage(result.error, 'Die Beschreibung konnte leider nicht optimiert werden.'), { id: toastId, duration: 4500 });
             } else {
-                toast.error('Konnte keine Beschreibung generieren.', { id: toastId });
+                toast.error('Die Beschreibung konnte leider nicht erstellt werden.', { id: toastId });
             }
         } catch (err) {
             console.error('Error generating auto description:', err);
-            toast.error('Fehler beim Optimieren der Beschreibung.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Die Beschreibung konnte leider nicht optimiert werden. Bitte versuche es kurz erneut.'), { id: toastId });
         } finally {
             setIsGeneratingDesc(false);
         }
@@ -245,30 +246,96 @@ function AdminListingFormContent() {
 
     // Handle Image Upload
     const handleFiles = (files) => {
+        if (!files || files.length === 0) return;
         const fileList = Array.from(files);
-        if (previewUrls.length + fileList.length > 10) {
-            toast.error('Maximal 10 Bilder erlaubt.');
+
+        const maxAllowed = 10;
+        const currentCount = previewUrls.length;
+        const remainingSlots = maxAllowed - currentCount;
+
+        if (remainingSlots <= 0) {
+            toast.error('Du hast bereits 10 Fotos ausgewählt. Entferne zuerst ein Foto, um ein neues hinzuzufügen.', {
+                duration: 4500,
+                icon: '📷'
+            });
+            if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
 
         const newImages = [...images];
         const newPreviews = [...previewUrls];
+        let addedCount = 0;
+        let skippedTooLarge = 0;
+        let skippedNotImage = 0;
+        const heavyFiles = [];
 
-        fileList.forEach(file => {
-            if (!file.type.startsWith('image/')) {
-                toast.error(`${file.name} ist keine Bilddatei.`);
-                return;
+        for (const file of fileList) {
+            if (newPreviews.length >= maxAllowed) {
+                toast.error('Es können maximal 10 Fotos pro Inserat hinzugefügt werden.', {
+                    duration: 4000,
+                    icon: '⚠️'
+                });
+                break;
             }
-            if (file.size > 10 * 1024 * 1024) {
-                toast.error(`${file.name} ist größer als 10MB.`);
-                return;
+
+            // Check if file is an image
+            if (!file.type || !file.type.startsWith('image/')) {
+                skippedNotImage++;
+                toast.error(`"${file.name}" ist keine Bilddatei. Bitte wähle nur Fotos aus.`, {
+                    duration: 4000,
+                    icon: '🖼️'
+                });
+                continue;
             }
+
+            // Check file size (max 25 MB per file)
+            const maxFileBytes = 25 * 1024 * 1024;
+            if (file.size > maxFileBytes) {
+                skippedTooLarge++;
+                toast.error(`Das Foto "${file.name}" ist leider zu groß. Bitte wähle ein Bild unter 25 MB aus.`, {
+                    duration: 5000,
+                    icon: '⚠️'
+                });
+                continue;
+            }
+
+            // Detect heavy image (> 5 MB)
+            if (file.size > 5 * 1024 * 1024) {
+                heavyFiles.push(file.name);
+            }
+
             newImages.push(file);
             newPreviews.push(URL.createObjectURL(file));
-        });
+            addedCount++;
+        }
 
-        setImages(newImages);
-        setPreviewUrls(newPreviews);
+        if (addedCount > 0) {
+            setImages(newImages);
+            setPreviewUrls(newPreviews);
+
+            if (heavyFiles.length === 1) {
+                toast('Großes Foto hinzugefügt – wird beim Speichern automatisch angepasst.', {
+                    duration: 4500,
+                    icon: '📷'
+                });
+            } else if (heavyFiles.length > 1) {
+                toast(`${heavyFiles.length} große Fotos hinzugefügt – werden beim Speichern automatisch angepasst.`, {
+                    duration: 4500,
+                    icon: '📷'
+                });
+            } else if (skippedTooLarge === 0 && skippedNotImage === 0) {
+                if (addedCount === 1) {
+                    toast.success('Foto hinzugefügt.', { duration: 2500 });
+                } else {
+                    toast.success(`${addedCount} Fotos hinzugefügt.`, { duration: 2500 });
+                }
+            }
+        }
+
+        // Reset the input value so user can re-select the same file name if needed
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     const removeImage = (index) => {
@@ -358,33 +425,44 @@ function AdminListingFormContent() {
                 formData.append('existingImages', JSON.stringify(existingImages));
             }
 
-            // Attach newly added image files
-            images.forEach(imgFile => {
-                if (imgFile instanceof File) {
-                    formData.append('images', imgFile);
-                }
+            // Optimize newly added image files
+            const newFiles = images.filter(imgFile => imgFile instanceof File);
+            const hasHeavyImages = newFiles.some(img => img.size > 5 * 1024 * 1024);
+            const toastId = toast.loading(
+                hasHeavyImages
+                    ? 'Fotos werden vorbereitet & Inserat wird gespeichert...'
+                    : (isEditMode ? 'Änderungen werden gespeichert...' : 'Inserat wird gespeichert...')
+            );
+            const optimizedFiles = await compressImages(newFiles);
+
+            optimizedFiles.forEach(imgFile => {
+                formData.append('images', imgFile);
             });
 
             if (isEditMode) {
                 const res = await updateListing(editId, formData);
                 if (res.data?.success || res.status === 200) {
-                    toast.success('Business Inserat erfolgreich aktualisiert!');
+                    toast.success('Inserat erfolgreich aktualisiert!', { id: toastId });
                     router.push('/admin/inserate');
                 } else {
-                    toast.error(res.data?.error || 'Aktualisierung fehlgeschlagen.');
+                    const errorMsg = getFriendlyErrorMessage(res.error || res.data?.error || res.data?.message);
+                    toast.error(errorMsg, { id: toastId });
                 }
             } else {
                 const res = await createListing(formData);
                 if (res.data?.success || res.status === 201) {
-                    toast.success('Inserat erfolgreich als Business Inserat veröffentlicht!');
+                    toast.success('Inserat erfolgreich veröffentlicht!', { id: toastId });
                     router.push('/admin/inserate');
                 } else {
-                    toast.error(res.data?.error || 'Erstellung fehlgeschlagen.');
+                    const errorMsg = getFriendlyErrorMessage(res.error || res.data?.error || res.data?.message);
+                    toast.error(errorMsg, { id: toastId });
                 }
             }
         } catch (err) {
             console.error('Error submitting listing:', err);
-            toast.error(err.response?.data?.error || 'Ein unerwarteter Fehler ist aufgetreten.');
+            const errData = err.response?.data || err;
+            const friendlyMsg = getFriendlyErrorMessage(errData?.error || err.message);
+            toast.error(friendlyMsg, { duration: 5000 });
         } finally {
             setLoading(false);
         }
@@ -772,13 +850,29 @@ function AdminListingFormContent() {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-slate-900">Bilder & Fotos</h3>
-                                    <p className="text-[11px] text-slate-400">Bis zu 10 hochauflösende Fotos (erstes Bild = Titelbild)</p>
+                                    <p className="text-[11px] text-slate-400">Bis zu 10 hochauflösende Fotos • Erstes Bild ist das Titelbild</p>
                                 </div>
                             </div>
-                            <span className="text-xs font-mono font-bold text-slate-500">
+                            <span className="text-xs font-mono font-bold text-slate-600 bg-slate-50 px-3 py-1 rounded-full border border-slate-200">
                                 {previewUrls.length}/10 Fotos
                             </span>
                         </div>
+
+                        {/* Clear Upload Instruction */}
+                        <div className="flex items-center gap-2.5 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-600">
+                            <Info className="w-4 h-4 text-forest shrink-0" />
+                            <span>JPG, PNG, WEBP oder HEIC bis zu 25 MB pro Foto. Bis zu 10 Fotos pro Inserat.</span>
+                        </div>
+
+                        {/* Heavy Image Warning Banner */}
+                        {images.some(img => img instanceof File && img.size > 5 * 1024 * 1024) && (
+                            <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200/90 rounded-xl px-3.5 py-2.5 text-xs text-amber-900">
+                                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                                <span>
+                                    <strong>Großes Foto ausgewählt:</strong> Dein Foto wird beim Hochladen automatisch angepasst, damit dein Inserat schnell öffnet.
+                                </span>
+                            </div>
+                        )}
 
                         {/* Dropzone */}
                         <div
@@ -800,8 +894,8 @@ function AdminListingFormContent() {
                                 <p className="text-xs font-bold text-slate-800 group-hover:text-forest transition-colors">
                                     Fotos hier hineinziehen oder <span className="text-forest underline">durchsuchen</span>
                                 </p>
-                                <p className="text-[11px] text-slate-400 mt-0.5">
-                                    PNG, JPG, WEBP bis 10MB pro Datei
+                                <p className="text-[11px] text-slate-400 mt-1">
+                                    JPG, PNG, WEBP, HEIC bis zu 25 MB • Maximal 10 Fotos
                                 </p>
                             </div>
                         </div>

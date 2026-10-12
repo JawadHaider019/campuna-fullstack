@@ -12,6 +12,7 @@ import {
     verifyStripeSession,
 } from '@/api/profile';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import {
     CreditCard, Building2, Shield, Check, Lock, Sparkles,
     Crown, ArrowRight, ArrowLeft, Loader2, AlertCircle, MapPin
@@ -91,7 +92,7 @@ export default function CheckoutBillingPage() {
                     const isCancelled = urlParams.get('cancelled') === 'true';
 
                     if (isCancelled) {
-                        toast.error('Zahlungsvorgang über Stripe wurde abgebrochen.');
+                        toast.error('Der Bezahlvorgang wurde abgebrochen. Es wurde kein Betrag abgebucht.');
                         window.history.replaceState({}, document.title, window.location.pathname);
                     } else if (sessionId && isStripeSuccess) {
                         try {
@@ -109,7 +110,7 @@ export default function CheckoutBillingPage() {
                                     billing_name: (profRes?.data?.profile?.first_name ? `${profRes.data.profile.first_name} ${profRes.data.profile.last_name}` : 'Campuna Partner'),
                                     company_name: profRes?.data?.profile?.company_name || '',
                                 });
-                                toast.success('🎉 Stripe-Zahlung erfolgreich! Business-Tarif ist jetzt aktiv.');
+                                toast.success('🎉 Zahlung erfolgreich! Dein Campuna Business-Tarif ist jetzt aktiv.');
                             }
                         } catch (err) {
                             console.error('Verify error:', err);
@@ -163,13 +164,13 @@ export default function CheckoutBillingPage() {
         e.preventDefault();
 
         if (!agreedToTerms) {
-            toast.error('Bitte akzeptiere die AGB und Datenschutzbestimmungen.');
+            toast.error('Bitte bestätige kurz die AGB und Datenschutzbestimmungen.');
             return;
         }
 
         // Stripe Checkout is the exclusive payment method for Business Subscriptions
         setIsProcessing(true);
-        const toastId = toast.loading('Stripe Checkout wird vorbereitet...');
+        const toastId = toast.loading('Sichere Bezahlung wird vorbereitet...');
         try {
             const res = await createStripeCheckoutSession({
                 type: 'SUBSCRIPTION',
@@ -179,14 +180,14 @@ export default function CheckoutBillingPage() {
             });
 
             if (res.success && res.data?.url) {
-                toast.success('Weiterleitung zu Stripe...', { id: toastId });
+                toast.success('Weiterleitung zur sicheren Bezahlung...', { id: toastId });
                 window.location.href = res.data.url;
             } else {
-                toast.error(res.error || res.data?.error || 'Fehler beim Starten von Stripe Checkout.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Die Bezahlung konnte gerade nicht gestartet werden. Bitte versuche es kurz erneut.'), { id: toastId });
                 setIsProcessing(false);
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Stripe Checkout konnte nicht gestartet werden.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Die Bezahlung konnte gerade nicht gestartet werden. Bitte versuche es kurz erneut.'), { id: toastId });
             setIsProcessing(false);
         }
     };

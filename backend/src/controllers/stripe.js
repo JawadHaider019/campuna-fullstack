@@ -1,4 +1,5 @@
 import { db } from '../prisma/db.js';
+import { toJsDate, toTemporalInstant, nowInstant } from '../utils/temporal.js';
 import { checkAndAwardReferralCreditsOnBusinessSubscription } from './referral.js';
 import {
     stripe,
@@ -159,12 +160,13 @@ export const fulfillSession = async (session) => {
                     .where({ id: currentActive.id })
                     .update({
                         status: 'CANCELLED',
-                        cancelled_at: new Date().toISOString(),
+                        cancelled_at: nowInstant(),
                     });
             }
 
             const expiresAt = new Date();
             expiresAt.setMonth(expiresAt.getMonth() + durationMonths);
+            const expiresAtInstant = toTemporalInstant(expiresAt);
 
             // Create new active subscription
             await tx.orm.public.Subscription.create({
@@ -174,7 +176,7 @@ export const fulfillSession = async (session) => {
                 payment_method: 'STRIPE',
                 amount_paid_cents: totalPriceCents,
                 notes: JSON.stringify(notesData),
-                expires_at: expiresAt.toISOString(),
+                expires_at: expiresAtInstant,
             });
 
             // Grant bonus credits
@@ -269,13 +271,13 @@ export const fulfillSession = async (session) => {
             .first();
 
         if (profile) {
-            const currentSpotlight = profile.spotlight_until ? new Date(profile.spotlight_until) : new Date();
+            const currentSpotlight = profile.spotlight_until ? toJsDate(profile.spotlight_until) : new Date();
             const baseDate = currentSpotlight > new Date() ? currentSpotlight : new Date();
             const newSpotlightUntil = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
 
             await db.orm.public.CompanyProfile
                 .where({ user_id: userId })
-                .update({ spotlight_until: newSpotlightUntil.toISOString() });
+                .update({ spotlight_until: toTemporalInstant(newSpotlightUntil) });
         }
 
         return { success: true, type: 'SPOTLIGHT_PURCHASE', days };

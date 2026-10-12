@@ -35,6 +35,7 @@ import { useChatStore } from '@/store/useChatStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getSocket } from '@/utils/socket';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import { getImageUrl } from '@/utils/imageUrl';
 
 function formatMessageTime(dateString) {
@@ -462,11 +463,11 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                     textareaRef.current.style.height = 'auto';
                 }
             } else {
-                toast.error(res.error || res.message || 'Fehler beim Senden der Nachricht.');
+                toast.error(getFriendlyErrorMessage(res.error || res.message, 'Deine Nachricht konnte gerade nicht zugestellt werden. Bitte versuche es kurz erneut.'));
             }
         } catch (err) {
             console.error('Error sending message:', err);
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Senden der Nachricht.');
+            toast.error(getFriendlyErrorMessage(err, 'Deine Nachricht konnte gerade nicht gesendet werden. Bitte prüfe deine Internetverbindung.'));
         } finally {
             setIsSending(false);
         }

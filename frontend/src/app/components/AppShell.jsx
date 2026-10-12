@@ -7,6 +7,7 @@ import Footer from './Footer';
 import BroadcastBanner from './BroadcastBanner';
 import ToolsFloatingModal from './ToolsFloatingModal';
 import ScrollSectionWrapper from './ScrollSectionWrapper';
+import MobileBottomNav from './MobileBottomNav';
 
 export default function AppShell({ children }) {
     const pathname = usePathname();
@@ -20,16 +21,18 @@ export default function AppShell({ children }) {
     const isAdminRoute = pathname?.startsWith('/admin');
     const isUserAccountRoute = pathname?.startsWith('/mein-konto');
     const hideHeaderFooter = isAuthPage || isAdminRoute || isUserAccountRoute;
+    const showMobileBottomNav = !isAuthPage && !isAdminRoute;
 
     return (
         <>
             {!isAuthPage && !isAdminRoute && <BroadcastBanner />}
             {!hideHeaderFooter && <Navbar />}
-            <main className={`flex-1 ${hideHeaderFooter ? 'h-full min-h-0 overflow-hidden flex flex-col' : ''}`}>
+            <main className={`flex-1 ${hideHeaderFooter ? 'h-full min-h-0 overflow-hidden flex flex-col' : ''} ${showMobileBottomNav ? 'pb-16 md:pb-0' : ''}`}>
                 {children}
             </main>
             {!hideHeaderFooter && <Footer />}
             {!hideHeaderFooter && <ToolsFloatingModal />}
+            {showMobileBottomNav && <MobileBottomNav />}
         </>
     );
 }

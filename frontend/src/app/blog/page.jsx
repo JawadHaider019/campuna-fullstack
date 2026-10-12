@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo, useCallback, memo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     Calendar,
@@ -9,14 +9,19 @@ import {
     ArrowRight,
     BookOpen,
     Sparkles,
-    Compass
+    Compass,
+    Search,
+    X,
+    Lightbulb
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getPublicPosts } from '@/api/posts';
+import { getPublicTips } from '@/api/tips';
 import { BLOG_POSTS as FALLBACK_POSTS } from '@/data';
 import { getImageUrl } from '@/utils/imageUrl';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
 import CircleLoader from '@/app/components/CircleLoader';
+import TipCard from '@/app/components/TipCard';
 
 // ─── Safe JSON-LD Serializer (XSS Protection) ────────────────────────────────
 function safeJsonLd(obj) {
@@ -52,7 +57,7 @@ const BlogCard = memo(function BlogCard({ post, index, onClick }) {
             transition={{ duration: 0.4, delay: (index % 3) * 0.08, ease: [0.21, 0.47, 0.32, 0.98] }}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
             onClick={() => onClick(postSlug)}
-            className="group bg-white rounded-3xl border border-forest/10 hover:border-forest/25 shadow-sm hover:shadow-2xl transition-all duration-300 flex flex-col overflow-hidden cursor-pointer h-full will-change-transform select-none"
+            className="group bg-white rounded-3xl border border-forest/10 hover:border-forest/25 shadow-xs hover:shadow-2xl transition-all duration-300 flex flex-col overflow-hidden cursor-pointer h-full will-change-transform select-none"
         >
             {/* Cover Image */}
             <div className="relative aspect-[16/10] w-full bg-slate-100 overflow-hidden shrink-0">
@@ -68,7 +73,7 @@ const BlogCard = memo(function BlogCard({ post, index, onClick }) {
                     }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                
+
                 {post.category && (
                     <div className="absolute top-3.5 left-3.5">
                         <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/90 backdrop-blur-xs text-forest shadow-xs border border-forest/10">
@@ -121,12 +126,73 @@ const BlogCard = memo(function BlogCard({ post, index, onClick }) {
     );
 });
 
-// ─── Main All Blogs Directory Page Component ─────────────────────────────────
-export default function AllBlogsPage() {
+// ─── Blog Content Component (Reads SearchParams) ──────────────────────────────
+function BlogContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Tab State: 'blogs' vs 'tipps'
+    const paramTab = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(paramTab === 'tipps' ? 'tipps' : 'blogs');
+
+    // Posts State
     const [posts, setPosts] = useState([]);
     const [activeCategory, setActiveCategory] = useState('Alle');
     const [isLoading, setIsLoading] = useState(true);
+
+    // Tips State (Backend-driven)
+    const [tips, setTips] = useState([]);
+    const [isTipsLoading, setIsTipsLoading] = useState(true);
+    const [activeTipCategory, setActiveTipCategory] = useState('Alle');
+    const [tipSearch, setTipSearch] = useState('');
+
+    // Fetch Tips Data from backend
+    useEffect(() => {
+        let isMounted = true;
+        getPublicTips()
+            .then(res => {
+                if (isMounted && res.data?.success && Array.isArray(res.data.tips)) {
+                    setTips(res.data.tips);
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching tips:', err);
+                if (isMounted) setTips([]);
+            })
+            .finally(() => {
+                if (isMounted) setIsTipsLoading(false);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    // Auto-fallback to 'blogs' if there are no tips
+    useEffect(() => {
+        if (!isTipsLoading && tips.length === 0 && activeTab === 'tipps') {
+            setActiveTab('blogs');
+        }
+    }, [tips, isTipsLoading, activeTab]);
+
+    // Synchronize tab state with URL parameter if present
+    useEffect(() => {
+        if (paramTab === 'tipps' && activeTab !== 'tipps') {
+            setActiveTab('tipps');
+        } else if (paramTab === 'blogs' && activeTab !== 'blogs') {
+            setActiveTab('blogs');
+        }
+    }, [paramTab]);
+
+    // Handle Tab Switch & URL update
+    const handleTabChange = (newTab) => {
+        setActiveTab(newTab);
+        if (newTab === 'tipps') {
+            router.replace('/blog?tab=tipps', { scroll: false });
+        } else {
+            router.replace('/blog', { scroll: false });
+        }
+    };
 
     // Fetch Posts Data
     useEffect(() => {
@@ -144,7 +210,6 @@ export default function AllBlogsPage() {
                 if (res.data?.success && res.data.posts?.length > 0) {
                     setPosts(res.data.posts);
                 } else {
-                    // Fallback to static data
                     setPosts(FALLBACK_POSTS.map(p => ({
                         id: p.id,
                         title: p.title,
@@ -183,7 +248,7 @@ export default function AllBlogsPage() {
         };
     }, [activeCategory]);
 
-    // Categories List
+    // Blog Categories List
     const categories = useMemo(() => {
         const set = new Set(['Alle']);
         posts.forEach(p => {
@@ -197,6 +262,28 @@ export default function AllBlogsPage() {
         if (activeCategory === 'Alle') return posts;
         return posts.filter(p => p.category === activeCategory);
     }, [posts, activeCategory]);
+
+    // Tip Categories List
+    const tipCategories = useMemo(() => {
+        const set = new Set(['Alle']);
+        tips.forEach(t => {
+            if (t.category) set.add(t.category);
+        });
+        return Array.from(set);
+    }, [tips]);
+
+    // Filtered Tips (from backend data)
+    const filteredTips = useMemo(() => {
+        return tips.filter(tip => {
+            const matchesCat = activeTipCategory === 'Alle' || tip.category === activeTipCategory;
+            const query = tipSearch.trim().toLowerCase();
+            const matchesSearch = !query ||
+                (tip.title && tip.title.toLowerCase().includes(query)) ||
+                (tip.description && tip.description.toLowerCase().includes(query)) ||
+                (tip.category && tip.category.toLowerCase().includes(query));
+            return matchesCat && matchesSearch;
+        });
+    }, [tips, activeTipCategory, tipSearch]);
 
     // Navigate to Single Post
     const handlePostClick = useCallback((slug) => {
@@ -267,7 +354,7 @@ export default function AllBlogsPage() {
                         transition={{ duration: 0.6, delay: 0.1 }}
                         className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-3 drop-shadow-xl leading-tight"
                     >
-                        Camping-Wissen <span className="text-gold">& Kaufberatung</span>
+                        Camping-Wissen <span className="text-gold">& Praxistipps</span>
                     </motion.h1>
                     <motion.p
                         initial={{ opacity: 0, y: 15 }}
@@ -308,66 +395,224 @@ export default function AllBlogsPage() {
             {/* ── Breadcrumbs below Hero (7xl Container) ── */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-2">
                 <Breadcrumbs
-                    items={[{ label: 'Blog' }]}
+                    items={[
+                        { label: 'Wissen & Ratgeber', href: '/blog' },
+                        { label: activeTab === 'tipps' && tips.length > 0 ? 'Tipps' : 'Ratgeber' }
+                    ]}
                     variant="light"
                 />
             </div>
 
             {/* ── Main Content Area (7xl Container) ── */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-                {/* Category Filter Pills (if multiple categories) */}
-                {categories.length > 1 && (
-                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                        {categories.map((cat) => (
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-8">
+                {/* ── MAIN TABS SWITCHER (Ratgeber vs. Tipps) - Hidden if no tips exist ── */}
+                {tips.length > 0 && (
+                    <div className="flex items-center justify-between gap-4 p-1.5 bg-white rounded-3xl border border-forest/10 shadow-xs">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
                             <button
-                                key={cat}
                                 type="button"
-                                onClick={() => setActiveCategory(cat)}
-                                className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                                    activeCategory === cat
+                                onClick={() => handleTabChange('blogs')}
+                                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
+                                    activeTab === 'blogs'
                                         ? 'bg-forest text-sand shadow-md'
-                                        : 'bg-white text-forest/75 hover:bg-forest/5 border border-forest/10 shadow-2xs'
+                                        : 'text-forest/75 hover:text-forest hover:bg-forest/5'
                                 }`}
                             >
-                                {cat}
+                                <BookOpen className="w-4 h-4 text-gold" />
+                                <span>Ratgeber</span>
+                                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-gold/20 text-forest font-bold">
+                                    {posts.length}
+                                </span>
                             </button>
-                        ))}
+
+                            <button
+                                type="button"
+                                onClick={() => handleTabChange('tipps')}
+                                className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-6 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-200 cursor-pointer ${
+                                    activeTab === 'tipps'
+                                        ? 'bg-forest text-sand shadow-md'
+                                        : 'text-forest/75 hover:text-forest hover:bg-forest/5'
+                                }`}
+                            >
+                                <Sparkles className="w-4 h-4 text-gold" />
+                                <span>Tipps</span>
+                                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-gold/20 text-forest font-bold">
+                                    {tips.length}
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 )}
 
-                {/* POSTS GRID */}
-                {isLoading ? (
-                    <div className="py-20 flex justify-center items-center">
-                        <CircleLoader size="lg" color="forest" />
-                    </div>
-                ) : filteredPosts.length === 0 ? (
-                    <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-forest/20 p-8 space-y-4 shadow-sm">
-                        <BookOpen className="w-12 h-12 text-forest/20 mx-auto" />
-                        <h3 className="font-display font-bold text-forest text-xl">Keine Artikel gefunden</h3>
-                        <p className="text-xs text-slate-500 max-w-md mx-auto">
-                            In dieser Kategorie sind derzeit noch keine Beiträge hinterlegt.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => setActiveCategory('Alle')}
-                            className="px-5 py-2.5 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-forest/90 cursor-pointer"
-                        >
-                            Alle Ratgeber anzeigen
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                        {filteredPosts.map((post, index) => (
-                            <BlogCard
-                                key={post.id || post.slug || index}
-                                post={post}
-                                index={index}
-                                onClick={handlePostClick}
-                            />
-                        ))}
-                    </div>
+                {/* ── TAB 1: BLOGS / RATGEBER ── */}
+                {(activeTab === 'blogs' || tips.length === 0) && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="space-y-8"
+                    >
+                        {/* Category Filter Pills */}
+                        {categories.length > 1 && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                                {categories.map((cat) => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => setActiveCategory(cat)}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                                            activeCategory === cat
+                                                ? 'bg-forest text-sand shadow-md'
+                                                : 'bg-white text-forest/75 hover:bg-forest/5 border border-forest/10 shadow-2xs'
+                                        }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* POSTS GRID */}
+                        {isLoading ? (
+                            <div className="py-20 flex justify-center items-center">
+                                <CircleLoader size="lg" color="forest" />
+                            </div>
+                        ) : filteredPosts.length === 0 ? (
+                            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-forest/20 p-8 space-y-4 shadow-sm">
+                                <BookOpen className="w-12 h-12 text-forest/20 mx-auto" />
+                                <h3 className="font-display font-bold text-forest text-xl">Keine Artikel gefunden</h3>
+                                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                                    In dieser Kategorie sind derzeit noch keine Beiträge hinterlegt.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveCategory('Alle')}
+                                    className="px-5 py-2.5 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-forest/90 cursor-pointer"
+                                >
+                                    Alle Ratgeber anzeigen
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                                {filteredPosts.map((post, index) => (
+                                    <BlogCard
+                                        key={post.id || post.slug || index}
+                                        post={post}
+                                        index={index}
+                                        onClick={handlePostClick}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
+                )}
+
+                {/* ── TAB 2: TIPPS ── */}
+                {activeTab === 'tipps' && tips.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="space-y-6"
+                    >
+                        {/* Search & Filter Toolbar */}
+                        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
+                            {/* Tips Category Filter Pills */}
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-1">
+                                {tipCategories.map((cat) => (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        onClick={() => setActiveTipCategory(cat)}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+                                            activeTipCategory === cat
+                                                ? 'bg-forest text-sand shadow-md'
+                                                : 'bg-white text-forest/75 hover:bg-forest/5 border border-forest/10 shadow-2xs'
+                                        }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Search Input for Tips */}
+                            <div className="relative min-w-[240px] sm:min-w-[280px]">
+                                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <input
+                                    type="text"
+                                    value={tipSearch}
+                                    onChange={(e) => setTipSearch(e.target.value)}
+                                    placeholder="Tipp suchen (z.B. Stützlast, Gas...)"
+                                    className="w-full bg-white border border-forest/15 rounded-full pl-9 pr-8 py-2 text-xs text-charcoal placeholder:text-slate-400 focus:outline-hidden focus:border-gold transition-colors shadow-2xs"
+                                />
+                                {tipSearch && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setTipSearch('')}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-charcoal cursor-pointer"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Tips Results Count */}
+                        <div className="flex items-center justify-between text-xs text-slate-500 font-mono pt-1">
+                            <span>
+                                {filteredTips.length} Praxistipp{filteredTips.length === 1 ? '' : 's'} verfügbar
+                                {activeTipCategory !== 'Alle' ? ` in „${activeTipCategory}“` : ''}
+                            </span>
+                            {tipSearch && (
+                                <button
+                                    type="button"
+                                    onClick={() => setTipSearch('')}
+                                    className="text-gold font-bold hover:underline cursor-pointer"
+                                >
+                                    Suche zurücksetzen
+                                </button>
+                            )}
+                        </div>
+
+                        {/* TIPS GRID */}
+                        {filteredTips.length === 0 ? (
+                            <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-forest/20 p-8 space-y-4 shadow-sm">
+                                <Lightbulb className="w-12 h-12 text-forest/20 mx-auto" />
+                                <h3 className="font-display font-bold text-forest text-xl">Keine passenden Tipps gefunden</h3>
+                                <p className="text-xs text-slate-500 max-w-md mx-auto">
+                                    Für deine Suche „{tipSearch}“ konnten keine Praxistipps gefunden werden. Versuche einen anderen Begriff oder setze den Filter zurück.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => { setActiveTipCategory('Alle'); setTipSearch(''); }}
+                                    className="px-5 py-2.5 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-forest/90 cursor-pointer"
+                                >
+                                    Alle Tipps anzeigen
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                                {filteredTips.map((tip, index) => (
+                                    <TipCard key={tip.id} tip={tip} index={index} />
+                                ))}
+                            </div>
+                        )}
+                    </motion.div>
                 )}
             </main>
         </div>
+    );
+}
+
+// ─── Main Page with Suspense (Required for useSearchParams) ──────────────────
+export default function AllBlogsPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-sand/15 flex items-center justify-center">
+                <CircleLoader size="lg" color="forest" />
+            </div>
+        }>
+            <BlogContent />
+        </Suspense>
     );
 }

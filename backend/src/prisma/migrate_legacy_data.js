@@ -771,6 +771,10 @@ async function migrate() {
               const cleanText = bText
                 .replace(/\[highlight=[^\]]*\]/gi, '')
                 .replace(/\[\/highlight\]/gi, '')
+                .replace(/\[h([1-6])\]([\s\S]*?)\[\/h\1\]/gi, (m, lvl, txt) => {
+                  const hashes = '#'.repeat(parseInt(lvl, 10));
+                  return `\n\n${hashes} ${txt.trim()}\n\n`;
+                })
                 .replace(/\[b\]/gi, '**')
                 .replace(/\[\/b\]/gi, '**')
                 .replace(/\[ml\]/gi, '')

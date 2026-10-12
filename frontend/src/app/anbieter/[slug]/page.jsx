@@ -31,6 +31,7 @@ import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import { PROVIDERS, STATIC_USERS } from '@/data';
 import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
@@ -415,7 +416,7 @@ export default function ProviderDetails() {
             return;
         }
         if (currentUser?.id && provider?.id && String(currentUser.id).toLowerCase() === String(provider.id).toLowerCase()) {
-            toast.error('Du kannst dir nicht selbst eine Nachricht senden.');
+            toast.error('Das ist dein eigenes Profil – du kannst dir nicht selbst schreiben.');
             return;
         }
         setIsContactModalOpen(true);
@@ -424,7 +425,7 @@ export default function ProviderDetails() {
     const handleSendDirectMessage = async (e) => {
         if (e) e.preventDefault();
         if (!contactMessage || !contactMessage.trim()) {
-            toast.error('Bitte gib eine Nachricht ein.');
+            toast.error('Bitte schreibe eine kurze Nachricht an diesen Anbieter.');
             return;
         }
 
@@ -438,16 +439,16 @@ export default function ProviderDetails() {
 
             const convId = res.conversation_id || res.data?.conversation_id;
             if (res.success && convId) {
-                toast.success('Nachricht gesendet!');
+                toast.success('Nachricht gesendet! Deine Unterhaltung wurde gestartet.');
                 setIsContactModalOpen(false);
                 setContactMessage('');
                 router.push(`/mein-konto?tab=nachrichten&id=${encodeURIComponent(convId)}`);
             } else {
-                toast.error(res.error || res.message || 'Fehler beim Senden der Nachricht.');
+                toast.error(getFriendlyErrorMessage(res.error || res.message, 'Deine Nachricht konnte leider nicht übermittelt werden. Bitte versuche es kurz erneut.'));
             }
         } catch (err) {
             console.error('Error starting chat:', err);
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Starten der Unterhaltung.');
+            toast.error(getFriendlyErrorMessage(err, 'Deine Nachricht konnte gerade nicht gesendet werden. Bitte versuche es gleich noch einmal.'));
         } finally {
             setIsSendingMessage(false);
         }

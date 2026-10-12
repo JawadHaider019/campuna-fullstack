@@ -38,6 +38,7 @@ import {
     updateUserProviderCategory
 } from '@/api/admin';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import { getImageUrl } from '@/utils/imageUrl';
 import { Crown, Rocket, Gift, X } from 'lucide-react';
@@ -74,11 +75,11 @@ export default function AdminUserDetailPage() {
                 setUser(userData);
             } else {
                 console.error('User fetch returned unformatted data:', res);
-                toast.error(res?.data?.error || res?.error || 'Benutzer nicht gefunden.');
+                toast.error(getFriendlyErrorMessage(res?.data?.error || res?.error, 'Benutzer nicht gefunden.'));
             }
         } catch (error) {
             console.error('Failed to load user details:', error);
-            toast.error('Fehler beim Laden der Benutzerdetails.');
+            toast.error(getFriendlyErrorMessage(error, 'Die Benutzerdetails konnten nicht geladen werden. Bitte versuche es kurz erneut.'));
         } finally {
             setLoading(false);
         }
@@ -102,10 +103,10 @@ export default function AdminUserDetailPage() {
                 );
                 setUser(prev => ({ ...prev, is_suspended: newStatus }));
             } else {
-                toast.error(res.error || res.data?.error || 'Aktion fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Statusänderung konnte nicht durchgeführt werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Aktion fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Statusänderung konnte nicht durchgeführt werden.'), { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -121,10 +122,10 @@ export default function AdminUserDetailPage() {
                 toast.success(res.data?.message || 'E-Mail wurde verifiziert.', { id: toastId });
                 setUser(prev => ({ ...prev, email_verified: true }));
             } else {
-                toast.error(res.error || res.data?.error || 'Verifizierung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Verifizierung fehlgeschlagen.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Verifizierung fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Verifizierung fehlgeschlagen.'), { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -140,10 +141,10 @@ export default function AdminUserDetailPage() {
                 toast.success(res.data?.message || 'Benutzer wurde gelöscht.', { id: toastId });
                 router.push('/admin/benutzer');
             } else {
-                toast.error(res.error || res.data?.error || 'Löschen fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Benutzer konnte nicht gelöscht werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Löschen fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Benutzer konnte nicht gelöscht werden.'), { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -158,10 +159,10 @@ export default function AdminUserDetailPage() {
                 toast.success(res.data?.message || 'Anbieterkategorie erfolgreich aktualisiert!', { id: toastId });
                 setUser(prev => ({ ...prev, provider_category: newCategory }));
             } else {
-                toast.error(res.data?.error || res.error || 'Fehler beim Aktualisieren.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Kategorie konnte nicht geändert werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Aktualisieren.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Kategorie konnte nicht geändert werden.'), { id: toastId });
         }
     };
 
@@ -211,10 +212,10 @@ export default function AdminUserDetailPage() {
                 setBenefitModalOpen(false);
                 fetchUser();
             } else {
-                toast.error(res.data?.error || res.error || 'Zuweisung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Vorteil konnte nicht zugewiesen werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Zuweisen des Vorteils.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Fehler beim Zuweisen des Vorteils.'), { id: toastId });
         } finally {
             setGrantingBenefit(false);
         }

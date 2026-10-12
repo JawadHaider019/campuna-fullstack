@@ -252,10 +252,15 @@ export default function SinglePostPage() {
     const handleCopyLink = useCallback(() => {
         const url = getShareUrl();
         if (typeof window !== 'undefined' && navigator?.clipboard) {
-            navigator.clipboard.writeText(url);
-            setCopied(true);
-            toast.success('Link in die Zwischenablage kopiert!', { icon: '🔗' });
-            setTimeout(() => setCopied(false), 2500);
+            navigator.clipboard.writeText(url)
+                .then(() => {
+                    setCopied(true);
+                    toast.success('Link kopiert! Teile den Ratgeber gerne mit Freunden.', { icon: '🔗' });
+                    setTimeout(() => setCopied(false), 2500);
+                })
+                .catch(() => {
+                    toast.error('Der Link konnte nicht kopiert werden. Bitte markiere ihn manuell.');
+                });
         }
     }, [getShareUrl]);
 

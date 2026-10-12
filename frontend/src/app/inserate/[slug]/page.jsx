@@ -51,6 +51,7 @@ import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
@@ -233,7 +234,7 @@ export default function ListingDetailPage() {
         const url = getCleanShareUrl();
         navigator.clipboard.writeText(url);
         setCopied(true);
-        toast.success('Link kopiert! Keine privaten Kontaktdaten enthalten.', { icon: '🔒' });
+        toast.success('Link in die Zwischenablage kopiert! Keine privaten Kontaktdaten enthalten.', { icon: '🔒' });
         setTimeout(() => setCopied(false), 2500);
     };
 
@@ -257,7 +258,7 @@ export default function ListingDetailPage() {
             return;
         }
         if (isOwner) {
-            toast.error('Du bist der Eigentümer dieses Inserats.');
+            toast.error('Das ist deine eigene Anzeige – du kannst dich nicht selbst kontaktieren.');
             return;
         }
         setIsContactModalOpen(true);
@@ -273,15 +274,15 @@ export default function ListingDetailPage() {
         try {
             const res = await deleteListing(listing.id);
             if (res.success || res.status === 200) {
-                toast.success('Inserat erfolgreich gelöscht.');
+                toast.success('Dein Inserat wurde erfolgreich gelöscht.');
                 setIsDeleteModalOpen(false);
                 router.push('/mein-konto');
             } else {
-                toast.error(res.error || res.message || 'Fehler beim Löschen des Inserats.');
+                toast.error(getFriendlyErrorMessage(res.error || res.message, 'Das Inserat konnte leider nicht gelöscht werden. Bitte versuche es kurz erneut.'));
             }
         } catch (err) {
             console.error('Error deleting listing:', err);
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Löschen des Inserats.');
+            toast.error(getFriendlyErrorMessage(err, 'Das Inserat konnte leider nicht gelöscht werden. Bitte versuche es gleich noch einmal.'));
         } finally {
             setIsDeleting(false);
         }
@@ -298,7 +299,7 @@ export default function ListingDetailPage() {
     const handleSendDirectMessage = async (e) => {
         if (e) e.preventDefault();
         if (!contactMessage || !contactMessage.trim()) {
-            toast.error('Bitte gib eine Nachricht ein.');
+            toast.error('Bitte schreibe eine kurze Nachricht an den Anbieter.');
             return;
         }
         if (!listing?.id) return;
@@ -308,15 +309,15 @@ export default function ListingDetailPage() {
             const res = await createOrGetConversation(listing.id, contactMessage.trim());
             const convId = res.conversation_id || res.data?.conversation_id;
             if (res.success && convId) {
-                toast.success('Unterhaltung gestartet!');
+                toast.success('Nachricht gesendet! Deine Unterhaltung wurde gestartet.');
                 setIsContactModalOpen(false);
                 router.push(`/mein-konto?tab=nachrichten&id=${encodeURIComponent(convId)}`);
             } else {
-                toast.error(res.error || res.message || 'Fehler beim Senden der Nachricht.');
+                toast.error(getFriendlyErrorMessage(res.error || res.message, 'Deine Nachricht konnte nicht übermittelt werden. Bitte versuche es kurz erneut.'));
             }
         } catch (err) {
             console.error('Error starting chat:', err);
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Starten der Unterhaltung.');
+            toast.error(getFriendlyErrorMessage(err, 'Deine Nachricht konnte leider nicht gesendet werden. Bitte versuche es gleich noch einmal.'));
         } finally {
             setIsSendingMessage(false);
         }
@@ -538,7 +539,7 @@ export default function ListingDetailPage() {
 
     const handleReportListing = () => {
         if (!currentUser) {
-            toast.error('Bitte melde dich an, um ein Inserat zu melden.');
+            toast.error('Bitte melde dich an, um dieses Inserat zu melden.');
             router.push(`/login?returnUrl=/inserate/${encodeURIComponent(slug)}`);
             return;
         }
@@ -553,7 +554,7 @@ export default function ListingDetailPage() {
     const handleSendReport = async (e) => {
         if (e) e.preventDefault();
         if (!reportReasonCategory) {
-            toast.error('Bitte wähle einen Grund für die Meldung aus.');
+            toast.error('Bitte wähle einen Grund für deine Meldung aus.');
             return;
         }
         if (!listing?.id) return;
@@ -567,14 +568,13 @@ export default function ListingDetailPage() {
 
             if (res.data?.success || res.success) {
                 setIsReportSent(true);
-                toast.success('Meldung erfolgreich übermittelt.');
+                toast.success('Vielen Dank für deinen Hinweis! Unser Team prüft das Inserat schnellstmöglich.');
             } else {
-                toast.error(res.data?.error || res.error || 'Fehler beim Senden der Meldung.');
+                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Deine Meldung konnte gerade nicht übermittelt werden. Bitte versuche es kurz erneut.'));
             }
         } catch (err) {
             console.error('Error submitting report:', err);
-            const errMsg = err.response?.data?.error || err.message || 'Fehler beim Senden der Meldung.';
-            toast.error(errMsg);
+            toast.error(getFriendlyErrorMessage(err, 'Deine Meldung konnte gerade nicht übermittelt werden. Bitte versuche es gleich noch einmal.'));
         } finally {
             setIsSendingReport(false);
         }
@@ -957,10 +957,10 @@ export default function ListingDetailPage() {
                                                 toast.success('Inserat erfolgreich wieder aktiviert!', { id: toastId });
                                                 setListing(prev => ({ ...prev, status: 'APPROVED' }));
                                             } else {
-                                                toast.error(res.data?.error || 'Fehler beim Aktivieren.', { id: toastId });
+                                                toast.error(getFriendlyErrorMessage(res.data?.error, 'Das Inserat konnte leider nicht aktiviert werden. Bitte versuche es kurz erneut.'), { id: toastId });
                                             }
                                         } catch (err) {
-                                            toast.error(err.response?.data?.error || err.message || 'Fehler beim Aktivieren.', { id: toastId });
+                                            toast.error(getFriendlyErrorMessage(err, 'Das Inserat konnte leider nicht aktiviert werden. Bitte versuche es gleich noch einmal.'), { id: toastId });
                                         }
                                     }}
                                     className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm transition-all cursor-pointer"

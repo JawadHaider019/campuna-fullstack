@@ -35,7 +35,8 @@
     "pg": "^8.23.0",
     "resend": "^6.25.0",
     "socket.io": "^4.8.4",
-    "stripe": "^23.0.0"
+    "stripe": "^23.0.0",
+    "temporal-polyfill": "^1.0.5"
   },
   "devDependencies": {
     "@prisma/cli-engine": "^0.2.3",

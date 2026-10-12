@@ -45,6 +45,7 @@ import {
     grantAdminBenefit
 } from '@/api/admin';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
@@ -119,7 +120,7 @@ export default function AdminListingsPage() {
             }
         } catch (error) {
             console.error('Failed to load listings:', error);
-            toast.error('Fehler beim Laden der Inserate.');
+            toast.error(getFriendlyErrorMessage(error, 'Die Inserate konnten nicht geladen werden. Bitte versuche es kurz erneut.'));
         } finally {
             setLoading(false);
         }
@@ -148,10 +149,10 @@ export default function AdminListingsPage() {
                 setRejectModalOpen(false);
                 setRejectionReason('');
             } else {
-                toast.error(res.error || res.data?.error || 'Statusänderung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Statusänderung konnte nicht gespeichert werden. Bitte versuche es kurz erneut.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Statusänderung fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Statusänderung konnte nicht gespeichert werden. Bitte versuche es kurz erneut.'), { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -172,10 +173,10 @@ export default function AdminListingsPage() {
                 }
                 fetchListings();
             } else {
-                toast.error(res.error || res.data?.error || 'Löschen fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Das Inserat konnte leider nicht gelöscht werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Löschen fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Das Inserat konnte leider nicht gelöscht werden.'), { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -195,10 +196,10 @@ export default function AdminListingsPage() {
                     setSelectedListing(prev => ({ ...prev, featured: newFeatured }));
                 }
             } else {
-                toast.error(res.error || res.data?.error || 'Fehler beim Ändern des Featured-Status.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Featured-Status konnte nicht geändert werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Ändern des Featured-Status.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Featured-Status konnte nicht geändert werden.'), { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -218,7 +219,7 @@ export default function AdminListingsPage() {
         if (!listingForBoost) return;
 
         setGrantingBoost(true);
-        const toastId = toast.loading('Inserate-Boost wird kostenlos aktiviert...');
+        const toastId = toast.loading('Inserate-Boost wird aktiviert...');
 
         try {
             const res = await grantAdminBenefit({
@@ -236,10 +237,10 @@ export default function AdminListingsPage() {
                 setListingForBoost(null);
                 fetchListings();
             } else {
-                toast.error(res.data?.error || res.error || 'Boost fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Der Boost konnte nicht aktiviert werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Boosten.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Der Boost konnte nicht aktiviert werden.'), { id: toastId });
         } finally {
             setGrantingBoost(false);
         }

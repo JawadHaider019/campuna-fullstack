@@ -50,6 +50,7 @@ import {
     getAdminUserListings
 } from '@/api/admin';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import { getImageUrl } from '@/utils/imageUrl';
 
@@ -117,7 +118,7 @@ export default function AdminUsersPage() {
             }
         } catch (error) {
             console.error('Failed to load users:', error);
-            toast.error('Fehler beim Laden der Benutzer.');
+            toast.error(getFriendlyErrorMessage(error, 'Die Benutzer konnten nicht geladen werden. Bitte versuche es kurz erneut.'));
         } finally {
             setLoading(false);
         }
@@ -153,10 +154,10 @@ export default function AdminUsersPage() {
                 );
                 fetchUsers();
             } else {
-                toast.error(res.error || res.data?.error || 'Aktion fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Statusänderung konnte nicht durchgeführt werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Aktion fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Statusänderung konnte nicht durchgeführt werden.'), { id: toastId });
         } finally {
             setActionLoading(false);
             setActionMenuOpenId(null);
@@ -172,10 +173,10 @@ export default function AdminUsersPage() {
                 toast.success(res.data?.message || `E-Mail für "${user.email}" wurde manuell verifiziert.`, { id: toastId });
                 fetchUsers();
             } else {
-                toast.error(res.error || res.data?.error || 'Verifizierung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'E-Mail konnte nicht verifiziert werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Verifizierung fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'E-Mail konnte nicht verifiziert werden.'), { id: toastId });
         } finally {
             setActionLoading(false);
             setActionMenuOpenId(null);
@@ -194,10 +195,10 @@ export default function AdminUsersPage() {
                 setUserToDelete(null);
                 fetchUsers();
             } else {
-                toast.error(res.error || res.data?.error || 'Löschen fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Benutzer konnte nicht gelöscht werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Löschen fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Benutzer konnte nicht gelöscht werden.'), { id: toastId });
         } finally {
             setActionLoading(false);
         }
@@ -269,10 +270,10 @@ export default function AdminUsersPage() {
                 setUserForBenefit(null);
                 fetchUsers();
             } else {
-                toast.error(res.data?.error || res.error || 'Zuweisung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Vorteil konnte nicht zugewiesen werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Zuweisen des Vorteils.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Fehler beim Zuweisen des Vorteils.'), { id: toastId });
         } finally {
             setGrantingBenefit(false);
         }
@@ -289,10 +290,10 @@ export default function AdminUsersPage() {
                 setTransitionModalOpen(false);
                 fetchUsers();
             } else {
-                toast.error(res.data?.error || res.error || 'Aktion fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Übergangsphase konnte nicht aktiviert werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Aktivieren der Übergangsphase.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Fehler beim Aktivieren der Übergangsphase.'), { id: toastId });
         } finally {
             setApplyingTransition(false);
         }

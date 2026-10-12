@@ -13,6 +13,7 @@ import {
     getCreditBalance,
 } from '@/api/profile';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import {
     Check, X, Zap, Star, FileText,
     BarChart2, Loader2, Crown, ArrowRight,
@@ -139,18 +140,18 @@ export default function AboPage() {
         if (subscribing || !canAffordWithCredits) return;
 
         setSubscribing(true);
-        const toastId = toast.loading('Abonnement wird aktiviert...');
+        const toastId = toast.loading('Dein Business-Tarif wird aktiviert...');
         try {
             const res = await subscribeToPlan('BUSINESS', 'CREDIT', selectedMonths);
             if (res?.success) {
-                toast.success(`Business-Tarif für ${selectedMonths} Monat${selectedMonths > 1 ? 'e' : ''} erfolgreich aktiviert!`, { id: toastId });
+                toast.success(`Willkommen bei Campuna Business! Dein Tarif für ${selectedMonths} Monat${selectedMonths > 1 ? 'e' : ''} ist jetzt aktiv.`, { id: toastId });
                 setUpgradeModalOpen(false);
                 await reloadSub();
             } else {
-                toast.error(res?.error || 'Fehler beim Aktivieren des Tarifs.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res?.error, 'Dein Business-Tarif konnte gerade nicht aktiviert werden. Bitte versuche es kurz erneut.'), { id: toastId });
             }
-        } catch {
-            toast.error('Netzwerkfehler. Bitte versuche es später erneut.', { id: toastId });
+        } catch (err) {
+            toast.error(getFriendlyErrorMessage(err, 'Dein Business-Tarif konnte gerade nicht aktiviert werden. Bitte versuche es gleich noch einmal.'), { id: toastId });
         } finally {
             setSubscribing(false);
         }
@@ -172,16 +173,16 @@ export default function AboPage() {
         const trimmedIban = cancelVerification.iban_or_card?.trim();
 
         if (!trimmedHolder || !trimmedIban) {
-            toast.error('Bitte gib den Namen des Kontoinhabers und deine IBAN / Kartennummer zur Bestätigung ein.');
+            toast.error('Bitte gib den Namen des Kontoinhabers und deine IBAN oder Kartennummer zur Bestätigung ein.');
             return;
         }
         if (!cancelVerification.confirm_clawback) {
-            toast.error('Bitte bestätige die Rückbuchung der ungenutzten Credits durch Aktivieren der Checkbox.');
+            toast.error('Bitte bestätige kurz die Bedingungen zur Kündigung über das Häkchen.');
             return;
         }
 
         setCancelling(true);
-        const toastId = toast.loading('Kündigung wird verarbeitet...');
+        const toastId = toast.loading('Deine Kündigung wird bearbeitet...');
         try {
             const res = await cancelSubscription({
                 account_holder: trimmedHolder,
@@ -191,7 +192,7 @@ export default function AboPage() {
             });
 
             if (res?.success) {
-                toast.success(res.message || 'Abonnement erfolgreich gekündigt.', { id: toastId, duration: 5000 });
+                toast.success('Dein Business-Abonnement wurde erfolgreich gekündigt. Dein Zugang bleibt bis zum Ende des gebuchten Zeitraums aktiv.', { id: toastId, duration: 5000 });
                 setCancelModalOpen(false);
                 setCancelVerification({
                     account_holder: '',
@@ -201,10 +202,10 @@ export default function AboPage() {
                 });
                 await reloadSub();
             } else {
-                toast.error(res?.error || 'Kündigung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res?.error, 'Die Kündigung konnte leider nicht abgeschlossen werden. Bitte prüfe deine Angaben oder wende dich an unseren Support.'), { id: toastId });
             }
-        } catch {
-            toast.error('Netzwerkfehler. Bitte versuche es später erneut.', { id: toastId });
+        } catch (err) {
+            toast.error(getFriendlyErrorMessage(err, 'Die Kündigung konnte gerade nicht übermittelt werden. Bitte versuche es gleich noch einmal.'), { id: toastId });
         } finally {
             setCancelling(false);
         }

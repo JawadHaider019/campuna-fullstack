@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { motion, useMotionValue } from 'framer-motion';
+import { motion, useMotionValue, animate } from 'framer-motion';
 import { Heart, MapPin, ShieldCheck, Eye, ArrowRight, ChevronLeft, ChevronRight, Rocket, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { getAllListings } from '@/api/listings';
@@ -102,7 +102,7 @@ function normalizeListing(item) {
 
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
 
-const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
+const ListingCard = React.memo(({ item: rawItem, onCardClick, isParentDragging }) => {
     const item = useMemo(() => normalizeListing(rawItem), [rawItem]);
     const isFavorite = useFavoritesStore((state) => state.isFavorite(item?.id));
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
@@ -111,6 +111,35 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
     const tagsRef = useRef(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
     const [canScrollRight, setCanScrollRight] = useState(false);
+
+    // Suppress accidental clicks during drag or trackpad gestures (> 6px threshold)
+    const pointerStartRef = useRef(null);
+    const hasDraggedRef = useRef(false);
+
+    const handlePointerDown = (e) => {
+        pointerStartRef.current = { x: e.clientX, y: e.clientY };
+        hasDraggedRef.current = false;
+    };
+
+    const handlePointerMove = (e) => {
+        if (pointerStartRef.current) {
+            const dx = Math.abs(e.clientX - pointerStartRef.current.x);
+            const dy = Math.abs(e.clientY - pointerStartRef.current.y);
+            if (dx > 6 || dy > 6) {
+                hasDraggedRef.current = true;
+            }
+        }
+    };
+
+    const handleCardClick = (e) => {
+        // Prevent click if user was dragging or if parent carousel row was moving
+        if (hasDraggedRef.current || (isParentDragging && isParentDragging())) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        onCardClick(item);
+    };
 
     const checkScroll = useCallback(() => {
         if (tagsRef.current) {
@@ -144,7 +173,9 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick }) => {
 
     return (
         <div
-            onClick={() => onCardClick(item)}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onClick={handleCardClick}
             className={`listing-card group relative flex-shrink-0 w-[300px] md:w-[320px] flex flex-col h-full rounded-[24px] overflow-hidden transition-all duration-300 select-none cursor-pointer ${
                 item.is_boosted
                     ? 'bg-gradient-to-b from-[#fdfbf7] to-[#fbf7ee] border border-amber-300/60 hover:border-amber-400/80 shadow-[0_4px_20px_-4px_rgba(202,152,43,0.18)] hover:shadow-[0_8px_30px_-4px_rgba(202,152,43,0.28)]'
@@ -397,6 +428,12 @@ export default function Listing({
     const isHoveredRef2 = useRef(false);
     const isDraggingRef1 = useRef(false);
     const isDraggingRef2 = useRef(false);
+    const lastDragEndTimeRef1 = useRef(0);
+    const lastDragEndTimeRef2 = useRef(0);
+    const wheelPauseTimerRef1 = useRef(null);
+    const wheelPauseTimerRef2 = useRef(null);
+    const arrowPauseTimerRef1 = useRef(null);
+    const arrowPauseTimerRef2 = useRef(null);
 
     useEffect(() => {
         const measure = () => {
@@ -431,6 +468,50 @@ export default function Listing({
 
     const x1 = useMotionValue(0);
     const x2 = useMotionValue(0);
+
+    const isParentDragging1 = useCallback(() => {
+        return isDraggingRef1.current || (Date.now() - lastDragEndTimeRef1.current < 200);
+    }, []);
+
+    const isParentDragging2 = useCallback(() => {
+        return isDraggingRef2.current || (Date.now() - lastDragEndTimeRef2.current < 200);
+    }, []);
+
+    const handleScrollStep = useCallback((rowNum, direction) => {
+        const motionVal = rowNum === 1 ? x1 : x2;
+        const constraints = rowNum === 1 ? rowConstraints1 : rowConstraints2;
+        const isHovered = rowNum === 1 ? isHoveredRef1 : isHoveredRef2;
+        const pauseTimer = rowNum === 1 ? arrowPauseTimerRef1 : arrowPauseTimerRef2;
+
+        isHovered.current = true;
+        if (pauseTimer.current) clearTimeout(pauseTimer.current);
+        pauseTimer.current = setTimeout(() => {
+            isHovered.current = false;
+        }, 2500);
+
+        const step = 340; // 320px card width + 20px gap
+        const current = motionVal.get();
+        let target;
+
+        if (direction === 'left') {
+            if (current >= -10) {
+                target = -constraints;
+            } else {
+                target = Math.min(0, current + step);
+            }
+        } else {
+            if (current <= -constraints + 10) {
+                target = 0;
+            } else {
+                target = Math.max(-constraints, current - step);
+            }
+        }
+
+        animate(motionVal, target, {
+            duration: 0.45,
+            ease: [0.22, 1, 0.36, 1]
+        });
+    }, [rowConstraints1, rowConstraints2, x1, x2]);
 
     useEffect(() => {
         if (rowConstraints1 > 0) {
@@ -522,6 +603,52 @@ export default function Listing({
         };
     }, [row1Listings, row2Listings, rowConstraints1, rowConstraints2, x1, x2]);
 
+    // MacBook Trackpad & horizontal wheel support (deltaX gesture)
+    useEffect(() => {
+        const el1 = rowRef1.current;
+        const el2 = rowRef2.current;
+
+        const createWheelHandler = (rowNum) => (e) => {
+            const absX = Math.abs(e.deltaX);
+            const absY = Math.abs(e.deltaY);
+
+            // Trigger when horizontal delta dominates (e.g. MacBook 2-finger trackpad swipe or Shift+Wheel)
+            if (absX > 4 && absX > absY) {
+                e.preventDefault(); // Stop macOS Safari/Chrome back/forward navigation gesture
+
+                const motionVal = rowNum === 1 ? x1 : x2;
+                const constraints = rowNum === 1 ? rowConstraints1 : rowConstraints2;
+                const isHovered = rowNum === 1 ? isHoveredRef1 : isHoveredRef2;
+                const pauseTimer = rowNum === 1 ? wheelPauseTimerRef1 : wheelPauseTimerRef2;
+
+                isHovered.current = true;
+                if (pauseTimer.current) clearTimeout(pauseTimer.current);
+                pauseTimer.current = setTimeout(() => {
+                    isHovered.current = false;
+                }, 1500);
+
+                if (constraints > 0) {
+                    const current = motionVal.get();
+                    const next = Math.max(-constraints, Math.min(0, current - e.deltaX * 1.15));
+                    motionVal.set(next);
+                }
+            }
+        };
+
+        const wheelHandler1 = createWheelHandler(1);
+        const wheelHandler2 = createWheelHandler(2);
+
+        if (el1) el1.addEventListener('wheel', wheelHandler1, { passive: false });
+        if (el2) el2.addEventListener('wheel', wheelHandler2, { passive: false });
+
+        return () => {
+            if (el1) el1.removeEventListener('wheel', wheelHandler1);
+            if (el2) el2.removeEventListener('wheel', wheelHandler2);
+            if (wheelPauseTimerRef1.current) clearTimeout(wheelPauseTimerRef1.current);
+            if (wheelPauseTimerRef2.current) clearTimeout(wheelPauseTimerRef2.current);
+        };
+    }, [rowConstraints1, rowConstraints2, x1, x2]);
+
     return (
         <section id="exclusive-offers" className="py-10 sm:py-16 bg-white scroll-mt-24 overflow-hidden">
             <div className="max-w-8xl mx-auto px-6 md:px-12">
@@ -583,19 +710,48 @@ export default function Listing({
                         {/* Row 1 */}
                         {row1Listings.length > 0 && (
                             <div 
-                                className="relative overflow-hidden pb-1 cursor-grab active:cursor-grabbing" 
+                                className="group/row relative overflow-hidden pb-1 cursor-grab active:cursor-grabbing" 
                                 ref={rowRef1}
                                 onMouseEnter={() => { isHoveredRef1.current = true; }}
                                 onMouseLeave={() => { isHoveredRef1.current = false; }}
                                 onPointerEnter={() => { isHoveredRef1.current = true; }}
                                 onPointerLeave={() => { isHoveredRef1.current = false; }}
                             >
+                                {/* Desktop Navigation Arrow - Previous */}
+                                <button
+                                    type="button"
+                                    aria-label="Vorherige Inserate anzeigen"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleScrollStep(1, 'left');
+                                    }}
+                                    className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-forest hover:text-gold shadow-xl border border-forest/10 items-center justify-center transition-all duration-300 opacity-0 group-hover/row:opacity-100 hover:scale-110 active:scale-95 focus:opacity-100 cursor-pointer backdrop-blur-sm"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+
+                                {/* Desktop Navigation Arrow - Next */}
+                                <button
+                                    type="button"
+                                    aria-label="Nächste Inserate anzeigen"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleScrollStep(1, 'right');
+                                    }}
+                                    className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-forest hover:text-gold shadow-xl border border-forest/10 items-center justify-center transition-all duration-300 opacity-0 group-hover/row:opacity-100 hover:scale-110 active:scale-95 focus:opacity-100 cursor-pointer backdrop-blur-sm"
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+
                                 <motion.div
                                     drag="x"
                                     dragConstraints={{ right: 0, left: -rowConstraints1 }}
                                     style={{ x: x1 }}
                                     onDragStart={() => { isDraggingRef1.current = true; isHoveredRef1.current = true; }}
-                                    onDragEnd={() => { isDraggingRef1.current = false; }}
+                                    onDragEnd={() => {
+                                        lastDragEndTimeRef1.current = Date.now();
+                                        setTimeout(() => { isDraggingRef1.current = false; }, 150);
+                                    }}
                                     onMouseEnter={() => { isHoveredRef1.current = true; }}
                                     onMouseLeave={() => { isHoveredRef1.current = false; }}
                                     onPointerEnter={() => { isHoveredRef1.current = true; }}
@@ -607,6 +763,7 @@ export default function Listing({
                                             key={`${item.id}-r1-${idx}`}
                                             item={item}
                                             onCardClick={handleCardClick}
+                                            isParentDragging={isParentDragging1}
                                         />
                                     ))}
                                 </motion.div>
@@ -616,19 +773,48 @@ export default function Listing({
                         {/* Row 2 */}
                         {row2Listings.length > 0 && (
                             <div 
-                                className="relative overflow-hidden pb-1 cursor-grab active:cursor-grabbing" 
+                                className="group/row relative overflow-hidden pb-1 cursor-grab active:cursor-grabbing" 
                                 ref={rowRef2}
                                 onMouseEnter={() => { isHoveredRef2.current = true; }}
                                 onMouseLeave={() => { isHoveredRef2.current = false; }}
                                 onPointerEnter={() => { isHoveredRef2.current = true; }}
                                 onPointerLeave={() => { isHoveredRef2.current = false; }}
                             >
+                                {/* Desktop Navigation Arrow - Previous */}
+                                <button
+                                    type="button"
+                                    aria-label="Vorherige Inserate anzeigen"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleScrollStep(2, 'left');
+                                    }}
+                                    className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-forest hover:text-gold shadow-xl border border-forest/10 items-center justify-center transition-all duration-300 opacity-0 group-hover/row:opacity-100 hover:scale-110 active:scale-95 focus:opacity-100 cursor-pointer backdrop-blur-sm"
+                                >
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+
+                                {/* Desktop Navigation Arrow - Next */}
+                                <button
+                                    type="button"
+                                    aria-label="Nächste Inserate anzeigen"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleScrollStep(2, 'right');
+                                    }}
+                                    className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 hover:bg-white text-forest hover:text-gold shadow-xl border border-forest/10 items-center justify-center transition-all duration-300 opacity-0 group-hover/row:opacity-100 hover:scale-110 active:scale-95 focus:opacity-100 cursor-pointer backdrop-blur-sm"
+                                >
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+
                                 <motion.div
                                     drag="x"
                                     dragConstraints={{ right: 0, left: -rowConstraints2 }}
                                     style={{ x: x2 }}
                                     onDragStart={() => { isDraggingRef2.current = true; isHoveredRef2.current = true; }}
-                                    onDragEnd={() => { isDraggingRef2.current = false; }}
+                                    onDragEnd={() => {
+                                        lastDragEndTimeRef2.current = Date.now();
+                                        setTimeout(() => { isDraggingRef2.current = false; }, 150);
+                                    }}
                                     onMouseEnter={() => { isHoveredRef2.current = true; }}
                                     onMouseLeave={() => { isHoveredRef2.current = false; }}
                                     onPointerEnter={() => { isHoveredRef2.current = true; }}
@@ -640,6 +826,7 @@ export default function Listing({
                                             key={`${item.id}-r2-${idx}`}
                                             item={item}
                                             onCardClick={handleCardClick}
+                                            isParentDragging={isParentDragging2}
                                         />
                                     ))}
                                 </motion.div>

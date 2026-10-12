@@ -166,3 +166,106 @@ export function cleanPhoneNumber(phone) {
     if (!phone || typeof phone !== 'string') return '';
     return phone.trim();
 }
+
+export function getFriendlyErrorMessage(errOrMsg, fallback = 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.') {
+    if (!errOrMsg) return fallback;
+    const raw = typeof errOrMsg === 'string'
+        ? errOrMsg
+        : (errOrMsg.error || errOrMsg.message || errOrMsg.data?.error || errOrMsg.data?.message || String(errOrMsg));
+
+    if (!raw || typeof raw !== 'string') return fallback;
+
+    const lower = raw.toLowerCase();
+
+    // 1. File & Image Upload Errors
+    if (
+        lower.includes('limit_file_size') ||
+        lower.includes('413') ||
+        lower.includes('payload too large') ||
+        lower.includes('zu groß') ||
+        lower.includes('dateigröße')
+    ) {
+        return 'Ein oder mehrere Fotos sind leider zu groß. Bitte wähle kleinere Bilder aus.';
+    }
+
+    if (lower.includes('file format') || lower.includes('nur bilder') || lower.includes('keine bilddatei') || lower.includes('mimetype')) {
+        return 'Bitte wähle nur gültige Fotos (z. B. JPG, PNG oder WEBP) aus.';
+    }
+
+    // 2. Network, Fetch & Timeout Errors
+    if (
+        lower.includes('aborterror') ||
+        lower.includes('timeout') ||
+        lower.includes('zu lange gedauert') ||
+        lower.includes('zeitüberschreitung')
+    ) {
+        return 'Die Übertragung hat etwas zu lange gedauert. Bitte überprüfe deine Internetverbindung und versuche es erneut.';
+    }
+
+    if (
+        lower.includes('failed to fetch') ||
+        lower.includes('networkerror') ||
+        lower.includes('netzwerkfehler') ||
+        lower.includes('enotfound') ||
+        lower.includes('econnrefused') ||
+        lower.includes('verbindung')
+    ) {
+        return 'Verbindungsfehler. Bitte überprüfe deine Internetverbindung und versuche es erneut.';
+    }
+
+    // 3. Authentication & Session Errors
+    if (
+        lower.includes('token') ||
+        lower.includes('jwt') ||
+        lower.includes('unauthorized') ||
+        lower.includes('401') ||
+        lower.includes('sitzung abgelaufen')
+    ) {
+        return 'Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.';
+    }
+
+    // 4. Payment & Stripe Errors
+    if (
+        lower.includes('stripe') ||
+        lower.includes('checkout') ||
+        lower.includes('payment') ||
+        lower.includes('zahlungssitzung')
+    ) {
+        return 'Die Bezahlung konnte nicht vorbereitet werden. Bitte versuche es in einem Moment erneut.';
+    }
+
+    // 5. Code Exceptions & DB Errors
+    if (
+        lower.includes('prisma') ||
+        lower.includes('sql') ||
+        lower.includes('database') ||
+        lower.includes('internal server error') ||
+        lower.includes('500') ||
+        lower.includes('typeerror') ||
+        lower.includes('referenceerror') ||
+        lower.includes('undefined') ||
+        lower.includes('null') ||
+        lower.includes('object object') ||
+        lower.includes('syntaxerror')
+    ) {
+        return 'Ein vorübergehender Systemfehler ist aufgetreten. Bitte versuche es in wenigen Momenten erneut.';
+    }
+
+    // 6. Not Found
+    if (lower.includes('not found') || lower.includes('404') || lower.includes('nicht gefunden')) {
+        return 'Der gewünschte Eintrag wurde leider nicht gefunden.';
+    }
+
+    // 7. Forbidden / Limits
+    if (lower.includes('forbidden') || lower.includes('403') || lower.includes('upgrade_required')) {
+        return 'Diese Aktion ist für dein Konto derzeit nicht verfügbar oder erfordert ein Upgrade.';
+    }
+
+    // If it looks like technical code/paths/URL, don't show raw string
+    if (raw.includes('http://') || raw.includes('https://') || raw.includes('/') && raw.includes('.js')) {
+        return fallback;
+    }
+
+    return raw;
+}
+

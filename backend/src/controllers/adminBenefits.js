@@ -1,17 +1,31 @@
-import { db } from '../prisma/db.js';
+import pool from '../config/database.js';
+import { toJsDate } from '../utils/temporal.js';
 
 /**
  * Helper to calculate expiration date from preset duration or custom date
+ * Supports ISO strings, YYYY-MM-DD, and German date format DD.MM.YYYY
+ * Returns a Temporal.Instant object for Prisma 8 / Postgres compatibility
  */
 const calculateExpiryDate = (durationDays, customEndDate) => {
     if (customEndDate) {
+        // Handle German date format e.g. "11.10.2026" or "11 . 10 . 2026"
+        if (typeof customEndDate === 'string' && customEndDate.includes('.')) {
+            const parts = customEndDate.split('.').map(p => p.trim());
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+                const d = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
+                if (!isNaN(d.getTime())) return Temporal.Instant.fromEpochMilliseconds(d.getTime());
+            }
+        }
         const d = new Date(customEndDate);
-        if (!isNaN(d.getTime())) return d.toISOString();
+        if (!isNaN(d.getTime())) return Temporal.Instant.fromEpochMilliseconds(d.getTime());
     }
     const days = Math.max(1, Number(durationDays) || 30);
     const date = new Date();
     date.setDate(date.getDate() + days);
-    return date.toISOString();
+    return Temporal.Instant.fromEpochMilliseconds(date.getTime());
 };
 
 /**
@@ -19,56 +33,44 @@ const calculateExpiryDate = (durationDays, customEndDate) => {
  */
 export const sendSystemNotificationToUser = async (userId, title, content) => {
     try {
-        // Find or create a conversation with the admin / system
-        const adminUser = await db.orm.public.User
-            .where({ role: 'ADMIN' })
-            .first()
-            .catch(() => null);
-
-        if (!adminUser || adminUser.id === userId) return null;
+        const adminRes = await pool.query("SELECT id FROM users WHERE role = 'ADMIN' LIMIT 1");
+        if (adminRes.rows.length === 0) return null;
+        const adminId = adminRes.rows[0].id;
+        if (adminId === userId) return null;
 
         // Check if a conversation between admin and user exists
-        let conversation = await db.orm.public.Conversation
-            .where({
-                buyer_id: userId,
-                seller_id: adminUser.id,
-            })
-            .first()
-            .catch(() => null);
+        let convRes = await pool.query(
+            `SELECT id FROM conversations 
+             WHERE (buyer_id = $1 AND seller_id = $2) OR (buyer_id = $2 AND seller_id = $1) 
+             LIMIT 1`,
+            [userId, adminId]
+        );
 
-        if (!conversation) {
-            conversation = await db.orm.public.Conversation
-                .where({
-                    buyer_id: adminUser.id,
-                    seller_id: userId,
-                })
-                .first()
-                .catch(() => null);
-        }
+        let convId = convRes.rows[0]?.id;
 
-        // If still no conversation, create one linked to any listing or null
-        if (!conversation) {
-            const anyListing = await db.orm.public.Listing
-                .where({ user_id: userId })
-                .first()
-                .catch(() => null);
-
-            if (anyListing) {
-                conversation = await db.orm.public.Conversation.create({
-                    listing_id: anyListing.id,
-                    buyer_id: adminUser.id,
-                    seller_id: userId,
-                }).catch(() => null);
+        if (!convId) {
+            // Find any listing of user or admin to associate
+            const listRes = await pool.query(
+                `SELECT id FROM listings WHERE user_id = $1 OR user_id = $2 LIMIT 1`,
+                [userId, adminId]
+            );
+            if (listRes.rows.length > 0) {
+                const newConvRes = await pool.query(
+                    `INSERT INTO conversations (id, listing_id, buyer_id, seller_id, created_at, updated_at)
+                     VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
+                     RETURNING id`,
+                    [listRes.rows[0].id, adminId, userId]
+                );
+                convId = newConvRes.rows[0]?.id;
             }
         }
 
-        if (conversation) {
-            await db.orm.public.Message.create({
-                conversation_id: conversation.id,
-                sender_id: adminUser.id,
-                content: `🔔 **${title}**\n\n${content}`,
-                is_read: false,
-            }).catch(() => null);
+        if (convId) {
+            await pool.query(
+                `INSERT INTO messages (id, conversation_id, sender_id, content, is_read, created_at)
+                 VALUES (gen_random_uuid(), $1, $2, $3, FALSE, NOW())`,
+                [convId, adminId, `🔔 **${title}**\n\n${content}`]
+            );
         }
     } catch (err) {
         console.warn('⚠️ Could not send inbox message:', err.message);
@@ -95,18 +97,21 @@ export const grantAdminBenefit = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Benutzer-ID ist erforderlich.' });
         }
 
-        const targetUser = await db.orm.public.User
-            .where({ id: user_id })
-            .include('company_profile')
-            .include('private_profile')
-            .first();
+        const userRes = await pool.query(
+            `SELECT u.id, u.email, u.user_type, u.role, cp.id AS company_profile_id, cp.tier AS company_tier 
+             FROM users u 
+             LEFT JOIN company_profiles cp ON cp.user_id = u.id 
+             WHERE u.id = $1`,
+            [user_id]
+        );
 
-        if (!targetUser) {
+        if (userRes.rows.length === 0) {
             return res.status(404).json({ success: false, error: 'Benutzer nicht gefunden.' });
         }
 
+        const targetUser = userRes.rows[0];
         const expiresAt = calculateExpiryDate(duration_days, custom_end_date);
-        const expiryFormatted = new Date(expiresAt).toLocaleDateString('de-DE', {
+        const expiryFormatted = toJsDate(expiresAt).toLocaleDateString('de-DE', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
@@ -124,48 +129,44 @@ export const grantAdminBenefit = async (req, res) => {
                 });
             }
 
-            const businessPlan = await db.orm.public.Plan
-                .where({ name: 'BUSINESS' })
-                .first();
-
-            if (!businessPlan) {
+            const planRes = await pool.query("SELECT id FROM plans WHERE name = 'BUSINESS' LIMIT 1");
+            if (planRes.rows.length === 0) {
                 return res.status(500).json({ success: false, error: 'Business-Tarif nicht in der Datenbank gefunden.' });
             }
+            const businessPlanId = planRes.rows[0].id;
 
             // Deactivate any existing active subscriptions
-            const activeSubs = await db.orm.public.Subscription
-                .where({ user_id, status: 'ACTIVE' })
-                .all();
-
-            for (const sub of activeSubs) {
-                await db.orm.public.Subscription
-                    .where((s) => s.id.eq(sub.id))
-                    .update({ status: 'CANCELLED', cancelled_at: new Date().toISOString() });
-            }
+            await pool.query(
+                `UPDATE subscriptions 
+                 SET status = 'CANCELLED', cancelled_at = NOW(), updated_at = NOW() 
+                 WHERE user_id = $1 AND status = 'ACTIVE'`,
+                [user_id]
+            );
 
             // Create complimentary subscription
-            const newSub = await db.orm.public.Subscription.create({
-                user_id,
-                plan_id: businessPlan.id,
-                status: 'ACTIVE',
-                started_at: new Date().toISOString(),
-                expires_at: expiresAt,
-                payment_method: 'ADMIN_GRANT',
-                amount_paid_cents: 0,
-                notes: JSON.stringify({
-                    type: 'COMPLIMENTARY_GRANT',
-                    granted_by_admin: req.user.email,
-                    reason: admin_note,
-                    auto_renew: false,
-                    is_complimentary: true,
-                }),
+            const notesJson = JSON.stringify({
+                type: 'COMPLIMENTARY_GRANT',
+                granted_by_admin: req.user?.email || 'Administration',
+                reason: admin_note,
+                auto_renew: false,
+                is_complimentary: true,
             });
 
+            const subInsertRes = await pool.query(
+                `INSERT INTO subscriptions (
+                    user_id, plan_id, status, started_at, expires_at, payment_method, amount_paid_cents, notes, created_at, updated_at
+                ) VALUES ($1, $2, 'ACTIVE', NOW(), $3, 'ADMIN_GRANT', 0, $4, NOW(), NOW())
+                RETURNING *`,
+                [user_id, businessPlanId, expiresAt, notesJson]
+            );
+            const newSub = subInsertRes.rows[0];
+
             // Ensure company profile has BUSINESS tier
-            if (targetUser.company_profile) {
-                await db.orm.public.CompanyProfile
-                    .where((cp) => cp.user_id.eq(user_id))
-                    .update({ tier: 'BUSINESS' });
+            if (targetUser.company_profile_id) {
+                await pool.query(
+                    `UPDATE company_profiles SET tier = 'BUSINESS', updated_at = NOW() WHERE user_id = $1`,
+                    [user_id]
+                );
             }
 
             // Send notification message to user
@@ -184,20 +185,20 @@ export const grantAdminBenefit = async (req, res) => {
                 return res.status(400).json({ success: false, error: 'Bitte wähle ein Inserat aus.' });
             }
 
-            const listing = await db.orm.public.Listing
-                .where({ id: listing_id, user_id })
-                .first();
+            const listingRes = await pool.query(
+                `SELECT id, title FROM listings WHERE id = $1 AND user_id = $2 LIMIT 1`,
+                [listing_id, user_id]
+            );
 
-            if (!listing) {
+            if (listingRes.rows.length === 0) {
                 return res.status(404).json({ success: false, error: 'Inserat nicht gefunden oder gehört nicht zu diesem Benutzer.' });
             }
+            const listing = listingRes.rows[0];
 
-            await db.orm.public.Listing
-                .where((l) => l.id.eq(listing_id))
-                .update({
-                    featured: true,
-                    boosted_until: expiresAt,
-                });
+            await pool.query(
+                `UPDATE listings SET featured = TRUE, boosted_until = $1, updated_at = NOW() WHERE id = $2`,
+                [expiresAt, listing_id]
+            );
 
             // Send notification
             await sendSystemNotificationToUser(
@@ -212,16 +213,17 @@ export const grantAdminBenefit = async (req, res) => {
         // ── 3. SPOTLIGHT (Homepage - Commercial accounts only) ──
         else if (benefit_type === 'SPOTLIGHT') {
             const isPrivate = (targetUser.user_type === 'PRIVATE' || targetUser.account_type === 'PRIVATE');
-            if (isPrivate || !targetUser.company_profile) {
+            if (isPrivate || !targetUser.company_profile_id) {
                 return res.status(400).json({
                     success: false,
                     error: 'Homepage-Spotlights sind gewerblichen Profilen mit Firmenprofil vorbehalten. Für Privatnutzer stehen Inserate-Boosts und Campuna Credits zur Verfügung.'
                 });
             }
 
-            await db.orm.public.CompanyProfile
-                .where((cp) => cp.user_id.eq(user_id))
-                .update({ spotlight_until: expiresAt });
+            await pool.query(
+                `UPDATE company_profiles SET spotlight_until = $1, updated_at = NOW() WHERE user_id = $2`,
+                [expiresAt, user_id]
+            );
 
             await sendSystemNotificationToUser(
                 user_id,
@@ -236,17 +238,19 @@ export const grantAdminBenefit = async (req, res) => {
         else if (benefit_type === 'CREDITS') {
             const amount = Math.max(1, Number(credits_amount) || 500);
 
-            const tx = await db.orm.public.CreditTransaction.create({
-                user_id,
-                amount,
-                type: 'ADMIN_GRANT',
-                description: admin_note || 'Gutschrift durch Campuna Administration',
-            });
+            const txRes = await pool.query(
+                `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
+                 VALUES ($1, $2, 'ADMIN_GRANT', $3, NOW())
+                 RETURNING *`,
+                [user_id, amount, admin_note || 'Gutschrift durch Campuna Administration']
+            );
+            const tx = txRes.rows[0];
 
-            const allTx = await db.orm.public.CreditTransaction
-                .where({ user_id })
-                .all();
-            const newBalance = allTx.reduce((sum, t) => sum + t.amount, 0);
+            const balRes = await pool.query(
+                `SELECT COALESCE(SUM(amount), 0) AS balance FROM credit_transactions WHERE user_id = $1`,
+                [user_id]
+            );
+            const newBalance = Number(balRes.rows[0].balance);
 
             await sendSystemNotificationToUser(
                 user_id,
@@ -279,23 +283,23 @@ export const grantAdminBenefit = async (req, res) => {
  */
 export const applyCommercialTransitionPeriod = async (req, res) => {
     try {
-        const commercialUsers = await db.orm.public.User
-            .where({ user_type: 'COMMERCIAL' })
-            .include('company_profile')
-            .all();
+        const commercialUsersRes = await pool.query(
+            `SELECT u.id, cp.id AS company_profile_id 
+             FROM users u 
+             LEFT JOIN company_profiles cp ON cp.user_id = u.id 
+             WHERE u.user_type = 'COMMERCIAL'`
+        );
 
-        const businessPlan = await db.orm.public.Plan
-            .where({ name: 'BUSINESS' })
-            .first();
-
-        if (!businessPlan) {
+        const planRes = await pool.query("SELECT id FROM plans WHERE name = 'BUSINESS' LIMIT 1");
+        if (planRes.rows.length === 0) {
             return res.status(500).json({ success: false, error: 'Business-Tarif nicht gefunden.' });
         }
+        const businessPlanId = planRes.rows[0].id;
 
         const transitionDays = 90; // 3 months
         const date = new Date();
         date.setDate(date.getDate() + transitionDays);
-        const expiresAt = date.toISOString();
+        const expiresAt = Temporal.Instant.fromEpochMilliseconds(date.getTime());
         const expiryFormatted = date.toLocaleDateString('de-DE', {
             day: '2-digit',
             month: '2-digit',
@@ -304,38 +308,35 @@ export const applyCommercialTransitionPeriod = async (req, res) => {
 
         let updatedCount = 0;
 
-        for (const user of commercialUsers) {
-            // Check if already has an active subscription
-            const existingActive = await db.orm.public.Subscription
-                .where({ user_id: user.id, status: 'ACTIVE' })
-                .first();
+        for (const user of commercialUsersRes.rows) {
+            const activeSub = await pool.query(
+                `SELECT id FROM subscriptions WHERE user_id = $1 AND status = 'ACTIVE' LIMIT 1`,
+                [user.id]
+            );
 
-            if (!existingActive) {
-                // Grant 3-month transition subscription
-                await db.orm.public.Subscription.create({
-                    user_id: user.id,
-                    plan_id: businessPlan.id,
-                    status: 'ACTIVE',
-                    started_at: new Date().toISOString(),
-                    expires_at: expiresAt,
-                    payment_method: 'TRANSITION_PERIOD',
-                    amount_paid_cents: 0,
-                    notes: JSON.stringify({
-                        type: 'MIGRATION_3_MONTH_TRANSITION',
-                        is_transition_period: true,
-                        is_complimentary: true,
-                        auto_renew: false,
-                        expires_at: expiresAt,
-                    }),
+            if (activeSub.rows.length === 0) {
+                const notesJson = JSON.stringify({
+                    type: 'MIGRATION_3_MONTH_TRANSITION',
+                    is_transition_period: true,
+                    is_complimentary: true,
+                    auto_renew: false,
+                    expires_at: expiresAt.toString(),
                 });
 
-                if (user.company_profile) {
-                    await db.orm.public.CompanyProfile
-                        .where((cp) => cp.user_id.eq(user.id))
-                        .update({ tier: 'BUSINESS' });
+                await pool.query(
+                    `INSERT INTO subscriptions (
+                        user_id, plan_id, status, started_at, expires_at, payment_method, amount_paid_cents, notes, created_at, updated_at
+                    ) VALUES ($1, $2, 'ACTIVE', NOW(), $3, 'TRANSITION_PERIOD', 0, $4, NOW(), NOW())`,
+                    [user.id, businessPlanId, expiresAt, notesJson]
+                );
+
+                if (user.company_profile_id) {
+                    await pool.query(
+                        `UPDATE company_profiles SET tier = 'BUSINESS', updated_at = NOW() WHERE user_id = $1`,
+                        [user.id]
+                    );
                 }
 
-                // Send transition notification message to their inbox
                 await sendSystemNotificationToUser(
                     user.id,
                     'Deine 3-monatige Campuna Business Übergangsphase ist aktiv!',
@@ -368,13 +369,17 @@ export const applyCommercialTransitionPeriod = async (req, res) => {
 export const getAdminUserListings = async (req, res) => {
     try {
         const { userId } = req.params;
-        const listings = await db.orm.public.Listing
-            .where({ user_id: userId })
-            .all();
+        const resList = await pool.query(
+            `SELECT id, title, status, featured, boosted_until 
+             FROM listings 
+             WHERE user_id = $1 
+             ORDER BY created_at DESC`,
+            [userId]
+        );
 
         return res.status(200).json({
             success: true,
-            listings: listings.map(l => ({
+            listings: resList.rows.map(l => ({
                 id: l.id,
                 title: l.title,
                 status: l.status,

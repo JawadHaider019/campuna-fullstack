@@ -52,8 +52,8 @@ export default function FeedbackClient() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.name || !formData.email || !formData.message) {
-            toast.error('Bitte fülle alle Pflichtfelder aus.');
+        if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+            toast.error('Bitte teile uns noch deinen Namen, deine E-Mail und deine Idee mit.');
             return;
         }
 
@@ -61,7 +61,7 @@ export default function FeedbackClient() {
         setTimeout(() => {
             setIsSubmitting(false);
             setIsSubmitted(true);
-            toast.success('Vielen Dank für dein wertvolles Feedback!');
+            toast.success('Vielen Dank für dein Feedback! Wir freuen uns sehr über deine Idee.');
         }, 800);
     };
 

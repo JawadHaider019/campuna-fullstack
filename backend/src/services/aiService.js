@@ -1,9 +1,11 @@
 import OpenAI from 'openai';
 
-// Client pointing to local llama-server (OpenAI compatible on port 8080)
+// Client pointing to local llama-server (OpenAI compatible on port 8080) with fast timeout
 const client = new OpenAI({
     baseURL: process.env.LOCAL_AI_BASE_URL || 'http://localhost:8080/v1',
     apiKey: process.env.LOCAL_AI_API_KEY || 'no-key-required',
+    timeout: 3000,
+    maxRetries: 0
 });
 
 /**

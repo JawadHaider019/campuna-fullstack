@@ -27,6 +27,7 @@ import {
     ChevronDown
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import {
     getAdminFeedbacks,
     updateAdminFeedbackStatus
@@ -107,7 +108,7 @@ export default function AdminFeedbackPage() {
             }
         } catch (err) {
             console.error('Error fetching admin feedbacks:', err);
-            if (!silent) toast.error('Fehler beim Laden der Feedbacks.');
+            if (!silent) toast.error(getFriendlyErrorMessage(err, 'Die Feedback-Einträge konnten nicht geladen werden. Bitte versuche es kurz erneut.'));
         } finally {
             if (!silent) setLoading(false);
             setRefreshing(false);
@@ -194,7 +195,7 @@ export default function AdminFeedbackPage() {
             toast.success(newVal ? 'Zu Favoriten hinzugefügt' : 'Aus Favoriten entfernt');
         } catch (err) {
             console.error('Error toggling favorite:', err);
-            toast.error('Fehler beim Aktualisieren des Favoritenstatus.');
+            toast.error(getFriendlyErrorMessage(err, 'Der Favoritenstatus konnte nicht geändert werden.'));
             fetchFeedbacks(true);
         }
     };
@@ -213,7 +214,7 @@ export default function AdminFeedbackPage() {
             toast.success(`Priorität auf "${PRIORITY_CONFIG[newPriority]?.label || newPriority}" gesetzt.`);
         } catch (err) {
             console.error('Error updating priority:', err);
-            toast.error('Fehler beim Aktualisieren der Priorität.');
+            toast.error(getFriendlyErrorMessage(err, 'Die Priorität konnte nicht aktualisiert werden.'));
             fetchFeedbacks(true);
         }
     };
@@ -233,7 +234,7 @@ export default function AdminFeedbackPage() {
             toast.success(newStatus === 'RESOLVED' ? 'Feedback als erledigt markiert.' : 'Feedback wieder auf Offen gesetzt.');
         } catch (err) {
             console.error('Error updating status:', err);
-            toast.error('Fehler beim Aktualisieren des Status.');
+            toast.error(getFriendlyErrorMessage(err, 'Der Status konnte nicht geändert werden.'));
             fetchFeedbacks(true);
         }
     };
@@ -243,14 +244,14 @@ export default function AdminFeedbackPage() {
         setSavingNoteId(feedbackId);
         try {
             await updateAdminFeedbackStatus(feedbackId, { admin_note: noteText });
-            toast.success('Interne Notiz gespeichert.');
+            toast.success('Interne Notiz erfolgreich gespeichert.');
             setRawFeedbacks(prev => prev.map(f => f.id === feedbackId ? { ...f, admin_note: noteText } : f));
             if (selectedFeedback && selectedFeedback.id === feedbackId) {
                 setSelectedFeedback(prev => ({ ...prev, admin_note: noteText }));
             }
         } catch (err) {
             console.error('Error saving note:', err);
-            toast.error('Fehler beim Speichern der Notiz.');
+            toast.error(getFriendlyErrorMessage(err, 'Die Notiz konnte nicht gespeichert werden.'));
         } finally {
             setSavingNoteId(null);
         }

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import 'temporal-polyfill/full/global';
 import 'express-async-errors';
 import express from 'express';
 import http from 'http';
@@ -16,6 +17,7 @@ import adminRoutes from './routes/admin.js';
 import conversationRoutes from './routes/conversations.js';
 import broadcastRoutes from './routes/broadcasts.js';
 import postsRoutes from './routes/posts.js';
+import tipsRoutes from './routes/tips.js';
 import aiRoutes from './routes/ai.js';
 import contactRoutes from './routes/contact.js';
 import stripeRoutes from './routes/stripe.js';
@@ -26,6 +28,7 @@ import './config/initChatTables.js';
 import './config/initReportsTable.js';
 import { initBroadcastsTable } from './config/initBroadcastsTable.js';
 import { initBlogPostsTable } from './config/initBlogPostsTable.js';
+import { initTipsTable } from './config/initTipsTable.js';
 import { initFeedbackTable } from './config/initFeedbackTable.js';
 import path from 'path';
 import fs from 'fs';
@@ -35,6 +38,9 @@ initBroadcastsTable().catch(e => console.error('Broadcasts init error:', e.messa
 
 // Initialize blog posts table
 initBlogPostsTable().catch(e => console.error('Blog posts init error:', e.message));
+
+// Initialize camping tips table
+initTipsTable().catch(e => console.error('Tips init error:', e.message));
 
 // Initialize user feedback table
 initFeedbackTable().catch(e => console.error('Feedback init error:', e.message));
@@ -93,6 +99,7 @@ app.use('/api/favorites', favoritesRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/broadcasts', broadcastRoutes);
 app.use('/api/posts', postsRoutes);
+app.use('/api/tips', tipsRoutes);
 app.use('/api', feedbackRoutes);
 app.use('/api/admin', adminRoutes);
 
@@ -111,7 +118,7 @@ app.use((err, req, res, next) => {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({
         success: false,
-        error: 'Die Datei ist zu groß. Maximale Dateigröße ist 5 MB.'
+        error: 'Die Datei ist zu groß. Maximale Dateigröße ist 25 MB.'
       });
     }
     return res.status(400).json({

@@ -28,6 +28,7 @@ import { getListingDetail, boostListing, getMyListings } from '@/api/listings';
 import { getCreditBalance } from '@/api/profile';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import { getImageUrl } from '@/utils/imageUrl';
 import CoinIcon from '@/app/components/CoinIcon';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
@@ -140,7 +141,7 @@ export default function BoostListingPage() {
                 }
             } catch (err) {
                 console.error('Error loading boost page data:', err);
-                toast.error('Fehler beim Laden des Inserats.');
+                toast.error(getFriendlyErrorMessage(err, 'Die Daten für das Inserat konnten nicht geladen werden. Bitte lade die Seite neu.'));
             } finally {
                 if (active) setLoading(false);
             }
@@ -189,12 +190,12 @@ export default function BoostListingPage() {
         if (!listing?.id) return;
 
         if (listing.status !== 'APPROVED') {
-            toast.error('Nur freigegebene (aktive) Inserate können hervorgehoben werden.');
+            toast.error('Nur bereits freigegebene und aktive Inserate können hervorgehoben werden.');
             return;
         }
 
         if (paymentMethod === 'CREDIT' && !hasEnoughCredits) {
-            toast.error(`Nicht genügend Credits (${creditBalance} CC vorhanden, ${activePackage.costCC} CC benötigt).`);
+            toast.error(`Dein Credit-Guthaben reicht dafür noch nicht aus (${creditBalance.toLocaleString('de-DE')} CC vorhanden, ${activePackage.costCC.toLocaleString('de-DE')} CC benötigt).`);
             return;
         }
 
@@ -202,24 +203,24 @@ export default function BoostListingPage() {
         const toastId = toast.loading(
             paymentMethod === 'CREDIT'
                 ? 'Campuna Credits werden abgebucht...'
-                : `Zahlung von ${activePackage.priceEur} wird abgewickelt...`
+                : `Zahlung von ${activePackage.priceEur} wird vorbereitet...`
         );
 
         try {
             const res = await boostListing(listing.id, selectedDays, paymentMethod);
             if (res?.success || res?.data?.success) {
-                toast.success(`🎉 Inserat erfolgreich für ${selectedDays} Tage hervorgehoben!`, { id: toastId });
+                toast.success(`Geschafft! Dein Inserat ist jetzt für ${selectedDays} Tage hervorgehoben.`, { id: toastId });
                 setBoostResult(res.data);
                 setIsSuccess(true);
                 if (res.data?.new_balance !== undefined) {
                     setCreditBalance(res.data.new_balance);
                 }
             } else {
-                toast.error(res?.error || res?.data?.error || 'Hervorheben fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res?.error || res?.data?.error, 'Das Inserat konnte leider nicht hervorgehoben werden. Bitte versuche es kurz erneut.'), { id: toastId });
             }
         } catch (err) {
             console.error('Boost error:', err);
-            toast.error(err.response?.data?.error || err.message || 'Hervorheben fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Das Inserat konnte leider nicht hervorgehoben werden. Bitte versuche es kurz erneut.'), { id: toastId });
         } finally {
             setIsSubmitting(false);
         }

@@ -580,7 +580,7 @@ export default function UserDashboard({
                                 </div>
                                 <div>
                                     <h3 className="font-black text-forest text-lg sm:text-xl font-display">
-                                        Graph 1: Reichweiten-, Verkaufs- & Lead-Verlauf
+                                        Performance- & Reichweitenverlauf
                                     </h3>
                                     <p className="text-xs text-charcoal/50">
                                         Entwicklung von Fahrzeugaufrufen, Suchimpressionen und echten Käuferinteraktionen
@@ -645,6 +645,16 @@ export default function UserDashboard({
                         </div>
                     ) : (
                         <div className="space-y-4">
+                            {/* Live Tracking Status Notice */}
+                            {totalViews === 0 && (
+                                <div className="p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs text-emerald-950 flex items-center gap-2.5">
+                                    <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                                    <span className="text-[11px] leading-relaxed">
+                                        <strong>Live-Tracking aktiv:</strong> Deine Inserate sind online geschaltet. Sobald Besucher deine Angebote auf Campuna aufrufen, visualisiert dieses Dashboard deine täglichen Klicks & Kaufanfragen in Echtzeit.
+                                    </span>
+                                </div>
+                            )}
+
                             {/* Hover info tooltip card */}
                             <div className="flex items-center justify-between px-2 text-xs">
                                 <div className="flex items-center gap-2">
@@ -775,7 +785,7 @@ export default function UserDashboard({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                     {/* ═════════════════════════════════════════════════════
-                        GRAPH 2: SELLING & DEMAND BY CATEGORY (SVG DONUT GRAPH)
+                        KATEGORIE-VERTEILUNG & NACHFRAGE
                        ═════════════════════════════════════════════════════ */}
                     <div className="bg-white rounded-3xl p-6 sm:p-7 border border-beige shadow-xs flex flex-col justify-between space-y-6">
                         <div className="space-y-1.5">
@@ -785,11 +795,11 @@ export default function UserDashboard({
                                         <PieChartIcon className="w-4 h-4" />
                                     </div>
                                     <h3 className="font-black text-forest text-base sm:text-lg">
-                                        Graph 2: Nachfrage & Verkauf nach Kategorie
+                                        Kategorie-Verteilung & Nachfrage
                                     </h3>
                                 </div>
                                 <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#faf8f3] text-charcoal/70 border border-beige">
-                                    Marktanteile (Donut)
+                                    Kategorie-Mix
                                 </span>
                             </div>
                             <p className="text-xs text-charcoal/50">
@@ -863,10 +873,10 @@ export default function UserDashboard({
                                         <div className="flex items-center gap-1.5">
                                             <span className="font-bold text-charcoal">{cat.name}</span>
                                             <span className="text-[9px] px-1.5 py-0.2 rounded-md font-bold uppercase bg-white border border-beige text-charcoal/60">
-                                                {cat.badge}
+                                                {cat.share}% Anteil
                                             </span>
                                         </div>
-                                        <span className="font-bold text-emerald-700 font-mono">{cat.leads} Leads generiert</span>
+                                        <span className="text-emerald-700 font-mono">{cat.leads} Leads generiert</span>
                                     </div>
 
                                     {/* Progress Share Line */}
@@ -880,14 +890,17 @@ export default function UserDashboard({
                             ))}
                         </div>
 
-                        <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-[11px] text-emerald-950 flex items-center gap-2.5">
-                            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-                            <span><strong>Vertriebstipp:</strong> Wohnmobile & Campervans verzeichnen die schnellste Umschlagskraft. Erhöhe hier dein Inserats-Kontingent.</span>
+                        {/* Recommendation Note */}
+                        <div className="p-3.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/60 text-xs flex items-center gap-2.5 text-forest">
+                            <span className="text-base shrink-0">💡</span>
+                            <span className="text-[11px] leading-relaxed">
+                                <strong>Vertriebstipp:</strong> {categoryStats[0]?.name || 'Wohnmobile'} erzielen aktuell die höchste Interaktionsrate pro Inserat auf Campuna.
+                            </span>
                         </div>
                     </div>
 
                     {/* ═════════════════════════════════════════════════════
-                        GRAPH 3: TOP PERFORMING LISTINGS (SVG BAR CHART)
+                        TOP PERFORMING LISTINGS
                        ═════════════════════════════════════════════════════ */}
                     <div className="bg-white rounded-3xl p-6 sm:p-7 border border-beige shadow-xs flex flex-col justify-between space-y-6">
                         <div className="space-y-1.5">
@@ -897,11 +910,11 @@ export default function UserDashboard({
                                         <BarChart3 className="w-4 h-4" />
                                     </div>
                                     <h3 className="font-black text-forest text-base sm:text-lg">
-                                        Graph 3: Top-Performer & Meistbesuchte
+                                        Top-Performer & Inserate-Ranking
                                     </h3>
                                 </div>
                                 <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-forest text-sand">
-                                    Vergleichs-Balken (SVG)
+                                    Fahrzeug-Ranking
                                 </span>
                             </div>
                             <p className="text-xs text-charcoal/50">
@@ -909,86 +922,72 @@ export default function UserDashboard({
                             </p>
                         </div>
 
-                        {/* Top Inserate Visual Comparative SVG Bar Graph */}
+                        {/* Top Inserate Visual Comparative Ranking */}
                         <div className="space-y-3.5 py-1">
                             {userListings.length > 0 ? (
-                                userListings.slice(0, 4).map((listing, idx) => {
-                                    const views = Math.floor(Math.max(140, (totalViews / Math.max(1, userListings.length)) * (1.7 - idx * 0.25)));
-                                    const leadsCount = Math.max(1, Math.floor(views / 30));
-                                    const relativePct = Math.min(100, Math.max(30, 100 - idx * 20));
+                                (() => {
+                                    const maxViews = Math.max(...userListings.map(l => parseInt(l.views ?? l.views_count ?? l.viewsCount ?? 0, 10)), 0);
+                                    return userListings.slice(0, 4).map((listing, idx) => {
+                                        const views = parseInt(listing.views ?? listing.views_count ?? listing.viewsCount ?? 0, 10);
+                                        const leadsCount = views > 0 ? Math.max(1, Math.round(views * 0.035)) : 0;
+                                        const relativePct = maxViews > 0
+                                            ? Math.max(15, Math.round((views / maxViews) * 100))
+                                            : Math.max(20, 100 - idx * 25);
 
-                                    return (
-                                        <div
-                                            key={listing.id || idx}
-                                            className="p-3.5 bg-[#faf8f3] hover:bg-sand/60 rounded-2xl border border-beige transition-all space-y-2 group"
-                                        >
-                                            <div className="flex items-center justify-between gap-2 text-xs">
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black font-mono shrink-0 shadow-xs ${
-                                                        idx === 0 ? 'bg-gold text-forest' : idx === 1 ? 'bg-slate-300 text-charcoal' : 'bg-stone-200 text-charcoal/60'
-                                                    }`}>
-                                                        #{idx + 1}
-                                                    </span>
-                                                    <span className="font-bold text-charcoal truncate max-w-[200px]">{listing.title}</span>
-                                                </div>
-                                                <span className="font-mono font-black text-forest shrink-0">
-                                                    {formatPrice(listing.price)}
-                                                </span>
-                                            </div>
-
-                                            {/* SVG Visual Horizontal Bar */}
-                                            <div className="w-full h-3 bg-stone-200 rounded-full overflow-hidden p-0.5">
-                                                <div
-                                                    className="h-full rounded-full bg-gradient-to-r from-forest via-emerald-600 to-emerald-400 transition-all duration-700 group-hover:brightness-110"
-                                                    style={{ width: `${relativePct}%` }}
-                                                />
-                                            </div>
-
-                                            <div className="flex items-center justify-between text-[10px] text-charcoal/60">
-                                                <span className="font-mono"><strong>{views}</strong> Aufrufe • <strong>{leadsCount} Anfragen</strong></span>
-                                                <span className="text-forest font-bold">{listing.category || 'Camping'}</span>
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                [
-                                    { title: 'Hymer B-Klasse MasterLine I 780', price: '129.500 €', views: 890, leads: 16, cat: 'Wohnmobil', pct: 95 },
-                                    { title: 'Pössl 2Win Plus Citroën Jumper', price: '54.900 €', views: 640, leads: 12, cat: 'Campervan', pct: 76 },
-                                    { title: 'Knaus Südwind 500 FU Caravan', price: '26.800 €', views: 420, leads: 7, cat: 'Wohnwagen', pct: 54 },
-                                    { title: 'iKamper Skycamp 3.0 Dachzelt', price: '4.250 €', views: 290, leads: 5, cat: 'Zubehör', pct: 36 },
-                                ].map((item, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="p-3.5 bg-[#faf8f3] hover:bg-sand/60 rounded-2xl border border-beige transition-all space-y-2 group"
-                                    >
-                                        <div className="flex items-center justify-between gap-2 text-xs">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black font-mono shrink-0 shadow-xs ${
-                                                    idx === 0 ? 'bg-gold text-forest' : idx === 1 ? 'bg-slate-300 text-charcoal' : 'bg-stone-200 text-charcoal/60'
-                                                }`}>
-                                                    #{idx + 1}
-                                                </span>
-                                                <span className="font-bold text-charcoal truncate">{item.title}</span>
-                                            </div>
-                                            <span className="font-mono font-black text-forest shrink-0">
-                                                {item.price}
-                                            </span>
-                                        </div>
-
-                                        <div className="w-full h-3 bg-stone-200 rounded-full overflow-hidden p-0.5">
+                                        return (
                                             <div
-                                                className="h-full rounded-full bg-gradient-to-r from-forest via-emerald-600 to-emerald-400 group-hover:brightness-110"
-                                                style={{ width: `${item.pct}%` }}
-                                            />
-                                        </div>
+                                                key={listing.id || idx}
+                                                className="p-3.5 bg-[#faf8f3] hover:bg-sand/60 rounded-2xl border border-beige transition-all space-y-2 group"
+                                            >
+                                                <div className="flex items-center justify-between gap-2 text-xs">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <span className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black font-mono shrink-0 shadow-xs ${
+                                                            idx === 0 ? 'bg-gold text-forest' : idx === 1 ? 'bg-slate-300 text-charcoal' : 'bg-stone-200 text-charcoal/60'
+                                                        }`}>
+                                                            #{idx + 1}
+                                                        </span>
+                                                        <span className="font-bold text-charcoal truncate max-w-[200px]">{listing.title}</span>
+                                                    </div>
+                                                    <span className="font-mono font-black text-forest shrink-0">
+                                                        {formatPrice(listing.price)}
+                                                    </span>
+                                                </div>
 
-                                        <div className="flex items-center justify-between text-[10px] text-charcoal/60">
-                                            <span className="font-mono"><strong>{item.views}</strong> Aufrufe • <strong>{item.leads} Anfragen</strong></span>
-                                            <span className="text-forest font-bold">{item.cat}</span>
-                                        </div>
+                                                {/* Visual Horizontal Bar */}
+                                                <div className="w-full h-3 bg-stone-200 rounded-full overflow-hidden p-0.5">
+                                                    <div
+                                                        className="h-full rounded-full bg-gradient-to-r from-forest via-emerald-600 to-emerald-400 transition-all duration-700 group-hover:brightness-110"
+                                                        style={{ width: `${relativePct}%` }}
+                                                    />
+                                                </div>
+
+                                                <div className="flex items-center justify-between text-[10px] text-charcoal/60">
+                                                    <span className="font-mono"><strong>{views}</strong> Aufrufe • <strong>{leadsCount} Anfragen</strong></span>
+                                                    <span className="text-forest font-bold">{listing.category || 'Camping'}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })()
+                            ) : (
+                                <div className="py-8 px-4 text-center bg-[#faf8f3] rounded-2xl border border-dashed border-beige space-y-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-forest/10 text-forest mx-auto flex items-center justify-center">
+                                        <Plus className="w-5 h-5" />
                                     </div>
-                                ))
+                                    <div>
+                                        <p className="text-xs font-bold text-forest">Noch keine aktiven Inserate</p>
+                                        <p className="text-[11px] text-charcoal/50 max-w-xs mx-auto">
+                                            Erstelle deine Angebote, um dein persönliches Performance-Ranking zu aktivieren.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={onCreateListing}
+                                        className="px-4 py-2 bg-forest text-sand text-[11px] font-bold rounded-xl hover:bg-forest-light transition-all cursor-pointer"
+                                    >
+                                        Erstes Inserat erstellen
+                                    </button>
+                                </div>
                             )}
                         </div>
 
@@ -1018,7 +1017,7 @@ export default function UserDashboard({
                     {/* Device Breakdown with Mini SVG Donut */}
                     <div className="p-5 bg-white rounded-3xl border border-beige space-y-4 text-xs shadow-xs">
                         <span className="font-bold text-charcoal/70 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                            <Sliders className="w-3.5 h-3.5 text-forest" /> Endgeräte-Verteilung (Graph)
+                            <Sliders className="w-3.5 h-3.5 text-forest" /> Endgeräte-Verteilung
                         </span>
                         
                         {/* Mini Visual Donut */}

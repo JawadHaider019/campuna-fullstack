@@ -15,6 +15,7 @@ import {
 } from '@/api/auth';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import { PROVIDER_CATEGORIES } from '@/data';
 
 /* ─── Glass input ─── */
@@ -203,14 +204,15 @@ function AuthFormContent({ initialMode = 'login' }) {
                 setForgotStep('reset_password');
                 toast.success('Code erfolgreich bestätigt!');
             } else {
-                const err = res.error || 'Ungültiger oder abgelaufener Code.';
+                const err = getFriendlyErrorMessage(res.error, 'Der Code ist leider ungültig oder abgelaufen.');
                 setOtpError(err);
                 toast.error(err);
             }
         } catch (err) {
             setLoading(false);
-            setOtpError('Fehler beim Überprüfen des Codes.');
-            toast.error('Fehler beim Überprüfen des Codes.');
+            const friendlyErr = 'Der Code konnte nicht überprüft werden. Bitte versuche es erneut.';
+            setOtpError(friendlyErr);
+            toast.error(friendlyErr);
         }
     };
 
@@ -270,13 +272,13 @@ function AuthFormContent({ initialMode = 'login' }) {
                     if (res.success) {
                         setForgotStep('otp');
                         setOtpResendCooldown(120);
-                        toast.success('6-stelliger Bestätigungscode wurde per E-Mail gesendet!');
+                        toast.success('Bestätigungscode wurde an deine E-Mail-Adresse gesendet!');
                     } else {
-                        toast.error(res.error || 'Fehler beim Senden des Codes.');
+                        toast.error(getFriendlyErrorMessage(res.error, 'Der Bestätigungscode konnte nicht gesendet werden.'));
                     }
                 } catch (err) {
                     setLoading(false);
-                    toast.error('Fehler beim Anfordern des Codes.');
+                    toast.error('Der Bestätigungscode konnte nicht gesendet werden. Bitte versuche es erneut.');
                 }
             } else if (forgotStep === 'otp') {
                 const fullOtp = otpCode.join('');
@@ -301,7 +303,7 @@ function AuthFormContent({ initialMode = 'login' }) {
                     const res = await resetPassword(forgotEmail, resetToken, newPassword);
                     setLoading(false);
                     if (res.success) {
-                        toast.success('Passwort erfolgreich zurückgesetzt! Bitte logge dich ein.');
+                        toast.success('Passwort erfolgreich geändert! Bitte melde dich an.');
                         setLoginEmail(forgotEmail);
                         setMode('login');
                         setForgotStep('email');
@@ -311,12 +313,13 @@ function AuthFormContent({ initialMode = 'login' }) {
                         setResetToken('');
                         setResetError('');
                     } else {
-                        setResetError(res.error || 'Fehler beim Zurücksetzen des Passworts.');
-                        toast.error(res.error || 'Fehler beim Zurücksetzen des Passworts.');
+                        const friendlyErr = getFriendlyErrorMessage(res.error, 'Das Passwort konnte nicht geändert werden.');
+                        setResetError(friendlyErr);
+                        toast.error(friendlyErr);
                     }
                 } catch (err) {
                     setLoading(false);
-                    setResetError('Ein unerwarteter Fehler ist aufgetreten.');
+                    setResetError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut.');
                 }
             }
         } else if (mode === 'signup') {
@@ -370,7 +373,7 @@ function AuthFormContent({ initialMode = 'login' }) {
                 setMode('login');
                 toast.success('Bestätigungs-E-Mail gesendet! Bitte überprüfe dein Postfach.');
             } else {
-                const errMsg = response.error || 'Registrierung fehlgeschlagen.';
+                const errMsg = getFriendlyErrorMessage(response.error, 'Die Registrierung hat leider nicht geklappt. Bitte prüfe deine Angaben.');
                 setAuthError(errMsg);
                 toast.error(errMsg);
             }
@@ -402,7 +405,7 @@ function AuthFormContent({ initialMode = 'login' }) {
                     });
                     toast.error('Bitte bestätige zuerst deine E-Mail-Adresse.');
                 } else {
-                    const errMsg = response.error || 'Login fehlgeschlagen.';
+                    const errMsg = getFriendlyErrorMessage(response.error, 'Anmeldung fehlgeschlagen. Bitte prüfe deine E-Mail-Adresse und dein Passwort.');
                     setAuthError(errMsg);
                     toast.error(errMsg);
                 }
@@ -686,11 +689,11 @@ function AuthFormContent({ initialMode = 'login' }) {
                                                     setResendCooldown(120);
                                                     toast.success('Ein neuer Bestätigungslink wurde gesendet!');
                                                 } else {
-                                                    toast.error(res.error || 'Fehler beim Senden.');
+                                                    toast.error(getFriendlyErrorMessage(res.error, 'Der Bestätigungslink konnte nicht gesendet werden. Bitte versuche es kurz erneut.'));
                                                 }
                                             } catch {
                                                 setLoading(false);
-                                                toast.error('Fehler beim Senden des Links.');
+                                                toast.error('Der Bestätigungslink konnte gerade nicht gesendet werden. Bitte versuche es kurz erneut.');
                                             }
                                         }}
                                         className="w-full bg-gold/90 text-forest font-sans font-bold text-xs py-2.5 rounded-xl hover:bg-gold transition-all shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -842,10 +845,10 @@ function AuthFormContent({ initialMode = 'login' }) {
                                                             setOtpResendCooldown(120);
                                                             toast.success(`Neuer Code an ${forgotEmail} gesendet!`);
                                                         } else {
-                                                            toast.error(res.error || 'Fehler beim Senden des Codes.');
+                                                            toast.error(getFriendlyErrorMessage(res.error, 'Der Bestätigungscode konnte nicht gesendet werden. Bitte versuche es kurz erneut.'));
                                                         }
                                                     } catch {
-                                                        toast.error('Fehler beim erneuten Senden des Codes.');
+                                                        toast.error('Der Bestätigungscode konnte gerade nicht gesendet werden. Bitte versuche es kurz erneut.');
                                                     }
                                                 }}
                                                 className={`font-semibold transition-colors ${otpResendCooldown > 0 ? 'text-white/40 cursor-not-allowed' : 'text-gold/80 hover:text-gold cursor-pointer'}`}
@@ -947,11 +950,11 @@ function AuthFormContent({ initialMode = 'login' }) {
                                                             setResendCooldown(120);
                                                             toast.success('Neuer Bestätigungslink wurde gesendet!');
                                                         } else {
-                                                            toast.error(res.error || 'Fehler beim Senden.');
+                                                            toast.error(getFriendlyErrorMessage(res.error, 'Der Bestätigungslink konnte nicht gesendet werden. Bitte versuche es kurz erneut.'));
                                                         }
                                                     } catch {
                                                         setLoading(false);
-                                                        toast.error('Fehler beim Senden des Links.');
+                                                        toast.error('Der Bestätigungslink konnte gerade nicht gesendet werden. Bitte versuche es kurz erneut.');
                                                     }
                                                 }}
                                                 className={`font-semibold transition-colors ${resendCooldown > 0 ? 'text-white/40 cursor-not-allowed' : 'text-gold hover:underline cursor-pointer'}`}

@@ -1,5 +1,6 @@
 import { db } from '../prisma/db.js';
 import { checkAndAwardReferralCreditsOnBusinessSubscription } from './referral.js';
+import { toJsDate, toTemporalInstant, nowInstant } from '../utils/temporal.js';
 
 // ─── Internal Helper ─────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export const getUserSubscription = async (userId) => {
 
     if (activeSub?.plan) {
         // Check if subscription has expired
-        if (activeSub.expires_at && new Date(activeSub.expires_at) < new Date()) {
+        if (activeSub.expires_at && toJsDate(activeSub.expires_at) < new Date()) {
             // Automatically mark subscription as EXPIRED
             await db.orm.public.Subscription
                 .where((s) => s.id.eq(activeSub.id))
@@ -262,7 +263,7 @@ export const subscribe = async (req, res) => {
             duration_months: monthsNum,
             total_price_cents: totalCost,
             credits_granted: creditsGranted,
-            subscribed_at: new Date().toISOString(),
+            subscribed_at: nowInstant().toString(),
         };
 
         // Use a transaction for atomicity
@@ -277,7 +278,7 @@ export const subscribe = async (req, res) => {
                     .where({ id: currentActive.id })
                     .update({
                         status: 'CANCELLED',
-                        cancelled_at: new Date().toISOString(),
+                        cancelled_at: nowInstant(),
                     });
             }
 
@@ -296,6 +297,7 @@ export const subscribe = async (req, res) => {
             // 3. Compute expiry
             const expiresAt = new Date();
             expiresAt.setMonth(expiresAt.getMonth() + monthsNum);
+            const expiresAtInstant = toTemporalInstant(expiresAt);
 
             // 4. Create new subscription
             const newSub = await tx.orm.public.Subscription.create({
@@ -306,7 +308,7 @@ export const subscribe = async (req, res) => {
                 amount_paid_cents: totalCost,
                 credit_tx_id: creditTxId,
                 notes: JSON.stringify(notesData),
-                expires_at: expiresAt.toISOString(),
+                expires_at: expiresAtInstant,
             });
 
             // 5. Grant 1,000 Campuna Credits welcome/subscription bonus
@@ -435,7 +437,7 @@ export const cancelSubscription = async (req, res) => {
         const updatedNotes = {
             ...notesData,
             cancellation: {
-                cancelled_at: new Date().toISOString(),
+                cancelled_at: nowInstant().toString(),
                 account_holder: account_holder || 'Bestätigt',
                 bank_or_card_last4: iban_or_card ? iban_or_card.replace(/\s/g, '').slice(-4) : 'Verifiziert',
                 reason: reason || 'Kein Grund angegeben',
@@ -470,7 +472,7 @@ export const cancelSubscription = async (req, res) => {
                 .where({ id: activeSub.id })
                 .update({
                     status: 'CANCELLED',
-                    cancelled_at: new Date().toISOString(),
+                    cancelled_at: nowInstant(),
                     notes: JSON.stringify(updatedNotes),
                 });
 
@@ -528,7 +530,7 @@ export const getInvoices = async (req, res) => {
                 }
             }
 
-            const invoiceYear = new Date(sub.created_at).getFullYear();
+            const invoiceYear = toJsDate(sub.created_at).getFullYear();
             const fallbackInvNum = `INV-${invoiceYear}-${String(sub.id).padStart(6, '0')}`;
 
             return {
@@ -643,7 +645,7 @@ export const getSubscriptionAnalytics = async (req, res) => {
 
         const activeCount = userListings.filter(l => ['APPROVED', 'REVIEW'].includes(l.status)).length;
         const approvedListings = userListings.filter(l => l.status === 'APPROVED');
-        const boostedCount = userListings.filter(l => l.boosted_until && new Date(l.boosted_until) > new Date()).length;
+        const boostedCount = userListings.filter(l => l.boosted_until && toJsDate(l.boosted_until) > new Date()).length;
 
         // Base metric multipliers calculated from active listings
         const countFactor = Math.max(1, activeCount);
@@ -711,7 +713,7 @@ export const getSubscriptionAnalytics = async (req, res) => {
 
         // Per-listing performance breakdown with actual database views
         const listingPerformance = userListings.map((l) => {
-            const isBoosted = Boolean(l.boosted_until && new Date(l.boosted_until) > new Date());
+            const isBoosted = Boolean(l.boosted_until && toJsDate(l.boosted_until) > new Date());
             const listViews = parseInt(l.views || l.views_count || 0, 10);
             const listImpressions = Math.round(listViews * 4.5);
             const listLeads = Math.max(0, Math.round(listViews * 0.035));

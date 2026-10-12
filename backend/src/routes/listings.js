@@ -15,7 +15,7 @@ import {
 } from '../controllers/listings.js';
 import { createListingReport } from '../controllers/listingReports.js';
 import { authenticate, optionalAuthenticate } from '../middleware/authenticate.js';
-import { uploadMultiple } from '../middleware/upload.js';
+import { uploadMultipleSafe } from '../middleware/upload.js';
 
 const router = Router();
 
@@ -44,10 +44,10 @@ router.post('/csv-import', authenticate, importListingsFromCsv);
 router.post('/generate-description', generateDescriptionController);
 
 // POST /api/listings → Create listing
-router.post('/', authenticate, uploadMultiple, createListing);
+router.post('/', authenticate, uploadMultipleSafe, createListing);
 
 // PUT /api/listings/:id → Update listing (requires authentication & re-triggers moderation review)
-router.put('/:id', authenticate, uploadMultiple, updateListing);
+router.put('/:id', authenticate, uploadMultipleSafe, updateListing);
 
 // PATCH /api/listings/:id/status → Activate/Deactivate/Pause listing (owner or admin)
 router.patch('/:id/status', authenticate, toggleListingStatus);

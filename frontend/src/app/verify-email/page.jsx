@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { verifyEmailToken } from '@/api/auth';
 import useAuthStore from '@/store/useAuthStore';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import CircleLoader from '@/app/components/CircleLoader';
 
 function VerifyEmailContent() {
@@ -23,7 +24,7 @@ function VerifyEmailContent() {
     useEffect(() => {
         if (!token) {
             setStatus('error');
-            setErrorMessage('Kein Verifizierungstoken im Link gefunden.');
+            setErrorMessage('Der Bestätigungslink ist unvollständig oder ungültig.');
             return;
         }
 
@@ -38,24 +39,24 @@ function VerifyEmailContent() {
                     const data = res.data;
                     if (data?.user && data?.access_token) {
                         login(data.user, data.access_token, data.refresh_token);
-                        toast.success('E-Mail erfolgreich bestätigt! Willkommen bei Campuna.');
+                        toast.success('E-Mail-Adresse erfolgreich bestätigt! Willkommen bei Campuna.');
                         if (data.user?.role === 'ADMIN') {
                             router.replace('/admin');
                         } else {
                             router.replace('/mein-konto');
                         }
                     } else {
-                        toast.success('E-Mail erfolgreich bestätigt! Bitte melde dich an.');
+                        toast.success('E-Mail-Adresse erfolgreich bestätigt! Du kannst dich jetzt direkt anmelden.');
                         router.replace('/login?verified=true');
                     }
                 } else {
                     setStatus('error');
-                    setErrorMessage(res.error || 'Ungültiger oder abgelaufener Verifizierungslink.');
+                    setErrorMessage(getFriendlyErrorMessage(res.error, 'Dieser Bestätigungslink ist leider ungültig oder bereits abgelaufen.'));
                 }
             } catch (err) {
                 if (!isCancelled) {
                     setStatus('error');
-                    setErrorMessage('Ein Fehler ist bei der Verifizierung aufgetreten. Bitte versuche es erneut.');
+                    setErrorMessage(getFriendlyErrorMessage(err, 'Die Bestätigung konnte gerade nicht abgeschlossen werden. Bitte fordere einen neuen Link an.'));
                 }
             }
         };

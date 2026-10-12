@@ -37,6 +37,7 @@ import {
 import { useAuthStore } from '@/store/useAuthStore';
 import { getSocket } from '@/utils/socket';
 import { toast } from 'react-hot-toast';
+import { getFriendlyErrorMessage } from '@/utils/validation';
 import { getImageUrl } from '@/utils/imageUrl';
 
 function formatMessageTime(dateString) {
@@ -204,7 +205,7 @@ function AdminMessagesContent() {
             }
         } catch (err) {
             console.error('Error fetching admin conversations:', err);
-            if (!silent) toast.error('Fehler beim Laden der Nachrichten.');
+            if (!silent) toast.error(getFriendlyErrorMessage(err, 'Die Unterhaltungen konnten nicht geladen werden. Bitte versuche es gleich noch einmal.'));
         } finally {
             if (!silent) setLoadingList(false);
             setRefreshing(false);
@@ -241,7 +242,7 @@ function AdminMessagesContent() {
             }
         } catch (err) {
             console.error('Error fetching conversation detail:', err);
-            if (!silent) toast.error('Fehler beim Laden des Chats.');
+            if (!silent) toast.error(getFriendlyErrorMessage(err, 'Der Chatverlauf konnte nicht geladen werden. Bitte versuche es kurz erneut.'));
         } finally {
             if (!silent) setLoadingChat(false);
         }
@@ -434,11 +435,11 @@ function AdminMessagesContent() {
                     textareaRef.current.style.height = 'auto';
                 }
             } else {
-                toast.error(res.error || res.message || 'Fehler beim Senden.');
+                toast.error(getFriendlyErrorMessage(res.error || res.message, 'Deine Nachricht konnte leider nicht gesendet werden. Bitte versuche es kurz erneut.'));
             }
         } catch (err) {
             console.error('Error sending admin message:', err);
-            toast.error(err.response?.data?.error || err.message || 'Fehler beim Senden.');
+            toast.error(getFriendlyErrorMessage(err, 'Deine Nachricht konnte gerade nicht übermittelt werden. Bitte versuche es kurz erneut.'));
         } finally {
             setIsSending(false);
         }

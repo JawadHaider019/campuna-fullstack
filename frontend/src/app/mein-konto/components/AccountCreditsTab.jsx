@@ -66,18 +66,18 @@ export default function AccountCreditsTab({
     const handleCopyReferral = useCallback((e) => {
         e?.stopPropagation();
         if (!referralUrl) {
-            toast.error('Kein Empfehlungs-Link vorhanden');
+            toast.error('Dein persönlicher Empfehlungslink ist gerade noch nicht bereit.');
             return;
         }
         if (typeof navigator !== 'undefined' && navigator.clipboard) {
             navigator.clipboard.writeText(referralUrl)
                 .then(() => {
                     setCopiedLink(true);
-                    toast.success('Empfehlungslink in Zwischenablage kopiert!');
+                    toast.success('Empfehlungslink kopiert! Teile ihn gerne mit deinen Freunden.');
                     setTimeout(() => setCopiedLink(false), 2000);
                 })
                 .catch(() => {
-                    toast.error('Kopieren fehlgeschlagen');
+                    toast.error('Kopieren nicht möglich. Bitte markiere und kopiere den Link manuell.');
                 });
         }
     }, [referralUrl]);

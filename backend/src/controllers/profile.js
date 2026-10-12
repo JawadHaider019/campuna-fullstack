@@ -1,5 +1,6 @@
 import { db } from '../prisma/db.js';
 import pool from '../config/database.js';
+import { toJsDate } from '../utils/temporal.js';
 import crypto from 'crypto';
 import { checkAndAwardPioneerBadge } from './badge.js';
 import { checkAndAwardReferralCreditsOnCommercialProfile } from './referral.js';
@@ -135,7 +136,7 @@ export const getMyProfile = async (req, res) => {
                 profile = insertRes.rows[0];
             }
 
-            const spotlightUntil = profile?.spotlight_until ? new Date(profile.spotlight_until) : null;
+            const spotlightUntil = profile?.spotlight_until ? toJsDate(profile.spotlight_until) : null;
             const now = new Date();
             const hasPaidSpotlight = Boolean(spotlightUntil && spotlightUntil > now) || Boolean(profile?.is_strategic_partner);
             const spotlightDaysLeft = spotlightUntil && spotlightUntil > now 
@@ -459,7 +460,7 @@ export const getPublicProfile = async (req, res) => {
             const activeSub = subRes.rows?.[0];
 
             const isBusiness = profile.tier === 'BUSINESS' || profile.is_strategic_partner || activeSub?.plan_name === 'BUSINESS';
-            const spotlightUntil = profile?.spotlight_until ? new Date(profile.spotlight_until) : null;
+            const spotlightUntil = profile?.spotlight_until ? toJsDate(profile.spotlight_until) : null;
             const now = new Date();
             const hasPaidSpotlight = Boolean(spotlightUntil && spotlightUntil > now) || Boolean(profile?.is_strategic_partner);
             const hasLogo = Boolean(profile?.logo_url && profile.logo_url.trim());
@@ -800,7 +801,7 @@ export const bookSpotlight = async (req, res) => {
 
         // 4. Calculate new spotlight_until
         let newSpotlightUntil;
-        const currentSpotlight = profile.spotlight_until ? new Date(profile.spotlight_until) : null;
+        const currentSpotlight = profile.spotlight_until ? toJsDate(profile.spotlight_until) : null;
         const now = new Date();
 
         if (currentSpotlight && currentSpotlight > now) {

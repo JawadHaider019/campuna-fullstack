@@ -208,7 +208,7 @@ export default function AdminLayout({ children }) {
             setLogoutConfirmOpen(false);
             logout();
             router.replace('/login');
-            toast.success('Erfolgreich abgemeldet.');
+            toast.success('Du hast dich erfolgreich abgemeldet. Bis zum nächsten Mal!');
         }
     };
 

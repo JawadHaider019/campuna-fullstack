@@ -40,7 +40,7 @@ import AccountPioneerTab from './components/AccountPioneerTab';
 import AccountFeedbackTab from './components/AccountFeedbackTab';
 import { useChatStore } from '@/store/useChatStore';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
-import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALIDATION_ERROR } from '@/utils/validation';
+import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALIDATION_ERROR, getFriendlyErrorMessage } from '@/utils/validation';
 import { getImageUrl } from '@/utils/imageUrl';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import Breadcrumbs from '@/app/components/Breadcrumbs';
@@ -58,7 +58,8 @@ import {
     Rocket, Eye, LayoutDashboard, Gift, Users, CheckCircle2, Zap, ExternalLink,
     Clock, TrendingUp, Bell, Search, ShieldCheck, Compass, CheckCircle, Pencil, Send,
     FileSpreadsheet, MessageSquare, Heart, Trash2, PanelLeftClose, PanelLeftOpen, PanelLeft,
-    Pause, Play, Power, BarChart2, Circle, MessageSquareHeart
+    Pause, Play, Power, BarChart2, Circle, MessageSquareHeart,
+    Menu, Home
 } from 'lucide-react';
 
 function Linkedin(props) {
@@ -306,6 +307,18 @@ export default function MeinKontoPage() {
     const [isBioExpanded, setIsBioExpanded] = useState(false);
     const [achievements, setAchievements] = useState([]);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    // Auto-close mobile drawer on larger screens
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth >= 1024) {
+                setMobileMenuOpen(false);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Persist sidebar collapsed state
     useEffect(() => {
@@ -587,18 +600,18 @@ export default function MeinKontoPage() {
                 const isStripeCancelled = urlParams.get('stripe_cancelled') === 'true' || urlParams.get('spotlight_cancelled') === 'true';
 
                 if (isStripeCancelled) {
-                    toast.error('Zahlungsvorgang über Stripe abgebrochen.');
+                    toast.error('Zahlungsvorgang abgebrochen. Es wurde kein Betrag abgebucht.');
                     window.history.replaceState({}, document.title, window.location.pathname + (urlParams.get('tab') ? `?tab=${urlParams.get('tab')}` : ''));
                 } else if (sessionId && isStripeSuccess) {
                     try {
                         const verifyRes = await verifyStripeSession(sessionId);
                         if (verifyRes.success && verifyRes.data?.paid) {
                             if (verifyRes.data.type === 'CREDIT_PURCHASE') {
-                                toast.success('🎉 Campuna Credits erfolgreich über Stripe aufgeladen!', { duration: 5000 });
+                                toast.success('🎉 Campuna Credits erfolgreich aufgeladen!', { duration: 5000 });
                             } else if (verifyRes.data.type === 'SPOTLIGHT_PURCHASE') {
-                                toast.success('🎉 Spotlight-Platzierung erfolgreich über Stripe aktiviert!', { duration: 5000 });
+                                toast.success('🎉 Spotlight-Platzierung erfolgreich aktiviert!', { duration: 5000 });
                             } else if (verifyRes.data.type === 'SUBSCRIPTION') {
-                                toast.success('🎉 Campuna Business erfolgreich über Stripe aktiviert!', { duration: 5000 });
+                                toast.success('🎉 Campuna Business erfolgreich aktiviert!', { duration: 5000 });
                             }
                         }
                     } catch (_) {}
@@ -630,7 +643,7 @@ export default function MeinKontoPage() {
                     });
                 }
             } else {
-                toast.error(profileRes.error || 'Profil konnte nicht geladen werden.');
+                toast.error(getFriendlyErrorMessage(profileRes.error, 'Profil konnte nicht geladen werden.'));
             }
 
 
@@ -881,13 +894,14 @@ export default function MeinKontoPage() {
             const res = await toggleListingStatus(listingItem.id, targetStatus);
             if (res.data?.success || res.status === 200) {
                 const newStatus = res.data?.status || targetStatus;
-                toast.success(res.data?.message || `Inserat erfolgreich ${actionLabel}.`, { id: toastId });
+                toast.success(`Inserat erfolgreich ${actionLabel}.`, { id: toastId });
                 setUserListings(prev => prev.map(l => l.id === listingItem.id ? { ...l, status: newStatus } : l));
             } else {
-                toast.error(res.data?.error || `Fehler beim ${actionLabel} des Inserats.`, { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.data?.error, `Inserat konnte nicht ${actionLabel} werden.`), { id: toastId });
             }
         } catch (err) {
             console.error('Error toggling listing status:', err);
+            toast.error(`Inserat konnte nicht ${actionLabel} werden. Bitte versuche es erneut.`, { id: toastId });
         } finally {
             setTogglingListingId(null);
         }
@@ -910,11 +924,11 @@ export default function MeinKontoPage() {
                     if (r.data?.listings) setUserListings(r.data.listings);
                 }).catch(() => {});
             } else {
-                toast.error(res.data?.error || 'Fehler beim Löschen des Inserats.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.data?.error, 'Inserat konnte nicht gelöscht werden.'), { id: toastId });
             }
         } catch (err) {
             console.error('Error deleting listing:', err);
-            toast.error(err.response?.data?.error || 'Fehler beim Löschen des Inserats.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err.response?.data?.error, 'Inserat konnte nicht gelöscht werden.'), { id: toastId });
         } finally {
             setIsDeletingListing(false);
         }
@@ -973,7 +987,7 @@ export default function MeinKontoPage() {
                         payload.profile_image_url = url;
                     }
                 } else {
-                    toast.error(avatarRes?.error || 'Profilbild-Upload fehlgeschlagen.', { id: toastId });
+                    toast.error(getFriendlyErrorMessage(avatarRes?.error, 'Profilbild konnte nicht hochgeladen werden.'), { id: toastId });
                     setSaving(false);
                     return;
                 }
@@ -989,7 +1003,7 @@ export default function MeinKontoPage() {
                 if (coverRes && coverRes.success) {
                     payload.cover_image_url = coverRes.data.url;
                 } else {
-                    toast.error(coverRes?.error || 'Hintergrundbild-Upload fehlgeschlagen.', { id: toastId });
+                    toast.error(getFriendlyErrorMessage(coverRes?.error, 'Hintergrundbild konnte nicht hochgeladen werden.'), { id: toastId });
                     setSaving(false);
                     return;
                 }
@@ -1007,10 +1021,10 @@ export default function MeinKontoPage() {
                 setIsEditing(false);
                 toast.success('Profil erfolgreich gespeichert!', { id: toastId });
             } else {
-                toast.error(res.error || 'Speichern fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error, 'Profil konnte nicht gespeichert werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || 'Netzwerkfehler beim Speichern.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err.response?.data?.error, 'Profil konnte nicht gespeichert werden. Bitte versuche es erneut.'), { id: toastId });
         } finally {
             setSaving(false);
         }
@@ -1024,12 +1038,12 @@ export default function MeinKontoPage() {
 
         const maxSize = 5 * 1024 * 1024;
         if (file.size > maxSize) {
-            toast.error('Die Datei ist zu groß. Maximale Dateigröße ist 5 MB.');
+            toast.error('Dieses Foto ist leider zu groß. Bitte wähle ein Bild unter 5 MB aus.');
             return;
         }
 
         if (!ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
-            toast.error('Bitte lade eine gültige Bilddatei (JPEG, PNG, WEBP) hoch.');
+            toast.error('Bitte wähle eine Bilddatei aus (z. B. JPG oder PNG).');
             return;
         }
 
@@ -1039,7 +1053,7 @@ export default function MeinKontoPage() {
             ...prev,
             [profileType === 'COMMERCIAL' ? 'logo_url' : 'profile_image_url']: previewUrl,
         }));
-        toast.success('Bild ausgewählt. Klicke auf "Profil speichern", um es zu übernehmen.');
+        toast.success('Foto ausgewählt. Klicke auf "Profil speichern", um es zu übernehmen.');
         e.target.value = '';
     };
 
@@ -1054,12 +1068,12 @@ export default function MeinKontoPage() {
 
         const maxSize = 5 * 1024 * 1024;
         if (file.size > maxSize) {
-            toast.error('Die Datei ist zu groß. Maximale Dateigröße ist 5 MB.');
+            toast.error('Dieses Hintergrundbild ist leider zu groß. Bitte wähle ein Bild unter 5 MB aus.');
             return;
         }
 
         if (!ALLOWED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
-            toast.error('Bitte lade eine gültige Bilddatei (JPEG, PNG, WEBP) hoch.');
+            toast.error('Bitte wähle eine Bilddatei aus (z. B. JPG oder PNG).');
             return;
         }
 
@@ -1090,7 +1104,7 @@ export default function MeinKontoPage() {
         setBuyingCredits(true);
         const PACKAGES_EUR = { 500: '4,99 €', 800: '7,99 €', 1300: '12,99 €', 2500: '24,99 €' };
         const priceEur = PACKAGES_EUR[selectedCreditPkg] || '4,99 €';
-        const toastId = toast.loading(`Kauf von ${selectedCreditPkg.toLocaleString('de-DE')} CC (${priceEur}) wird vorbereitet...`);
+        const toastId = toast.loading('Zahlung wird vorbereitet...');
 
         try {
             const stripeRes = await createStripeCheckoutSession({
@@ -1100,13 +1114,13 @@ export default function MeinKontoPage() {
             });
 
             if (stripeRes.success && stripeRes.data?.url) {
-                toast.success('Weiterleitung zu Stripe...', { id: toastId });
+                toast.success('Weiterleitung zur sicheren Bezahlung...', { id: toastId });
                 window.location.href = stripeRes.data.url;
             } else {
-                toast.error(stripeRes.error || 'Fehler beim Erstellen der Stripe-Zahlungssitzung.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(stripeRes.error, 'Die Bezahlung konnte nicht vorbereitet werden.'), { id: toastId });
             }
         } catch (err) {
-            toast.error(err.response?.data?.error || err.message || 'Guthabenkauf über Stripe fehlgeschlagen.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err.response?.data?.error || err.message, 'Die Bezahlung konnte nicht vorbereitet werden. Bitte versuche es erneut.'), { id: toastId });
         } finally {
             setBuyingCredits(false);
         }
@@ -1125,12 +1139,12 @@ export default function MeinKontoPage() {
 
         if (spotlightPaymentMethod === 'CREDIT') {
             if ((Number(creditBalance) || 0) < cost) {
-                toast.error(`Nicht genügend Credits (${creditBalance} CC vorhanden, ${cost} CC benötigt).`);
+                toast.error(`Dein Guthaben reicht leider nicht aus (noch ${cost - (Number(creditBalance) || 0)} Credits benötigt).`);
                 return;
             }
 
             setBookingSpotlight(true);
-            const toastId = toast.loading('Spotlight wird mit Credits aktiviert...');
+            const toastId = toast.loading('Spotlight-Platzierung wird aktiviert...');
 
             try {
                 const res = await bookSpotlight({
@@ -1158,17 +1172,17 @@ export default function MeinKontoPage() {
 
                     setSpotlightModalOpen(false);
                 } else {
-                    toast.error(res.error || res.data?.error || 'Spotlight-Buchung fehlgeschlagen.', { id: toastId });
+                    toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Spotlight konnte nicht gebucht werden.'), { id: toastId });
                 }
             } catch (err) {
-                toast.error(err.response?.data?.error || err.message || 'Spotlight-Buchung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(err.response?.data?.error || err.message, 'Spotlight konnte nicht gebucht werden. Bitte versuche es erneut.'), { id: toastId });
             } finally {
                 setBookingSpotlight(false);
             }
         } else {
             // Stripe Payment Method
             setBookingSpotlight(true);
-            const toastId = toast.loading(`Spotlight-Zahlung (${priceEur}) über Stripe wird vorbereitet...`);
+            const toastId = toast.loading('Zahlung wird vorbereitet...');
 
             try {
                 const stripeRes = await createStripeCheckoutSession({
@@ -1178,13 +1192,13 @@ export default function MeinKontoPage() {
                 });
 
                 if (stripeRes.success && stripeRes.data?.url) {
-                    toast.success('Weiterleitung zu Stripe...', { id: toastId });
+                    toast.success('Weiterleitung zur sicheren Bezahlung...', { id: toastId });
                     window.location.href = stripeRes.data.url;
                 } else {
-                    toast.error(stripeRes.error || 'Fehler beim Erstellen der Stripe-Sitzung.', { id: toastId });
+                    toast.error(getFriendlyErrorMessage(stripeRes.error, 'Die Bezahlung konnte nicht vorbereitet werden.'), { id: toastId });
                 }
             } catch (err) {
-                toast.error(err.response?.data?.error || err.message || 'Stripe-Zahlung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(err.response?.data?.error || err.message, 'Die Bezahlung konnte nicht vorbereitet werden. Bitte versuche es erneut.'), { id: toastId });
             } finally {
                 setBookingSpotlight(false);
             }
@@ -1200,7 +1214,7 @@ export default function MeinKontoPage() {
                 setInvoices(res.data.invoices || []);
             }
         } catch (err) {
-            toast.error('Rechnungen konnten nicht geladen werden.');
+            toast.error(getFriendlyErrorMessage(err, 'Deine Rechnungen konnten gerade nicht geladen werden. Bitte versuche es kurz erneut.'));
         } finally {
             setLoadingInvoices(false);
         }
@@ -1236,7 +1250,7 @@ export default function MeinKontoPage() {
         try {
             const res = await cancelSubscription(cancelVerification);
             if (res.success) {
-                toast.success(res.message || 'Abonnement gekündigt.', { id: toastId, duration: 5000 });
+                toast.success('Dein Abonnement wurde erfolgreich gekündigt.', { id: toastId, duration: 5000 });
                 setCancelSubModalOpen(false);
                 setCancelVerification({
                     account_holder: '',
@@ -1246,10 +1260,10 @@ export default function MeinKontoPage() {
                 });
                 loadAllAccountData();
             } else {
-                toast.error(res.error || 'Kündigung fehlgeschlagen.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error, 'Die Kündigung konnte nicht durchgeführt werden. Bitte versuche es erneut.'), { id: toastId });
             }
         } catch (err) {
-            toast.error('Netzwerkfehler.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Die Kündigung konnte leider nicht abgeschlossen werden. Bitte versuche es gleich noch einmal.'), { id: toastId });
         } finally {
             setCancellingSub(false);
         }
@@ -1366,9 +1380,9 @@ export default function MeinKontoPage() {
             )}
 
             {/* ── TOP FULL-WIDTH NAVBAR ── */}
-            <header className="shrink-0 z-40 w-full bg-white backdrop-blur-md border-b border-beige">
+            <header className="shrink-0 z-40 w-full bg-white backdrop-blur-md border-b border-beige relative">
                 <div className="w-full mx-auto px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4">
-                    {/* Left: Brand Logo & Breadcrumb (Desktop) */}
+                    {/* Left: Brand Logo & Breadcrumb / Mobile Active Section Indicator */}
                     <div className="flex items-center gap-2 sm:gap-4 shrink-0">
                         <Link href="/" className="flex items-center gap-1 group cursor-pointer" title="Zur Startseite">
                             <img
@@ -1386,6 +1400,11 @@ export default function MeinKontoPage() {
                                     : [{ label: 'Mein Konto', href: '/mein-konto' }, { label: navItems.find(n => n.id === activeTab)?.label || activeTab }]}
                                 variant="light"
                             />
+                        </div>
+
+                        {/* Mobile Active Section Pill */}
+                        <div className="lg:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-forest/5 border border-forest/10 text-forest text-xs font-bold truncate max-w-[130px] sm:max-w-[200px]">
+                            <span className="truncate">{navItems.find(n => n.id === activeTab)?.label || 'Mein Konto'}</span>
                         </div>
                     </div>
 
@@ -1413,11 +1432,14 @@ export default function MeinKontoPage() {
                             <span className="hidden xs:inline sm:inline">Inserieren</span>
                         </button>
 
-                        {/* Mobile User Icon & Logout (Visible only on mobile < md) */}
-                        <div className="flex md:hidden items-center gap-2">
+                        {/* Mobile User Avatar (Visible only on mobile < md) */}
+                        <div className="flex md:hidden items-center gap-1.5">
                             <button
                                 type="button"
-                                onClick={() => setActiveTab('dashboard')}
+                                onClick={() => {
+                                    handleTabChange('dashboard');
+                                    setMobileMenuOpen(false);
+                                }}
                                 className="cursor-pointer transition-transform active:scale-95"
                                 title="Mein Profil"
                             >
@@ -1428,57 +1450,164 @@ export default function MeinKontoPage() {
                                     isPioneer={Boolean(pioneerBadge)}
                                 />
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                className="p-2 text-charcoal/60 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer border border-beige bg-[#faf8f3]"
-                                title="Abmelden"
-                            >
-                                <LogOut className="w-4 h-4 text-rose-500" />
-                            </button>
                         </div>
+
+                        {/* Mobile & Tablet Hamburger Button (< lg) */}
+                        <button
+                            type="button"
+                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            className="lg:hidden p-2 rounded-xl bg-[#faf8f3] border border-beige hover:bg-sand text-forest hover:text-forest transition-all cursor-pointer relative shadow-2xs"
+                            aria-label="Dashboard Menü"
+                            title={mobileMenuOpen ? 'Menü schließen' : 'Menü öffnen'}
+                        >
+                            {mobileMenuOpen ? <X className="w-5 h-5 text-forest" /> : <Menu className="w-5 h-5 text-forest" />}
+                            {unreadMessagesCount > 0 && !mobileMenuOpen && (
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white animate-pulse" />
+                            )}
+                        </button>
                     </div>
                 </div>
+
+                {/* ── MOBILE HAMBURGER DRAWER (< lg) ── */}
+                <AnimatePresence>
+                    {mobileMenuOpen && (
+                        <>
+                            {/* Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="fixed inset-0 top-[57px] bg-black/60 backdrop-blur-xs z-50 lg:hidden"
+                            />
+
+                            {/* Dropdown Menu Canvas */}
+                            <motion.div
+                                initial={{ opacity: 0, y: -15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -15 }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                                className="fixed inset-x-0 top-[57px] max-h-[calc(100vh-80px)] overflow-y-auto bg-white border-b border-beige shadow-2xl z-50 rounded-b-3xl px-4 py-5 space-y-4 lg:hidden"
+                            >
+                                {/* User Card Header */}
+                                <div className="p-3.5 bg-gradient-to-br from-[#faf8f3] to-sand/40 border border-beige rounded-2xl flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <Avatar
+                                            src={avatarSrc}
+                                            name={displayName}
+                                            size="md"
+                                            isPioneer={Boolean(pioneerBadge)}
+                                        />
+                                        <div className="min-w-0">
+                                            <h4 className="font-bold text-sm text-charcoal truncate">{displayName}</h4>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <span className="text-[10px] font-mono px-2 py-0.2 rounded-md bg-white border border-beige text-charcoal/70 uppercase font-semibold">
+                                                    {isCommercial ? 'Gewerblich' : 'Privat'}
+                                                </span>
+                                                {pioneerBadge && (
+                                                    <span className="text-[10px] font-bold px-2 py-0.2 rounded-md bg-gold/20 text-forest border border-gold/40">
+                                                        Pioneer
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            handleTabChange('credits');
+                                            setMobileMenuOpen(false);
+                                        }}
+                                        className="px-2.5 py-1.5 rounded-xl bg-forest/5 hover:bg-forest/10 border border-forest/15 text-forest flex items-center gap-1.5 shrink-0 cursor-pointer"
+                                    >
+                                        <CoinIcon size="sm" />
+                                        <span className="text-xs font-mono font-black">{Number(creditBalance).toLocaleString('de-DE')} CC</span>
+                                    </button>
+                                </div>
+
+                                {/* Navigation Items */}
+                                <div className="space-y-1.5">
+                                    <span className="text-[10px] font-mono tracking-widest text-charcoal/40 uppercase font-bold px-1">
+                                        DASHBOARD BEREICHE
+                                    </span>
+                                    <nav className="space-y-1">
+                                        {navItems.map((item) => {
+                                            const Icon = item.icon;
+                                            const isActive = activeTab === item.id;
+                                            return (
+                                                <button
+                                                    key={item.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        handleTabChange(item.id);
+                                                        setMobileMenuOpen(false);
+                                                    }}
+                                                    className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all cursor-pointer ${
+                                                        isActive
+                                                            ? 'bg-forest text-sand font-bold shadow-md shadow-forest/20'
+                                                            : 'bg-[#faf8f3] hover:bg-sand/60 text-charcoal/80 border border-beige/60'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3 min-w-0">
+                                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                                                            isActive ? 'bg-white/15 text-gold' : 'bg-white border border-beige text-forest'
+                                                        }`}>
+                                                            <Icon className="w-4 h-4" />
+                                                        </div>
+                                                        <span className="text-xs truncate">{item.label}</span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2">
+                                                        {item.badge && (
+                                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono ${
+                                                                isActive ? 'bg-gold text-forest' : 'bg-rose-500 text-white'
+                                                            }`}>
+                                                                {item.badge}
+                                                            </span>
+                                                        )}
+                                                        <ChevronRight className={`w-4 h-4 ${isActive ? 'text-sand/60' : 'text-charcoal/30'}`} />
+                                                    </div>
+                                                </button>
+                                            );
+                                        })}
+                                    </nav>
+                                </div>
+
+                                {/* Quick Action Buttons */}
+                                <div className="pt-2 border-t border-beige space-y-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            handleCreateListingClick();
+                                            setMobileMenuOpen(false);
+                                        }}
+                                        className="w-full py-2.5 px-4 rounded-xl bg-forest text-sand text-xs font-bold flex items-center justify-center gap-2 shadow-md hover:bg-forest-light transition-all cursor-pointer"
+                                    >
+                                        <Plus className="w-4 h-4 text-gold" />
+                                        <span>Neues Inserat erstellen</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setMobileMenuOpen(false);
+                                            handleLogout();
+                                        }}
+                                        className="w-full py-2.5 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        <span>Abmelden</span>
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
             </header>
 
             {/* ── MAIN DASHBOARD CONTAINER ── */}
             <div className="w-full flex-1 min-h-0 overflow-hidden flex flex-col bg-white">
-
-                {/* ── MOBILE HORIZONTAL TAB STRIP (Visible only on mobile/tablet < lg) ── */}
-                <div className="lg:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-2 px-3 shrink-0 border-b border-beige bg-white">
-                    {navItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = activeTab === item.id;
-                        return (
-                            <button
-                                key={item.id}
-                                onClick={() => handleTabChange(item.id)}
-                                className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer shadow-xs relative ${isActive
-                                    ? 'bg-forest text-sand shadow-sm shadow-forest/20 font-black'
-                                    : 'bg-white text-charcoal/70 hover:bg-[#faf8f3] border border-beige'
-                                    }`}
-                            >
-                                <div className="relative flex items-center justify-center shrink-0">
-                                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-gold' : 'text-forest'}`} />
-                                    {item.hasNotification && (
-                                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                        </span>
-                                    )}
-                                </div>
-                                <span className="whitespace-nowrap">{item.label}</span>
-                                {item.badge && (
-                                    <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-black leading-none ${
-                                        isActive ? 'bg-gold text-forest' : 'bg-rose-500 text-white'
-                                    }`}>
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
 
                 {/* ── MAIN DASHBOARD CONTAINER (Sidebar + Content Hub) ── */}
                 <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden h-full">
@@ -1683,8 +1812,8 @@ export default function MeinKontoPage() {
                     {/* ── 2. RIGHT MAIN UNIFIED CONTAINER CANVAS (All sections housed inside) ── */}
                     <div className={`flex-1 h-full min-h-0 min-w-0 ${
                         activeTab === 'nachrichten'
-                            ? 'p-0 overflow-hidden flex flex-col'
-                            : 'overflow-y-auto p-3 sm:p-5 md:p-6 lg:p-7'
+                            ? 'p-0 overflow-hidden flex flex-col pb-16 md:pb-0'
+                            : 'overflow-y-auto p-3 sm:p-5 md:p-6 lg:p-7 pb-24 lg:pb-7'
                     }`}>
                         {/* ── Breadcrumbs inside page canvas (Mobile only) ── */}
                         {activeTab !== 'nachrichten' && (

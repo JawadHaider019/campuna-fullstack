@@ -15,14 +15,17 @@ import {
     Layers,
     Phone,
     Save,
-    Eye
+    Eye,
+    Info,
+    AlertCircle
 } from 'lucide-react';
 import { CATEGORIES } from '@/data';
 import { createListing, updateListing, deleteListing, getListingDetail } from '@/api/listings';
 import { toast } from 'react-hot-toast';
-import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALIDATION_ERROR } from '@/utils/validation';
+import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALIDATION_ERROR, getFriendlyErrorMessage } from '@/utils/validation';
 import { getImageUrl } from '@/utils/imageUrl';
 import { generateAutoDescription } from '@/utils/autoDescription';
+import { compressImages } from '@/utils/imageCompression';
 
 const SUBCATEGORIES_MAP = {
     'Camping Zubehör': [
@@ -177,7 +180,7 @@ export default function AccountCreateListingTab({
             toast.success('Beschreibung wurde erstellt!', { id: toastId, icon: '✨' });
         } catch (err) {
             console.error('Error generating description:', err);
-            toast.error('Fehler beim Erstellen der Beschreibung.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Die Beschreibung konnte leider nicht automatisch erstellt werden.'), { id: toastId });
         } finally {
             setIsGeneratingDesc(false);
         }
@@ -221,7 +224,7 @@ export default function AccountCreateListingTab({
                 }
             } catch (err) {
                 console.error('Error fetching listing details for edit:', err);
-                toast.error('Konnte Inserat nicht laden.');
+                toast.error(getFriendlyErrorMessage(err, 'Das Inserat konnte leider nicht geladen werden.'));
             } finally {
                 setInitialLoading(false);
             }
@@ -232,30 +235,96 @@ export default function AccountCreateListingTab({
 
     // Handle Image Upload
     const handleFiles = (files) => {
+        if (!files || files.length === 0) return;
         const fileList = Array.from(files);
-        if (previewUrls.length + fileList.length > 10) {
-            toast.error('Maximal 10 Bilder erlaubt.');
+
+        const maxAllowed = 10;
+        const currentCount = previewUrls.length;
+        const remainingSlots = maxAllowed - currentCount;
+
+        if (remainingSlots <= 0) {
+            toast.error('Du hast bereits 10 Fotos ausgewählt. Entferne zuerst ein Foto, um ein neues hinzuzufügen.', {
+                duration: 4500,
+                icon: '📷'
+            });
+            if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
 
         const newImages = [...images];
         const newPreviews = [...previewUrls];
+        let addedCount = 0;
+        let skippedTooLarge = 0;
+        let skippedNotImage = 0;
+        const heavyFiles = [];
 
-        fileList.forEach(file => {
-            if (!file.type.startsWith('image/')) {
-                toast.error(`${file.name} ist keine Bilddatei.`);
-                return;
+        for (const file of fileList) {
+            if (newPreviews.length >= maxAllowed) {
+                toast.error('Es können maximal 10 Fotos pro Inserat hinzugefügt werden.', {
+                    duration: 4000,
+                    icon: '⚠️'
+                });
+                break;
             }
-            if (file.size > 10 * 1024 * 1024) {
-                toast.error(`${file.name} ist größer als 10MB.`);
-                return;
+
+            // Check if file is an image
+            if (!file.type || !file.type.startsWith('image/')) {
+                skippedNotImage++;
+                toast.error(`"${file.name}" ist keine Bilddatei. Bitte wähle nur Fotos aus.`, {
+                    duration: 4000,
+                    icon: '🖼️'
+                });
+                continue;
             }
+
+            // Check file size (max 25 MB per file)
+            const maxFileBytes = 25 * 1024 * 1024;
+            if (file.size > maxFileBytes) {
+                skippedTooLarge++;
+                toast.error(`Das Foto "${file.name}" ist leider zu groß. Bitte wähle ein Bild unter 25 MB aus.`, {
+                    duration: 5000,
+                    icon: '⚠️'
+                });
+                continue;
+            }
+
+            // Detect heavy image (> 5 MB)
+            if (file.size > 5 * 1024 * 1024) {
+                heavyFiles.push(file.name);
+            }
+
             newImages.push(file);
             newPreviews.push(URL.createObjectURL(file));
-        });
+            addedCount++;
+        }
 
-        setImages(newImages);
-        setPreviewUrls(newPreviews);
+        if (addedCount > 0) {
+            setImages(newImages);
+            setPreviewUrls(newPreviews);
+
+            if (heavyFiles.length === 1) {
+                toast('Großes Foto hinzugefügt – wird beim Speichern automatisch angepasst.', {
+                    duration: 4500,
+                    icon: '📷'
+                });
+            } else if (heavyFiles.length > 1) {
+                toast(`${heavyFiles.length} große Fotos hinzugefügt – werden beim Speichern automatisch angepasst.`, {
+                    duration: 4500,
+                    icon: '📷'
+                });
+            } else if (skippedTooLarge === 0 && skippedNotImage === 0) {
+                if (addedCount === 1) {
+                    toast.success('Foto hinzugefügt.', { duration: 2500 });
+                } else {
+                    toast.success(`${addedCount} Fotos hinzugefügt.`, { duration: 2500 });
+                }
+            }
+        }
+
+        // Reset the input value so user can re-select the same file name if needed
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     const removeImage = (index) => {
@@ -326,6 +395,16 @@ export default function AccountCreateListingTab({
         setLoading(true);
 
         try {
+            // Compress large images client-side to prevent 413 Payload Too Large and upload timeouts
+            const fileImages = images.filter(imgFile => imgFile instanceof File);
+            const hasHeavyImages = fileImages.some(img => img.size > 5 * 1024 * 1024);
+            const toastId = toast.loading(
+                hasHeavyImages
+                    ? 'Fotos werden vorbereitet & Inserat wird gespeichert...'
+                    : (editId ? 'Änderungen werden gespeichert...' : 'Inserat wird gespeichert...')
+            );
+            const optimizedFiles = await compressImages(fileImages);
+
             const formData = new FormData();
             formData.append('title', title.trim());
             formData.append('category', category);
@@ -337,10 +416,8 @@ export default function AccountCreateListingTab({
             formData.append('description', description.trim());
             formData.append('phone', phone.trim());
 
-            images.forEach(imgFile => {
-                if (imgFile instanceof File) {
-                    formData.append('images', imgFile);
-                }
+            optimizedFiles.forEach(imgFile => {
+                formData.append('images', imgFile);
             });
 
             if (editId) {
@@ -352,31 +429,35 @@ export default function AccountCreateListingTab({
 
                 const res = await updateListing(editId, formData);
                 if (res.data?.success || res.status === 200) {
-                    toast.success('Inserat erfolgreich aktualisiert!');
+                    toast.success('Inserat erfolgreich aktualisiert!', { id: toastId });
                     onSuccess();
                 } else {
-                    toast.error(res.data?.error || 'Aktualisierung fehlgeschlagen.');
+                    const errorMsg = getFriendlyErrorMessage(res.error || res.data?.error || res.data?.message);
+                    toast.error(errorMsg, { id: toastId });
                 }
             } else {
                 const res = await createListing(formData);
                 if (res.data?.success || res.status === 201) {
-                    toast.success('Inserat erfolgreich erstellt und zur Prüfung eingereicht!');
+                    toast.success('Inserat erfolgreich erstellt!', { id: toastId });
                     onSuccess();
                 } else {
-                    if (res.data?.upgrade_required) {
+                    if (res.upgrade_required || res.data?.upgrade_required) {
+                        toast.dismiss(toastId);
                         onOpenLimitModal();
                     } else {
-                        toast.error(res.data?.error || 'Erstellung fehlgeschlagen.');
+                        const errorMsg = getFriendlyErrorMessage(res.error || res.data?.error || res.data?.message);
+                        toast.error(errorMsg, { id: toastId });
                     }
                 }
             }
         } catch (err) {
             console.error('Error submitting listing from dashboard:', err);
-            const errData = err.response?.data;
+            const errData = err.response?.data || err;
             if (errData?.upgrade_required || err.response?.status === 403) {
                 onOpenLimitModal();
             } else {
-                toast.error(errData?.error || 'Ein Fehler ist aufgetreten beim Speichern.');
+                const friendlyMsg = getFriendlyErrorMessage(errData?.error || err.message);
+                toast.error(friendlyMsg, { duration: 5000 });
             }
         } finally {
             setLoading(false);
@@ -397,11 +478,11 @@ export default function AccountCreateListingTab({
                 setShowDeleteModal(false);
                 onSuccess();
             } else {
-                toast.error(res.data?.error || 'Fehler beim Löschen des Inserats.', { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.data?.error, 'Das Inserat konnte leider nicht gelöscht werden. Bitte versuche es kurz erneut.'), { id: toastId });
             }
         } catch (err) {
             console.error('Error deleting listing from editor:', err);
-            toast.error(err.response?.data?.error || 'Fehler beim Löschen des Inserats.', { id: toastId });
+            toast.error(getFriendlyErrorMessage(err, 'Das Inserat konnte leider nicht gelöscht werden. Bitte versuche es gleich noch einmal.'), { id: toastId });
         } finally {
             setIsDeleting(false);
         }
@@ -894,13 +975,29 @@ export default function AccountCreateListingTab({
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-charcoal font-sans">Bilder & Fotos</h3>
-                                    <p className="text-[11px] text-charcoal/50 font-sans">Bis zu 10 hochauflösende Fotos (erstes Bild = Titelbild)</p>
+                                    <p className="text-[11px] text-charcoal/50 font-sans">Bis zu 10 hochauflösende Fotos • Erstes Bild ist dein Titelbild</p>
                                 </div>
                             </div>
-                            <span className="text-xs font-mono font-bold text-charcoal/60">
+                            <span className="text-xs font-mono font-bold text-charcoal/70 bg-[#faf8f3] px-3 py-1 rounded-full border border-beige">
                                 {previewUrls.length}/10 Fotos
                             </span>
                         </div>
+
+                        {/* Clear Upload Instruction */}
+                        <div className="flex items-center gap-2.5 bg-[#faf8f3] border border-beige/90 rounded-xl px-3.5 py-2.5 text-xs text-charcoal/75 font-sans">
+                            <Info className="w-4 h-4 text-forest shrink-0" />
+                            <span>JPG, PNG, WEBP oder HEIC bis zu 25 MB pro Foto. Bis zu 10 Fotos pro Inserat.</span>
+                        </div>
+
+                        {/* Heavy Image Warning Banner */}
+                        {images.some(img => img instanceof File && img.size > 5 * 1024 * 1024) && (
+                            <div className="flex items-center gap-2.5 bg-amber-50 border border-amber-200/90 rounded-xl px-3.5 py-2.5 text-xs text-amber-900 font-sans">
+                                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                                <span>
+                                    <strong>Großes Foto ausgewählt:</strong> Dein Foto wird beim Hochladen automatisch angepasst, damit dein Inserat schnell öffnet.
+                                </span>
+                            </div>
+                        )}
 
                         {/* Dropzone */}
                         <div
@@ -922,8 +1019,8 @@ export default function AccountCreateListingTab({
                                 <p className="text-xs font-bold text-charcoal group-hover:text-forest transition-colors font-sans">
                                     Fotos hier hineinziehen oder <span className="text-forest underline">durchsuchen</span>
                                 </p>
-                                <p className="text-[11px] text-charcoal/50 mt-0.5 font-sans">
-                                    PNG, JPG, WEBP bis 10MB pro Datei
+                                <p className="text-[11px] text-charcoal/50 mt-1 font-sans">
+                                    JPG, PNG, WEBP, HEIC bis zu 25 MB • Maximal 10 Fotos
                                 </p>
                             </div>
                         </div>
