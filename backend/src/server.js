@@ -30,6 +30,7 @@ import { initBroadcastsTable } from './config/initBroadcastsTable.js';
 import { initBlogPostsTable } from './config/initBlogPostsTable.js';
 import { initTipsTable } from './config/initTipsTable.js';
 import { initFeedbackTable } from './config/initFeedbackTable.js';
+import { initBenefitGrantsTable } from './config/initBenefitGrantsTable.js';
 import path from 'path';
 import fs from 'fs';
 
@@ -44,6 +45,9 @@ initTipsTable().catch(e => console.error('Tips init error:', e.message));
 
 // Initialize user feedback table
 initFeedbackTable().catch(e => console.error('Feedback init error:', e.message));
+
+// Initialize admin benefit grants table
+initBenefitGrantsTable().catch(e => console.error('Benefit grants init error:', e.message));
 const app = express();
 const PORT = process.env.PORT || 5000;
 

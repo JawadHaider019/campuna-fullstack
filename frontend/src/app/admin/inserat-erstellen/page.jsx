@@ -41,6 +41,7 @@ import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALID
 import { generateAutoDescription, generateOrImproveDescription } from '@/utils/autoDescription';
 import { getImageUrl } from '@/utils/imageUrl';
 import { compressImages } from '@/utils/imageCompression';
+import DescriptionEditor from '@/app/components/DescriptionEditor';
 
 // Map of subcategories based on categories
 const SUBCATEGORIES_MAP = {
@@ -817,26 +818,12 @@ function AdminListingFormContent() {
                             </div>
                         </div>
 
-                        {/* Helper banner explaining the requirements */}
-                        {(!title.trim() || !category || !condition || !price || !location.trim() || !description.trim()) && (
-                            <div className="bg-[#F8F9FA] border border-[#E2E4E8] rounded-2xl p-3 text-xs text-slate-700 flex items-start gap-2.5">
-                                <Sparkles className="w-4 h-4 text-gold shrink-0 mt-0.5" />
-                                <div>
-                                    <span className="font-bold text-slate-900">So funktioniert die KI-Verbesserung:</span>
-                                    <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
-                                        Trage Titel, Kategorie, Zustand, Preis, Standort sowie ein paar Stichpunkte oder Notizen in das Textfeld ein. Ein Klick auf <strong className="text-forest">„Beschreibung verbessern“</strong> erstellt einen professionellen Text.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
                         <div className="space-y-1.5">
-                            <textarea
+                            <DescriptionEditor
                                 rows={8}
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                onChange={setDescription}
                                 placeholder="Detaillierte Fahrzeug-/Artikelbeschreibung oder Notizen eingeben (z. B. TÜV neu, Standheizung, Markise, Nichtraucher)..."
-                                className="w-full bg-[#F8F9FA] border border-[#E2E4E8] rounded-2xl p-4 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest transition-all leading-relaxed font-normal"
                             />
                         </div>
                     </div>

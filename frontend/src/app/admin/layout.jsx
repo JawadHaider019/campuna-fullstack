@@ -117,7 +117,7 @@ export default function AdminLayout({ children }) {
                     })
                     .catch(() => { });
 
-                getUnreadMessagesCount()
+                getUnreadMessagesCount({ params: { scope: 'all' } })
                     .then(res => {
                         if (res.success && typeof res.unread_count === 'number') {
                             setUnreadMessagesCount(res.unread_count);

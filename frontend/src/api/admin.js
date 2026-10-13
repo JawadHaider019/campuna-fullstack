@@ -193,6 +193,22 @@ export const grantAdminBenefit = (data) => {
 };
 
 /**
+ * POST /api/admin/benefits/cancel
+ * Cancels / revokes an active complimentary benefit for a user.
+ */
+export const cancelAdminBenefit = (data) => {
+    return api.post('/admin/benefits/cancel', data);
+};
+
+/**
+ * POST /api/admin/benefits/extend
+ * Extends the duration of an active complimentary benefit (Business, Spotlight, Boost).
+ */
+export const extendAdminBenefit = (data) => {
+    return api.post('/admin/benefits/extend', data);
+};
+
+/**
  * POST /api/admin/benefits/apply-transition-period
  * Activates a 3-month free Campuna Business transition period for existing commercial partners.
  */

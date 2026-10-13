@@ -41,8 +41,9 @@ import { toast } from 'react-hot-toast';
 import { getFriendlyErrorMessage } from '@/utils/validation';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import { getImageUrl } from '@/utils/imageUrl';
-import { Crown, Rocket, Gift, X } from 'lucide-react';
+import { Crown, Rocket, Gift, X, Clock } from 'lucide-react';
 import { PROVIDER_CATEGORIES } from '@/data';
+import ManageBenefitModal from '@/app/admin/components/ManageBenefitModal';
 
 export default function AdminUserDetailPage() {
     const params = useParams();
@@ -55,15 +56,8 @@ export default function AdminUserDetailPage() {
     const [copiedCode, setCopiedCode] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-    // Grant Benefit State
+    // Benefit Modal State
     const [benefitModalOpen, setBenefitModalOpen] = useState(false);
-    const [benefitType, setBenefitType] = useState('LISTING_BOOST');
-    const [durationDays, setDurationDays] = useState(30);
-    const [customEndDate, setCustomEndDate] = useState('');
-    const [selectedListingId, setSelectedListingId] = useState('');
-    const [creditsAmount, setCreditsAmount] = useState(500);
-    const [adminNote, setAdminNote] = useState('Kulanz / Partner-Vorteil durch Administration');
-    const [grantingBenefit, setGrantingBenefit] = useState(false);
 
     const fetchUser = useCallback(async () => {
         if (!userId) return;
@@ -167,58 +161,7 @@ export default function AdminUserDetailPage() {
     };
 
     const handleOpenBenefitModal = () => {
-        if (!user) return;
-        const isCommercial = user.user_type === 'COMMERCIAL';
-        const defaultType = isCommercial ? 'BUSINESS_SUBSCRIPTION' : 'LISTING_BOOST';
-        setBenefitType(defaultType);
-        setDurationDays(30);
-        setCustomEndDate('');
-        setSelectedListingId(user.listings && user.listings.length > 0 ? user.listings[0].id : '');
-        if (!isCommercial && (!user.listings || user.listings.length === 0)) {
-            setBenefitType('CREDITS');
-        }
-        setCreditsAmount(500);
-        setAdminNote('Kulanz / Partner-Vorteil durch Administration');
         setBenefitModalOpen(true);
-    };
-
-    const handleGrantBenefit = async (e) => {
-        e?.preventDefault();
-        if (!user) return;
-
-        if (benefitType === 'LISTING_BOOST' && !selectedListingId) {
-            toast.error('Bitte wähle ein Inserat aus.');
-            return;
-        }
-
-        setGrantingBenefit(true);
-        const toastId = toast.loading('Vorteil wird zugewiesen...');
-
-        try {
-            const payload = {
-                user_id: user.id,
-                benefit_type: benefitType,
-                duration_days: customEndDate ? undefined : durationDays,
-                custom_end_date: customEndDate || undefined,
-                listing_id: benefitType === 'LISTING_BOOST' ? selectedListingId : undefined,
-                credits_amount: benefitType === 'CREDITS' ? creditsAmount : undefined,
-                admin_note: adminNote.trim() || 'Kulanz / Partner-Vorteil durch Administration',
-            };
-
-            const res = await grantAdminBenefit(payload);
-
-            if (res.data?.success || res.success) {
-                toast.success(res.data?.message || '🎉 Vorteil wurde erfolgreich kostenlos zugewiesen!', { id: toastId });
-                setBenefitModalOpen(false);
-                fetchUser();
-            } else {
-                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Vorteil konnte nicht zugewiesen werden.'), { id: toastId });
-            }
-        } catch (err) {
-            toast.error(getFriendlyErrorMessage(err, 'Fehler beim Zuweisen des Vorteils.'), { id: toastId });
-        } finally {
-            setGrantingBenefit(false);
-        }
     };
 
     const copyToClipboard = (text) => {
@@ -366,6 +309,11 @@ export default function AdminUserDetailPage() {
                                         E-Mail Ausstehend
                                     </span>
                                 )}
+                                {user.benefits?.has_assigned_benefits && (
+                                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gold/20 text-gold border border-gold/40 flex items-center gap-1">
+                                        <Gift className="w-2.5 h-2.5" /> Admin-Vorteile Aktiv
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -377,7 +325,7 @@ export default function AdminUserDetailPage() {
                             className="px-3.5 sm:px-4 py-2 rounded-xl bg-gold text-forest font-black text-xs transition-all cursor-pointer shadow-md hover:brightness-105 active:scale-95 flex items-center gap-1.5 flex-1 sm:flex-initial justify-center"
                         >
                             <Sparkles className="w-3.5 h-3.5 fill-forest" />
-                            <span>Vorteil schenken</span>
+                            <span>{user.benefits?.has_assigned_benefits ? 'Vorteile verwalten' : 'Vorteil schenken'}</span>
                         </button>
                         {!user.email_verified && (
                             <button
@@ -548,6 +496,198 @@ export default function AdminUserDetailPage() {
                 )}
             </div>
 
+            {/* ─── Assigned Admin Benefits Card & History ─── */}
+            <div className="bg-white border border-[#E8EAEF] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xs space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FFF9E6] to-[#FEF3D0] border border-gold/40 text-[#855F19] flex items-center justify-center font-bold shadow-2xs">
+                            <Gift className="w-5 h-5 text-gold" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 uppercase tracking-wider">
+                                    Zugewiesene Admin-Vorteile & Kulanz
+                                </h3>
+                                {user.benefits?.has_assigned_benefits ? (
+                                    <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        {user.benefits.active_benefits?.length || 0} aktiv
+                                    </span>
+                                ) : (
+                                    <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-slate-100 text-slate-500">
+                                        Keine Vorteile
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                                Vom Administrator kostenlos zugewiesene Tarife, Homepage-Spotlights, Inserate-Boosts und CC-Gutschriften.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        onClick={handleOpenBenefitModal}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-forest text-sand text-xs font-bold hover:bg-forest/90 transition-all cursor-pointer shadow-xs active:scale-95 w-fit"
+                    >
+                        <Sparkles className="w-3.5 h-3.5 text-gold" />
+                        <span>{user.benefits?.has_assigned_benefits ? 'Vorteile verwalten' : 'Vorteil zuweisen'}</span>
+                    </button>
+                </div>
+
+                {/* Active Benefits Overview Cards */}
+                {user.benefits?.active_benefits && user.benefits.active_benefits.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        {user.benefits.active_benefits.map((b, idx) => (
+                            <div
+                                key={idx}
+                                className={`rounded-2xl p-4 border shadow-2xs flex flex-col justify-between space-y-3 ${
+                                    b.type === 'BUSINESS_SUBSCRIPTION'
+                                        ? 'bg-gradient-to-br from-[#FFFDF5] to-[#FFF9E6] border-gold/40'
+                                        : b.type === 'SPOTLIGHT'
+                                        ? 'bg-gradient-to-br from-[#FAF5FF] to-[#F3E8FF] border-purple-200'
+                                        : b.type === 'LISTING_BOOST'
+                                        ? 'bg-gradient-to-br from-[#F0F9FF] to-[#E0F2FE] border-sky-200'
+                                        : 'bg-gradient-to-br from-[#F0FDF4] to-[#DCFCE7] border-emerald-200'
+                                }`}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span className="inline-flex items-center gap-1.5 text-xs font-black text-slate-800">
+                                        {b.type === 'BUSINESS_SUBSCRIPTION' && <Crown className="w-4 h-4 text-gold" />}
+                                        {b.type === 'SPOTLIGHT' && <Sparkles className="w-4 h-4 text-purple-600" />}
+                                        {b.type === 'LISTING_BOOST' && <Rocket className="w-4 h-4 text-sky-600" />}
+                                        {b.type === 'CREDITS' && <Coins className="w-4 h-4 text-emerald-600" />}
+                                        <span>{b.title}</span>
+                                    </span>
+                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-2xs text-slate-700 border border-black/5">
+                                        Aktiv
+                                    </span>
+                                </div>
+
+                                <div className="text-xs text-slate-600 space-y-1">
+                                    {b.expires_at && (
+                                        <div className="flex items-center justify-between text-[11px]">
+                                            <span className="text-slate-400">Gültig bis:</span>
+                                            <span className="font-bold text-slate-800 font-mono">
+                                                {formatDate(b.expires_at)}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {b.count && (
+                                        <div className="flex items-center justify-between text-[11px]">
+                                            <span className="text-slate-400">Anzahl:</span>
+                                            <span className="font-bold text-slate-800">{b.count} Inserate</span>
+                                        </div>
+                                    )}
+                                    {b.amount && (
+                                        <div className="flex items-center justify-between text-[11px]">
+                                            <span className="text-slate-400">Gutschrift:</span>
+                                            <span className="font-bold text-emerald-700">+{b.amount.toLocaleString('de-DE')} CC</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="p-6 rounded-2xl bg-[#F8F9FA] border border-[#E8EAEF] text-center space-y-2">
+                        <Gift className="w-8 h-8 text-slate-300 mx-auto" />
+                        <h4 className="text-xs font-bold text-slate-700">
+                            Keine aktiven Admin-Vorteile zugewiesen
+                        </h4>
+                        <p className="text-[11px] text-slate-400 max-w-md mx-auto">
+                            Du kannst diesem Partner jederzeit kostenlose Vorteile wie Campuna Business, Inserate-Boosts, Homepage-Spotlights oder Credits schenken.
+                        </p>
+                    </div>
+                )}
+
+                {/* Boosted Listings Breakdown (if any) */}
+                {user.benefits?.boosted_listings && user.benefits.boosted_listings.length > 0 && (
+                    <div className="space-y-2 pt-2">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <Rocket className="w-3.5 h-3.5 text-sky-600" />
+                            <span>Aktuell geboostete Inserate ({user.benefits.boosted_listings.length})</span>
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                            {user.benefits.boosted_listings.map((item) => (
+                                <Link
+                                    key={item.id}
+                                    href={`/inserate/${item.slug || item.id}`}
+                                    target="_blank"
+                                    className="p-3 rounded-xl bg-sky-50/50 border border-sky-100 hover:border-sky-300 transition-all flex items-center justify-between gap-2 group"
+                                >
+                                    <div className="min-w-0">
+                                        <span className="font-bold text-xs text-slate-900 group-hover:text-forest transition-colors block truncate">
+                                            {item.title}
+                                        </span>
+                                        <span className="text-[10px] text-sky-700 font-medium">
+                                            Boost bis {formatDate(item.boosted_until)}
+                                        </span>
+                                    </div>
+                                    <ExternalLink className="w-3.5 h-3.5 text-sky-500 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Audit & Grant History */}
+                {user.benefits?.history && user.benefits.history.length > 0 && (
+                    <div className="space-y-2 pt-3 border-t border-slate-100">
+                        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>Vorteils-Historie & Zuweisungs-Protokoll ({user.benefits.history.length})</span>
+                        </h4>
+                        <div className="overflow-x-auto rounded-xl border border-[#E8EAEF]">
+                            <table className="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr className="bg-[#F8F9FA] border-b border-[#E8EAEF] text-[10px] font-bold text-slate-400 uppercase">
+                                        <th className="py-2.5 px-3">Datum</th>
+                                        <th className="py-2.5 px-3">Vorteil</th>
+                                        <th className="py-2.5 px-3">Notiz / Grund</th>
+                                        <th className="py-2.5 px-3">Gültig bis</th>
+                                        <th className="py-2.5 px-3">Zugewiesen von</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#F0F2F5]">
+                                    {user.benefits.history.map((h) => {
+                                        const typeLabels = {
+                                            BUSINESS_SUBSCRIPTION: 'Business-Tarif',
+                                            SPOTLIGHT: 'Homepage-Spotlight',
+                                            LISTING_BOOST: 'Inserate-Boost',
+                                            CREDITS: 'Campuna Credits',
+                                        };
+                                        return (
+                                            <tr key={h.id} className="hover:bg-slate-50 transition-colors">
+                                                <td className="py-2.5 px-3 font-mono text-[11px] text-slate-600">
+                                                    {formatDate(h.created_at)}
+                                                </td>
+                                                <td className="py-2.5 px-3 font-bold text-slate-800">
+                                                    <span className="inline-flex items-center gap-1">
+                                                        {h.benefit_type === 'BUSINESS_SUBSCRIPTION' && <Crown className="w-3 h-3 text-gold" />}
+                                                        {h.benefit_type === 'SPOTLIGHT' && <Sparkles className="w-3 h-3 text-purple-600" />}
+                                                        {h.benefit_type === 'LISTING_BOOST' && <Rocket className="w-3 h-3 text-sky-600" />}
+                                                        {h.benefit_type === 'CREDITS' && <Coins className="w-3 h-3 text-emerald-600" />}
+                                                        <span>{typeLabels[h.benefit_type] || h.benefit_type}</span>
+                                                    </span>
+                                                </td>
+                                                <td className="py-2.5 px-3 text-slate-600 italic max-w-[220px] truncate" title={h.admin_note}>
+                                                    {h.admin_note || '-'}
+                                                </td>
+                                                <td className="py-2.5 px-3 font-mono text-[11px] text-slate-700">
+                                                    {h.expires_at ? formatDate(h.expires_at) : 'Dauerhaft'}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-slate-500 text-[11px]">
+                                                    {h.granted_by || 'Admin'}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* ─── Listings by this user ─── */}
             <div className="bg-white border border-[#E8EAEF] rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xs space-y-4">
                 <div className="flex items-center justify-between">
@@ -678,308 +818,13 @@ export default function AdminUserDetailPage() {
                 )}
             </AnimatePresence>
 
-            {/* ─── Grant Complimentary Benefit Modal ─── */}
-            <AnimatePresence>
-                {benefitModalOpen && user && (
-                    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                            transition={{ duration: 0.2 }}
-                            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden"
-                        >
-                            {/* Header */}
-                            <div className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] p-6 text-white relative">
-                                <button
-                                    onClick={() => setBenefitModalOpen(false)}
-                                    className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-gold/20 text-gold flex items-center justify-center font-bold text-xl border border-gold/30">
-                                        <Gift className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-black text-white leading-tight font-display">
-                                            Kostenlosen Vorteil zuweisen
-                                        </h3>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <p className="text-xs text-sand/80 truncate max-w-[240px]">
-                                                Für: <strong className="text-white">{user.email}</strong>
-                                            </p>
-                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                                                user.user_type === 'COMMERCIAL'
-                                                    ? 'bg-gold text-forest'
-                                                    : 'bg-white/20 text-sand'
-                                            }`}>
-                                                {user.user_type === 'COMMERCIAL' ? 'Gewerblicher Partner' : 'Privatnutzer'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Body */}
-                            <form onSubmit={handleGrantBenefit} className="p-6 space-y-5 text-xs text-slate-700 max-h-[70vh] overflow-y-auto">
-                                
-                                {/* Info Box tailored to account type */}
-                                {user.user_type === 'COMMERCIAL' ? (
-                                    <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
-                                        <Crown className="w-4 h-4 text-gold-dark shrink-0 mt-0.5" />
-                                        <span>
-                                            <strong>Gewerbliche Partner-Vorteile</strong>: Du kannst dem Händler eine kostenlose Business-Mitgliedschaft, Homepage-Spotlights, Inserate-Boosts oder Campuna Credits zuweisen.
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-[11px] text-emerald-900 leading-relaxed flex items-start gap-2">
-                                        <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                        <span>
-                                            <strong>Privatnutzer-Vorteile</strong>: Private Konten inserieren kostenfrei und benötigen kein Business-Abo. Du kannst Inserate-Highlights (Boosts) oder Campuna Credits vergeben.
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* 1. Benefit Type Selector */}
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                        1. Art des Vorteils wählen:
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        
-                                        {/* Commercial-only: Business Subscription */}
-                                        {user.user_type === 'COMMERCIAL' && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setBenefitType('BUSINESS_SUBSCRIPTION')}
-                                                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                                                    benefitType === 'BUSINESS_SUBSCRIPTION'
-                                                        ? 'border-forest bg-forest/10 ring-2 ring-forest/20 text-forest font-bold'
-                                                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-1.5">
-                                                    <Crown className="w-4 h-4 text-gold" />
-                                                    <span className="text-xs font-bold">Campuna Business</span>
-                                                </div>
-                                                <span className="text-[10px] text-slate-500 font-normal">Kostenlose Mitgliedschaft</span>
-                                            </button>
-                                        )}
-
-                                        {/* Available for both: Listing Boost */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setBenefitType('LISTING_BOOST')}
-                                            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                                                benefitType === 'LISTING_BOOST'
-                                                    ? 'border-forest bg-forest/10 ring-2 ring-forest/20 text-forest font-bold'
-                                                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-1.5">
-                                                <Rocket className="w-4 h-4 text-blue-600" />
-                                                <span className="text-xs font-bold">Inserate-Highlight</span>
-                                            </div>
-                                            <span className="text-[10px] text-slate-500 font-normal">Kostenloser Boost / Top</span>
-                                        </button>
-
-                                        {/* Commercial-only: Homepage Spotlight */}
-                                        {user.user_type === 'COMMERCIAL' && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setBenefitType('SPOTLIGHT')}
-                                                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                                                    benefitType === 'SPOTLIGHT'
-                                                        ? 'border-forest bg-forest/10 ring-2 ring-forest/20 text-forest font-bold'
-                                                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-1.5">
-                                                    <Sparkles className="w-4 h-4 text-amber-500" />
-                                                    <span className="text-xs font-bold">Homepage-Spotlight</span>
-                                                </div>
-                                                <span className="text-[10px] text-slate-500 font-normal">Startseiten-Präsenz</span>
-                                            </button>
-                                        )}
-
-                                        {/* Available for both: Credits */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setBenefitType('CREDITS')}
-                                            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                                                benefitType === 'CREDITS'
-                                                    ? 'border-forest bg-forest/10 ring-2 ring-forest/20 text-forest font-bold'
-                                                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-1.5">
-                                                <img src="/coin.png" className="w-4 h-4" alt="CC" />
-                                                <span className="text-xs font-bold">Credits Gutschrift</span>
-                                            </div>
-                                            <span className="text-[10px] text-slate-500 font-normal">Campuna Credits (CC)</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* 2. If Listing Boost: Listing Selector */}
-                                {benefitType === 'LISTING_BOOST' && (
-                                    <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                                        <label className="text-[11px] font-bold text-slate-700 block">
-                                            Zu boostendes Inserat wählen:
-                                        </label>
-                                        {!user.listings || user.listings.length === 0 ? (
-                                            <div className="text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-xs">
-                                                Dieser Benutzer hat aktuell keine Inserate erstellt.
-                                            </div>
-                                        ) : (
-                                            <select
-                                                value={selectedListingId}
-                                                onChange={(e) => setSelectedListingId(e.target.value)}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30 font-sans cursor-pointer"
-                                            >
-                                                {user.listings.map((l) => (
-                                                    <option key={l.id} value={l.id}>
-                                                        {l.title} ({l.status})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* 3. If Credits: Amount input */}
-                                {benefitType === 'CREDITS' && (
-                                    <div className="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                                        <label className="text-[11px] font-bold text-slate-700 block">
-                                            Anzahl Campuna Credits:
-                                        </label>
-                                        <div className="flex gap-2">
-                                            {[500, 1000, 2500, 5000].map((amt) => (
-                                                <button
-                                                    key={amt}
-                                                    type="button"
-                                                    onClick={() => setCreditsAmount(amt)}
-                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                                                        creditsAmount === amt
-                                                            ? 'bg-forest text-sand border-forest'
-                                                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                                                    }`}
-                                                >
-                                                    +{amt.toLocaleString('de-DE')} CC
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <input
-                                            type="number"
-                                            value={creditsAmount}
-                                            onChange={(e) => setCreditsAmount(Number(e.target.value))}
-                                            placeholder="Individueller Betrag"
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* 4. Duration Selector (for Subscriptions, Boosts, Spotlight) */}
-                                {benefitType !== 'CREDITS' && (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                                2. Laufzeit / Gültigkeit:
-                                            </label>
-                                            <span className="text-[10px] text-slate-400">Keine automatische Verlängerung</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {[
-                                                { days: 7, label: '7 Tage' },
-                                                { days: 14, label: '14 Tage' },
-                                                { days: 30, label: '1 Monat' },
-                                                { days: 90, label: '3 Monate' },
-                                            ].map((preset) => (
-                                                <button
-                                                    key={preset.days}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setDurationDays(preset.days);
-                                                        setCustomEndDate('');
-                                                    }}
-                                                    className={`py-2 px-2 rounded-xl text-center border text-xs font-bold transition-all cursor-pointer ${
-                                                        durationDays === preset.days && !customEndDate
-                                                            ? 'bg-forest text-sand border-forest shadow-xs'
-                                                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                                                    }`}
-                                                >
-                                                    {preset.label}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <div className="space-y-1 pt-1">
-                                            <label className="text-[10px] font-semibold text-slate-500">
-                                                Oder individuelles Enddatum festlegen (optional):
-                                            </label>
-                                            <input
-                                                type="date"
-                                                value={customEndDate}
-                                                onChange={(e) => setCustomEndDate(e.target.value)}
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* 5. Admin Note */}
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                        3. Anmerkung / Grund (wird im Audit & der Benachrichtigung erfasst):
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={adminNote}
-                                        onChange={(e) => setAdminNote(e.target.value)}
-                                        placeholder="z.B. Kulanz wegen Support-Anfrage / Partner-Aktion"
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30"
-                                    />
-                                </div>
-
-                                {/* Security Banner */}
-                                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-[11px] text-emerald-800 leading-relaxed flex items-start gap-2">
-                                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                    <span>
-                                        Dieser Vorteil wird <strong>100% kostenlos</strong> zugewiesen und <strong>endet automatisch</strong> nach Ablauf des Zeitraums. Es findet <strong>keine automatische Abbuchung</strong> statt.
-                                    </span>
-                                </div>
-
-                                {/* Modal Actions */}
-                                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                                    <button
-                                        type="button"
-                                        onClick={() => setBenefitModalOpen(false)}
-                                        disabled={grantingBenefit}
-                                        className="px-4 py-2.5 rounded-2xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
-                                    >
-                                        Abbrechen
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={grantingBenefit}
-                                        className="px-5 py-2.5 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-[#004d0a] transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                                    >
-                                        {grantingBenefit ? (
-                                            <div className="w-4 h-4 border-2 border-sand border-t-transparent rounded-full animate-spin" />
-                                        ) : (
-                                            <Gift className="w-4 h-4 text-gold" />
-                                        )}
-                                        <span>Vorteil kostenlos zuweisen</span>
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+            {/* ─── Manage & Grant Benefits Modal ─── */}
+            <ManageBenefitModal
+                isOpen={benefitModalOpen}
+                onClose={() => setBenefitModalOpen(false)}
+                user={user}
+                onSuccess={fetchUser}
+            />
 
         </div>
     );

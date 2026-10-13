@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -26,13 +25,13 @@ import {
     Layers,
     ChevronLeft,
     Building2,
-    Crown,
     Compass
 } from 'lucide-react';
 import {
     getConversations,
     getConversationDetail,
-    sendChatMessage
+    sendChatMessage,
+    markConversationAsRead
 } from '@/api/conversations';
 import { useAuthStore } from '@/store/useAuthStore';
 import { getSocket } from '@/utils/socket';
@@ -65,14 +64,20 @@ const QUICK_REPLIES = [
 ];
 
 function AdminMessagesContent() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const activeConvIdFromQuery = searchParams.get('id');
-
     const [conversations, setConversations] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState(null);
-    const [selectedConvId, setSelectedConvId] = useState(activeConvIdFromQuery || null);
-    const [mobileStep, setMobileStep] = useState('contacts'); // 'contacts' | 'listings' | 'chat'
+    const [selectedConvId, setSelectedConvId] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return new URLSearchParams(window.location.search).get('id') || null;
+        }
+        return null;
+    });
+    const [mobileStep, setMobileStep] = useState(() => {
+        if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('id')) {
+            return 'chat';
+        }
+        return 'contacts';
+    });
 
     const [activeConversation, setActiveConversation] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -89,6 +94,7 @@ function AdminMessagesContent() {
     const chatContainerRef = useRef(null);
     const textareaRef = useRef(null);
     const typingTimeoutRef = useRef(null);
+    const initialSelectionDoneRef = useRef(false);
 
     const scrollToBottom = useCallback((smooth = true) => {
         if (chatContainerRef.current) {
@@ -166,9 +172,10 @@ function AdminMessagesContent() {
 
     // Active Contact Group
     const activeContactGroup = useMemo(() => {
-        if (!selectedUserId) return null;
-        return groupedContacts.find((g) => g.userId === selectedUserId) || null;
-    }, [groupedContacts, selectedUserId]);
+        const targetUserId = selectedUserId || (selectedConvId ? conversations.find((c) => c.id === selectedConvId)?.other_user?.id : null);
+        if (!targetUserId) return null;
+        return groupedContacts.find((g) => g.userId === targetUserId) || null;
+    }, [groupedContacts, selectedUserId, selectedConvId, conversations]);
 
     const totalUnreadCount = useMemo(
         () => conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0),
@@ -183,46 +190,70 @@ function AdminMessagesContent() {
             const list = res.conversations || res.data?.conversations;
             if (res.success && Array.isArray(list)) {
                 setConversations(list);
-
-                // If query param ID exists, auto select corresponding user and conversation
-                if (activeConvIdFromQuery) {
-                    const targetConv = list.find((c) => c.id === activeConvIdFromQuery);
-                    if (targetConv) {
-                        setSelectedUserId(targetConv.other_user?.id);
-                        setSelectedConvId(targetConv.id);
-                        setMobileStep('chat');
-                        return;
-                    }
-                }
-
-                // If on desktop and no user selected, default to first user with no conversation opened yet
-                if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
-                    if (!selectedUserId && list.length > 0) {
-                        const firstUser = list[0].other_user?.id;
-                        setSelectedUserId(firstUser);
-                    }
-                }
             }
         } catch (err) {
             console.error('Error fetching admin conversations:', err);
             if (!silent) toast.error(getFriendlyErrorMessage(err, 'Die Unterhaltungen konnten nicht geladen werden. Bitte versuche es gleich noch einmal.'));
         } finally {
-            if (!silent) setLoadingList(false);
+            setLoadingList(false);
             setRefreshing(false);
         }
-    }, [activeConvIdFromQuery, selectedUserId]);
+    }, []);
 
+    // Initial mount and 5s recurring poll
     useEffect(() => {
-        fetchConversationsList();
-    }, [fetchConversationsList]);
+        let mounted = true;
+        const loadInitial = async () => {
+            try {
+                const res = await getConversations();
+                if (!mounted) return;
+                const list = res.conversations || res.data?.conversations;
+                if (res.success && Array.isArray(list)) {
+                    setConversations(list);
+                }
+            } catch (err) {
+                console.error('Error fetching admin conversations:', err);
+            } finally {
+                if (mounted) {
+                    setLoadingList(false);
+                    setRefreshing(false);
+                }
+            }
+        };
+        loadInitial();
 
-    // Poll conversations list every 5s
-    useEffect(() => {
         const interval = setInterval(() => {
             fetchConversationsList(true);
         }, 5000);
-        return () => clearInterval(interval);
+
+        return () => {
+            mounted = false;
+            clearInterval(interval);
+        };
     }, [fetchConversationsList]);
+
+    // Handle browser popstate (Back / Forward navigation)
+    useEffect(() => {
+        const handlePopState = () => {
+            if (typeof window === 'undefined') return;
+            const params = new URLSearchParams(window.location.search);
+            const idFromUrl = params.get('id');
+
+            if (idFromUrl) {
+                setSelectedConvId(idFromUrl);
+                setMobileStep('chat');
+            } else {
+                setSelectedConvId(null);
+                setSelectedUserId(null);
+                setActiveConversation(null);
+                setMessages([]);
+                setMobileStep('contacts');
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
 
     // ── 4. Fetch Active Conversation Detail ───────────────────────────────
     const fetchConversationDetail = useCallback(async (convId, silent = false) => {
@@ -239,6 +270,16 @@ function AdminMessagesContent() {
                 setConversations((prev) =>
                     prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c))
                 );
+
+                // Mark read on server and sync badges
+                markConversationAsRead(convId).catch(() => {});
+                const socket = getSocket();
+                if (socket) {
+                    socket.emit('mark_read', { conversationId: convId });
+                }
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('campuna-unread-sync'));
+                }
             }
         } catch (err) {
             console.error('Error fetching conversation detail:', err);
@@ -278,7 +319,6 @@ function AdminMessagesContent() {
         };
 
         socket.on('message_received', handleGlobalMessage);
-        socket.on('admin_new_message', handleGlobalMessage);
 
         if (selectedConvId) {
             socket.emit('join_conversation', { conversationId: selectedConvId });
@@ -332,25 +372,24 @@ function AdminMessagesContent() {
                 socket.off('user_stopped_typing', handleUserStoppedTyping);
                 socket.off('messages_read', handleMessagesRead);
                 socket.off('message_received', handleGlobalMessage);
-                socket.off('admin_new_message', handleGlobalMessage);
             };
         }
 
         return () => {
             socket.off('message_received', handleGlobalMessage);
-            socket.off('admin_new_message', handleGlobalMessage);
         };
     }, [selectedConvId, currentUser?.id, fetchConversationsList]);
 
     useEffect(() => {
-        if (selectedConvId) {
-            fetchConversationDetail(selectedConvId);
-            setIsOtherUserTyping(false);
-        } else {
-            setActiveConversation(null);
-            setMessages([]);
-            setIsOtherUserTyping(false);
-        }
+        if (!selectedConvId) return;
+        let isCurrent = true;
+        (async () => {
+            if (!isCurrent) return;
+            await fetchConversationDetail(selectedConvId, true);
+        })();
+        return () => {
+            isCurrent = false;
+        };
     }, [selectedConvId, fetchConversationDetail]);
 
     // Scroll to bottom on messages update
@@ -358,41 +397,82 @@ function AdminMessagesContent() {
         scrollToBottom(true);
     }, [messages, isOtherUserTyping, scrollToBottom]);
 
-    // Handle selecting a contact (Side 1: Users on left -> shows Listings on right)
+    // Handle selecting a contact (Side 1: Users on left)
     const handleSelectContact = (contactId) => {
         setSelectedUserId(contactId);
-        setSelectedConvId(null);
-        setMobileStep('listings');
+        const contactGroup = groupedContacts.find((g) => g.userId === contactId);
+        // If this contact has only 1 conversation, open it directly.
+        // If this contact has multiple conversations, show the listings so the admin can pick!
+        if (contactGroup && contactGroup.conversations.length === 1) {
+            const targetConv = contactGroup.conversations[0];
+            setSelectedConvId(targetConv.id);
+            setMobileStep('chat');
+            if (typeof window !== 'undefined') {
+                const url = new URL(window.location.href);
+                url.searchParams.set('id', targetConv.id);
+                window.history.pushState(null, '', url.toString());
+            }
+        } else {
+            setSelectedConvId(null);
+            setMobileStep('listings');
+            if (typeof window !== 'undefined') {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('id');
+                window.history.pushState(null, '', url.toString());
+            }
+        }
     };
 
     // Handle selecting a listing conversation (Side 2: Listings on left -> shows Chat on right)
     const handleSelectListingConversation = (convId) => {
         setSelectedConvId(convId);
         setMobileStep('chat');
-        router.replace(`/admin/nachrichten?id=${encodeURIComponent(convId)}`, { scroll: false });
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('id', convId);
+            window.history.pushState(null, '', url.toString());
+        }
     };
 
     // Handle going back to Contacts list
     const handleBackToContacts = () => {
+        setSelectedUserId(null);
         setSelectedConvId(null);
+        setActiveConversation(null);
+        setMessages([]);
         setMobileStep('contacts');
-        router.replace('/admin/nachrichten', { scroll: false });
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('id');
+            window.history.pushState(null, '', url.toString());
+        }
     };
 
     // Handle going back to Listings list on mobile
     const handleBackToListings = () => {
         setSelectedConvId(null);
-        setMobileStep('listings');
-        router.replace('/admin/nachrichten', { scroll: false });
+        setActiveConversation(null);
+        setMessages([]);
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('id');
+            window.history.pushState(null, '', url.toString());
+        }
+        if (activeContactGroup && activeContactGroup.conversations.length <= 1) {
+            setSelectedUserId(null);
+            setMobileStep('contacts');
+        } else {
+            setMobileStep('listings');
+        }
     };
 
     // Apply quick reply
-    const handleApplyQuickReply = (text) => {
+    const handleApplyQuickReply = useCallback((text) => {
         setNewMessageText(text);
-        if (textareaRef.current) {
-            textareaRef.current.focus();
-        }
-    };
+        setTimeout(() => {
+            textareaRef.current?.focus();
+        }, 0);
+    }, []);
 
     // ── Send Message ──────────────────────────────────────────────────
     const handleSendMessage = async (e) => {
@@ -934,7 +1014,7 @@ function AdminMessagesContent() {
                     ) : (
                         <AnimatePresence initial={false}>
                             {messages.map((msg, idx) => {
-                                const isMine = msg.is_mine || msg.sender_id === currentUser?.id;
+                                const isMine = msg.is_mine || msg.sender_id === currentUser?.id || msg.is_admin;
 
                                 return (
                                     <motion.div
@@ -955,13 +1035,8 @@ function AdminMessagesContent() {
                                         {/* Sender Tag */}
                                         <div className="flex items-center gap-1.5 mb-1 px-1">
                                             <span className="text-[10px] font-bold text-charcoal/45 uppercase tracking-wider font-sans">
-                                                {isMine ? 'Campuna Club (Admin)' : (activeConversation.other_user?.name || 'Interessent')}
+                                                {isMine ? 'Campuna Club (Admin)' : (msg.sender_name || activeConversation.other_user?.name || 'Interessent')}
                                             </span>
-                                            {isMine && (
-                                                <span className="inline-flex items-center gap-0.5 bg-gold/20 text-forest text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-gold/40">
-                                                    <Crown className="w-2.5 h-2.5 text-amber-600" /> Admin
-                                                </span>
-                                            )}
                                         </div>
 
                                         {/* Message Bubble */}

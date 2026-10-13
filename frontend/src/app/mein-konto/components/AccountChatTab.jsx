@@ -24,12 +24,14 @@ import {
     Inbox,
     Layers,
     Building2,
-    Crown
+    Crown,
+    Compass
 } from 'lucide-react';
 import {
     getConversations,
     getConversationDetail,
-    sendChatMessage
+    sendChatMessage,
+    markConversationAsRead
 } from '@/api/conversations';
 import { useChatStore } from '@/store/useChatStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -67,8 +69,18 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
 
     const [conversations, setConversations] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState(null);
-    const [selectedConvId, setSelectedConvId] = useState(null);
-    const [mobileStep, setMobileStep] = useState('contacts'); // 'contacts' | 'listings' | 'chat'
+    const [selectedConvId, setSelectedConvId] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return new URLSearchParams(window.location.search).get('id') || null;
+        }
+        return null;
+    });
+    const [mobileStep, setMobileStep] = useState(() => {
+        if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('id')) {
+            return 'chat';
+        }
+        return 'contacts';
+    });
     
     const [activeConversation, setActiveConversation] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -84,6 +96,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
     const chatContainerRef = useRef(null);
     const textareaRef = useRef(null);
     const typingTimeoutRef = useRef(null);
+    const initialSelectionDoneRef = useRef(false);
 
     const scrollToBottom = useCallback((smooth = true) => {
         if (chatContainerRef.current) {
@@ -172,18 +185,15 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
 
     // Active Contact Group
     const activeContactGroup = useMemo(() => {
-        if (!selectedUserId) return null;
-        return groupedContacts.find((g) => g.userId === selectedUserId) || null;
-    }, [groupedContacts, selectedUserId]);
+        const targetUserId = selectedUserId || (selectedConvId ? conversations.find((c) => c.id === selectedConvId)?.other_user?.id : null);
+        if (!targetUserId) return null;
+        return groupedContacts.find((g) => g.userId === targetUserId) || null;
+    }, [groupedContacts, selectedUserId, selectedConvId, conversations]);
 
     // ── 3. Load Conversations ───────────────────────────────────────────
     const loadConversations = useCallback(async (showLoading = false) => {
         const { isLoggedIn, accessToken } = useAuthStore.getState();
-        if (!isLoggedIn || !accessToken) {
-            setIsLoadingList(false);
-            setRefreshing(false);
-            return;
-        }
+        if (!isLoggedIn || !accessToken) return;
 
         if (showLoading) setIsLoadingList(true);
         try {
@@ -192,30 +202,6 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
             if (res.success && Array.isArray(list)) {
                 setConversations(list);
                 fetchGlobalUnreadCount();
-
-                // Check URL parameter id on initial load
-                if (typeof window !== 'undefined') {
-                    const urlParamId = new URLSearchParams(window.location.search).get('id');
-                    if (urlParamId) {
-                        const targetConv = list.find((c) => c.id === urlParamId);
-                        if (targetConv) {
-                            setSelectedUserId(targetConv.other_user?.id);
-                            setSelectedConvId(targetConv.id);
-                            setMobileStep('chat');
-                            return;
-                        }
-                    }
-
-                    // If on desktop and no user selected, default to first user
-                    if (window.innerWidth >= 1024) {
-                        setSelectedUserId((current) => {
-                            if (!current && list.length > 0) {
-                                return list[0].other_user?.id || null;
-                            }
-                            return current;
-                        });
-                    }
-                }
             }
         } catch (err) {
             console.error('Error loading conversations:', err);
@@ -225,21 +211,73 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
         }
     }, [fetchGlobalUnreadCount]);
 
+    // Initial mount and 5s recurring poll (false to rely on default isLoadingList=true)
     useEffect(() => {
-        loadConversations(true);
+        let mounted = true;
+        (async () => {
+            if (!mounted) return;
+            await loadConversations(false);
+        })();
 
         const interval = setInterval(() => {
             loadConversations(false);
         }, 5000);
 
-        return () => clearInterval(interval);
+        return () => {
+            mounted = false;
+            clearInterval(interval);
+        };
     }, [loadConversations]);
 
-    // Handle selecting a contact (Side 1: Users on left -> shows Listings on right)
+    // Handle browser popstate (Back / Forward navigation)
+    useEffect(() => {
+        const handlePopState = () => {
+            if (typeof window === 'undefined') return;
+            const params = new URLSearchParams(window.location.search);
+            const currentTab = params.get('tab');
+            if (currentTab && currentTab !== 'nachrichten') return;
+
+            const idFromUrl = params.get('id');
+            if (idFromUrl) {
+                setSelectedConvId(idFromUrl);
+                setMobileStep('chat');
+            } else {
+                setSelectedConvId(null);
+                setSelectedUserId(null);
+                setMobileStep('contacts');
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
+    // Handle selecting a contact (Side 1: Users on left)
     const handleSelectContact = (contactId) => {
         setSelectedUserId(contactId);
-        setSelectedConvId(null);
-        setMobileStep('listings');
+        const contactGroup = groupedContacts.find((g) => g.userId === contactId);
+        // If this contact has only 1 conversation, open it directly.
+        // If this contact has multiple conversations, show the listings so the user can choose!
+        if (contactGroup && contactGroup.conversations.length === 1) {
+            const targetConv = contactGroup.conversations[0];
+            setSelectedConvId(targetConv.id);
+            setMobileStep('chat');
+            if (typeof window !== 'undefined') {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'nachrichten');
+                url.searchParams.set('id', targetConv.id);
+                window.history.pushState(null, '', url.toString());
+            }
+        } else {
+            setSelectedConvId(null);
+            setMobileStep('listings');
+            if (typeof window !== 'undefined') {
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', 'nachrichten');
+                url.searchParams.delete('id');
+                window.history.pushState(null, '', url.toString());
+            }
+        }
     };
 
     // Handle selecting a specific listing conversation (Side 2: Listings on left -> shows Chat on right)
@@ -250,31 +288,37 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
             const url = new URL(window.location.href);
             url.searchParams.set('tab', 'nachrichten');
             url.searchParams.set('id', convId);
-            window.history.replaceState(null, '', url.toString());
+            window.history.pushState(null, '', url.toString());
         }
     };
 
     // Handle going back to Contacts list (Returns to Side 1: Users on left, Listings on right)
     const handleBackToContacts = () => {
+        setSelectedUserId(null);
         setSelectedConvId(null);
         setMobileStep('contacts');
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
             url.searchParams.set('tab', 'nachrichten');
             url.searchParams.delete('id');
-            window.history.replaceState(null, '', url.toString());
+            window.history.pushState(null, '', url.toString());
         }
     };
 
     // Handle going back to Listings list on mobile
     const handleBackToListings = () => {
         setSelectedConvId(null);
-        setMobileStep('listings');
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
             url.searchParams.set('tab', 'nachrichten');
             url.searchParams.delete('id');
-            window.history.replaceState(null, '', url.toString());
+            window.history.pushState(null, '', url.toString());
+        }
+        if (activeContactGroup && activeContactGroup.conversations.length <= 1) {
+            setSelectedUserId(null);
+            setMobileStep('contacts');
+        } else {
+            setMobileStep('listings');
         }
     };
 
@@ -294,7 +338,18 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                 setConversations((prev) =>
                     prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c))
                 );
+
+                // Ensure backend & socket mark as read immediately
+                markConversationAsRead(convId).catch(() => {});
+                const socket = getSocket();
+                if (socket) {
+                    socket.emit('mark_read', { conversationId: convId });
+                }
+
                 fetchGlobalUnreadCount();
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('campuna-unread-sync'));
+                }
             }
         } catch (err) {
             console.error('Error loading chat thread:', err);
@@ -310,12 +365,17 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
 
         // Global message received listener (updates conversation list & unread counters immediately)
         const handleGlobalMessage = ({ conversationId, message }) => {
+            const isCurrentActive = selectedConvId === conversationId;
+            if (isCurrentActive) {
+                socket.emit('mark_read', { conversationId });
+                markConversationAsRead(conversationId).catch(() => {});
+            }
+
             setConversations((prev) => {
                 let found = false;
                 const updated = prev.map((c) => {
                     if (c.id === conversationId) {
                         found = true;
-                        const isCurrentActive = selectedConvId === conversationId;
                         return {
                             ...c,
                             last_message: message,
@@ -330,7 +390,14 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                 }
                 return updated;
             });
-            fetchGlobalUnreadCount();
+
+            if (isCurrentActive) {
+                setTimeout(() => {
+                    fetchGlobalUnreadCount();
+                }, 300);
+            } else {
+                fetchGlobalUnreadCount();
+            }
         };
 
         socket.on('message_received', handleGlobalMessage);
@@ -398,14 +465,15 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
     }, [selectedConvId, currentUser?.id, fetchGlobalUnreadCount, loadConversations]);
 
     useEffect(() => {
-        if (selectedConvId) {
-            loadThread(selectedConvId, false);
-            setIsOtherUserTyping(false);
-        } else {
-            setActiveConversation(null);
-            setMessages([]);
-            setIsOtherUserTyping(false);
-        }
+        if (!selectedConvId) return;
+        let isCurrent = true;
+        (async () => {
+            if (!isCurrent) return;
+            await loadThread(selectedConvId, true);
+        })();
+        return () => {
+            isCurrent = false;
+        };
     }, [selectedConvId, loadThread]);
 
     // Scroll to bottom on messages update
@@ -413,12 +481,12 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
         scrollToBottom(true);
     }, [messages, isOtherUserTyping, scrollToBottom]);
 
-    const handleApplyQuickReply = (text) => {
+    const handleApplyQuickReply = useCallback((text) => {
         setNewMessageText(text);
-        if (textareaRef.current) {
-            textareaRef.current.focus();
-        }
-    };
+        setTimeout(() => {
+            textareaRef.current?.focus();
+        }, 0);
+    }, []);
 
     // ── 5. Send Message ──────────────────────────────────────────────────
     const handleSendMessage = async (e) => {
@@ -1039,7 +1107,7 @@ export default function AccountChatTab({ currentUser, onNavigateToListings }) {
                                         {/* Sender Tag */}
                                         <div className="flex items-center gap-1.5 mb-1 px-1">
                                             <span className="text-[10px] font-bold text-charcoal/45 uppercase tracking-wider font-sans">
-                                                {isMine ? 'Du' : (activeConversation.other_user?.name || 'Interessent')}
+                                                {isMine ? 'Du' : (msg.sender_name || activeConversation.other_user?.name || 'Interessent')}
                                             </span>
                                             {isMine && currentUser?.role === 'ADMIN' && (
                                                 <span className="inline-flex items-center gap-0.5 bg-gold/20 text-forest text-[9px] font-bold px-1.5 py-0.2 rounded-full border border-gold/40">

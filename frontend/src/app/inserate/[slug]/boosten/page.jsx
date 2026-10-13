@@ -177,10 +177,14 @@ export default function BoostListingPage() {
     }, [listing]);
 
     const calculatedEndDate = useMemo(() => {
-        const d = new Date();
-        d.setDate(d.getDate() + selectedDays);
+        const now = new Date();
+        let base = now;
+        if (isCurrentlyBoosted && listing?.boosted_until && new Date(listing.boosted_until) > now) {
+            base = new Date(listing.boosted_until);
+        }
+        const d = new Date(base.getTime() + selectedDays * 24 * 60 * 60 * 1000);
         return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    }, [selectedDays]);
+    }, [selectedDays, isCurrentlyBoosted, listing?.boosted_until]);
 
     const hasEnoughCredits = creditBalance >= activePackage.costCC;
 
@@ -209,7 +213,12 @@ export default function BoostListingPage() {
         try {
             const res = await boostListing(listing.id, selectedDays, paymentMethod);
             if (res?.success || res?.data?.success) {
-                toast.success(`Geschafft! Dein Inserat ist jetzt für ${selectedDays} Tage hervorgehoben.`, { id: toastId });
+                toast.success(
+                    isCurrentlyBoosted
+                        ? `Geschafft! Der Boost für dein Inserat wurde erfolgreich um ${selectedDays} Tage verlängert.`
+                        : `Geschafft! Dein Inserat ist jetzt für ${selectedDays} Tage hervorgehoben.`,
+                    { id: toastId }
+                );
                 setBoostResult(res.data);
                 setIsSuccess(true);
                 if (res.data?.new_balance !== undefined) {
@@ -789,7 +798,11 @@ export default function BoostListingPage() {
                                 ) : (
                                     <>
                                         <Rocket className="w-4 h-4" />
-                                        <span>Jetzt für {selectedDays} Tage hervorheben</span>
+                                        <span>
+                                            {isCurrentlyBoosted
+                                                ? `Laufzeit um ${selectedDays} Tage verlängern`
+                                                : `Jetzt für ${selectedDays} Tage hervorheben`}
+                                        </span>
                                     </>
                                 )}
                             </button>

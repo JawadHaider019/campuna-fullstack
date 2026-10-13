@@ -314,12 +314,6 @@ export const createOrGetConversation = async (req, res) => {
 export const getConversations = async (req, res) => {
     try {
         const userId = req.user.id;
-        const isAdmin = req.user?.role === 'ADMIN';
-
-        const whereClause = isAdmin
-            ? ""
-            : "WHERE (c.buyer_id = $1 OR c.seller_id = $1)";
-        const queryParams = isAdmin ? [] : [userId];
 
         const query = `
             SELECT 
@@ -359,7 +353,7 @@ export const getConversations = async (req, res) => {
                 lm.content as last_message_content,
                 lm.sender_id as last_message_sender_id,
                 lm.created_at as last_message_created_at,
-                -- Unread count for current user
+                -- Unread count for incoming messages from counterpart
                 COALESCE(unread.count, 0)::int as unread_count
             FROM conversations c
             LEFT JOIN listings l ON c.listing_id = l.id
@@ -378,15 +372,16 @@ export const getConversations = async (req, res) => {
             ) lm ON true
             LEFT JOIN LATERAL (
                 SELECT COUNT(*) as count
-                FROM messages
-                WHERE conversation_id = c.id 
-                  ${isAdmin ? "AND is_read = false" : "AND sender_id <> $1 AND is_read = false"}
+                FROM messages m
+                WHERE m.conversation_id = c.id 
+                  AND m.is_read = false
+                  AND m.sender_id <> $1
             ) unread ON true
-            ${whereClause}
+            WHERE (c.buyer_id = $1 OR c.seller_id = $1)
             ORDER BY c.updated_at DESC
         `;
 
-        const result = await pool.query(query, queryParams);
+        const result = await pool.query(query, [userId]);
 
         const conversations = result.rows.map(row => {
             const isBuyer = String(row.buyer_id).toLowerCase() === String(userId).toLowerCase();
@@ -414,19 +409,17 @@ export const getConversations = async (req, res) => {
                 'Gewerblicher Anbieter'
             );
 
-            // Determine other party info
-            let otherUser;
-            if (isBuyer) {
-                otherUser = {
+            // Determine other party info strictly for participants
+            const otherUser = isBuyer
+                ? {
                     id: row.seller_id,
                     role_in_chat: 'SELLER',
                     name: sellerDisplayName,
                     company_name: row.seller_company_name || null,
                     type: row.seller_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                     avatar: row.seller_type === 'COMMERCIAL' ? (row.seller_logo || row.seller_avatar) : row.seller_avatar
-                };
-            } else if (isSeller) {
-                otherUser = {
+                }
+                : {
                     id: row.buyer_id,
                     role_in_chat: 'BUYER',
                     name: buyerDisplayName,
@@ -434,17 +427,6 @@ export const getConversations = async (req, res) => {
                     type: row.buyer_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
                     avatar: row.buyer_type === 'COMMERCIAL' ? (row.buyer_logo || row.buyer_avatar) : row.buyer_avatar
                 };
-            } else {
-                // Admin viewing a conversation
-                otherUser = {
-                    id: row.buyer_id,
-                    role_in_chat: 'BUYER',
-                    name: buyerDisplayName,
-                    company_name: row.buyer_company_name || null,
-                    type: row.buyer_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
-                    avatar: row.buyer_type === 'COMMERCIAL' ? (row.buyer_logo || row.buyer_avatar) : row.buyer_avatar
-                };
-            }
 
             const images = parseImages(row.listing_images);
 
@@ -496,26 +478,16 @@ export const getConversations = async (req, res) => {
 export const getUnreadCount = async (req, res) => {
     try {
         const userId = req.user.id;
-        const isAdmin = req.user?.role === 'ADMIN';
 
-        let result;
-        if (isAdmin) {
-            result = await pool.query(
-                `SELECT COUNT(*)::int as count 
-                 FROM messages m 
-                 WHERE m.is_read = false`
-            );
-        } else {
-            result = await pool.query(
-                `SELECT COUNT(*)::int as count 
-                 FROM messages m 
-                 JOIN conversations c ON m.conversation_id = c.id 
-                 WHERE (c.buyer_id = $1 OR c.seller_id = $1) 
-                   AND m.sender_id <> $1 
-                   AND m.is_read = false`,
-                [userId]
-            );
-        }
+        const result = await pool.query(
+            `SELECT COUNT(*)::int as count 
+             FROM messages m 
+             JOIN conversations c ON m.conversation_id = c.id 
+             WHERE (c.buyer_id = $1 OR c.seller_id = $1) 
+               AND m.sender_id <> $1 
+               AND m.is_read = false`,
+            [userId]
+        );
 
         const unreadCount = result.rows[0]?.count || 0;
 
@@ -597,12 +569,11 @@ export const getConversationDetail = async (req, res) => {
 
         const row = convRes.rows[0];
 
-        // 2. Strict Access Control: User must be buyer or seller (or admin)
+        // 2. Strict Access Control: User must be buyer or seller (no admin third-party viewing)
         const isBuyer = String(row.buyer_id).toLowerCase() === String(userId).toLowerCase();
         const isSeller = String(row.seller_id).toLowerCase() === String(userId).toLowerCase();
-        const isAdmin = req.user.role === 'ADMIN';
 
-        if (!isBuyer && !isSeller && !isAdmin) {
+        if (!isBuyer && !isSeller) {
             return res.status(403).json({
                 success: false,
                 error: 'Zugriff verweigert. Du bist kein Teilnehmer dieser Unterhaltung.'
@@ -617,24 +588,57 @@ export const getConversationDetail = async (req, res) => {
             [id, userId]
         );
 
-        // 4. Fetch all messages in chronological order
+        // 4. Fetch all messages in chronological order with sender details
         const msgRes = await pool.query(
-            `SELECT id, conversation_id, sender_id, content, is_read, created_at
-             FROM messages
-             WHERE conversation_id = $1
-             ORDER BY created_at ASC`,
+            `SELECT 
+                m.id, 
+                m.conversation_id, 
+                m.sender_id, 
+                m.content, 
+                m.is_read, 
+                m.created_at,
+                u.role as sender_role,
+                u.user_type as sender_type,
+                pp.first_name as sender_pp_first,
+                pp.last_name as sender_pp_last,
+                cp.company_name as sender_company,
+                cp.first_name as sender_cp_first,
+                cp.last_name as sender_cp_last
+             FROM messages m
+             JOIN users u ON m.sender_id = u.id
+             LEFT JOIN private_profiles pp ON pp.user_id = u.id
+             LEFT JOIN company_profiles cp ON cp.user_id = u.id
+             WHERE m.conversation_id = $1
+             ORDER BY m.created_at ASC`,
             [id]
         );
 
-        const messages = msgRes.rows.map(m => ({
-            id: m.id,
-            conversation_id: m.conversation_id,
-            sender_id: m.sender_id,
-            content: m.content,
-            is_read: m.is_read,
-            is_mine: String(m.sender_id).toLowerCase() === String(userId).toLowerCase(),
-            created_at: m.created_at
-        }));
+        const messages = msgRes.rows.map(m => {
+            const senderName = formatChatUserName(
+                m.sender_type,
+                m.sender_pp_first,
+                m.sender_pp_last,
+                m.sender_cp_first,
+                m.sender_cp_last,
+                m.sender_company,
+                'Nutzer',
+                'Partner'
+            );
+            const isSenderAdmin = m.sender_role === 'ADMIN' || String(m.sender_id).toLowerCase() === '88145acc-d6bc-451f-ab41-9dbc068c3585' || String(m.sender_id).toLowerCase() === 'd528fd47-dc78-4891-abc6-201fe292b616';
+
+            return {
+                id: m.id,
+                conversation_id: m.conversation_id,
+                sender_id: m.sender_id,
+                sender_name: senderName,
+                sender_role: m.sender_role,
+                is_admin: isSenderAdmin,
+                content: m.content,
+                is_read: m.is_read,
+                is_mine: String(m.sender_id).toLowerCase() === String(userId).toLowerCase(),
+                created_at: m.created_at
+            };
+        });
 
         const buyerDisplayName = formatChatUserName(
             row.buyer_type,
@@ -688,6 +692,20 @@ export const getConversationDetail = async (req, res) => {
                 is_buyer: isBuyer,
                 created_at: row.created_at,
                 updated_at: row.updated_at,
+                buyer: {
+                    id: row.buyer_id,
+                    name: buyerDisplayName,
+                    company_name: row.buyer_company_name || null,
+                    type: row.buyer_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
+                    avatar: row.buyer_type === 'COMMERCIAL' ? (row.buyer_logo || row.buyer_avatar) : row.buyer_avatar
+                },
+                seller: {
+                    id: row.seller_id,
+                    name: sellerDisplayName,
+                    company_name: row.seller_company_name || null,
+                    type: row.seller_type === 'COMMERCIAL' ? 'Gewerblich' : 'Privat',
+                    avatar: row.seller_type === 'COMMERCIAL' ? (row.seller_logo || row.seller_avatar) : row.seller_avatar
+                },
                 listing: row.listing_id ? {
                     id: row.listing_id,
                     title: row.listing_title,
@@ -747,9 +765,8 @@ export const sendMessage = async (req, res) => {
         const conv = convRes.rows[0];
         const isBuyer = String(conv.buyer_id).toLowerCase() === String(userId).toLowerCase();
         const isSeller = String(conv.seller_id).toLowerCase() === String(userId).toLowerCase();
-        const isAdmin = req.user?.role === 'ADMIN';
 
-        if (!isBuyer && !isSeller && !isAdmin) {
+        if (!isBuyer && !isSeller) {
             return res.status(403).json({ success: false, error: 'Keine Berechtigung zum Senden in dieser Unterhaltung.' });
         }
 
@@ -827,6 +844,23 @@ export const markConversationAsRead = async (req, res) => {
 
         if (!isUUID(conversationId)) {
             return res.status(404).json({ success: false, error: 'Unterhaltung nicht gefunden.' });
+        }
+
+        const convRes = await pool.query(
+            `SELECT buyer_id, seller_id FROM conversations WHERE id = $1`,
+            [conversationId]
+        );
+
+        if (convRes.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Unterhaltung nicht gefunden.' });
+        }
+
+        const conv = convRes.rows[0];
+        const isBuyer = String(conv.buyer_id).toLowerCase() === String(userId).toLowerCase();
+        const isSeller = String(conv.seller_id).toLowerCase() === String(userId).toLowerCase();
+
+        if (!isBuyer && !isSeller) {
+            return res.status(403).json({ success: false, error: 'Keine Berechtigung für diese Unterhaltung.' });
         }
 
         const result = await pool.query(

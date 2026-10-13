@@ -53,11 +53,71 @@ export const getAdminUsers = async (req, res) => {
             conditions.push(`u.is_suspended = TRUE`);
         } else if (status === 'UNVERIFIED') {
             conditions.push(`u.email_verified = FALSE`);
+        } else if (status === 'BENEFITS') {
+            conditions.push(`(
+                sub_stat.sub_payment_method IS NOT NULL OR
+                (cp.spotlight_until IS NOT NULL AND cp.spotlight_until > NOW()) OR
+                COALESCE(boost_stats.boosted_count, 0) > 0 OR
+                COALESCE(credit_stats.granted_credits, 0) > 0 OR
+                COALESCE(grant_stat.total_grants_count, 0) > 0
+            )`);
         }
 
         const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-        // Main User Query with Left Joins for Profiles, Listings Count & Pioneer Badge
+        // Shared FROM clause with all profiles, stats and benefits joins
+        const fromClause = `
+            FROM users u
+            LEFT JOIN private_profiles pp ON u.id = pp.user_id
+            LEFT JOIN company_profiles cp ON u.id = cp.user_id
+            LEFT JOIN (
+                SELECT 
+                    user_id,
+                    COUNT(*) as total_listings,
+                    COUNT(CASE WHEN status = 'APPROVED' THEN 1 END) as active_listings
+                FROM listings
+                GROUP BY user_id
+            ) listing_stats ON u.id = listing_stats.user_id
+            LEFT JOIN (
+                SELECT 
+                    user_id,
+                    TRUE as has_pioneer
+                FROM user_achievements
+                WHERE badge_key = 'CAMPUNA_PIONEER'
+                GROUP BY user_id
+            ) pioneer_stat ON u.id = pioneer_stat.user_id
+            LEFT JOIN (
+                SELECT user_id, COUNT(*) as boosted_count
+                FROM listings
+                WHERE boosted_until IS NOT NULL AND boosted_until > NOW()
+                GROUP BY user_id
+            ) boost_stats ON u.id = boost_stats.user_id
+            LEFT JOIN (
+                SELECT user_id, SUM(amount) as granted_credits
+                FROM credit_transactions
+                WHERE type = 'ADMIN_GRANT'
+                GROUP BY user_id
+            ) credit_stats ON u.id = credit_stats.user_id
+            LEFT JOIN (
+                SELECT DISTINCT ON (user_id) 
+                    user_id, 
+                    payment_method as sub_payment_method, 
+                    expires_at as sub_expires_at, 
+                    notes as sub_notes
+                FROM subscriptions
+                WHERE status = 'ACTIVE' 
+                  AND (expires_at IS NULL OR expires_at > NOW())
+                  AND (payment_method IN ('ADMIN_GRANT', 'TRANSITION_PERIOD') OR notes LIKE '%is_complimentary%')
+                ORDER BY user_id, created_at DESC
+            ) sub_stat ON u.id = sub_stat.user_id
+            LEFT JOIN (
+                SELECT user_id, COUNT(*) as total_grants_count
+                FROM admin_benefit_grants
+                GROUP BY user_id
+            ) grant_stat ON u.id = grant_stat.user_id
+        `;
+
+        // Main User Query
         const mainQuery = `
             SELECT 
                 u.id,
@@ -84,29 +144,19 @@ export const getAdminUsers = async (req, res) => {
                 cp.phone as company_phone,
                 cp.website_url as company_website,
                 cp.tier as company_tier,
+                cp.spotlight_until as cp_spotlight_until,
                 -- Aggregate counts
                 COALESCE(listing_stats.total_listings, 0) as total_listings,
                 COALESCE(listing_stats.active_listings, 0) as active_listings,
-                COALESCE(pioneer_stat.has_pioneer, FALSE) as has_pioneer_badge
-            FROM users u
-            LEFT JOIN private_profiles pp ON u.id = pp.user_id
-            LEFT JOIN company_profiles cp ON u.id = cp.user_id
-            LEFT JOIN (
-                SELECT 
-                    user_id,
-                    COUNT(*) as total_listings,
-                    COUNT(CASE WHEN status = 'APPROVED' THEN 1 END) as active_listings
-                FROM listings
-                GROUP BY user_id
-            ) listing_stats ON u.id = listing_stats.user_id
-            LEFT JOIN (
-                SELECT 
-                    user_id,
-                    TRUE as has_pioneer
-                FROM user_achievements
-                WHERE badge_key = 'CAMPUNA_PIONEER'
-                GROUP BY user_id
-            ) pioneer_stat ON u.id = pioneer_stat.user_id
+                COALESCE(pioneer_stat.has_pioneer, FALSE) as has_pioneer_badge,
+                -- Benefit aggregates
+                COALESCE(boost_stats.boosted_count, 0) as boosted_listings_count,
+                COALESCE(credit_stats.granted_credits, 0) as granted_credits,
+                sub_stat.sub_payment_method,
+                sub_stat.sub_expires_at,
+                sub_stat.sub_notes,
+                COALESCE(grant_stat.total_grants_count, 0) as total_grants_count
+            ${fromClause}
             ${whereClause}
             ORDER BY u.created_at DESC
             LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -117,9 +167,7 @@ export const getAdminUsers = async (req, res) => {
         // Count Query for matching filter
         const countQuery = `
             SELECT COUNT(*) as total
-            FROM users u
-            LEFT JOIN private_profiles pp ON u.id = pp.user_id
-            LEFT JOIN company_profiles cp ON u.id = cp.user_id
+            ${fromClause}
             ${whereClause}
         `;
 
@@ -127,12 +175,20 @@ export const getAdminUsers = async (req, res) => {
         const summaryQuery = `
             SELECT 
                 COUNT(*) as total_users,
-                COUNT(CASE WHEN user_type = 'COMMERCIAL' THEN 1 END) as total_commercial,
-                COUNT(CASE WHEN user_type = 'PRIVATE' THEN 1 END) as total_private,
-                COUNT(CASE WHEN is_suspended = TRUE THEN 1 END) as total_suspended,
-                COUNT(CASE WHEN email_verified = FALSE THEN 1 END) as total_unverified
-            FROM users
-            WHERE role != 'ADMIN'
+                COUNT(CASE WHEN u.user_type = 'COMMERCIAL' THEN 1 END) as total_commercial,
+                COUNT(CASE WHEN u.user_type = 'PRIVATE' THEN 1 END) as total_private,
+                COUNT(CASE WHEN u.is_suspended = TRUE THEN 1 END) as total_suspended,
+                COUNT(CASE WHEN u.email_verified = FALSE THEN 1 END) as total_unverified,
+                COUNT(CASE WHEN (
+                    (cp.spotlight_until IS NOT NULL AND cp.spotlight_until > NOW()) OR
+                    EXISTS (SELECT 1 FROM subscriptions s WHERE s.user_id = u.id AND s.status = 'ACTIVE' AND (s.expires_at IS NULL OR s.expires_at > NOW()) AND (s.payment_method IN ('ADMIN_GRANT', 'TRANSITION_PERIOD') OR s.notes LIKE '%is_complimentary%')) OR
+                    EXISTS (SELECT 1 FROM listings lb WHERE lb.user_id = u.id AND lb.boosted_until IS NOT NULL AND lb.boosted_until > NOW()) OR
+                    EXISTS (SELECT 1 FROM credit_transactions ct WHERE ct.user_id = u.id AND ct.type = 'ADMIN_GRANT') OR
+                    EXISTS (SELECT 1 FROM admin_benefit_grants abg WHERE abg.user_id = u.id)
+                ) THEN 1 END) as total_with_benefits
+            FROM users u
+            LEFT JOIN company_profiles cp ON u.id = cp.user_id
+            WHERE u.role != 'ADMIN'
         `;
 
         const [usersResult, countResult, summaryResult] = await Promise.all([
@@ -172,6 +228,54 @@ export const getAdminUsers = async (req, res) => {
                 total_listings: parseInt(row.total_listings, 10),
                 active_listings: parseInt(row.active_listings, 10),
                 has_pioneer_badge: Boolean(row.has_pioneer_badge),
+                // Assigned Admin Benefits
+                has_assigned_benefits: (
+                    Boolean(row.sub_payment_method) ||
+                    Boolean(row.cp_spotlight_until && new Date(row.cp_spotlight_until) > new Date()) ||
+                    parseInt(row.boosted_listings_count, 10) > 0 ||
+                    parseInt(row.granted_credits, 10) > 0 ||
+                    parseInt(row.total_grants_count, 10) > 0
+                ),
+                assigned_benefits: (() => {
+                    const list = [];
+                    if (row.sub_payment_method) {
+                        list.push({
+                            type: 'BUSINESS_SUBSCRIPTION',
+                            label: row.sub_payment_method === 'TRANSITION_PERIOD' ? 'Business Übergangsphase' : 'Business Gratis',
+                            active: true,
+                            expires_at: row.sub_expires_at,
+                            payment_method: row.sub_payment_method
+                        });
+                    }
+                    if (row.cp_spotlight_until && new Date(row.cp_spotlight_until) > new Date()) {
+                        list.push({
+                            type: 'SPOTLIGHT',
+                            label: 'Homepage-Spotlight',
+                            active: true,
+                            expires_at: row.cp_spotlight_until
+                        });
+                    }
+                    const bCount = parseInt(row.boosted_listings_count, 10) || 0;
+                    if (bCount > 0) {
+                        list.push({
+                            type: 'LISTING_BOOST',
+                            label: `${bCount}x Boost`,
+                            active: true,
+                            count: bCount
+                        });
+                    }
+                    const credits = parseInt(row.granted_credits, 10) || 0;
+                    if (credits > 0) {
+                        list.push({
+                            type: 'CREDITS',
+                            label: `+${credits.toLocaleString('de-DE')} CC`,
+                            active: true,
+                            amount: credits
+                        });
+                    }
+                    return list;
+                })(),
+                total_grants_count: parseInt(row.total_grants_count, 10) || 0,
                 created_at: row.created_at,
                 updated_at: row.updated_at
             };
@@ -194,7 +298,8 @@ export const getAdminUsers = async (req, res) => {
                 totalPrivate: parseInt(summaryRow.total_private || 0, 10),
                 totalSuspended: parseInt(summaryRow.total_suspended || 0, 10),
                 totalAdmins: parseInt(summaryRow.total_admins || 0, 10),
-                totalUnverified: parseInt(summaryRow.total_unverified || 0, 10)
+                totalUnverified: parseInt(summaryRow.total_unverified || 0, 10),
+                totalWithBenefits: parseInt(summaryRow.total_with_benefits || 0, 10)
             }
         });
 
@@ -253,6 +358,7 @@ export const getAdminUserById = async (req, res) => {
                 cp.website_url as company_website,
                 cp.bio as company_description,
                 cp.tier as company_tier,
+                cp.spotlight_until as company_spotlight_until,
                 -- Credits
                 COALESCE((SELECT SUM(amount) FROM credit_transactions WHERE user_id = u.id), 0) as credit_balance,
                 -- Pioneer
@@ -277,13 +383,41 @@ export const getAdminUserById = async (req, res) => {
             ? (row.company_name || `${row.company_first_name || ''} ${row.company_last_name || ''}`.trim() || 'Gewerblicher Anbieter')
             : (`${row.private_first_name || ''} ${row.private_last_name || ''}`.trim() || 'Privatnutzer');
 
-        // Fetch user listings
-        const listingsRes = await pool.query(`
-            SELECT id, title, slug, price, status, images, location, created_at
-            FROM listings
-            WHERE user_id = $1
-            ORDER BY created_at DESC
-        `, [id]);
+        // Fetch user listings, benefits and grant history in parallel
+        const [listingsRes, compSubRes, boostedListingsRes, creditGrantsRes, grantsHistoryRes] = await Promise.all([
+            pool.query(`
+                SELECT id, title, slug, price, status, images, location, boosted_until, featured, created_at
+                FROM listings
+                WHERE user_id = $1
+                ORDER BY created_at DESC
+            `, [id]),
+            pool.query(`
+                SELECT id, plan_id, status, started_at, expires_at, payment_method, notes, created_at
+                FROM subscriptions
+                WHERE user_id = $1 
+                  AND (payment_method IN ('ADMIN_GRANT', 'TRANSITION_PERIOD') OR notes LIKE '%is_complimentary%')
+                ORDER BY created_at DESC
+                LIMIT 1
+            `, [id]),
+            pool.query(`
+                SELECT id, title, slug, price, status, boosted_until, featured
+                FROM listings
+                WHERE user_id = $1 AND boosted_until IS NOT NULL AND boosted_until > NOW()
+                ORDER BY boosted_until DESC
+            `, [id]),
+            pool.query(`
+                SELECT id, amount, type, description, created_at
+                FROM credit_transactions
+                WHERE user_id = $1 AND type = 'ADMIN_GRANT'
+                ORDER BY created_at DESC
+            `, [id]),
+            pool.query(`
+                SELECT id, benefit_type, details, admin_note, granted_by, expires_at, created_at
+                FROM admin_benefit_grants
+                WHERE user_id = $1
+                ORDER BY created_at DESC
+            `, [id])
+        ]);
 
         const listings = listingsRes.rows.map(l => {
             let imgs = [];
@@ -304,6 +438,75 @@ export const getAdminUserById = async (req, res) => {
             };
         });
 
+        // Compute Assigned Benefits
+        let compSub = compSubRes.rows[0] || null;
+        const isSpotlightActive = Boolean(row.company_spotlight_until && new Date(row.company_spotlight_until) > new Date());
+        const boostedListings = boostedListingsRes.rows || [];
+        const creditGrants = creditGrantsRes.rows || [];
+        const grantHistory = grantsHistoryRes.rows || [];
+
+        if (!compSub && isSpotlightActive) {
+            compSub = {
+                status: 'ACTIVE',
+                expires_at: row.company_spotlight_until,
+                payment_method: 'SPOTLIGHT_INCLUDED',
+                notes: 'Inklusive durch aktives Homepage-Spotlight'
+            };
+        }
+
+        const activeBenefitsList = [];
+        if (compSub && compSub.status === 'ACTIVE' && (!compSub.expires_at || new Date(compSub.expires_at) > new Date())) {
+            activeBenefitsList.push({
+                type: 'BUSINESS_SUBSCRIPTION',
+                title: compSub.payment_method === 'TRANSITION_PERIOD' 
+                    ? 'Business Übergangsphase (Kostenlos)' 
+                    : (compSub.payment_method === 'SPOTLIGHT_INCLUDED' ? 'Campuna Business (Inkl. Spotlight)' : 'Campuna Business (Gratis Partner-Vorteil)'),
+                expires_at: compSub.expires_at,
+                details: compSub.notes,
+                is_transition: compSub.payment_method === 'TRANSITION_PERIOD'
+            });
+        }
+        if (isSpotlightActive) {
+            activeBenefitsList.push({
+                type: 'SPOTLIGHT',
+                title: 'Homepage-Spotlight Platziert',
+                expires_at: row.company_spotlight_until
+            });
+        }
+        if (boostedListings.length > 0) {
+            activeBenefitsList.push({
+                type: 'LISTING_BOOST',
+                title: `${boostedListings.length}x Inserat-Boost aktiv`,
+                count: boostedListings.length,
+                items: boostedListings
+            });
+        }
+        if (creditGrants.length > 0) {
+            const totalCredits = creditGrants.reduce((acc, c) => acc + Number(c.amount || 0), 0);
+            activeBenefitsList.push({
+                type: 'CREDITS',
+                title: `+${totalCredits.toLocaleString('de-DE')} CC Administrations-Gutschrift`,
+                amount: totalCredits,
+                count: creditGrants.length
+            });
+        }
+
+        const benefitsData = {
+            has_assigned_benefits: Boolean(
+                activeBenefitsList.length > 0 ||
+                grantHistory.length > 0 ||
+                creditGrants.length > 0 ||
+                compSub
+            ),
+            active_benefits: activeBenefitsList,
+            complimentary_subscription: compSub,
+            spotlight: isSpotlightActive ? { active: true, expires_at: row.company_spotlight_until } : null,
+            boosted_listings: boostedListings,
+            credit_grants: creditGrants,
+            total_granted_credits: creditGrants.reduce((sum, g) => sum + Number(g.amount || 0), 0),
+            history: grantHistory
+        };
+
         return res.status(200).json({
             success: true,
             user: {
@@ -318,7 +521,7 @@ export const getAdminUserById = async (req, res) => {
                 phone: row.company_phone || '',
                 website: row.company_website || '',
                 bio: isCommercial ? (row.company_description || '') : null,
-                tier: row.company_tier || 'FREE',
+                tier: (isCommercial && isSpotlightActive) ? 'BUSINESS' : (row.company_tier || 'FREE'),
                 provider_category: isCommercial ? (row.company_provider_category || 'Wohnmobil- & Wohnwagenhändler') : null,
                 referral_code: row.referral_code,
                 email_verified: row.email_verified,
@@ -327,6 +530,7 @@ export const getAdminUserById = async (req, res) => {
                 has_pioneer_badge: Boolean(row.has_pioneer_badge),
                 total_listings: listings.length,
                 active_listings: listings.filter(l => l.status === 'APPROVED').length,
+                benefits: benefitsData,
                 created_at: row.created_at,
                 updated_at: row.updated_at,
                 listings

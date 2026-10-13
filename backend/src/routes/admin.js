@@ -90,6 +90,8 @@ router.delete('/listings/:id', deleteAdminListing);
 
 import {
     grantAdminBenefit,
+    cancelAdminBenefit,
+    extendAdminBenefit,
     applyCommercialTransitionPeriod,
     getAdminUserListings
 } from '../controllers/adminBenefits.js';
@@ -101,6 +103,8 @@ router.post('/decisions/:id/admin-decision', submitAdminManualDecision);
 
 // Complimentary Benefits & Goodwill endpoints
 router.post('/benefits/grant', grantAdminBenefit);
+router.post('/benefits/cancel', cancelAdminBenefit);
+router.post('/benefits/extend', extendAdminBenefit);
 router.post('/benefits/apply-transition-period', applyCommercialTransitionPeriod);
 router.get('/benefits/user-listings/:userId', getAdminUserListings);
 

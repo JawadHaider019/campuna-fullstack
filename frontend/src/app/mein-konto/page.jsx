@@ -273,6 +273,7 @@ const TabHeader = ({ title, subtitle, icon: Icon, badge, action }) => (
 export default function MeinKontoPage() {
     const router = useRouter();
     const { isLoggedIn, user, accessToken, logout } = useAuthStore();
+    const isAdmin = user?.role === 'ADMIN';
 
     // Active Navigation Tab with URL and Session Persistence
     const [activeTab, setActiveTab] = useState(() => {
@@ -478,10 +479,19 @@ export default function MeinKontoPage() {
         const hasLocation = Boolean((source?.location && String(source.location).trim()) || (source?.company_address && String(source.company_address).trim()));
         const isVerified = Boolean(user?.email_verified);
         const isCommercialUser = isCommercial;
-        const isBusinessSubscriber = Boolean(subDetails?.is_business);
+        const hasActiveSpotlight = Boolean(
+            profile?.has_paid_spotlight ||
+            (profile?.spotlight_until && new Date(profile.spotlight_until) > new Date()) ||
+            profile?.is_strategic_partner
+        );
+        const isBusinessSubscriber = Boolean(subDetails?.is_business || hasActiveSpotlight || profile?.tier === 'BUSINESS');
 
         const list = [
-            { id: 'business_plan', label: 'Aktiver Campuna Business Plan (29 €/Monat)', met: isBusinessSubscriber },
+            { 
+                id: 'business_plan', 
+                label: hasActiveSpotlight ? 'Campuna Business Plan (Inklusive durch Spotlight)' : 'Aktiver Campuna Business Plan (29 €/Monat)', 
+                met: isBusinessSubscriber 
+            },
             { id: 'logo', label: 'Firmenlogo / Profilbild', met: hasLogo },
             { id: 'cover', label: 'Titelbild / Banner', met: hasCover },
             { id: 'bio', label: 'Unternehmensbeschreibung (mind. 20 Zeichen)', met: hasBio },
@@ -635,11 +645,17 @@ export default function MeinKontoPage() {
 
                 const subRes = await getMySubscription().catch(() => null);
                 if (subRes && subRes.success) {
-                    const isBusiness = subRes.data.is_business ?? false;
+                    const prof = profileRes.data?.profile;
+                    const hasSpotlight = Boolean(
+                        prof?.has_paid_spotlight ||
+                        (prof?.spotlight_until && new Date(prof.spotlight_until) > new Date()) ||
+                        prof?.is_strategic_partner
+                    );
+                    const isBusiness = Boolean(subRes.data.is_business || hasSpotlight || prof?.tier === 'BUSINESS');
                     setSubDetails({
-                        plan_name: subRes.data.plan?.name ?? 'FREE',
+                        plan_name: isBusiness ? 'BUSINESS' : (subRes.data.plan?.name ?? 'FREE'),
                         is_business: isBusiness,
-                        expires_at: subRes.data.subscription?.expires_at ?? null,
+                        expires_at: subRes.data.subscription?.expires_at ?? prof?.spotlight_until ?? null,
                     });
                 }
             } else {
@@ -1153,7 +1169,12 @@ export default function MeinKontoPage() {
                 });
 
                 if (res.success || res.data?.success) {
-                    toast.success(`🎉 Glückwunsch! Dein Unternehmen ist jetzt für ${spotlightDuration} Tage im Campuna Spotlight aktiv!`, { id: toastId });
+                    toast.success(
+                        hasPaidSpotlight
+                            ? `🎉 Glückwunsch! Dein Spotlight wurde erfolgreich um ${spotlightDuration} Tage verlängert!`
+                            : `🎉 Glückwunsch! Dein Unternehmen ist jetzt für ${spotlightDuration} Tage im Campuna Spotlight aktiv!`,
+                        { id: toastId }
+                    );
                     if (res.data?.new_balance !== undefined) {
                         setCreditBalance(res.data.new_balance);
                     }
@@ -2293,7 +2314,7 @@ export default function MeinKontoPage() {
                                                                 className="w-full bg-gradient-to-r from-gold via-[#dfbe7f] to-gold hover:brightness-105 text-forest font-black text-xs uppercase tracking-wider py-2.5 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                                                             >
                                                                 <Sparkles className="w-3.5 h-3.5 text-forest" />
-                                                                <span>{hasPaidSpotlight ? 'Spotlight verwalten' : 'Spotlight buchen'}</span>
+                                                                <span>{hasPaidSpotlight ? 'Spotlight verlängern' : 'Spotlight buchen'}</span>
                                                             </button>
                                                         ) : (
                                                             <button
@@ -2970,7 +2991,7 @@ export default function MeinKontoPage() {
                                                                             ? 'Pausiert'
                                                                             : (item.status === 'REJECTED' ? 'Abgelehnt' : 'In Prüfung')}
                                                                     </span>
-                                                                    {item.ai_score !== null && item.ai_score !== undefined && (
+                                                                    {isAdmin && item.ai_score !== null && item.ai_score !== undefined && (
                                                                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold shadow-xs ${
                                                                             item.ai_score > 60
                                                                                 ? 'bg-emerald-950/80 text-emerald-300 backdrop-blur-xs'
@@ -3086,10 +3107,10 @@ export default function MeinKontoPage() {
                                                                     type="button"
                                                                     onClick={() => handleOpenBoostModal(item)}
                                                                     className="flex-1 flex items-center justify-center gap-1 bg-gradient-to-r from-gold via-[#ffd269] to-gold hover:brightness-105 text-forest font-bold py-2 px-2 rounded-xl text-[11px] transition-all cursor-pointer shadow-2xs"
-                                                                    title="Mit Campuna Credits hervorheben"
+                                                                    title={isBoosted ? `Hervorhebung verlängern (aktiv bis ${item.boosted_until ? new Date(item.boosted_until).toLocaleDateString('de-DE') : ''})` : "Mit Campuna Credits hervorheben"}
                                                                 >
                                                                     <Rocket className="w-3 h-3 text-forest" />
-                                                                    <span>Hervorheben</span>
+                                                                    <span>{isBoosted ? 'Verlängern' : 'Hervorheben'}</span>
                                                                 </motion.button>
                                                             ) : (
                                                                 <button
@@ -3228,10 +3249,14 @@ export default function MeinKontoPage() {
                                         <div className="w-8 h-8 rounded-xl bg-gold/20 flex items-center justify-center text-forest font-bold">
                                             <Sparkles className="w-4 h-4 text-forest" />
                                         </div>
-                                        <h3 className="font-black text-charcoal text-lg sm:text-xl font-display">Campuna Spotlight buchen</h3>
+                                        <h3 className="font-black text-charcoal text-lg sm:text-xl font-display">
+                                            {hasPaidSpotlight ? 'Campuna Spotlight verlängern' : 'Campuna Spotlight buchen'}
+                                        </h3>
                                     </div>
                                     <p className="text-xs text-charcoal/70 leading-relaxed">
-                                        Platziere dein Unternehmen in der prominenten Spotlight-Sektion auf der Campuna-Startseite.
+                                        {hasPaidSpotlight
+                                            ? 'Verlängere die prominente Platzierung deines Unternehmens auf der Campuna-Startseite. Deine neu gebuchte Laufzeit wird nahtlos angehängt.'
+                                            : 'Platziere dein Unternehmen in der prominenten Spotlight-Sektion auf der Campuna-Startseite.'}
                                     </p>
                                 </div>
                                 <button
@@ -3241,6 +3266,19 @@ export default function MeinKontoPage() {
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
+
+                            {/* Active Spotlight Info Banner (if renewal) */}
+                            {hasPaidSpotlight && profile?.spotlight_until && (
+                                <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl flex items-center justify-between text-xs text-purple-900 shadow-2xs">
+                                    <span className="flex items-center gap-1.5 font-bold">
+                                        <Sparkles className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                                        Aktuell aktiv bis {new Date(profile.spotlight_until).toLocaleDateString('de-DE')}
+                                    </span>
+                                    <span className="font-bold text-[11px] text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                                        {spotlightDaysLeft > 0 ? `noch ${spotlightDaysLeft} Tage` : 'läuft heute ab'}
+                                    </span>
+                                </div>
+                            )}
 
                             {/* Profile Completeness Checklist */}
                             <div className="bg-[#faf8f3] rounded-2xl border border-beige p-4 space-y-2.5 text-xs">
@@ -3402,6 +3440,10 @@ export default function MeinKontoPage() {
                                             ? 'Campuna Business erforderlich'
                                             : !spotlightRequirements.allMet
                                             ? 'Profil unvollständig'
+                                            : hasPaidSpotlight
+                                            ? (spotlightPaymentMethod === 'CREDIT'
+                                                ? `Um ${spotlightDuration} Tage verlängern (${(spotlightDuration === 7 ? 1500 : spotlightDuration === 14 ? 2500 : 4000).toLocaleString('de-DE')} CC)`
+                                                : `Um ${spotlightDuration} Tage verlängern (${spotlightDuration === 7 ? '14,99 €' : spotlightDuration === 14 ? '24,99 €' : '39,99 €'})`)
                                             : spotlightPaymentMethod === 'CREDIT'
                                             ? `Mit ${(spotlightDuration === 7 ? 1500 : spotlightDuration === 14 ? 2500 : 4000).toLocaleString('de-DE')} CC aktivieren`
                                             : `Sicher mit Stripe bezahlen (${spotlightDuration === 7 ? '14,99 €' : spotlightDuration === 14 ? '24,99 €' : '39,99 €'})`}

@@ -261,7 +261,8 @@ export const createListing = async (req, res) => {
  */
 export const getMyListings = async (req, res) => {
     try {
-        const { id } = req.user;
+        const { id, role } = req.user;
+        const isAdmin = role === 'ADMIN';
 
         const query = `
             SELECT 
@@ -309,8 +310,18 @@ export const getMyListings = async (req, res) => {
             const conversationsCount = parseInt(row.conversations_count || 0, 10);
             const viewsCount = parseInt(row.views || 0, 10);
 
+            // Strip sensitive moderation and AI scoring fields for non-admin users
+            const {
+                ai_score: rowAiScore,
+                ai_decision: rowAiDecision,
+                ai_reasons: rowAiReasons,
+                fraud_risk_score: rowFraudRisk,
+                admin_notes: rowAdminNotes,
+                ...cleanRow
+            } = row;
+
             return {
-                ...row,
+                ...cleanRow,
                 price: parseFloat(row.price) || 0,
                 featured: Boolean(row.featured),
                 is_boosted: Boolean(row.is_boosted),
@@ -322,11 +333,14 @@ export const getMyListings = async (req, res) => {
                 views_count: viewsCount,
                 viewsCount: viewsCount,
                 images: imagesArray,
-                ai_score: row.ai_score !== null && row.ai_score !== undefined ? parseInt(row.ai_score, 10) : null,
-                ai_decision: row.ai_decision || null,
-                ai_reasons: reasonsArray,
                 moderation_status: row.moderation_status || 'PENDING',
-                admin_notes: row.admin_notes || ''
+                ...(isAdmin ? {
+                    ai_score: rowAiScore !== null && rowAiScore !== undefined ? parseInt(rowAiScore, 10) : null,
+                    ai_decision: rowAiDecision || null,
+                    ai_reasons: reasonsArray,
+                    fraud_risk_score: rowFraudRisk !== null && rowFraudRisk !== undefined ? parseInt(rowFraudRisk, 10) : null,
+                    admin_notes: rowAdminNotes || ''
+                } : {})
             };
         });
 
@@ -549,6 +563,7 @@ export const getListingDetail = async (req, res) => {
             return res.status(404).json({ success: false, error: 'Inserat nicht gefunden.' });
         }
         const listing = result.rows[0];
+        const isAdmin = Boolean(req.user && req.user.role === 'ADMIN');
 
         // Increment views asynchronously in background (sync both views and views_count)
         const shouldTrackView = req.query.track_view !== 'false' && req.query.track !== '0';
@@ -665,15 +680,21 @@ export const getListingDetail = async (req, res) => {
             }
         }
 
+        // Strip sensitive internal AI scoring and moderation details for non-admins
+        const {
+            ai_score: rawAiScore,
+            ai_decision: rawAiDecision,
+            ai_reasons: rawAiReasons,
+            fraud_risk_score: rawFraudRisk,
+            admin_notes: rawAdminNotes,
+            ...cleanListing
+        } = listing;
+
         return res.status(200).json({
             success: true,
             listing: {
-                ...listing,
-                ai_score: listing.ai_score !== null && listing.ai_score !== undefined ? parseInt(listing.ai_score, 10) : null,
-                ai_decision: listing.ai_decision || null,
-                ai_reasons: reasonsArray,
+                ...cleanListing,
                 moderation_status: listing.moderation_status || null,
-                admin_notes: listing.admin_notes || '',
                 phone: visiblePhone,
                 has_phone: hasPhone,
                 is_phone_protected: isPhoneProtected,
@@ -695,6 +716,13 @@ export const getListingDetail = async (req, res) => {
                 is_admin: isAdminListing,
                 is_campuna_club: isCampunaClub,
                 is_own_listing: isCampunaClub || (req.user && req.user.id === listing.user_id),
+                ...(isAdmin ? {
+                    ai_score: rawAiScore !== null && rawAiScore !== undefined ? parseInt(rawAiScore, 10) : null,
+                    ai_decision: rawAiDecision || null,
+                    ai_reasons: reasonsArray,
+                    fraud_risk_score: rawFraudRisk !== null && rawFraudRisk !== undefined ? parseInt(rawFraudRisk, 10) : null,
+                    admin_notes: rawAdminNotes || ''
+                } : {}),
                 seller: {
                     name: sellerName,
                     type: sellerType,

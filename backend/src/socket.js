@@ -140,14 +140,6 @@ export function emitNewMessage({ conversationId, message, recipientId, buyerId, 
             message
         });
     }
-
-    // 3. Emit to all admins
-    io.to('admin:notifications').emit('admin_new_message', {
-        conversationId,
-        message,
-        buyerId,
-        sellerId
-    });
 }
 
 /**

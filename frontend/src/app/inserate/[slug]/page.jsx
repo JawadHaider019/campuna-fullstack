@@ -61,6 +61,7 @@ import { SellerAccountBadge, PromotedBadge, ListingBadgesRow } from '@/app/compo
 import { isListingBoosted } from '@/utils/sellerBadge';
 import CategoriesSection from '@/app/components/CategoriesSection';
 import { formatCondition, formatPrice, formatViews, formatCleanLocation, isListingSold } from '@/utils/formatters';
+import FormattedDescription from '@/app/components/FormattedDescription';
 
 function slugifyTitle(title = '') {
     return title
@@ -164,6 +165,7 @@ export default function ListingDetailPage() {
     const toggleFavorite = useFavoritesStore((state) => state.toggleFavorite);
     const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
     const currentUser = useAuthStore((state) => state.user);
+    const isAdmin = currentUser?.role === 'ADMIN';
     const [copied, setCopied] = useState(false);
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [relatedListings, setRelatedListings] = useState([]);
@@ -386,10 +388,12 @@ export default function ListingDetailPage() {
                                 condition: apiMatch.condition || 'Sehr gut',
                                 status: apiMatch.status || 'Aktiv',
                                 user_id: apiMatch.user_id || apiMatch.owner_user_id || apiMatch.seller?.id || null,
-                                ai_score: apiMatch.ai_score,
-                                ai_decision: apiMatch.ai_decision,
-                                ai_reasons: apiMatch.ai_reasons,
-                                admin_notes: apiMatch.admin_notes
+                                ...(isAdmin ? {
+                                    ai_score: apiMatch.ai_score,
+                                    ai_decision: apiMatch.ai_decision,
+                                    ai_reasons: apiMatch.ai_reasons,
+                                    admin_notes: apiMatch.admin_notes
+                                } : {})
                             };
                         }
                     } catch (apiErr) {
@@ -1230,10 +1234,10 @@ export default function ListingDetailPage() {
                             </h2>
                             <div className="relative">
                                 <div
-                                    className={`text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-light overflow-hidden transition-all duration-500 ${isDescriptionExpanded ? 'max-h-[5000px]' : 'max-h-[220px]'
+                                    className={`overflow-hidden transition-all duration-500 ${isDescriptionExpanded ? 'max-h-[5000px]' : 'max-h-[220px]'
                                         }`}
                                 >
-                                    {description}
+                                    <FormattedDescription content={description} />
                                 </div>
 
                                 {/* Fade overlay for collapsed view */}

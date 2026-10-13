@@ -81,6 +81,7 @@ export default function UserDashboard({
     user = null,
 }) {
     const router = useRouter();
+    const isAdmin = user?.role === 'ADMIN';
 
     // Data states
     const [analyticsPeriod, setAnalyticsPeriod] = useState('30d');
@@ -1084,30 +1085,56 @@ export default function UserDashboard({
                         </div>
                     </div>
 
-                    {/* Quality & Visibility Health Score */}
-                    <div className="p-5 bg-white rounded-3xl border border-beige space-y-3.5 text-xs flex flex-col justify-between shadow-xs">
-                        <div>
-                            <span className="font-bold text-charcoal/70 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
-                                <ShieldCheck className="w-3.5 h-3.5 text-forest" /> Inserats-Qualitäts-Score
-                            </span>
-                            <div className="flex items-center gap-3 mt-3">
-                                <div className="text-3xl font-black font-mono text-forest">
-                                    {avgAiScore}<span className="text-xs text-charcoal/40">/100</span>
-                                </div>
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
-                                    Exzellent
+                    {/* Quality & Visibility Health Score (Admins: Quality Score; Users: General Visibility Health) */}
+                    {isAdmin ? (
+                        <div className="p-5 bg-white rounded-3xl border border-beige space-y-3.5 text-xs flex flex-col justify-between shadow-xs">
+                            <div>
+                                <span className="font-bold text-charcoal/70 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-forest" /> Inserats-Qualitäts-Score
                                 </span>
+                                <div className="flex items-center gap-3 mt-3">
+                                    <div className="text-3xl font-black font-mono text-forest">
+                                        {avgAiScore}<span className="text-xs text-charcoal/40">/100</span>
+                                    </div>
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
+                                        Exzellent
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-charcoal/60 mt-1.5 leading-relaxed">
+                                    Optimierte Bilder, vollständige Stammdaten und ein detailliertes Profil sichern Top-Suchplatzierungen.
+                                </p>
                             </div>
-                            <p className="text-[11px] text-charcoal/60 mt-1.5 leading-relaxed">
-                                Optimierte Bilder, vollständige Stammdaten und ein detailliertes Profil sichern Top-Suchplatzierungen.
-                            </p>
-                        </div>
 
-                        <div className="pt-2 border-t border-beige/60 flex items-center justify-between text-[11px]">
-                            <span className="text-charcoal/50">Aktive Inserate:</span>
-                            <span className="font-mono font-bold text-forest">{activeListingsCount} von {userListings.length} Live</span>
+                            <div className="pt-2 border-t border-beige/60 flex items-center justify-between text-[11px]">
+                                <span className="text-charcoal/50">Aktive Inserate:</span>
+                                <span className="font-mono font-bold text-forest">{activeListingsCount} von {userListings.length} Live</span>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="p-5 bg-white rounded-3xl border border-beige space-y-3.5 text-xs flex flex-col justify-between shadow-xs">
+                            <div>
+                                <span className="font-bold text-charcoal/70 uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-forest" /> Inserate-Sichtbarkeit & Status
+                                </span>
+                                <div className="flex items-center gap-3 mt-3">
+                                    <div className="text-2xl font-black font-sans text-forest">
+                                        Optimal
+                                    </div>
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800">
+                                        Aktiv
+                                    </span>
+                                </div>
+                                <p className="text-[11px] text-charcoal/60 mt-1.5 leading-relaxed">
+                                    Optimierte Bilder, vollständige Stammdaten und ein detailliertes Profil sichern Top-Suchplatzierungen.
+                                </p>
+                            </div>
+
+                            <div className="pt-2 border-t border-beige/60 flex items-center justify-between text-[11px]">
+                                <span className="text-charcoal/50">Aktive Inserate:</span>
+                                <span className="font-mono font-bold text-forest">{activeListingsCount} von {userListings.length} Live</span>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -1127,7 +1154,7 @@ export default function UserDashboard({
                                 </span>
                             </div>
                             <p className="text-xs text-charcoal/50 mt-0.5">
-                                Verwalte Status, Highlights, AI-Scores und Bearbeitungen in Echtzeit
+                                Verwalte Status, Highlights und Bearbeitungen in Echtzeit
                             </p>
                         </div>
 
@@ -1228,7 +1255,7 @@ export default function UserDashboard({
                                                                 : (item.status === 'REJECTED' ? 'Abgelehnt' : 'In Prüfung')}
                                                     </span>
 
-                                                    {item.ai_score !== null && item.ai_score !== undefined && (
+                                                    {isAdmin && item.ai_score !== null && item.ai_score !== undefined && (
                                                         <span className={`px-2 py-0.2 rounded-md text-[9px] font-bold ${
                                                             item.ai_score > 60
                                                                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'

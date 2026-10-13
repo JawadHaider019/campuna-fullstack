@@ -37,7 +37,8 @@ import {
     Crown,
     Gift,
     Rocket,
-    Clock
+    Clock,
+    Coins
 } from 'lucide-react';
 import {
     getAdminUsers,
@@ -53,6 +54,7 @@ import { toast } from 'react-hot-toast';
 import { getFriendlyErrorMessage } from '@/utils/validation';
 import PioneerBadge from '@/app/components/PioneerBadge';
 import { getImageUrl } from '@/utils/imageUrl';
+import ManageBenefitModal from '@/app/admin/components/ManageBenefitModal';
 
 export default function AdminUsersPage() {
     const router = useRouter();
@@ -71,7 +73,8 @@ export default function AdminUsersPage() {
         totalCommercial: 0,
         totalPrivate: 0,
         totalSuspended: 0,
-        totalUnverified: 0
+        totalUnverified: 0,
+        totalWithBenefits: 0
     });
 
     // Modals & Active State
@@ -82,18 +85,9 @@ export default function AdminUsersPage() {
     const [actionMenuOpenId, setActionMenuOpenId] = useState(null);
     const [copiedCode, setCopiedCode] = useState(null);
 
-    // Benefit Grant Modal State
+    // Benefit Modal State
     const [benefitModalOpen, setBenefitModalOpen] = useState(false);
     const [userForBenefit, setUserForBenefit] = useState(null);
-    const [benefitType, setBenefitType] = useState('BUSINESS_SUBSCRIPTION'); // 'BUSINESS_SUBSCRIPTION' | 'LISTING_BOOST' | 'SPOTLIGHT' | 'CREDITS'
-    const [durationDays, setDurationDays] = useState(30);
-    const [customEndDate, setCustomEndDate] = useState('');
-    const [selectedListingId, setSelectedListingId] = useState('');
-    const [userListings, setUserListings] = useState([]);
-    const [loadingListings, setLoadingListings] = useState(false);
-    const [creditsAmount, setCreditsAmount] = useState(500);
-    const [adminNote, setAdminNote] = useState('Kulanz / Partner-Vorteil durch Administration');
-    const [grantingBenefit, setGrantingBenefit] = useState(false);
 
     // Transition Period Modal State
     const [transitionModalOpen, setTransitionModalOpen] = useState(false);
@@ -204,79 +198,10 @@ export default function AdminUsersPage() {
         }
     };
 
-    const handleOpenBenefitModal = async (user) => {
+    const handleOpenBenefitModal = (user) => {
         setUserForBenefit(user);
-        const isCommercial = user.user_type === 'COMMERCIAL';
-        // Private users only have Listing Boosts or Credits, Commercial users have Business Subscriptions, Spotlight, Boosts, Credits
-        const defaultType = isCommercial ? 'BUSINESS_SUBSCRIPTION' : 'LISTING_BOOST';
-        setBenefitType(defaultType);
-        setDurationDays(30);
-        setCustomEndDate('');
-        setSelectedListingId('');
-        setCreditsAmount(500);
-        setAdminNote('Kulanz / Partner-Vorteil durch Administration');
         setActionMenuOpenId(null);
         setBenefitModalOpen(true);
-
-        // Fetch user listings in background for listing boost selection
-        setLoadingListings(true);
-        try {
-            const res = await getAdminUserListings(user.id);
-            if (res.data?.success) {
-                const fetchedListings = res.data.listings || [];
-                setUserListings(fetchedListings);
-                if (fetchedListings.length > 0) {
-                    setSelectedListingId(fetchedListings[0].id);
-                } else if (!isCommercial) {
-                    // If private user has no listings to boost, default to CREDITS
-                    setBenefitType('CREDITS');
-                }
-            }
-        } catch (err) {
-            console.warn('Could not fetch user listings:', err);
-        } finally {
-            setLoadingListings(false);
-        }
-    };
-
-    const handleGrantBenefit = async (e) => {
-        e?.preventDefault();
-        if (!userForBenefit) return;
-
-        if (benefitType === 'LISTING_BOOST' && !selectedListingId) {
-            toast.error('Bitte wähle ein Inserat aus.');
-            return;
-        }
-
-        setGrantingBenefit(true);
-        const toastId = toast.loading('Vorteil wird zugewiesen...');
-
-        try {
-            const payload = {
-                user_id: userForBenefit.id,
-                benefit_type: benefitType,
-                duration_days: customEndDate ? undefined : durationDays,
-                custom_end_date: customEndDate || undefined,
-                listing_id: benefitType === 'LISTING_BOOST' ? selectedListingId : undefined,
-                credits_amount: benefitType === 'CREDITS' ? creditsAmount : undefined,
-                admin_note: adminNote.trim() || 'Kulanz / Partner-Vorteil durch Administration',
-            };
-
-            const res = await grantAdminBenefit(payload);
-
-            if (res.data?.success || res.success) {
-                toast.success(res.data?.message || '🎉 Vorteil wurde erfolgreich kostenlos zugewiesen!', { id: toastId });
-                setBenefitModalOpen(false);
-                setUserForBenefit(null);
-                fetchUsers();
-            } else {
-                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Vorteil konnte nicht zugewiesen werden.'), { id: toastId });
-            }
-        } catch (err) {
-            toast.error(getFriendlyErrorMessage(err, 'Fehler beim Zuweisen des Vorteils.'), { id: toastId });
-        } finally {
-            setGrantingBenefit(false);
-        }
     };
 
     const handleApplyTransitionPeriod = async () => {
@@ -358,19 +283,19 @@ export default function AdminUsersPage() {
                 </div>
             </motion.div>
 
-            {/* ─── Top Stats Bento Cards (5 Cards matching Dashboard styling) ─── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* ─── Top Stats Bento Cards (6 Cards with Admin Benefits) ─── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
 
                 {/* 1. Gesamt Benutzer (Forest-to-Black Gradient Luxury Card) */}
                 <motion.div
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => { setUserTypeFilter('ALL'); setStatusFilter('ALL'); setPage(1); }}
-                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[145px] border border-forest/30 cursor-pointer group transition-all"
+                    className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] text-white rounded-3xl p-4.5 relative overflow-hidden shadow-md flex flex-col justify-between min-h-[145px] border border-forest/30 cursor-pointer group transition-all"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-sand/80 uppercase tracking-wider">
-                            Gesamt-Benutzer
+                            Gesamt
                         </span>
                         <div className="w-6 h-6 rounded-full bg-white/10 text-gold flex items-center justify-center font-bold text-xs group-hover:bg-gold group-hover:text-forest transition-colors">
                             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -392,7 +317,7 @@ export default function AdminUsersPage() {
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => { setUserTypeFilter('COMMERCIAL'); setStatusFilter('ALL'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-emerald-200"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-4.5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-emerald-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -417,7 +342,7 @@ export default function AdminUsersPage() {
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => { setUserTypeFilter('PRIVATE'); setStatusFilter('ALL'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-blue-200"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-4.5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-blue-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -432,17 +357,50 @@ export default function AdminUsersPage() {
                             {summary.totalPrivate || 0}
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium mt-1">
-                            <span>Private Camper & Verkäufer</span>
+                            <span>Private Camper</span>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* 4. Unverifiziert / Ausstehend */}
+                {/* 4. Mit Admin-Vorteilen (Gold / Luxury Focus Card) */}
+                <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.99 }}
+                    onClick={() => { setStatusFilter(prev => prev === 'BENEFITS' ? 'ALL' : 'BENEFITS'); setPage(1); }}
+                    className={`rounded-3xl p-4.5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all border ${
+                        statusFilter === 'BENEFITS'
+                            ? 'bg-gradient-to-br from-[#FFFDF5] via-[#FFF9E6] to-[#FDF3D0] border-gold ring-2 ring-gold/40 shadow-sm'
+                            : 'bg-white border-[#E8EAEF] hover:border-gold/60'
+                    }`}
+                >
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                            <span>Vorteile</span>
+                            {statusFilter === 'BENEFITS' && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+                            )}
+                        </span>
+                        <div className="w-6 h-6 rounded-full bg-amber-50 text-gold flex items-center justify-center font-bold text-xs group-hover:bg-gold group-hover:text-forest transition-colors">
+                            <Gift className="w-3.5 h-3.5 text-gold" />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="text-3xl font-extrabold tracking-tight text-[#855F19] font-sans">
+                            {summary.totalWithBenefits || 0}
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-[#855F19] font-bold mt-1">
+                            <Sparkles className="w-3 h-3 text-gold shrink-0" />
+                            <span className="truncate">Admin-Vorteil aktiv</span>
+                        </div>
+                    </div>
+                </motion.div>
+
+                {/* 5. Unverifiziert / Ausstehend */}
                 <motion.div
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => { setStatusFilter('UNVERIFIED'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-amber-200"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-4.5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-amber-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -462,12 +420,12 @@ export default function AdminUsersPage() {
                     </div>
                 </motion.div>
 
-                {/* 5. Gesperrt */}
+                {/* 6. Gesperrt */}
                 <motion.div
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => { setStatusFilter('SUSPENDED'); setPage(1); }}
-                    className="bg-white border border-[#E8EAEF] rounded-3xl p-5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-rose-200"
+                    className="bg-white border border-[#E8EAEF] rounded-3xl p-4.5 shadow-2xs flex flex-col justify-between min-h-[145px] cursor-pointer group transition-all hover:border-rose-200"
                 >
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -482,7 +440,7 @@ export default function AdminUsersPage() {
                             {summary.totalSuspended || 0}
                         </div>
                         <div className="flex items-center gap-1.5 text-[10px] text-rose-600 font-semibold mt-1">
-                            <span>Deaktivierte Konten</span>
+                            <span>Deaktiviert</span>
                         </div>
                     </div>
                 </motion.div>
@@ -543,6 +501,27 @@ export default function AdminUsersPage() {
                             ))}
                         </div>
 
+                        {/* Quick Benefits Toggle Button */}
+                        <button
+                            onClick={() => {
+                                setStatusFilter(prev => prev === 'BENEFITS' ? 'ALL' : 'BENEFITS');
+                                setPage(1);
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold transition-all cursor-pointer border ${
+                                statusFilter === 'BENEFITS'
+                                    ? 'bg-gradient-to-r from-[#FFF9E6] to-[#FDF3D0] text-[#855F19] border-gold shadow-xs'
+                                    : 'bg-white text-slate-600 border-[#E2E4E8] hover:border-gold/60'
+                            }`}
+                        >
+                            <Gift className="w-3.5 h-3.5 text-gold" />
+                            <span>Vorteile</span>
+                            {summary.totalWithBenefits > 0 && (
+                                <span className="px-1.5 py-0.2 rounded-full bg-amber-500/15 text-[#855F19] text-[10px] font-black">
+                                    {summary.totalWithBenefits}
+                                </span>
+                            )}
+                        </button>
+
                         {/* Status Select */}
                         <select
                             value={statusFilter}
@@ -553,6 +532,7 @@ export default function AdminUsersPage() {
                             className="bg-[#F8F9FA] border border-[#E2E4E8] text-slate-700 text-xs font-semibold rounded-2xl px-3.5 py-2 focus:outline-none focus:ring-2 focus:ring-forest/20 cursor-pointer shadow-2xs"
                         >
                             <option value="ALL">Status: Alle</option>
+                            <option value="BENEFITS">🎁 Mit Admin-Vorteilen ({summary.totalWithBenefits || 0})</option>
                             <option value="ACTIVE">Nur Aktive</option>
                             <option value="SUSPENDED">Nur Gesperrte</option>
                             <option value="UNVERIFIED">Nur Unverifizierte</option>
@@ -625,6 +605,30 @@ export default function AdminUsersPage() {
                                                 <span className="text-[11px] text-slate-500 font-mono block truncate">
                                                     {u.email}
                                                 </span>
+                                                {/* Mobile Benefit Badges */}
+                                                {u.has_assigned_benefits && (
+                                                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                                                        {u.assigned_benefits && u.assigned_benefits.length > 0 ? (
+                                                            u.assigned_benefits.map((b, idx) => (
+                                                                <span
+                                                                    key={idx}
+                                                                    className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-[#FFF9E6] to-[#FEF3D0] text-[#855F19] border border-gold/40 shadow-2xs"
+                                                                    title={b.expires_at ? `Gültig bis ${new Date(b.expires_at).toLocaleDateString('de-DE')}` : undefined}
+                                                                >
+                                                                    {b.type === 'BUSINESS_SUBSCRIPTION' && <Crown className="w-2.5 h-2.5 text-gold shrink-0" />}
+                                                                    {b.type === 'SPOTLIGHT' && <Sparkles className="w-2.5 h-2.5 text-purple-600 shrink-0" />}
+                                                                    {b.type === 'LISTING_BOOST' && <Rocket className="w-2.5 h-2.5 text-sky-600 shrink-0" />}
+                                                                    {b.type === 'CREDITS' && <Coins className="w-2.5 h-2.5 text-emerald-600 shrink-0" />}
+                                                                    <span>{b.label}</span>
+                                                                </span>
+                                                            ))
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                                                                <Gift className="w-2.5 h-2.5 text-gold" /> Vorteil aktiv
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
@@ -668,10 +672,14 @@ export default function AdminUsersPage() {
                                     <div className="flex items-center justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
                                         <button
                                             onClick={() => handleOpenBenefitModal(u)}
-                                            className="px-3 py-1.5 rounded-xl bg-forest/10 border border-forest/30 text-forest text-xs font-bold shadow-2xs hover:bg-forest hover:text-sand cursor-pointer flex items-center gap-1 transition-all"
+                                            className={`px-3 py-1.5 rounded-xl border text-xs font-bold shadow-2xs cursor-pointer flex items-center gap-1 transition-all ${
+                                                u.has_assigned_benefits
+                                                    ? 'bg-gold/15 border-gold/40 text-amber-900 hover:bg-gold/25'
+                                                    : 'bg-forest/10 border-forest/30 text-forest hover:bg-forest hover:text-sand'
+                                            }`}
                                         >
                                             <Sparkles className="w-3 h-3 text-gold" />
-                                            <span>Vorteil</span>
+                                            <span>{u.has_assigned_benefits ? 'Vorteile verwalten' : 'Vorteil'}</span>
                                         </button>
                                         <button
                                             onClick={() => router.push(`/admin/benutzer/${u.id}`)}
@@ -705,6 +713,7 @@ export default function AdminUsersPage() {
                                 <th className="py-3.5 px-5">Benutzer</th>
                                 <th className="py-3.5 px-4">E-Mail & Status</th>
                                 <th className="py-3.5 px-4">Kontotyp</th>
+                                <th className="py-3.5 px-4">Admin-Vorteile</th>
                                 <th className="py-3.5 px-4 text-center">Inserate</th>
                                 <th className="py-3.5 px-4">Referral-Code</th>
                                 <th className="py-3.5 px-4">Registriert</th>
@@ -714,7 +723,7 @@ export default function AdminUsersPage() {
                         <tbody className="divide-y divide-[#F0F2F5] text-xs">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="7" className="py-16 text-center">
+                                    <td colSpan="8" className="py-16 text-center">
                                         <div className="inline-flex flex-col items-center gap-2">
                                             <div className="w-7 h-7 border-3 border-forest border-t-transparent rounded-full animate-spin" />
                                             <span className="text-xs font-bold text-slate-400">
@@ -725,7 +734,7 @@ export default function AdminUsersPage() {
                                 </tr>
                             ) : users.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="py-16 text-center">
+                                    <td colSpan="8" className="py-16 text-center">
                                         <div className="inline-flex flex-col items-center gap-2">
                                             <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400">
                                                 <Users className="w-6 h-6" />
@@ -840,7 +849,38 @@ export default function AdminUsersPage() {
                                                 </div>
                                             </td>
 
-                                            {/* 4. Inserate */}
+                                            {/* 4. Admin-Vorteile */}
+                                            <td className="py-3.5 px-4">
+                                                {u.has_assigned_benefits ? (
+                                                    <div className="flex flex-col items-start gap-1 max-w-[210px]">
+                                                        {u.assigned_benefits && u.assigned_benefits.length > 0 ? (
+                                                            u.assigned_benefits.map((b, idx) => (
+                                                                <span
+                                                                    key={idx}
+                                                                    className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-[#FFF9E6] to-[#FEF3D0] text-[#855F19] border border-gold/40 shadow-2xs whitespace-nowrap"
+                                                                    title={b.expires_at ? `Gültig bis ${new Date(b.expires_at).toLocaleDateString('de-DE')}` : undefined}
+                                                                >
+                                                                    {b.type === 'BUSINESS_SUBSCRIPTION' && <Crown className="w-2.5 h-2.5 text-gold shrink-0" />}
+                                                                    {b.type === 'SPOTLIGHT' && <Sparkles className="w-2.5 h-2.5 text-purple-600 shrink-0" />}
+                                                                    {b.type === 'LISTING_BOOST' && <Rocket className="w-2.5 h-2.5 text-sky-600 shrink-0" />}
+                                                                    {b.type === 'CREDITS' && <Coins className="w-2.5 h-2.5 text-emerald-600 shrink-0" />}
+                                                                    <span>{b.label}</span>
+                                                                </span>
+                                                            ))
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                                                                <Gift className="w-2.5 h-2.5 text-gold" /> Vorteil aktiv
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-[11px] text-slate-300 font-mono">
+                                                        —
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            {/* 5. Inserate */}
                                             <td className="py-3.5 px-4 text-center">
                                                 <div className="inline-flex flex-col items-center">
                                                     <span className="font-bold text-slate-800 text-sm">
@@ -918,13 +958,13 @@ export default function AdminUsersPage() {
                                                                 <span>Details ansehen</span>
                                                             </button>
 
-                                                            {/* Grant Benefit */}
+                                                            {/* Grant / Manage Benefit */}
                                                             <button
                                                                 onClick={() => handleOpenBenefitModal(u)}
                                                                 className="w-full px-4 py-2 text-xs font-bold text-forest hover:bg-forest/5 flex items-center gap-2.5 cursor-pointer"
                                                             >
                                                                 <Sparkles className="w-3.5 h-3.5 text-gold" />
-                                                                <span>Vorteil schenken</span>
+                                                                <span>{u.has_assigned_benefits ? 'Vorteile verwalten' : 'Vorteil schenken'}</span>
                                                             </button>
 
                                                             {/* Verify Email Manually */}
@@ -1169,310 +1209,16 @@ export default function AdminUsersPage() {
                 )}
             </AnimatePresence>
 
-            {/* ─── Grant Complimentary Benefit Modal ─── */}
-            <AnimatePresence>
-                {benefitModalOpen && userForBenefit && (
-                    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-                            transition={{ duration: 0.2 }}
-                            className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden"
-                        >
-                            {/* Header */}
-                            <div className="bg-gradient-to-br from-forest via-[#003807] to-[#040805] p-6 text-white relative">
-                                <button
-                                    onClick={() => setBenefitModalOpen(false)}
-                                    className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-
-                                <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-2xl bg-gold/20 text-gold flex items-center justify-center font-bold text-xl border border-gold/30">
-                                        <Gift className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-black text-white leading-tight font-display">
-                                            Kostenlosen Vorteil zuweisen
-                                        </h3>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <p className="text-xs text-sand/80 truncate max-w-[240px]">
-                                                Für: <strong className="text-white">{userForBenefit.email}</strong>
-                                            </p>
-                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                                                userForBenefit.user_type === 'COMMERCIAL'
-                                                    ? 'bg-gold text-forest'
-                                                    : 'bg-white/20 text-sand'
-                                            }`}>
-                                                {userForBenefit.user_type === 'COMMERCIAL' ? 'Gewerblicher Partner' : 'Privatnutzer'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Body */}
-                            <form onSubmit={handleGrantBenefit} className="p-6 space-y-5 text-xs text-slate-700 max-h-[70vh] overflow-y-auto">
-                                
-                                {/* Info Box tailored to account type */}
-                                {userForBenefit.user_type === 'COMMERCIAL' ? (
-                                    <div className="p-3 bg-amber-50/80 border border-amber-200/80 rounded-2xl text-[11px] text-amber-900 leading-relaxed flex items-start gap-2">
-                                        <Crown className="w-4 h-4 text-gold-dark shrink-0 mt-0.5" />
-                                        <span>
-                                            <strong>Gewerbliche Partner-Vorteile</strong>: Du kannst dem Händler eine kostenlose Business-Mitgliedschaft, Homepage-Spotlights, Inserate-Boosts oder Campuna Credits zuweisen.
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-[11px] text-emerald-900 leading-relaxed flex items-start gap-2">
-                                        <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                        <span>
-                                            <strong>Privatnutzer-Vorteile</strong>: Private Konten inserieren kostenfrei und benötigen kein Business-Abo. Du kannst Inserate-Highlights (Boosts) oder Campuna Credits vergeben.
-                                        </span>
-                                    </div>
-                                )}
-
-                                {/* 1. Benefit Type Selector (Tailored to account type) */}
-                                <div className="space-y-2">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                        1. Art des Vorteils wählen:
-                                    </label>
-                                    <div className={`grid gap-2 ${userForBenefit.user_type === 'COMMERCIAL' ? 'grid-cols-2' : 'grid-cols-2'}`}>
-                                        
-                                        {/* Commercial-only: Business Subscription */}
-                                        {userForBenefit.user_type === 'COMMERCIAL' && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setBenefitType('BUSINESS_SUBSCRIPTION')}
-                                                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                                                    benefitType === 'BUSINESS_SUBSCRIPTION'
-                                                        ? 'border-forest bg-forest/10 ring-2 ring-forest/20 text-forest font-bold'
-                                                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-1.5">
-                                                    <Crown className="w-4 h-4 text-gold" />
-                                                    <span className="text-xs font-bold">Campuna Business</span>
-                                                </div>
-                                                <span className="text-[10px] text-slate-500 font-normal">Kostenlose Mitgliedschaft</span>
-                                            </button>
-                                        )}
-
-                                        {/* Available for both: Listing Boost */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setBenefitType('LISTING_BOOST')}
-                                            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                                                benefitType === 'LISTING_BOOST'
-                                                    ? 'border-forest bg-forest/10 ring-2 ring-forest/20 text-forest font-bold'
-                                                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-1.5">
-                                                <Rocket className="w-4 h-4 text-blue-600" />
-                                                <span className="text-xs font-bold">Inserate-Highlight</span>
-                                            </div>
-                                            <span className="text-[10px] text-slate-500 font-normal">Kostenloser Boost / Top</span>
-                                        </button>
-
-                                        {/* Commercial-only: Homepage Spotlight */}
-                                        {userForBenefit.user_type === 'COMMERCIAL' && (
-                                            <button
-                                                type="button"
-                                                onClick={() => setBenefitType('SPOTLIGHT')}
-                                                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                                                    benefitType === 'SPOTLIGHT'
-                                                        ? 'border-forest bg-forest/10 ring-2 ring-forest/20 text-forest font-bold'
-                                                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-1.5">
-                                                    <Sparkles className="w-4 h-4 text-amber-500" />
-                                                    <span className="text-xs font-bold">Homepage-Spotlight</span>
-                                                </div>
-                                                <span className="text-[10px] text-slate-500 font-normal">Startseiten-Präsenz</span>
-                                            </button>
-                                        )}
-
-                                        {/* Available for both: Credits */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setBenefitType('CREDITS')}
-                                            className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col gap-1 ${
-                                                benefitType === 'CREDITS'
-                                                    ? 'border-forest bg-forest/10 ring-2 ring-forest/20 text-forest font-bold'
-                                                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-1.5">
-                                                <img src="/coin.png" className="w-4 h-4" alt="CC" />
-                                                <span className="text-xs font-bold">Credits Gutschrift</span>
-                                            </div>
-                                            <span className="text-[10px] text-slate-500 font-normal">Campuna Credits (CC)</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* 2. If Listing Boost: Listing Selector */}
-                                {benefitType === 'LISTING_BOOST' && (
-                                    <div className="space-y-1.5 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                                        <label className="text-[11px] font-bold text-slate-700 block">
-                                            Zu boostendes Inserat wählen:
-                                        </label>
-                                        {loadingListings ? (
-                                            <div className="py-2 text-slate-400 text-xs">Inserate werden geladen...</div>
-                                        ) : userListings.length === 0 ? (
-                                            <div className="text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200 text-xs">
-                                                Dieser Benutzer hat aktuell keine Inserate erstellt.
-                                            </div>
-                                        ) : (
-                                            <select
-                                                value={selectedListingId}
-                                                onChange={(e) => setSelectedListingId(e.target.value)}
-                                                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30 font-sans cursor-pointer"
-                                            >
-                                                {userListings.map((l) => (
-                                                    <option key={l.id} value={l.id}>
-                                                        {l.title} ({l.status})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* 3. If Credits: Amount input */}
-                                {benefitType === 'CREDITS' && (
-                                    <div className="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                                        <label className="text-[11px] font-bold text-slate-700 block">
-                                            Anzahl Campuna Credits:
-                                        </label>
-                                        <div className="flex gap-2">
-                                            {[500, 1000, 2500, 5000].map((amt) => (
-                                                <button
-                                                    key={amt}
-                                                    type="button"
-                                                    onClick={() => setCreditsAmount(amt)}
-                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                                                        creditsAmount === amt
-                                                            ? 'bg-forest text-sand border-forest'
-                                                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                                                    }`}
-                                                >
-                                                    +{amt.toLocaleString('de-DE')} CC
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <input
-                                            type="number"
-                                            value={creditsAmount}
-                                            onChange={(e) => setCreditsAmount(Number(e.target.value))}
-                                            placeholder="Individueller Betrag"
-                                            className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* 4. Duration Selector (for Subscriptions, Boosts, Spotlight) */}
-                                {benefitType !== 'CREDITS' && (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                                2. Laufzeit / Gültigkeit:
-                                            </label>
-                                            <span className="text-[10px] text-slate-400">Keine automatische Verlängerung</span>
-                                        </div>
-
-                                        <div className="grid grid-cols-4 gap-2">
-                                            {[
-                                                { days: 7, label: '7 Tage' },
-                                                { days: 14, label: '14 Tage' },
-                                                { days: 30, label: '1 Monat' },
-                                                { days: 90, label: '3 Monate' },
-                                            ].map((preset) => (
-                                                <button
-                                                    key={preset.days}
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setDurationDays(preset.days);
-                                                        setCustomEndDate('');
-                                                    }}
-                                                    className={`py-2 px-2 rounded-xl text-center border text-xs font-bold transition-all cursor-pointer ${
-                                                        durationDays === preset.days && !customEndDate
-                                                            ? 'bg-forest text-sand border-forest shadow-xs'
-                                                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                                                    }`}
-                                                >
-                                                    {preset.label}
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <div className="space-y-1 pt-1">
-                                            <label className="text-[10px] font-semibold text-slate-500">
-                                                Oder individuelles Enddatum festlegen (optional):
-                                            </label>
-                                            <input
-                                                type="date"
-                                                value={customEndDate}
-                                                onChange={(e) => setCustomEndDate(e.target.value)}
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30"
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* 5. Admin Note */}
-                                <div className="space-y-1">
-                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                                        3. Anmerkung / Grund (wird im Audit & der Benachrichtigung erfasst):
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={adminNote}
-                                        onChange={(e) => setAdminNote(e.target.value)}
-                                        placeholder="z.B. Kulanz wegen Support-Anfrage / Partner-Aktion"
-                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-forest/30"
-                                    />
-                                </div>
-
-                                {/* Security Banner */}
-                                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-[11px] text-emerald-800 leading-relaxed flex items-start gap-2">
-                                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                                    <span>
-                                        Dieser Vorteil wird <strong>100% kostenlos</strong> zugewiesen und <strong>endet automatisch</strong> nach Ablauf des Zeitraums. Es findet <strong>keine automatische Abbuchung</strong> statt.
-                                    </span>
-                                </div>
-
-                                {/* Modal Actions */}
-                                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-                                    <button
-                                        type="button"
-                                        onClick={() => setBenefitModalOpen(false)}
-                                        disabled={grantingBenefit}
-                                        className="px-4 py-2.5 rounded-2xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors cursor-pointer"
-                                    >
-                                        Abbrechen
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={grantingBenefit}
-                                        className="px-5 py-2.5 rounded-2xl bg-forest text-sand text-xs font-bold hover:bg-[#004d0a] transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                                    >
-                                        {grantingBenefit ? (
-                                            <div className="w-4 h-4 border-2 border-sand border-t-transparent rounded-full animate-spin" />
-                                        ) : (
-                                            <Gift className="w-4 h-4 text-gold" />
-                                        )}
-                                        <span>Vorteil kostenlos zuweisen</span>
-                                    </button>
-                                </div>
-                            </form>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+            {/* ─── Manage & Grant Benefits Modal ─── */}
+            <ManageBenefitModal
+                isOpen={benefitModalOpen}
+                onClose={() => {
+                    setBenefitModalOpen(false);
+                    setUserForBenefit(null);
+                }}
+                user={userForBenefit}
+                onSuccess={fetchUsers}
+            />
 
             {/* ─── 3-Month Commercial Transition Period Modal ─── */}
             <AnimatePresence>

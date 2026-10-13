@@ -11,7 +11,18 @@ import { toJsDate, toTemporalInstant, nowInstant } from '../utils/temporal.js';
  * @returns {{ subscription: object|null, plan: object }}
  */
 export const getUserSubscription = async (userId) => {
-    // Find active (non-expired, non-cancelled) subscription
+    // 1. Check if user has active spotlight or strategic partnership in company_profiles
+    const companyProfile = await db.orm.public.CompanyProfile
+        .where({ user_id: userId })
+        .first()
+        .catch(() => null);
+
+    const spotlightUntil = companyProfile?.spotlight_until ? toJsDate(companyProfile.spotlight_until) : null;
+    const hasActiveSpotlight = Boolean(
+        (spotlightUntil && spotlightUntil > new Date()) || companyProfile?.is_strategic_partner
+    );
+
+    // 2. Find active (non-expired, non-cancelled) subscription
     const activeSub = await db.orm.public.Subscription
         .where({ user_id: userId, status: 'ACTIVE' })
         .include('plan')
@@ -21,6 +32,31 @@ export const getUserSubscription = async (userId) => {
     if (activeSub?.plan) {
         // Check if subscription has expired
         if (activeSub.expires_at && toJsDate(activeSub.expires_at) < new Date()) {
+            if (hasActiveSpotlight) {
+                // If spotlight is active, maintain Business plan!
+                const businessPlan = await db.orm.public.Plan
+                    .where({ name: 'BUSINESS' })
+                    .first();
+
+                if (companyProfile && companyProfile.tier !== 'BUSINESS') {
+                    await db.orm.public.CompanyProfile
+                        .where({ user_id: userId })
+                        .update({ tier: 'BUSINESS' })
+                        .catch(() => null);
+                }
+
+                return {
+                    subscription: {
+                        ...activeSub,
+                        status: 'ACTIVE',
+                        expires_at: companyProfile.spotlight_until,
+                        payment_method: 'SPOTLIGHT_INCLUDED',
+                        plan: businessPlan
+                    },
+                    plan: businessPlan
+                };
+            }
+
             // Automatically mark subscription as EXPIRED
             await db.orm.public.Subscription
                 .where((s) => s.id.eq(activeSub.id))
@@ -41,6 +77,32 @@ export const getUserSubscription = async (userId) => {
         }
 
         return { subscription: activeSub, plan: activeSub.plan };
+    }
+
+    // 3. If no active subscription exists, but Spotlight is active -> grant active Business Plan
+    if (hasActiveSpotlight) {
+        const businessPlan = await db.orm.public.Plan
+            .where({ name: 'BUSINESS' })
+            .first();
+
+        if (companyProfile && companyProfile.tier !== 'BUSINESS') {
+            await db.orm.public.CompanyProfile
+                .where({ user_id: userId })
+                .update({ tier: 'BUSINESS' })
+                .catch(() => null);
+        }
+
+        return {
+            subscription: {
+                id: 'spotlight-included-sub',
+                user_id: userId,
+                status: 'ACTIVE',
+                expires_at: companyProfile?.spotlight_until || null,
+                payment_method: 'SPOTLIGHT_INCLUDED',
+                plan: businessPlan
+            },
+            plan: businessPlan
+        };
     }
 
     // Fallback: return FREE plan (no active sub)

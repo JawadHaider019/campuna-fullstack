@@ -49,6 +49,7 @@ import { getFriendlyErrorMessage } from '@/utils/validation';
 import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
 import ListingImagePlaceholder from '@/app/components/ListingImagePlaceholder';
+import FormattedDescription from '@/app/components/FormattedDescription';
 
 export default function AdminListingsPage() {
     const router = useRouter();
@@ -1401,8 +1402,8 @@ export default function AdminListingsPage() {
                                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                                         Beschreibung
                                     </h4>
-                                    <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                        {selectedListing.description || 'Keine Beschreibung angegeben.'}
+                                    <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed">
+                                        <FormattedDescription content={selectedListing.description} compact />
                                     </div>
                                 </div>
 

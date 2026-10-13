@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { getUnreadMessagesCount, getConversations } from '@/api/conversations';
+import { getUnreadMessagesCount, getConversations, markConversationAsRead } from '@/api/conversations';
 import { getSocket, disconnectSocket as socketUtilsDisconnect } from '@/utils/socket';
 import useAuthStore from './useAuthStore';
 
@@ -17,13 +17,38 @@ export const useChatStore = create((set, get) => ({
             const unread = res.unread_count ?? res.data?.unread_count;
             if (res.success && typeof unread === 'number') {
                 set({ unreadCount: unread });
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('campuna-unread-sync'));
+                }
             }
         } catch {
             // Silently fail if not logged in or network error
         }
     },
 
-    setUnreadCount: (count) => set({ unreadCount: Math.max(0, count) }),
+    markConversationRead: async (conversationId) => {
+        if (!conversationId) return;
+        try {
+            await markConversationAsRead(conversationId);
+        } catch {}
+        try {
+            const socket = getSocket();
+            if (socket) {
+                socket.emit('mark_read', { conversationId });
+            }
+        } catch {}
+        await get().fetchUnreadCount();
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('campuna-unread-sync'));
+        }
+    },
+
+    setUnreadCount: (count) => {
+        set({ unreadCount: Math.max(0, count) });
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('campuna-unread-sync'));
+        }
+    },
 
     decrementUnreadCount: (amount = 1) => {
         set((state) => ({
@@ -73,11 +98,6 @@ export const useChatStore = create((set, get) => ({
         socket.on('message_received', ({ conversationId, message }) => {
             get().fetchUnreadCount();
             get().fetchConversations();
-        });
-
-        socket.off('admin_new_message');
-        socket.on('admin_new_message', () => {
-            get().fetchUnreadCount();
         });
 
         set({ socketInitialized: true });

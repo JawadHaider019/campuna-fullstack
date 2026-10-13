@@ -31,8 +31,8 @@ export const createOrGetConversation = async (param1, param2 = '') => {
  * GET /api/conversations
  * Retrieves all active conversations for the logged in user.
  */
-export const getConversations = async () => {
-    const res = await api.get('/conversations');
+export const getConversations = async (options = {}) => {
+    const res = await api.get('/conversations', options);
     return unwrap(res);
 };
 
@@ -40,8 +40,8 @@ export const getConversations = async () => {
  * GET /api/conversations/unread-count
  * Returns total unread messages count for badges.
  */
-export const getUnreadMessagesCount = async () => {
-    const res = await api.get('/conversations/unread-count');
+export const getUnreadMessagesCount = async (options = {}) => {
+    const res = await api.get('/conversations/unread-count', options);
     return unwrap(res);
 };
 

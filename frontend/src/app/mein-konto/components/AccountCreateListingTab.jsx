@@ -26,6 +26,7 @@ import { isValidPhoneNumber, sanitizePhoneInput, handlePhoneKeyDown, PHONE_VALID
 import { getImageUrl } from '@/utils/imageUrl';
 import { generateAutoDescription } from '@/utils/autoDescription';
 import { compressImages } from '@/utils/imageCompression';
+import DescriptionEditor from '@/app/components/DescriptionEditor';
 
 const SUBCATEGORIES_MAP = {
     'Camping Zubehör': [
@@ -928,12 +929,11 @@ export default function AccountCreateListingTab({
                         </div>
 
                         <div className="space-y-3">
-                            <textarea
+                            <DescriptionEditor
                                 rows={8}
                                 value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                onChange={setDescription}
                                 placeholder="Gib hier deine Stichpunkte, Ausstattungsmerkmale oder einen ersten Entwurf ein (z. B. scheckheftgepflegt, 50.000 km, Standheizung, Markise, Nichtraucher)..."
-                                className="w-full bg-[#faf8f3] border border-beige rounded-2xl p-4 text-xs text-charcoal placeholder-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest/20 focus:border-forest font-sans transition-all leading-relaxed font-normal"
                             />
                             {/* Description improvement button */}
                             <div className="flex items-center gap-2">

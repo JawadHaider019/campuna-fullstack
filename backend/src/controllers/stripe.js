@@ -277,7 +277,39 @@ export const fulfillSession = async (session) => {
 
             await db.orm.public.CompanyProfile
                 .where({ user_id: userId })
-                .update({ spotlight_until: toTemporalInstant(newSpotlightUntil) });
+                .update({ 
+                    spotlight_until: toTemporalInstant(newSpotlightUntil),
+                    tier: 'BUSINESS'
+                });
+
+            // Ensure active Business subscription
+            const businessPlan = await db.orm.public.Plan.where({ name: 'BUSINESS' }).first().catch(() => null);
+            if (businessPlan) {
+                const activeSub = await db.orm.public.Subscription
+                    .where({ user_id: userId, status: 'ACTIVE' })
+                    .first()
+                    .catch(() => null);
+
+                if (activeSub) {
+                    const curExpiry = activeSub.expires_at ? toJsDate(activeSub.expires_at) : null;
+                    if (!curExpiry || curExpiry < newSpotlightUntil) {
+                        await db.orm.public.Subscription
+                            .where((s) => s.id.eq(activeSub.id))
+                            .update({ expires_at: toTemporalInstant(newSpotlightUntil) })
+                            .catch(() => null);
+                    }
+                } else {
+                    await db.orm.public.Subscription.create({
+                        user_id: userId,
+                        plan_id: businessPlan.id,
+                        status: 'ACTIVE',
+                        started_at: nowInstant(),
+                        expires_at: toTemporalInstant(newSpotlightUntil),
+                        payment_method: 'STRIPE_SPOTLIGHT',
+                        amount_paid_cents: 0,
+                    }).catch(() => null);
+                }
+            }
         }
 
         return { success: true, type: 'SPOTLIGHT_PURCHASE', days };

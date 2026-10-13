@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { getImageUrl } from '@/utils/imageUrl';
 import CircleLoader from '@/app/components/CircleLoader';
+import FormattedDescription from '@/app/components/FormattedDescription';
 import {
     Sparkles,
     Search,
@@ -947,8 +948,8 @@ export default function AdminDecisionsPage() {
                                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                                         Inserat-Beschreibung
                                     </h4>
-                                    <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed whitespace-pre-wrap">
-                                        {selectedDecision.description || 'Keine Beschreibung angegeben.'}
+                                    <div className="p-4 bg-[#F8F9FA] rounded-2xl text-xs text-slate-700 leading-relaxed">
+                                        <FormattedDescription content={selectedDecision.description} compact />
                                     </div>
                                 </div>
 

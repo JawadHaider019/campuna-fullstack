@@ -458,11 +458,10 @@ export const getPublicProfile = async (req, res) => {
                 [user.id]
             ).catch(() => ({ rows: [] }));
             const activeSub = subRes.rows?.[0];
-
-            const isBusiness = profile.tier === 'BUSINESS' || profile.is_strategic_partner || activeSub?.plan_name === 'BUSINESS';
             const spotlightUntil = profile?.spotlight_until ? toJsDate(profile.spotlight_until) : null;
             const now = new Date();
             const hasPaidSpotlight = Boolean(spotlightUntil && spotlightUntil > now) || Boolean(profile?.is_strategic_partner);
+            const isBusiness = profile.tier === 'BUSINESS' || profile.is_strategic_partner || activeSub?.plan_name === 'BUSINESS' || hasPaidSpotlight;
             const hasLogo = Boolean(profile?.logo_url && profile.logo_url.trim());
             const hasCover = Boolean(profile?.cover_image_url && profile.cover_image_url.trim());
             const hasBio = Boolean(profile?.bio && profile.bio.trim().length >= 20);
@@ -810,13 +809,49 @@ export const bookSpotlight = async (req, res) => {
             newSpotlightUntil = new Date(now.getTime() + parsedDays * 24 * 60 * 60 * 1000);
         }
 
-        // 5. Update company_profiles spotlight_until
+        // 5. Update company_profiles spotlight_until AND ensure tier = 'BUSINESS'
         await pool.query(
             `UPDATE company_profiles
-             SET spotlight_until = $1, updated_at = NOW()
+             SET spotlight_until = $1, tier = 'BUSINESS', updated_at = NOW()
              WHERE user_id = $2`,
             [newSpotlightUntil.toISOString(), userId]
         );
+
+        // 6. Ensure active BUSINESS subscription in subscriptions table
+        const planRes = await pool.query("SELECT id FROM plans WHERE name = 'BUSINESS' LIMIT 1");
+        const businessPlanId = planRes.rows[0]?.id;
+
+        const activeSubRes = await pool.query(
+            `SELECT id, expires_at FROM subscriptions 
+             WHERE user_id = $1 AND status = 'ACTIVE' LIMIT 1`,
+            [userId]
+        );
+
+        if (activeSubRes.rows.length > 0) {
+            const activeSub = activeSubRes.rows[0];
+            const curExpiry = activeSub.expires_at ? new Date(activeSub.expires_at) : null;
+            if (!curExpiry || curExpiry < newSpotlightUntil) {
+                await pool.query(
+                    `UPDATE subscriptions 
+                     SET expires_at = $1, updated_at = NOW() 
+                     WHERE id = $2`,
+                    [newSpotlightUntil.toISOString(), activeSub.id]
+                );
+            }
+        } else if (businessPlanId) {
+            const notesJson = JSON.stringify({
+                type: 'SPOTLIGHT_INCLUDED_BUSINESS',
+                reason: `Inklusive zu gebuchtem Spotlight (${parsedDays} Tage)`,
+                auto_renew: false,
+                is_complimentary: true,
+            });
+            await pool.query(
+                `INSERT INTO subscriptions (
+                    user_id, plan_id, status, started_at, expires_at, payment_method, amount_paid_cents, notes, created_at, updated_at
+                ) VALUES ($1, $2, 'ACTIVE', NOW(), $3, 'SPOTLIGHT_INCLUDED', 0, $4, NOW(), NOW())`,
+                [userId, businessPlanId, newSpotlightUntil.toISOString(), notesJson]
+            );
+        }
 
         const daysLeft = Math.ceil((newSpotlightUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
