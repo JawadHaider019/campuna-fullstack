@@ -154,7 +154,7 @@ export default function FeaturedShowcaseSection() {
                     </span>
                     <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-forest leading-tight whitespace-normal lg:whitespace-nowrap">
                         <span className="block sm:inline">Campuna </span>
-                        <span>Fundstück der Woche</span>
+                        <span>Fundstücke  der Woche</span>
                     </h2>
                     <p className="font-sans text-xs sm:text-sm md:text-base text-charcoal/70 max-w-xl mx-auto font-light leading-relaxed">
                         Entdecke besondere Camping-Fahrzeuge, Zubehör und Ausrüstung aus unserer Community.
@@ -221,14 +221,9 @@ export default function FeaturedShowcaseSection() {
                         transition={{ duration: 0.6 }}
                         className="lg:col-span-6 flex flex-col justify-center space-y-4 sm:space-y-5 lg:space-y-6"
                     >
-                        {/* Campuna Fundstück der Woche Badge & Headline */}
+                        {/* Campuna Fundstücke  der Woche Badge & Headline */}
                         <div className="space-y-2 sm:space-y-3">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-forest text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider shadow-xs max-w-full">
-                                    <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-                                    <span className="truncate">Campuna Fundstück der Woche</span>
-                                </span>
-                            </div>
+
 
                             {/* Headline (Capped at 2 lines with ellipsis, breaks words cleanly on small mobile) */}
                             <h3 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold text-forest tracking-tight leading-snug sm:leading-tight line-clamp-2 break-words" title={featuredItem.title}>

@@ -139,6 +139,7 @@ export const fulfillSession = async (session) => {
             stripe_session_id: session.id,
             stripe_customer_id: session.customer,
             stripe_payment_intent: session.payment_intent,
+            stripe_invoice_id: typeof session.invoice === 'string' ? session.invoice : (session.invoice?.id || null),
             invoice_number: invoiceNumber,
             payment_summary: 'Stripe (Kreditkarte / SEPA / Apple Pay)',
             payment_method: 'STRIPE',

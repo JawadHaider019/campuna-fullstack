@@ -77,6 +77,12 @@ export const createSubscriptionCheckoutSession = async ({
         adaptive_pricing: {
             enabled: false,
         },
+        invoice_creation: {
+            enabled: true,
+        },
+        tax_id_collection: {
+            enabled: true,
+        },
         customer_email: userEmail,
         line_items: [
             {
@@ -139,6 +145,9 @@ export const createCreditCheckoutSession = async ({
         adaptive_pricing: {
             enabled: false,
         },
+        invoice_creation: {
+            enabled: true,
+        },
         customer_email: userEmail,
         line_items: [
             {
@@ -197,6 +206,9 @@ export const createSpotlightCheckoutSession = async ({
         locale: 'de',
         adaptive_pricing: {
             enabled: false,
+        },
+        invoice_creation: {
+            enabled: true,
         },
         customer_email: userEmail,
         line_items: [
