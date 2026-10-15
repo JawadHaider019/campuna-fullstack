@@ -31,9 +31,9 @@ const requireStripe = () => {
  * Credit package pricing definitions (in EUR cents).
  */
 export const CREDIT_PACKAGES = {
-    500: { priceCents: 499, priceEur: '4,99 €', name: '500 Campuna Credits (7-Tage Highlight)' },
-    800: { priceCents: 799, priceEur: '7,99 €', name: '800 Campuna Credits (14-Tage Highlight)' },
-    1300: { priceCents: 1299, priceEur: '12,99 €', name: '1.300 Campuna Credits (30-Tage Highlight)' },
+    500: { priceCents: 499, priceEur: '4,99 €', name: '500 Campuna Credits (Starter-Paket)' },
+    800: { priceCents: 799, priceEur: '7,99 €', name: '800 Campuna Credits (Standard-Paket)' },
+    1300: { priceCents: 1299, priceEur: '12,99 €', name: '1.300 Campuna Credits (Plus-Paket)' },
     2500: { priceCents: 2499, priceEur: '24,99 €', name: '2.500 Campuna Credits (Spar-Paket)' },
 };
 

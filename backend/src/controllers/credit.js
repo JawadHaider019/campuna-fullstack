@@ -121,9 +121,9 @@ export const purchaseCredits = async (req, res) => {
 
         const credits = parseInt(packageCredits, 10);
         const PACKAGES = {
-            500: { priceCents: 499, priceEur: '4,99 €', label: '7-Tage Inserat-Highlight Paket' },
-            800: { priceCents: 799, priceEur: '7,99 €', label: '14-Tage Inserat-Highlight Paket' },
-            1300: { priceCents: 1299, priceEur: '12,99 €', label: '30-Tage Inserat-Highlight Paket' },
+            500: { priceCents: 499, priceEur: '4,99 €', label: 'Starter-Paket (500 CC)' },
+            800: { priceCents: 799, priceEur: '7,99 €', label: 'Standard-Paket (800 CC)' },
+            1300: { priceCents: 1299, priceEur: '12,99 €', label: 'Plus-Paket (1.300 CC)' },
             2500: { priceCents: 2499, priceEur: '24,99 €', label: 'Spar-Paket (2.500 CC)' },
         };
 

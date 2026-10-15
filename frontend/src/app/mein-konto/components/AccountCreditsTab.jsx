@@ -20,10 +20,10 @@ import CoinIcon from '@/app/components/CoinIcon';
 import toast from 'react-hot-toast';
 
 const CREDIT_PACKAGES = [
-    { credits: 500, priceEur: '4,99 €', label: '7 Tage Inserat-Highlight', popular: false },
-    { credits: 800, priceEur: '7,99 €', label: '14 Tage Inserat-Highlight', popular: true },
-    { credits: 1300, priceEur: '12,99 €', label: '30 Tage Inserat-Highlight', popular: false },
-    { credits: 2500, priceEur: '24,99 €', label: '2.500 CC Guthaben', popular: false },
+    { credits: 500, priceEur: '4,99 €', label: 'Starter-Paket', popular: false },
+    { credits: 800, priceEur: '7,99 €', label: 'Standard-Paket', popular: true },
+    { credits: 1300, priceEur: '12,99 €', label: 'Plus-Paket', popular: false },
+    { credits: 2500, priceEur: '24,99 €', label: 'Spar-Paket', popular: false },
 ];
 
 export default function AccountCreditsTab({

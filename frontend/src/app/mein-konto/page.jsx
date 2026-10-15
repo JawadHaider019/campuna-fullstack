@@ -3498,10 +3498,10 @@ export default function MeinKontoPage() {
                                 <label className="text-xs font-bold text-charcoal/70 uppercase tracking-wider">Paket wählen:</label>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                     {[
-                                        { credits: 500, priceEur: '4,99 €', sub: '7 Tage' },
-                                        { credits: 800, priceEur: '7,99 €', sub: '14 Tage', popular: true },
-                                        { credits: 1300, priceEur: '12,99 €', sub: '30 Tage' },
-                                        { credits: 2500, priceEur: '24,99 €', sub: '2.500 CC' },
+                                        { credits: 500, priceEur: '4,99 €', sub: 'Starter' },
+                                        { credits: 800, priceEur: '7,99 €', sub: 'Standard', popular: true },
+                                        { credits: 1300, priceEur: '12,99 €', sub: 'Plus' },
+                                        { credits: 2500, priceEur: '24,99 €', sub: 'Spar-Paket' },
                                     ].map((pkg) => (
                                         <button
                                             key={pkg.credits}
