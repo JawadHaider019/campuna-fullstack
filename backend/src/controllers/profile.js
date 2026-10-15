@@ -413,10 +413,23 @@ export const getPublicProfile = async (req, res) => {
         }
 
         const achRes = await pool.query(
-            'SELECT badge_key, position, awarded_at FROM user_achievements WHERE user_id = $1',
+            'SELECT badge_key, position, earned_at, earned_at as awarded_at FROM user_achievements WHERE user_id = $1',
             [user.id]
         ).catch(() => ({ rows: [] }));
-        const achievements = achRes.rows || [];
+        let achievements = achRes.rows || [];
+
+        // Check approved listings count for pioneer eligibility (strictly requires email_verified + at least 3 approved listings)
+        const lCountRes = await pool.query(
+            "SELECT COUNT(*)::int as count FROM listings WHERE user_id = $1 AND status = 'APPROVED'",
+            [user.id]
+        ).catch(() => ({ rows: [{ count: 0 }] }));
+        const approvedCount = lCountRes.rows?.[0]?.count || 0;
+
+        const hasPioneerBadge = achievements.some(a => a.badge_key === 'CAMPUNA_PIONEER');
+        const isPioneer = Boolean(hasPioneerBadge && user.email_verified && approvedCount >= 3);
+        const filteredAchievements = isPioneer
+            ? achievements
+            : achievements.filter(a => a.badge_key !== 'CAMPUNA_PIONEER');
 
         const isCommercial = user.user_type === 'COMMERCIAL' || user.role === 'ADMIN';
 
@@ -433,13 +446,22 @@ export const getPublicProfile = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 profile_type: 'PRIVATE',
-                profile: { ...publicFields, member_since: user.created_at },
+                profile: { 
+                    ...publicFields, 
+                    is_pioneer: isPioneer,
+                    isPioneer,
+                    member_since: user.created_at 
+                },
                 user: {
                     id: user.id,
                     role: user.role,
                     user_type: user.user_type,
+                    is_pioneer: isPioneer,
+                    isPioneer,
                 },
-                achievements,
+                is_pioneer: isPioneer,
+                isPioneer,
+                achievements: filteredAchievements,
             });
         }
 
@@ -486,14 +508,20 @@ export const getPublicProfile = async (req, res) => {
                     is_business: isBusiness, 
                     is_spotlight_active: isSpotlightActive,
                     spotlight_until: profile?.spotlight_until || null,
+                    is_pioneer: isPioneer,
+                    isPioneer,
                     member_since: user.created_at 
                 },
                 user: {
                     id: user.id,
                     role: user.role,
                     user_type: user.user_type,
+                    is_pioneer: isPioneer,
+                    isPioneer,
                 },
-                achievements,
+                is_pioneer: isPioneer,
+                isPioneer,
+                achievements: filteredAchievements,
             });
         }
 
@@ -903,7 +931,31 @@ export const getAllProfiles = async (req = {}, res) => {
                 COALESCE(cp.phone, '') as phone,
                 COALESCE(cp.company_address, '') as "companyAddress",
                 COALESCE(l_count.count, 0)::int as "listingsCount",
-                COALESCE((SELECT TRUE FROM user_achievements WHERE user_id = u.id AND badge_key = 'CAMPUNA_PIONEER' LIMIT 1), FALSE) as "isPioneer",
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM user_achievements WHERE user_id = u.id AND badge_key = 'CAMPUNA_PIONEER') > 0
+                     AND u.email_verified IS TRUE
+                     AND COALESCE(l_count.count, 0)::int >= 3
+                    THEN TRUE
+                    ELSE FALSE
+                END as "isPioneer",
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM user_achievements WHERE user_id = u.id AND badge_key = 'CAMPUNA_PIONEER') > 0
+                     AND u.email_verified IS TRUE
+                     AND COALESCE(l_count.count, 0)::int >= 3
+                    THEN TRUE
+                    ELSE FALSE
+                END as is_pioneer,
+                CASE 
+                    WHEN (SELECT COUNT(*) FROM user_achievements WHERE user_id = u.id AND badge_key = 'CAMPUNA_PIONEER') > 0
+                     AND u.email_verified IS TRUE
+                     AND COALESCE(l_count.count, 0)::int >= 3
+                    THEN (
+                        SELECT json_agg(json_build_object('badge_key', ua.badge_key, 'position', ua.position, 'earned_at', ua.earned_at))
+                        FROM user_achievements ua
+                        WHERE ua.user_id = u.id AND ua.badge_key = 'CAMPUNA_PIONEER'
+                    )
+                    ELSE json_build_array()
+                END as achievements,
                 'Gewerblich' as type,
                 CASE 
                     WHEN cp.tier = 'BUSINESS' OR sub.id IS NOT NULL OR cp.is_strategic_partner = TRUE THEN TRUE

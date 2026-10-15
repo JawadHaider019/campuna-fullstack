@@ -83,8 +83,10 @@ const ProviderCard = React.memo(function ProviderCard({ partner, onAuthRequired,
     const hasLogo = Boolean(partner.logo && partner.logo.trim());
     const coverUrl = hasCover ? getImageUrl(partner.coverImage) : null;
     const logoUrl = hasLogo ? getImageUrl(partner.logo) : null;
-
-    const isPioneer = Boolean(partner.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'));
+    const isPioneer = Boolean(
+        (partner.listingsCount >= 3) &&
+        (partner.isPioneer || partner.is_pioneer || partner.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'))
+    );
 
     const handleCardClick = useCallback(() => {
         const slug = buildProviderSlug(partner.name, partner.id);
@@ -138,9 +140,6 @@ const ProviderCard = React.memo(function ProviderCard({ partner, onAuthRequired,
                             <Sparkles className="w-2.5 h-2.5 fill-forest" />
                             Spotlight
                         </span>
-                    )}
-                    {isPioneer && (
-                        <PioneerBadge variant="forest" size="xs" text="Pioneer" className="shadow-lg backdrop-blur-xs" />
                     )}
                 </div>
             </div>
@@ -277,7 +276,9 @@ function ProvidersContent() {
                                 type: p.type || 'Gewerblich',
                                 isSpotlightEligible: p.isSpotlightEligible || false,
                                 isBusiness: p.isBusiness || false,
-                                achievements: p.achievements || []
+                                isPioneer: Boolean(p.isPioneer || p.is_pioneer || p.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')),
+                                is_pioneer: Boolean(p.isPioneer || p.is_pioneer || p.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')),
+                                achievements: p.achievements || (p.isPioneer ? [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }] : [])
                             });
                         }
                     }

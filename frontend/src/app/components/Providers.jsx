@@ -50,6 +50,10 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
     const hasLogo = Boolean(partner.logo && partner.logo.trim());
     const coverUrl = hasCover ? getImageUrl(partner.coverImage) : null;
     const logoUrl = hasLogo ? getImageUrl(partner.logo) : null;
+    const isPioneer = Boolean(
+        (partner.listingsCount >= 3) &&
+        (partner.isPioneer || partner.is_pioneer || partner.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'))
+    );
 
     const handleCardClick = () => {
         const nameSlug = partner.name
@@ -99,13 +103,6 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
                         </span>
                     </div>
                 )}
-
-                {/* Pioneer Badge on Cover */}
-                {partner.isPioneer && (
-                    <div className="absolute top-3 right-3 z-10 pointer-events-none">
-                        <PioneerBadge variant="forest" size="xs" text="Campuna Pioneer" />
-                    </div>
-                )}
             </div>
 
             {/* Overlapping Floating Circular Brand Avatar */}
@@ -135,9 +132,14 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
                         </span>
                     )}
 
-                    <h3 className="font-display text-base sm:text-lg font-bold text-forest group-hover:text-gold transition-colors line-clamp-1 leading-snug">
-                        {partner.name}
-                    </h3>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-display text-base sm:text-lg font-bold text-forest group-hover:text-gold transition-colors line-clamp-1 leading-snug">
+                            {partner.name}
+                        </h3>
+                        {isPioneer && (
+                            <PioneerBadge size="xs" text="Pioneer" />
+                        )}
+                    </div>
 
                     <p className="font-sans text-xs text-charcoal/70 leading-relaxed font-light line-clamp-2">
                         {partner.description || 'Dein verifizierter Partner für Camping und Caravaning auf Campuna.'}

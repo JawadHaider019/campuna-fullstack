@@ -492,6 +492,8 @@ export default function ProviderDetails() {
                     isStrategic: Boolean(matchedStaticUser.isStrategic || matchedStaticUser.is_strategic_partner),
                     isBusiness: Boolean(matchedStaticUser.tier === 'BUSINESS' || matchedStaticUser.isBusiness),
                     tier: matchedStaticUser.tier || 'FREE',
+                    is_pioneer: true,
+                    isPioneer: true,
                     achievements: matchedStaticUser.achievements || [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
                 });
 
@@ -533,6 +535,8 @@ export default function ProviderDetails() {
                     isStrategic: Boolean(matchedMock.isStrategic || matchedMock.is_strategic_partner),
                     isBusiness: Boolean(matchedMock.tier === 'BUSINESS' || matchedMock.isBusiness),
                     tier: matchedMock.tier || 'FREE',
+                    is_pioneer: true,
+                    isPioneer: true,
                     achievements: [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }],
                 });
 
@@ -570,6 +574,32 @@ export default function ProviderDetails() {
                         const logo = p.logo_url || p.profile_image_url || null;
                         const cover = p.cover_image_url || null;
 
+                        let uniqueListings = [];
+                        if (listingsRes.success && Array.isArray(listingsRes.data?.listings)) {
+                            const rawListings = listingsRes.data.listings;
+                            const seen = new Set();
+                            uniqueListings = rawListings.filter(item => {
+                                const key = item.id || `${item.title}_${item.price}`;
+                                if (seen.has(key)) return false;
+                                seen.add(key);
+                                return true;
+                            });
+                            setListings(uniqueListings);
+                        }
+
+                        const achievements = profileRes.data.achievements || profileRes.data.profile?.achievements || [];
+                        const isPioneer = Boolean(
+                            uniqueListings.length >= 3 &&
+                            (
+                                profileRes.data.isPioneer ||
+                                profileRes.data.is_pioneer ||
+                                p.isPioneer ||
+                                p.is_pioneer ||
+                                profileRes.data.user?.is_pioneer ||
+                                achievements.some(a => a.badge_key === 'CAMPUNA_PIONEER')
+                            )
+                        );
+
                         setProvider({
                             id: userId,
                             name,
@@ -590,23 +620,13 @@ export default function ProviderDetails() {
                             isStrategic: p.is_strategic_partner || false,
                             isBusiness: p.is_business || p.tier === 'BUSINESS' || p.is_strategic_partner || false,
                             tier: p.tier || 'FREE',
-                            achievements: profileRes.data.achievements || [],
+                            is_pioneer: isPioneer,
+                            isPioneer: isPioneer,
+                            achievements: achievements.length > 0 ? achievements : (isPioneer ? [{ badge_key: 'CAMPUNA_PIONEER', position: 1 }] : []),
                         });
 
                         setCoverSrc(cover ? getImageUrl(cover) : null);
                         setLogoSrc(logo ? getImageUrl(logo) : null);
-
-                        if (listingsRes.success && Array.isArray(listingsRes.data?.listings)) {
-                            const rawListings = listingsRes.data.listings;
-                            const seen = new Set();
-                            const uniqueListings = rawListings.filter(item => {
-                                const key = item.id || `${item.title}_${item.price}`;
-                                if (seen.has(key)) return false;
-                                seen.add(key);
-                                return true;
-                            });
-                            setListings(uniqueListings);
-                        }
 
                         setLoading(false);
                         return;
@@ -780,7 +800,7 @@ export default function ProviderDetails() {
                                                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                                                 Privatverkäufer
                                             </span>
-                                            {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
+                                            {(listings.length >= 3 && (provider.is_pioneer || provider.isPioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'))) && (
                                                 <PioneerBadge size="sm" text="Pioneer" />
                                             )}
                                         </div>
@@ -848,7 +868,7 @@ export default function ProviderDetails() {
                                                 <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-extrabold text-forest tracking-tight">
                                                     {provider.name}
                                                 </h1>
-                                                {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
+                                                {(listings.length >= 3 && (provider.is_pioneer || provider.isPioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'))) && (
                                                     <PioneerBadge size="sm" text="Pioneer" />
                                                 )}
                                                 {provider.tier === 'BUSINESS' && (
@@ -1111,7 +1131,7 @@ export default function ProviderDetails() {
                                         <span className="text-[10px] font-bold text-forest uppercase tracking-wider truncate">
                                             {provider.name} ({provider.type})
                                         </span>
-                                        {(provider.is_pioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER')) && (
+                                        {(listings.length >= 3 && (provider.is_pioneer || provider.isPioneer || provider.achievements?.some(a => a.badge_key === 'CAMPUNA_PIONEER'))) && (
                                             <PioneerBadge size="xs" text="Pioneer" />
                                         )}
                                     </div>
