@@ -77,7 +77,9 @@ export default function AccountSubscriptionTab({
                             </div>
                             <p className="text-xs text-charcoal/60 mt-0.5 font-medium">
                                 {isBusiness 
-                                    ? `Monatlich 29,00 € • Automatische Verlängerung am: ${subDetails.expires_at ? new Date(subDetails.expires_at).toLocaleDateString('de-DE') : 'in 30 Tagen'}`
+                                    ? subDetails?.cancel_at_period_end
+                                        ? `Gekündigt zum: ${subDetails.expires_at ? new Date(subDetails.expires_at).toLocaleDateString('de-DE') : 'Periodenende'} • Alle Business-Funktionen bleiben bis dahin voll aktiv.`
+                                        : `Monatlich 29,00 € • Nächste Periode ab: ${subDetails.expires_at ? new Date(subDetails.expires_at).toLocaleDateString('de-DE') : 'in 30 Tagen'}`
                                     : '0,00 € / Monat • Dauerhaft kostenloser Basis-Tarif für Unternehmen & professionelle Anbieter'}
                             </p>
                         </div>
@@ -85,15 +87,22 @@ export default function AccountSubscriptionTab({
 
                     <div className="flex items-center gap-2.5 flex-wrap">
                         {isBusiness ? (
-                            <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                type="button"
-                                onClick={onOpenCancelModal}
-                                className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
-                            >
-                                Abonnement kündigen
-                            </motion.button>
+                            subDetails?.cancel_at_period_end ? (
+                                <span className="px-3.5 py-2 bg-amber-50 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs">
+                                    <CheckCircle2 className="w-4 h-4 text-amber-600" />
+                                    <span>Gekündigt zum {subDetails.expires_at ? new Date(subDetails.expires_at).toLocaleDateString('de-DE') : 'Periodenende'}</span>
+                                </span>
+                            ) : (
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    type="button"
+                                    onClick={onOpenCancelModal}
+                                    className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+                                >
+                                    Abonnement kündigen
+                                </motion.button>
+                            )
                         ) : (
                             <motion.button
                                 whileHover={{ scale: 1.02 }}

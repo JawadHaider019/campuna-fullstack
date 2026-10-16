@@ -26,7 +26,7 @@ import {
     createStripeCheckoutSession,
     verifyStripeSession,
 } from '@/api/profile';
-import { getMyListings, boostListing, deleteListing, toggleListingStatus } from '@/api/listings';
+import { getMyListings, boostListing, deleteListing, toggleListingStatus, submitListingAppeal } from '@/api/listings';
 import { logoutUser } from '@/api/auth';
 import { toast } from 'react-hot-toast';
 import CoinIcon from '@/app/components/CoinIcon';
@@ -380,17 +380,25 @@ export default function MeinKontoPage() {
     const [limitModalOpen, setLimitModalOpen] = useState(false);
     const [editingListingId, setEditingListingId] = useState(null);
 
+    // Appeal Modal State
+    const [appealModalListing, setAppealModalListing] = useState(null);
+    const [appealReason, setAppealReason] = useState('MISSING_CONTEXT');
+    const [appealNotes, setAppealNotes] = useState('');
+    const [isSubmittingAppeal, setIsSubmittingAppeal] = useState(false);
+
     // Credit Purchase Modal State
     const [buyCreditModalOpen, setBuyCreditModalOpen] = useState(false);
     const [selectedCreditPkg, setSelectedCreditPkg] = useState(500); // 500, 800, 1300, 2500
     const [creditPaymentMethod, setCreditPaymentMethod] = useState('CREDIT_CARD'); // 'CREDIT_CARD' | 'SEPA' | 'PAYPAL'
     const [buyingCredits, setBuyingCredits] = useState(false);
+    const [buyCreditWithdrawalConsent, setBuyCreditWithdrawalConsent] = useState(false);
 
     // Spotlight Modal State
     const [spotlightModalOpen, setSpotlightModalOpen] = useState(false);
     const [spotlightDuration, setSpotlightDuration] = useState(7); // 7, 14, 30 days
     const [spotlightPaymentMethod, setSpotlightPaymentMethod] = useState('CREDIT'); // 'CREDIT' | 'CREDIT_CARD' | 'SEPA' | 'PAYPAL'
     const [bookingSpotlight, setBookingSpotlight] = useState(false);
+    const [spotlightWithdrawalConsent, setSpotlightWithdrawalConsent] = useState(false);
 
     // Pioneer Award Modal
     const [badgeModalOpen, setBadgeModalOpen] = useState(false);
@@ -1110,6 +1118,39 @@ export default function MeinKontoPage() {
         router.push(`/inserate/${encodeURIComponent(targetSlug)}/boosten`);
     };
 
+    const handleOpenAppealModal = (listing) => {
+        if (!listing) return;
+        setAppealModalListing(listing);
+        setAppealReason('MISSING_CONTEXT');
+        setAppealNotes('');
+    };
+
+    const handleSubmitAppeal = async (e) => {
+        if (e) e.preventDefault();
+        if (!appealModalListing?.id) return;
+        setIsSubmittingAppeal(true);
+        const toastId = toast.loading('Einspruch wird eingereicht...');
+        try {
+            const res = await submitListingAppeal(appealModalListing.id, {
+                reason: appealReason === 'MISSING_CONTEXT' ? 'Missverständnis / Fehlinterpretation der Richtlinien'
+                    : appealReason === 'COMPLIANT' ? 'Inserat entspricht vollständig den Richtlinien'
+                    : 'Sonstige Begründung',
+                notes: appealNotes
+            });
+            if (res?.success || res?.data?.success) {
+                toast.success('Deine Anfrage auf manuelle Überprüfung wurde erfolgreich eingereicht. Das Inserat wird nun manuell geprüft.', { id: toastId, duration: 5000 });
+                setAppealModalListing(null);
+                loadAllAccountData();
+            } else {
+                toast.error(getFriendlyErrorMessage(res?.error || res?.data?.error, 'Einspruch konnte nicht übermittelt werden.'), { id: toastId });
+            }
+        } catch (err) {
+            toast.error(getFriendlyErrorMessage(err, 'Einspruch konnte nicht übermittelt werden.'), { id: toastId });
+        } finally {
+            setIsSubmittingAppeal(false);
+        }
+    };
+
     const handleOpenBuyCreditModal = (pkgCredits = 500) => {
         setSelectedCreditPkg(pkgCredits);
         setCreditPaymentMethod('CREDIT_CARD');
@@ -1117,6 +1158,11 @@ export default function MeinKontoPage() {
     };
 
     const handlePurchaseCreditPackage = async () => {
+        if (!buyCreditWithdrawalConsent) {
+            toast.error('Bitte bestätige die sofortige Ausführung und das vorzeitige Erlöschen des Widerrufsrechts.');
+            return;
+        }
+
         setBuyingCredits(true);
         const PACKAGES_EUR = { 500: '4,99 €', 800: '7,99 €', 1300: '12,99 €', 2500: '24,99 €' };
         const priceEur = PACKAGES_EUR[selectedCreditPkg] || '4,99 €';
@@ -1127,6 +1173,8 @@ export default function MeinKontoPage() {
                 type: 'CREDIT_PURCHASE',
                 package_credits: selectedCreditPkg,
                 return_url: window.location.origin,
+                withdrawal_consent: true,
+                withdrawal_consent_at: new Date().toISOString(),
             });
 
             if (stripeRes.success && stripeRes.data?.url) {
@@ -1148,6 +1196,11 @@ export default function MeinKontoPage() {
             return;
         }
 
+        if (!spotlightWithdrawalConsent) {
+            toast.error('Bitte bestätige die sofortige Ausführung und das vorzeitige Erlöschen des Widerrufsrechts.');
+            return;
+        }
+
         const SPOTLIGHT_COSTS = { 7: 1500, 14: 2500, 30: 4000 };
         const SPOTLIGHT_PRICES = { 7: '14,99 €', 14: '24,99 €', 30: '39,99 €' };
         const cost = SPOTLIGHT_COSTS[spotlightDuration] || 1500;
@@ -1165,7 +1218,9 @@ export default function MeinKontoPage() {
             try {
                 const res = await bookSpotlight({
                     durationDays: spotlightDuration,
-                    payment_method: 'CREDIT'
+                    payment_method: 'CREDIT',
+                    withdrawal_consent: true,
+                    withdrawal_consent_at: new Date().toISOString(),
                 });
 
                 if (res.success || res.data?.success) {
@@ -1210,6 +1265,8 @@ export default function MeinKontoPage() {
                     type: 'SPOTLIGHT_PURCHASE',
                     duration_days: spotlightDuration,
                     return_url: window.location.origin,
+                    withdrawal_consent: true,
+                    withdrawal_consent_at: new Date().toISOString(),
                 });
 
                 if (stripeRes.success && stripeRes.data?.url) {
@@ -1262,16 +1319,17 @@ export default function MeinKontoPage() {
             return;
         }
         if (!cancelVerification.confirm_clawback) {
-            toast.error('Bitte die Rückbuchung der Credits bestätigen.');
+            toast.error('Bitte bestätige die Kündigung zum Ende des aktuellen Abrechnungszeitraums.');
             return;
         }
 
         setCancellingSub(true);
-        const toastId = toast.loading('Kündigung wird verarbeitet...');
+        const toastId = toast.loading('Kündigung wird vorgemerkt...');
         try {
             const res = await cancelSubscription(cancelVerification);
-            if (res.success) {
-                toast.success('Dein Abonnement wurde erfolgreich gekündigt.', { id: toastId, duration: 5000 });
+            if (res.success || res.data?.success) {
+                const msg = res.data?.message || res.message || 'Dein Abonnement wurde erfolgreich zum Ende der aktuellen Periode gekündigt. Alle Business-Vorteile bleiben bis dahin aktiv.';
+                toast.success(msg, { id: toastId, duration: 6000 });
                 setCancelSubModalOpen(false);
                 setCancelVerification({
                     account_holder: '',
@@ -1281,7 +1339,7 @@ export default function MeinKontoPage() {
                 });
                 loadAllAccountData();
             } else {
-                toast.error(getFriendlyErrorMessage(res.error, 'Die Kündigung konnte nicht durchgeführt werden. Bitte versuche es erneut.'), { id: toastId });
+                toast.error(getFriendlyErrorMessage(res.error || res.data?.error, 'Die Kündigung konnte nicht durchgeführt werden. Bitte versuche es erneut.'), { id: toastId });
             }
         } catch (err) {
             toast.error(getFriendlyErrorMessage(err, 'Die Kündigung konnte leider nicht abgeschlossen werden. Bitte versuche es gleich noch einmal.'), { id: toastId });
@@ -3112,6 +3170,17 @@ export default function MeinKontoPage() {
                                                                     <Rocket className="w-3 h-3 text-forest" />
                                                                     <span>{isBoosted ? 'Verlängern' : 'Hervorheben'}</span>
                                                                 </motion.button>
+                                                            ) : item.status === 'REJECTED' ? (
+                                                                <motion.button
+                                                                    whileTap={{ scale: 0.95 }}
+                                                                    type="button"
+                                                                    onClick={() => handleOpenAppealModal(item)}
+                                                                    className="flex-1 flex items-center justify-center gap-1 bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold py-2 px-2 rounded-xl text-[11px] transition-all cursor-pointer shadow-2xs"
+                                                                    title="Manuelle Überprüfung durch Administrator anfordern"
+                                                                >
+                                                                    <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
+                                                                    <span>Prüfung anfordern</span>
+                                                                </motion.button>
                                                             ) : (
                                                                 <button
                                                                     type="button"
@@ -3420,6 +3489,19 @@ export default function MeinKontoPage() {
                                 </div>
                             )}
 
+                            {/* Withdrawal Waiver Checkbox */}
+                            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-[#faf8f3] border border-beige text-[11px] text-charcoal/70 cursor-pointer font-sans">
+                                <input
+                                    type="checkbox"
+                                    checked={spotlightWithdrawalConsent}
+                                    onChange={e => setSpotlightWithdrawalConsent(e.target.checked)}
+                                    className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
+                                />
+                                <span>
+                                    Ich stimme der sofortigen Platzierung im Campuna Spotlight zu und bestätige meine Kenntnis, dass mein <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> mit vollständiger Leistungserbringung vorzeitig erlischt.
+                                </span>
+                            </label>
+
                             {/* Action Buttons */}
                             <div className="flex gap-2.5 pt-1">
                                 <button
@@ -3561,6 +3643,19 @@ export default function MeinKontoPage() {
                                     </span>
                                 </div>
                             </div>
+
+                            {/* Withdrawal Waiver Checkbox */}
+                            <label className="flex items-start gap-2.5 p-3 rounded-xl bg-[#faf8f3] border border-beige text-[11px] text-charcoal/70 cursor-pointer font-sans">
+                                <input
+                                    type="checkbox"
+                                    checked={buyCreditWithdrawalConsent}
+                                    onChange={e => setBuyCreditWithdrawalConsent(e.target.checked)}
+                                    className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
+                                />
+                                <span>
+                                    Ich stimme der sofortigen Ausführung des Vertrags (sofortige Gutschrift der Campuna Credits) zu und bestätige meine Kenntnis, dass mein <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> bei vollständiger Vertragserfüllung vorzeitig erlischt.
+                                </span>
+                            </label>
 
                             {/* Actions */}
                             <div className="flex gap-2.5 pt-1">
@@ -3797,32 +3892,41 @@ export default function MeinKontoPage() {
                                 </button>
                             </div>
 
-                            <p className="text-xs text-charcoal/70 leading-relaxed">
-                                Bitte bestätige deine Kontodaten zur Authentifizierung der Kündigung:
+                            <div className="p-3.5 bg-emerald-50 border border-emerald-200/80 rounded-2xl space-y-1">
+                                <span className="font-bold text-xs text-emerald-900 block font-sans">
+                                    Faire Kündigungsfrist zum Periodenende
+                                </span>
+                                <p className="text-[11px] text-emerald-800 leading-relaxed font-sans">
+                                    Gemäß unseren AGB bleibt dein Campuna Business Tarif bis zum Ende des aktuellen bezahlten Zeitraums voll aktiv. Du kannst alle Händler-Funktionen bis zum Ablaufdatum uneingeschränkt weiter nutzen. Es erfolgt keine weitere Abbuchung.
+                                </p>
+                            </div>
+
+                            <p className="text-xs text-charcoal/70 leading-relaxed font-sans">
+                                Bitte bestätige deine Angaben zur Verifizierung der Kündigung:
                             </p>
 
                             <button
                                 type="button"
                                 onClick={handleAutofillCancelBank}
-                                className="w-full text-center py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold cursor-pointer"
+                                className="w-full text-center py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-xs font-bold cursor-pointer font-sans"
                             >
                                 Test-Bankdaten automatisch ausfüllen
                             </button>
 
                             <form onSubmit={handleCancelSubscriptionConfirm} className="space-y-3">
                                 <div>
-                                    <label className="text-[11px] font-bold text-charcoal/60 uppercase">Kontoinhaber</label>
+                                    <label className="text-[11px] font-bold text-charcoal/60 uppercase font-sans">Kontoinhaber</label>
                                     <input
                                         type="text"
                                         value={cancelVerification.account_holder}
                                         onChange={e => setCancelVerification(v => ({ ...v, account_holder: e.target.value }))}
-                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl px-3 py-2 text-xs text-charcoal mt-1 focus:border-forest"
+                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl px-3 py-2 text-xs text-charcoal mt-1 focus:border-forest font-sans"
                                         placeholder="Vor- und Nachname"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="text-[11px] font-bold text-charcoal/60 uppercase">IBAN / Kartennummer</label>
+                                    <label className="text-[11px] font-bold text-charcoal/60 uppercase font-sans">IBAN / Kartennummer</label>
                                     <input
                                         type="text"
                                         value={cancelVerification.iban_or_card}
@@ -3832,28 +3936,28 @@ export default function MeinKontoPage() {
                                     />
                                 </div>
 
-                                <label className="flex items-center gap-2 pt-2 text-xs text-charcoal/70 cursor-pointer">
+                                <label className="flex items-start gap-2.5 pt-2 text-xs text-charcoal/80 cursor-pointer font-sans">
                                     <input
                                         type="checkbox"
                                         checked={cancelVerification.confirm_clawback}
                                         onChange={e => setCancelVerification(v => ({ ...v, confirm_clawback: e.target.checked }))}
-                                        className="rounded text-forest focus:ring-forest"
+                                        className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
                                     />
-                                    <span>Ich bestätige die Deaktivierung aller Business-Funktionen.</span>
+                                    <span>Ich bestätige die Kündigung zum Ende der aktuellen bezahlten Laufzeit.</span>
                                 </label>
 
                                 <div className="flex gap-2 pt-3">
                                     <button
                                         type="submit"
                                         disabled={cancellingSub}
-                                        className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md"
+                                        className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-md font-sans"
                                     >
-                                        {cancellingSub ? 'Wird gekündigt...' : 'Kündigung bestätigen'}
+                                        {cancellingSub ? 'Wird gekündigt...' : 'Kündigung zum Periodenende bestätigen'}
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => setCancelSubModalOpen(false)}
-                                        className="px-4 bg-[#faf8f3] text-charcoal rounded-xl text-xs font-bold uppercase cursor-pointer border border-beige"
+                                        className="px-4 bg-[#faf8f3] text-charcoal rounded-xl text-xs font-bold uppercase cursor-pointer border border-beige font-sans"
                                     >
                                         Abbrechen
                                     </button>
@@ -4326,6 +4430,114 @@ export default function MeinKontoPage() {
                                     )}
                                 </button>
                             </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Appeal / Manual Review Modal */}
+            <AnimatePresence>
+                {appealModalListing && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        onClick={() => !isSubmittingAppeal && setAppealModalListing(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-white rounded-3xl p-6 sm:p-7 border border-beige shadow-2xl max-w-lg w-full space-y-5 relative text-left"
+                        >
+                            <div className="flex items-center justify-between pb-3 border-b border-beige">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
+                                        <ShieldCheck className="w-5 h-5 text-amber-700" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-base text-charcoal">Manuelle Überprüfung anfordern</h3>
+                                        <p className="text-[11px] text-charcoal/60">Einspruch gegen die Inseratsablehnung einreichen</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => !isSubmittingAppeal && setAppealModalListing(null)}
+                                    className="p-1.5 rounded-full text-charcoal/40 hover:text-charcoal hover:bg-sand/60 transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
+                                <span className="text-[10px] uppercase font-bold text-rose-900 tracking-wider">Betroffenes Inserat:</span>
+                                <p className="text-xs font-bold text-rose-950 truncate">{appealModalListing.title}</p>
+                                {appealModalListing.admin_notes && (
+                                    <p className="text-[11px] text-rose-800 pt-1 border-t border-rose-200/60">
+                                        <strong>Ablehnungsgrund:</strong> {appealModalListing.admin_notes}
+                                    </p>
+                                )}
+                            </div>
+
+                            <form onSubmit={handleSubmitAppeal} className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-charcoal">Grund des Einspruchs</label>
+                                    <select
+                                        value={appealReason}
+                                        onChange={(e) => setAppealReason(e.target.value)}
+                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl p-2.5 text-xs text-charcoal focus:outline-none focus:ring-2 focus:ring-forest"
+                                    >
+                                        <option value="MISSING_CONTEXT">Missverständnis oder unvollständige automatische Prüfung</option>
+                                        <option value="COMPLIANT">Inserat entspricht vollständig den Campuna-Richtlinien</option>
+                                        <option value="ADJUSTED">Angaben wurden überprüft / korrigiert</option>
+                                        <option value="OTHER">Sonstige Begründung</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-charcoal">
+                                        Erläuterung für die Campuna Redaktion <span className="text-charcoal/40 font-normal">(optional)</span>
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        value={appealNotes}
+                                        onChange={(e) => setAppealNotes(e.target.value)}
+                                        placeholder="Bitte beschreibe kurz, weshalb das Inserat erneut geprüft und freigegeben werden sollte..."
+                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl p-3 text-xs text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest"
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-2.5 pt-2">
+                                    <button
+                                        type="button"
+                                        disabled={isSubmittingAppeal}
+                                        onClick={() => setAppealModalListing(null)}
+                                        className="flex-1 py-2.5 px-4 rounded-xl border border-beige bg-[#faf8f3] hover:bg-sand text-xs font-bold text-charcoal transition-all cursor-pointer"
+                                    >
+                                        Abbrechen
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmittingAppeal}
+                                        className="flex-1 py-2.5 px-4 rounded-xl bg-forest hover:bg-[#004d0a] text-sand text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        {isSubmittingAppeal ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <span>Wird gesendet...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send className="w-3.5 h-3.5" />
+                                                <span>Einspruch absenden</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
                         </motion.div>
                     </motion.div>
                 )}

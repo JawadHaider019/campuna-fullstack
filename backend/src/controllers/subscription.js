@@ -1,6 +1,7 @@
 import { db } from '../prisma/db.js';
 import { checkAndAwardReferralCreditsOnBusinessSubscription } from './referral.js';
 import { toJsDate, toTemporalInstant, nowInstant } from '../utils/temporal.js';
+import { sendSystemNotificationToUser } from './adminBenefits.js';
 
 // ─── Internal Helper ─────────────────────────────────────────────────────────
 
@@ -76,7 +77,26 @@ export const getUserSubscription = async (userId) => {
             return { subscription: null, plan: freePlan };
         }
 
-        return { subscription: activeSub, plan: activeSub.plan };
+        let isCancelling = false;
+        let cancellationDate = null;
+        if (activeSub.notes) {
+            try {
+                const parsed = JSON.parse(activeSub.notes);
+                if (parsed.cancellation?.cancel_at_period_end || parsed.cancellation?.cancelled_at) {
+                    isCancelling = true;
+                    cancellationDate = activeSub.expires_at;
+                }
+            } catch {}
+        }
+
+        return {
+            subscription: {
+                ...activeSub,
+                cancel_at_period_end: isCancelling,
+                cancellation_date: cancellationDate,
+            },
+            plan: activeSub.plan
+        };
     }
 
     // 3. If no active subscription exists, but Spotlight is active -> grant active Business Plan
@@ -129,6 +149,8 @@ export const getUserFeatures = async (userId) => {
     const listingLimit = isBusiness ? (plan?.listing_limit ?? 25) : (isPrivate ? 10 : (plan?.listing_limit ?? 3));
     const descLimit = isBusiness ? 1000 : (plan?.description_limit ?? 500);
 
+    const isCancelling = Boolean(subscription?.cancel_at_period_end);
+
     if (!plan) {
         // Hard fallback
         return {
@@ -143,6 +165,7 @@ export const getUserFeatures = async (userId) => {
             subscription_active: false,
             expires_at: null,
             is_business: false,
+            cancel_at_period_end: false,
         };
     }
 
@@ -158,6 +181,8 @@ export const getUserFeatures = async (userId) => {
         subscription_active: !!subscription,
         expires_at: subscription?.expires_at ?? null,
         is_business: isBusiness,
+        cancel_at_period_end: isCancelling,
+        cancellation_date: subscription?.cancellation_date ?? null,
     };
 };
 
@@ -461,9 +486,8 @@ export const subscribe = async (req, res) => {
 
 /**
  * POST /api/subscriptions/cancel
- * Cancels the user's active subscription.
- * Deducts any remaining unspent subscription credits from the user's balance.
- * Reverts company profile tier to FREE.
+ * Cancels the user's active subscription with effect at the end of the current paid billing period.
+ * Maintains Business tier benefits until expires_at without premature forfeiture.
  */
 export const cancelSubscription = async (req, res) => {
     try {
@@ -482,85 +506,55 @@ export const cancelSubscription = async (req, res) => {
             });
         }
 
-        // Determine how many credits were granted with this subscription & update notes
-        let creditsGranted = 1000; // Default fallback
         let notesData = {};
         if (activeSub.notes) {
             try {
                 notesData = JSON.parse(activeSub.notes);
-                if (typeof notesData.credits_granted === 'number') {
-                    creditsGranted = notesData.credits_granted;
-                }
             } catch {
                 notesData = {};
             }
         }
 
+        const effectiveDate = activeSub.expires_at ? toJsDate(activeSub.expires_at) : new Date();
+        const effectiveDateFormatted = effectiveDate.toLocaleDateString('de-DE', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+        });
+
         const updatedNotes = {
             ...notesData,
             cancellation: {
                 cancelled_at: nowInstant().toString(),
+                cancel_at_period_end: true,
+                effective_until: activeSub.expires_at ? activeSub.expires_at.toString() : null,
                 account_holder: account_holder || 'Bestätigt',
                 bank_or_card_last4: iban_or_card ? iban_or_card.replace(/\s/g, '').slice(-4) : 'Verifiziert',
                 reason: reason || 'Kein Grund angegeben',
             },
         };
 
-        const cancelResult = await db.transaction(async (tx) => {
-            // 1. Calculate current user balance
-            const currentTxs = await tx.orm.public.CreditTransaction
-                .where({ user_id: userId })
-                .all();
-            const currentBalance = currentTxs.reduce((sum, t) => sum + t.amount, 0);
+        // Update subscription: record cancellation timestamp & notes, keeping status ACTIVE until expires_at
+        await db.orm.public.Subscription
+            .where({ id: activeSub.id })
+            .update({
+                cancelled_at: nowInstant(),
+                notes: JSON.stringify(updatedNotes),
+            });
 
-            // 2. Compute remaining unspent subscription credits
-            // E.g., if granted 1000, and current balance is 500, we deduct exactly 500.
-            // If current balance is 0, we deduct 0.
-            // If current balance is 1200 (e.g. 200 prior + 1000 sub), we deduct 1000.
-            const creditsToDeduct = Math.max(0, Math.min(creditsGranted, currentBalance));
-
-            // 3. Deduct remaining credits in ledger
-            if (creditsToDeduct > 0) {
-                await tx.orm.public.CreditTransaction.create({
-                    user_id: userId,
-                    amount: -creditsToDeduct,
-                    type: 'SUBSCRIPTION_CREDITS_REVOKED',
-                    description: `Rückbuchung ungenutzter Abonnement-Credits nach Kündigung (-${creditsToDeduct.toLocaleString('de-DE')} CC)`,
-                });
-            }
-
-            // 4. Mark subscription as cancelled with verification notes
-            await tx.orm.public.Subscription
-                .where({ id: activeSub.id })
-                .update({
-                    status: 'CANCELLED',
-                    cancelled_at: nowInstant(),
-                    notes: JSON.stringify(updatedNotes),
-                });
-
-            // 5. Revert company profile tier to FREE
-            await tx.orm.public.CompanyProfile
-                .where({ user_id: userId })
-                .update({ tier: 'FREE' })
-                .catch(() => { });
-
-            const newBalance = currentBalance - creditsToDeduct;
-
-            return {
-                deducted_credits: creditsToDeduct,
-                previous_balance: currentBalance,
-                new_balance: newBalance,
-            };
-        });
+        // Send confirmation in-app system message
+        sendSystemNotificationToUser(
+            userId,
+            'Kündigung deines Campuna Business Abonnements',
+            `Deine Kündigung für **Campuna Business** ist erfolgreich bei uns eingegangen.\n\nGemäß unseren AGB bleibt deine Mitgliedschaft bis zum Ende des aktuellen bezahlten Zeitraums am **${effectiveDateFormatted}** mit allen Vorteilen (Cover-Bild, Händler-Tools, Inserate-Kontingent) voll aktiv.\n\nEs erfolgt **keine weitere automatische Verlängerung oder Abbuchung**. Nach dem ${effectiveDateFormatted} wird dein Profil automatisch auf den kostenlosen Basis-Tarif (Business Free) umgestellt.`
+        ).catch(() => {});
 
         return res.status(200).json({
             success: true,
-            message: cancelResult.deducted_credits > 0
-                ? `Abonnement erfolgreich gekündigt. ${cancelResult.deducted_credits} verbleibende Abonnement-Credits wurden abgezogen. Dein neuer Kontostand beträgt ${cancelResult.new_balance} CC.`
-                : 'Abonnement erfolgreich gekündigt. Dein Konto wurde zum FREE-Tarif zurückgesetzt.',
-            deducted_credits: cancelResult.deducted_credits,
-            previous_balance: cancelResult.previous_balance,
-            new_balance: cancelResult.new_balance,
+            cancel_at_period_end: true,
+            expires_at: activeSub.expires_at,
+            effective_date_formatted: effectiveDateFormatted,
+            message: `Abonnement erfolgreich zum ${effectiveDateFormatted} gekündigt. Bis dahin stehen dir alle Business-Vorteile uneingeschränkt zur Verfügung. Es erfolgt keine weitere Abbuchung.`,
         });
     } catch (err) {
         console.error('❌ cancelSubscription error:', err.message);

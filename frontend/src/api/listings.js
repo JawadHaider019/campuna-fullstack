@@ -53,9 +53,25 @@ export const getListingsByUser = async (userId) => {
  * @param {string} id - Listing ID
  * @param {number} durationDays - 7, 14, or 30 days
  * @param {string} paymentMethod - 'CREDIT' | 'CREDIT_CARD' | 'SEPA' | 'PAYPAL'
+ * @param {object} [options] - Additional parameters like withdrawal_consent
  */
-export const boostListing = async (id, durationDays = 7, paymentMethod = 'CREDIT') => {
-    return api.post(`/listings/${id}/boost`, { durationDays, payment_method: paymentMethod });
+export const boostListing = async (id, durationDays = 7, paymentMethod = 'CREDIT', options = {}) => {
+    return api.post(`/listings/${id}/boost`, {
+        durationDays,
+        payment_method: paymentMethod,
+        withdrawal_consent: options?.withdrawal_consent,
+        withdrawal_consent_at: options?.withdrawal_consent_at
+    });
+};
+
+/**
+ * POST /api/listings/:id/appeal
+ * Submits an appeal / manual review request for a rejected listing.
+ * @param {string} id - Listing ID
+ * @param {{ reason: string, notes?: string }} data
+ */
+export const submitListingAppeal = async (id, data) => {
+    return api.post(`/listings/${id}/appeal`, data);
 };
 
 /**

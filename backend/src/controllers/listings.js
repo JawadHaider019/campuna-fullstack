@@ -835,7 +835,7 @@ export const boostListing = async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
-        const { durationDays = 7, payment_method = 'CREDIT' } = req.body;
+        const { durationDays = 7, payment_method = 'CREDIT', withdrawal_consent = false, withdrawal_consent_at } = req.body;
 
         const parsedDays = parseInt(durationDays, 10);
         const PRICING_CC = {
@@ -883,6 +883,9 @@ export const boostListing = async (req, res) => {
         const currentBalance = parseInt(balanceRes.rows[0]?.balance || 0, 10);
 
         const normMethod = (payment_method || 'CREDIT').toUpperCase();
+        const consentAudit = withdrawal_consent
+            ? ` [Sofortbeginn & Widerrufsverzicht zugestimmt am ${new Date(withdrawal_consent_at || Date.now()).toLocaleDateString('de-DE')}]`
+            : '';
 
         if (normMethod === 'CREDIT') {
             if (currentBalance < cost) {
@@ -902,7 +905,7 @@ export const boostListing = async (req, res) => {
                     userId,
                     -cost,
                     'FEATURE_SPEND',
-                    `${parsedDays}-Tage Inserat hervorheben für "${listing.title}" (-${cost.toLocaleString('de-DE')} CC)`
+                    `${parsedDays}-Tage Inserat hervorheben für "${listing.title}" (-${cost.toLocaleString('de-DE')} CC)${consentAudit}`
                 ]
             );
         } else {
@@ -918,7 +921,7 @@ export const boostListing = async (req, res) => {
                  VALUES ($1, 0, 'DIRECT_BOOST_PAYMENT', $2, NOW())`,
                 [
                     userId,
-                    `${parsedDays}-Tage Inserat hervorheben für "${listing.title}" (${priceEur} bezahlt via ${methodLabel})`
+                    `${parsedDays}-Tage Inserat hervorheben für "${listing.title}" (${priceEur} bezahlt via ${methodLabel})${consentAudit}`
                 ]
             );
         }
@@ -1540,6 +1543,73 @@ export const generateDescriptionController = async (req, res) => {
             success: false,
             error: 'Fehler bei der Beschreibungserstellung.'
         });
+    }
+};
+
+/**
+ * POST /api/listings/:id/appeal
+ * Submits an appeal or request for manual review for a rejected listing.
+ */
+export const submitListingAppeal = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { id } = req.params;
+        const { reason, notes } = req.body;
+
+        const listingRes = await pool.query('SELECT * FROM listings WHERE id = $1', [id]);
+        if (listingRes.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Inserat nicht gefunden.' });
+        }
+
+        const listing = listingRes.rows[0];
+        if (listing.user_id !== userId && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ success: false, error: 'Du kannst nur für deine eigenen Inserate eine Überprüfung anfordern.' });
+        }
+
+        if (listing.status !== 'REJECTED') {
+            return res.status(400).json({
+                success: false,
+                error: 'Eine manuelle Überprüfung kann nur für abgelehnte Inserate angefordert werden.'
+            });
+        }
+
+        const appealStatement = `[EINSPRUCH / MANUELLE PRÜFUNG]\nGrund: ${reason || 'Bitte um erneute Prüfung'}\nDetails: ${notes || 'Keine weiteren Angaben'}\nEingereicht am: ${new Date().toLocaleString('de-DE')}`;
+
+        // 1. Move listing to 'REVIEW'
+        const updatedRes = await pool.query(
+            `UPDATE listings
+             SET status = 'REVIEW',
+                 updated_at = NOW()
+             WHERE id = $1
+             RETURNING *`,
+            [id]
+        );
+
+        // 2. Upsert listing_moderation with status APPEAL_REQUESTED
+        try {
+            await pool.query(`
+                INSERT INTO listing_moderation (
+                    listing_id, ai_score, ai_decision, status, admin_notes, reviewed_at, updated_at
+                ) VALUES ($1, 50, 'MANUAL_REVIEW', 'APPEAL_REQUESTED', $2, NOW(), NOW())
+                ON CONFLICT (listing_id) DO UPDATE SET
+                    ai_decision = 'MANUAL_REVIEW',
+                    status = 'APPEAL_REQUESTED',
+                    admin_notes = EXCLUDED.admin_notes,
+                    reviewed_at = NOW(),
+                    updated_at = NOW()
+            `, [id, appealStatement]);
+        } catch (modErr) {
+            console.warn('listing_moderation appeal update:', modErr.message);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Deine Anfrage auf manuelle Überprüfung wurde erfolgreich eingereicht. Ein Administrator wird dein Inserat sorgfältig prüfen.',
+            listing: updatedRes.rows[0]
+        });
+    } catch (error) {
+        console.error('❌ submitListingAppeal error:', error.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Einreichen des Einspruchs.' });
     }
 };
 

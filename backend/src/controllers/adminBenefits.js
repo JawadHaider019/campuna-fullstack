@@ -310,15 +310,38 @@ export const grantAdminBenefit = async (req, res) => {
             resultData = { spotlight_until: expiresAt, tier: 'BUSINESS' };
         }
 
-        // ── 4. CAMPUNA CREDITS GUTSCHRIFT ──
-        else if (benefit_type === 'CREDITS') {
-            const amount = Math.max(1, Number(credits_amount) || 500);
+        // ── 4. CAMPUNA CREDITS GUTSCHRIFT ODER ERSTATTUNG / KORREKTUR ──
+        else if (benefit_type === 'CREDITS' || benefit_type === 'CREDIT_REFUND') {
+            const rawAmount = Number(credits_amount);
+            const isDeduction = benefit_type === 'CREDIT_REFUND' || rawAmount < 0;
+            const amount = isDeduction ? -Math.abs(rawAmount || 500) : Math.abs(rawAmount || 500);
+            const txType = isDeduction ? 'CREDIT_REFUND' : 'ADMIN_GRANT';
+
+            // Check current balance if deducting
+            if (isDeduction) {
+                const balCheck = await pool.query(
+                    `SELECT COALESCE(SUM(amount), 0) AS balance FROM credit_transactions WHERE user_id = $1`,
+                    [user_id]
+                );
+                const curBal = Number(balCheck.rows[0]?.balance || 0);
+                if (curBal <= 0) {
+                    return res.status(400).json({
+                        success: false,
+                        error: `Der Benutzer hat aktuell kein verfügbares Credit-Guthaben (${curBal} CC). Ein Abzug ist nicht möglich.`
+                    });
+                }
+            }
 
             const txRes = await pool.query(
                 `INSERT INTO credit_transactions (user_id, amount, type, description, created_at)
-                 VALUES ($1, $2, 'ADMIN_GRANT', $3, NOW())
+                 VALUES ($1, $2, $3, $4, NOW())
                  RETURNING *`,
-                [user_id, amount, admin_note || 'Gutschrift durch Campuna Administration']
+                [
+                    user_id,
+                    amount,
+                    txType,
+                    admin_note || (isDeduction ? 'Credit-Rückbuchung / Erstattung durch Administration' : 'Gutschrift durch Campuna Administration')
+                ]
             );
             const tx = txRes.rows[0];
 
@@ -328,10 +351,17 @@ export const grantAdminBenefit = async (req, res) => {
             );
             const newBalance = Number(balRes.rows[0].balance);
 
+            const notifTitle = isDeduction
+                ? `${Math.abs(amount).toLocaleString('de-DE')} Campuna Credits erstattet / angepasst`
+                : `+${amount.toLocaleString('de-DE')} Campuna Credits gutgeschrieben!`;
+            const notifContent = isDeduction
+                ? `Aufgrund einer Erstattung oder manuellen Anpassung wurden von deinem Konto **${amount.toLocaleString('de-DE')} CC** abgebucht.\n\nNeuer Kontostand: **${newBalance.toLocaleString('de-DE')} CC**\n\nBegründung: *${admin_note || 'Erstattung / Korrektur'}*`
+                : `Die Campuna-Administration hat deinem Konto soeben **+${amount.toLocaleString('de-DE')} CC** gutgeschrieben.\n\nNeuer Kontostand: **${newBalance.toLocaleString('de-DE')} CC**\n\nGrund: *${admin_note}*`;
+
             await sendSystemNotificationToUser(
                 user_id,
-                `+${amount.toLocaleString('de-DE')} Campuna Credits gutgeschrieben!`,
-                `Die Campuna-Administration hat deinem Konto soeben **+${amount.toLocaleString('de-DE')} CC** gutgeschrieben.\n\nNeuer Kontostand: **${newBalance.toLocaleString('de-DE')} CC**\n\nGrund: *${admin_note}*`
+                notifTitle,
+                notifContent
             );
 
             resultData = { transaction: tx, new_balance: newBalance };

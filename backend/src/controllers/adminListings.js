@@ -1,6 +1,7 @@
 import pool from '../config/database.js';
 import { checkAndAwardPioneerBadge } from './badge.js';
 import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
+import { sendSystemNotificationToUser } from './adminBenefits.js';
 
 /**
  * GET /api/admin/listings
@@ -337,6 +338,14 @@ export const updateAdminListingStatus = async (req, res) => {
         if (status === 'APPROVED' && updatedListing.user_id) {
             checkAndAwardPioneerBadge(updatedListing.user_id).catch(() => {});
             checkAndAwardReferralCreditsOnApproval(updatedListing.user_id).catch(() => {});
+        }
+
+        // If rejected, automatically notify the user with the specific reason
+        if (status === 'REJECTED' && updatedListing.user_id) {
+            const reasonText = reason || 'Dein Inserat entspricht leider nicht vollständig unseren Marktplatz-Richtlinien oder Qualitätsstandards.';
+            const title = `Dein Inserat "${updatedListing.title || 'Camping-Inserat'}" wurde abgelehnt`;
+            const content = `Hallo,\n\ndein Inserat "${updatedListing.title || 'Camping-Inserat'}" konnte leider nicht veröffentlicht werden.\n\nBegründung:\n${reasonText}\n\nDu kannst das Inserat in deinem Konto anpassen oder eine manuelle Überprüfung anfordern, falls du der Ansicht bist, dass es sich um ein Missverständnis handelt.\n\nViele Grüße,\nDein Campuna Team`;
+            sendSystemNotificationToUser(updatedListing.user_id, title, content, adminId).catch(err => console.warn('Notification error on listing reject:', err.message));
         }
 
         return res.status(200).json({

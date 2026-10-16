@@ -2,6 +2,7 @@ import pool from '../config/database.js';
 import { checkAndAwardPioneerBadge } from './badge.js';
 import { checkAndAwardReferralCreditsOnApproval } from './referral.js';
 import { moderateListingAI } from '../services/aiService.js';
+import { sendSystemNotificationToUser } from './adminBenefits.js';
 
 /**
  * GET /api/admin/decisions
@@ -467,6 +468,13 @@ export const submitAdminManualDecision = async (req, res) => {
         if (decision === 'APPROVED' && listing.user_id) {
             checkAndAwardPioneerBadge(listing.user_id).catch(() => {});
             checkAndAwardReferralCreditsOnApproval(listing.user_id).catch(() => {});
+        }
+
+        if (decision === 'REJECTED' && listing.user_id) {
+            const reasonText = notes || 'Dein Inserat entspricht leider nicht vollständig unseren Marktplatz-Richtlinien oder Qualitätsstandards.';
+            const title = `Dein Inserat "${listing.title || 'Camping-Inserat'}" wurde abgelehnt`;
+            const content = `Hallo,\n\ndein Inserat "${listing.title || 'Camping-Inserat'}" wurde nach redaktioneller Prüfung abgelehnt.\n\nBegründung:\n${reasonText}\n\nDu kannst das Inserat bearbeiten oder auf der Inseratsseite Einspruch einlegen und eine manuelle Überprüfung anfordern.\n\nViele Grüße,\nDein Campuna Team`;
+            sendSystemNotificationToUser(listing.user_id, title, content, adminId).catch(err => console.warn('Notification error on decision reject:', err.message));
         }
 
         return res.status(200).json({

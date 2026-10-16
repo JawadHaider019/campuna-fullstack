@@ -85,6 +85,7 @@ export default function BoostListingPage() {
     // Form state
     const [selectedDays, setSelectedDays] = useState(14);
     const [paymentMethod, setPaymentMethod] = useState('CREDIT'); // 'CREDIT' | 'CREDIT_CARD' | 'SEPA' | 'PAYPAL'
+    const [withdrawalConsent, setWithdrawalConsent] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [boostResult, setBoostResult] = useState(null);
@@ -203,6 +204,11 @@ export default function BoostListingPage() {
             return;
         }
 
+        if (!withdrawalConsent) {
+            toast.error('Bitte bestätige die sofortige Ausführung und das vorzeitige Erlöschen des Widerrufsrechts.');
+            return;
+        }
+
         setIsSubmitting(true);
         const toastId = toast.loading(
             paymentMethod === 'CREDIT'
@@ -211,7 +217,10 @@ export default function BoostListingPage() {
         );
 
         try {
-            const res = await boostListing(listing.id, selectedDays, paymentMethod);
+            const res = await boostListing(listing.id, selectedDays, paymentMethod, {
+                withdrawal_consent: true,
+                withdrawal_consent_at: new Date().toISOString()
+            });
             if (res?.success || res?.data?.success) {
                 toast.success(
                     isCurrentlyBoosted
@@ -783,11 +792,26 @@ export default function BoostListingPage() {
                                 </div>
                             </div>
 
+                            {/* Statutory immediate activation & withdrawal waiver consent */}
+                            <div className="pt-2 pb-1 border-t border-forest/10">
+                                <label className="flex items-start gap-2.5 text-xs text-charcoal/80 cursor-pointer select-none">
+                                    <input
+                                        type="checkbox"
+                                        checked={withdrawalConsent}
+                                        onChange={(e) => setWithdrawalConsent(e.target.checked)}
+                                        className="mt-0.5 w-4 h-4 rounded text-forest focus:ring-forest border-charcoal/30 cursor-pointer"
+                                    />
+                                    <span className="leading-snug">
+                                        Ich stimme ausdrücklich zu, dass Campuna mit der Ausführung des Boost-Dienstes sofort vor Ablauf der gesetzlichen Widerrufsfrist beginnt. Mir ist bekannt, dass mein <Link href="/agb#widerrufsbelehrung" target="_blank" className="text-forest underline font-semibold hover:text-emerald-700">Widerrufsrecht</Link> mit vollständiger Leistungserbringung erlischt (§ 356 Abs. 4 BGB).
+                                    </span>
+                                </label>
+                            </div>
+
                             {/* Main Action Button */}
                             <button
                                 type="button"
                                 onClick={handleExecuteBoost}
-                                disabled={isSubmitting || (paymentMethod === 'CREDIT' && !hasEnoughCredits)}
+                                disabled={isSubmitting || !withdrawalConsent || (paymentMethod === 'CREDIT' && !hasEnoughCredits)}
                                 className="w-full bg-forest hover:bg-gold text-sand hover:text-forest transition-colors duration-300 font-sans font-bold py-4 px-6 rounded-2xl shadow-md text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? (

@@ -41,7 +41,8 @@ export default function CheckoutBillingPage() {
         vat_id: '',
     });
 
-    const [agreedToTerms, setAgreedToTerms] = useState(true);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [agreedToImmediateActivation, setAgreedToImmediateActivation] = useState(false);
 
     // Processing & Success State
     const [isProcessing, setIsProcessing] = useState(false);
@@ -168,6 +169,11 @@ export default function CheckoutBillingPage() {
             return;
         }
 
+        if (!agreedToImmediateActivation) {
+            toast.error('Bitte bestätige die sofortige Ausführung und das vorzeitige Erlöschen des Widerrufsrechts.');
+            return;
+        }
+
         // Stripe Checkout is the exclusive payment method for Business Subscriptions
         setIsProcessing(true);
         const toastId = toast.loading('Sichere Bezahlung wird vorbereitet...');
@@ -177,6 +183,8 @@ export default function CheckoutBillingPage() {
                 plan_name: 'BUSINESS',
                 duration_months: selectedDuration,
                 return_url: window.location.origin,
+                withdrawal_consent: true,
+                withdrawal_consent_at: new Date().toISOString(),
             });
 
             if (res.success && res.data?.url) {
@@ -476,9 +484,9 @@ export default function CheckoutBillingPage() {
                                 </div>
                             </div>
 
-                            {/* Terms Checkbox */}
-                            <div className="pt-2 pb-4">
-                                <label className="flex items-start gap-2.5 text-[11px] text-charcoal/60 font-sans cursor-pointer">
+                            {/* Legal Consent Checkboxes */}
+                            <div className="pt-2 pb-4 space-y-3">
+                                <label className="flex items-start gap-2.5 text-[11px] text-charcoal/70 font-sans cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={agreedToTerms}
@@ -486,7 +494,19 @@ export default function CheckoutBillingPage() {
                                         className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
                                     />
                                     <span>
-                                        Ich akzeptiere die <a href="#" className="underline text-charcoal/80">AGB</a> und habe die <a href="#" className="underline text-charcoal/80">Datenschutzbestimmungen</a> zur Kenntnis genommen.
+                                        Ich akzeptiere die <a href="/agb" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">AGB</a> und habe die <a href="/datenschutz" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Datenschutzbestimmungen</a> zur Kenntnis genommen.
+                                    </span>
+                                </label>
+
+                                <label className="flex items-start gap-2.5 text-[11px] text-charcoal/70 font-sans cursor-pointer bg-sand/30 p-2.5 rounded-xl border border-beige/60">
+                                    <input
+                                        type="checkbox"
+                                        checked={agreedToImmediateActivation}
+                                        onChange={e => setAgreedToImmediateActivation(e.target.checked)}
+                                        className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
+                                    />
+                                    <span>
+                                        Ich verlange ausdrücklich und stimme zu, dass Campuna vor Ablauf der 14-tägigen Widerrufsfrist mit der Ausführung der gebuchten Dienstleistung beginnt. Mir ist bekannt, dass mein gesetzliches <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> bei vollständiger Vertragserfüllung vorzeitig erlischt.
                                     </span>
                                 </label>
                             </div>

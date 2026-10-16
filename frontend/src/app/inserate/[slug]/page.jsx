@@ -46,7 +46,7 @@ import {
     Pause,
     Play
 } from 'lucide-react';
-import { getListingDetail, getAllListings, reportListing, deleteListing, toggleListingStatus } from '@/api/listings';
+import { getListingDetail, getAllListings, reportListing, deleteListing, toggleListingStatus, submitListingAppeal } from '@/api/listings';
 import { createOrGetConversation } from '@/api/conversations';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -197,6 +197,12 @@ export default function ListingDetailPage() {
     const [reportDescription, setReportDescription] = useState('');
     const [isSendingReport, setIsSendingReport] = useState(false);
     const [isReportSent, setIsReportSent] = useState(false);
+
+    // Appeal Modal States
+    const [isAppealModalOpen, setIsAppealModalOpen] = useState(false);
+    const [appealReason, setAppealReason] = useState('MISSING_CONTEXT');
+    const [appealNotes, setAppealNotes] = useState('');
+    const [isSubmittingAppeal, setIsSubmittingAppeal] = useState(false);
 
     // Clean, GDPR-compliant Share URL (contains referral code if logged in, zero personal data)
     const getCleanShareUrl = () => {
@@ -584,6 +590,32 @@ export default function ListingDetailPage() {
         }
     };
 
+    const handleSubmitAppeal = async (e) => {
+        if (e) e.preventDefault();
+        if (!listing?.id) return;
+        setIsSubmittingAppeal(true);
+        const toastId = toast.loading('Einspruch wird eingereicht...');
+        try {
+            const res = await submitListingAppeal(listing.id, {
+                reason: appealReason === 'MISSING_CONTEXT' ? 'Missverständnis / Fehlinterpretation der Richtlinien'
+                    : appealReason === 'COMPLIANT' ? 'Inserat entspricht vollständig den Richtlinien'
+                    : 'Sonstige Begründung',
+                notes: appealNotes
+            });
+            if (res?.success || res?.data?.success) {
+                toast.success('Deine Anfrage auf manuelle Überprüfung wurde erfolgreich eingereicht. Das Inserat wird nun manuell geprüft.', { id: toastId, duration: 5000 });
+                setIsAppealModalOpen(false);
+                setListing(prev => ({ ...prev, status: 'REVIEW' }));
+            } else {
+                toast.error(getFriendlyErrorMessage(res?.error || res?.data?.error, 'Einspruch konnte nicht übermittelt werden.'), { id: toastId });
+            }
+        } catch (err) {
+            toast.error(getFriendlyErrorMessage(err, 'Einspruch konnte nicht übermittelt werden.'), { id: toastId });
+        } finally {
+            setIsSubmittingAppeal(false);
+        }
+    };
+
     if (loading) {
         return (
             <CircleLoader size="lg" color="forest" fullPage />
@@ -752,7 +784,26 @@ export default function ListingDetailPage() {
                             <span>Löschen</span>
                         </button>
                     </div>
-                    <div className={`grid gap-2 pt-1 ${listing.status === 'APPROVED' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                    {/* Rejection / Review Status Notice for Owner */}
+                    {listing.status === 'REJECTED' && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1 text-xs">
+                            <span className="font-bold text-rose-950 block">Inserat wurde abgelehnt</span>
+                            <p className="text-rose-900 text-[11px] leading-snug">
+                                {listing.admin_notes || 'Dieses Inserat entspricht nicht unseren Richtlinien. Du kannst es bearbeiten oder eine manuelle Überprüfung anfordern.'}
+                            </p>
+                        </div>
+                    )}
+
+                    {listing.status === 'REVIEW' && (
+                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1 text-xs">
+                            <span className="font-bold text-amber-950 block">In manueller Prüfung</span>
+                            <p className="text-amber-900 text-[11px] leading-snug">
+                                Unser Team prüft dieses Inserat sorgfältig. Nach erfolgreicher Freigabe ist es sofort öffentlich sichtbar.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className={`grid gap-2 pt-1 ${listing.status === 'APPROVED' ? 'grid-cols-1 sm:grid-cols-2' : listing.status === 'REJECTED' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                         <Link
                             href={currentUser?.role === 'ADMIN' ? `/admin/inserat-erstellen?edit=${listing.id}` : `/anzeige-erstellen?edit=${listing.id}`}
                             className="bg-white hover:bg-forest hover:text-white text-forest border border-forest/20 transition-all font-sans font-bold py-2.5 px-3 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center"
@@ -760,6 +811,16 @@ export default function ListingDetailPage() {
                             <Pencil className="w-3.5 h-3.5 shrink-0" />
                             Bearbeiten
                         </Link>
+                        {listing.status === 'REJECTED' && (
+                            <button
+                                type="button"
+                                onClick={() => setIsAppealModalOpen(true)}
+                                className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition-all font-sans font-bold py-2.5 px-3 rounded-xl shadow-sm text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer text-center"
+                            >
+                                <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-amber-700" />
+                                Prüfung anfordern
+                            </button>
+                        )}
                         {listing.status === 'APPROVED' && (
                             <Link
                                 href={`/inserate/${listing.slug || listing.id}/boosten`}
@@ -2029,6 +2090,112 @@ export default function ListingDetailPage() {
                                     <span>{isDeleting ? 'Löschen...' : 'Ja, löschen'}</span>
                                 </button>
                             </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* ─── Appeal / Manual Review Modal ─── */}
+                {isAppealModalOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+                        onClick={() => !isSubmittingAppeal && setIsAppealModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 15 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 15 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-white rounded-3xl p-6 sm:p-7 border border-beige shadow-2xl max-w-lg w-full space-y-5 relative text-left"
+                        >
+                            <div className="flex items-center justify-between pb-3 border-b border-beige">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
+                                        <ShieldCheck className="w-5 h-5 text-amber-700" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-bold text-base text-charcoal">Manuelle Überprüfung anfordern</h3>
+                                        <p className="text-[11px] text-charcoal/60">Einspruch gegen die Inseratsablehnung einreichen</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => !isSubmittingAppeal && setIsAppealModalOpen(false)}
+                                    className="p-1.5 rounded-full text-charcoal/40 hover:text-charcoal hover:bg-sand/60 transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1">
+                                <span className="text-[10px] uppercase font-bold text-rose-900 tracking-wider">Betroffenes Inserat:</span>
+                                <p className="text-xs font-bold text-rose-950 truncate">{listing.title}</p>
+                                {listing.admin_notes && (
+                                    <p className="text-[11px] text-rose-800 pt-1 border-t border-rose-200/60">
+                                        <strong>Ablehnungsgrund:</strong> {listing.admin_notes}
+                                    </p>
+                                )}
+                            </div>
+
+                            <form onSubmit={handleSubmitAppeal} className="space-y-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-charcoal">Grund des Einspruchs</label>
+                                    <select
+                                        value={appealReason}
+                                        onChange={(e) => setAppealReason(e.target.value)}
+                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl p-2.5 text-xs text-charcoal focus:outline-none focus:ring-2 focus:ring-forest"
+                                    >
+                                        <option value="MISSING_CONTEXT">Missverständnis oder unvollständige automatische Prüfung</option>
+                                        <option value="COMPLIANT">Inserat entspricht vollständig den Campuna-Richtlinien</option>
+                                        <option value="ADJUSTED">Angaben wurden überprüft / korrigiert</option>
+                                        <option value="OTHER">Sonstige Begründung</option>
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-charcoal">
+                                        Erläuterung für die Campuna Redaktion <span className="text-charcoal/40 font-normal">(optional)</span>
+                                    </label>
+                                    <textarea
+                                        rows={3}
+                                        value={appealNotes}
+                                        onChange={(e) => setAppealNotes(e.target.value)}
+                                        placeholder="Bitte beschreibe kurz, weshalb das Inserat erneut geprüft und freigegeben werden sollte..."
+                                        className="w-full bg-[#faf8f3] border border-beige rounded-xl p-3 text-xs text-charcoal placeholder:text-charcoal/40 focus:outline-none focus:ring-2 focus:ring-forest"
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-2.5 pt-2">
+                                    <button
+                                        type="button"
+                                        disabled={isSubmittingAppeal}
+                                        onClick={() => setIsAppealModalOpen(false)}
+                                        className="flex-1 py-2.5 px-4 rounded-xl border border-beige bg-[#faf8f3] hover:bg-sand text-xs font-bold text-charcoal transition-all cursor-pointer"
+                                    >
+                                        Abbrechen
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmittingAppeal}
+                                        className="flex-1 py-2.5 px-4 rounded-xl bg-forest hover:bg-[#004d0a] text-sand text-xs font-bold transition-all shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        {isSubmittingAppeal ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                <span>Wird gesendet...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send className="w-3.5 h-3.5" />
+                                                <span>Einspruch absenden</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
                         </motion.div>
                     </motion.div>
                 )}

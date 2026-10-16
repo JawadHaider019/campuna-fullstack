@@ -40,6 +40,8 @@ export const createCheckoutSession = async (req, res) => {
             package_credits = 500,
             duration_days = 7,
             return_url,
+            withdrawal_consent = false,
+            withdrawal_consent_at,
         } = req.body;
 
         let session;
@@ -51,6 +53,8 @@ export const createCheckoutSession = async (req, res) => {
                 planName: plan_name,
                 durationMonths: duration_months,
                 returnUrl: return_url,
+                withdrawalConsent: Boolean(withdrawal_consent),
+                withdrawalConsentAt: withdrawal_consent_at || new Date().toISOString(),
             });
         } else if (type === 'CREDIT_PURCHASE') {
             session = await createCreditCheckoutSession({
@@ -58,6 +62,8 @@ export const createCheckoutSession = async (req, res) => {
                 userEmail,
                 credits: package_credits,
                 returnUrl: return_url,
+                withdrawalConsent: Boolean(withdrawal_consent),
+                withdrawalConsentAt: withdrawal_consent_at || new Date().toISOString(),
             });
         } else if (type === 'SPOTLIGHT_PURCHASE') {
             session = await createSpotlightCheckoutSession({
@@ -65,6 +71,8 @@ export const createCheckoutSession = async (req, res) => {
                 userEmail,
                 durationDays: duration_days,
                 returnUrl: return_url,
+                withdrawalConsent: Boolean(withdrawal_consent),
+                withdrawalConsentAt: withdrawal_consent_at || new Date().toISOString(),
             });
         } else {
             return res.status(400).json({ success: false, error: 'Ungültiger Zahlungstyp angegeben.' });
@@ -148,6 +156,8 @@ export const fulfillSession = async (session) => {
             credits_granted: creditsGranted,
             customer_email: session.customer_email || metadata.userEmail,
             subscribed_at: new Date().toISOString(),
+            withdrawal_consent: metadata.withdrawalConsent === 'true',
+            withdrawal_consent_at: metadata.withdrawalConsentAt || new Date().toISOString(),
         };
 
         await db.transaction(async (tx) => {
@@ -253,12 +263,15 @@ export const fulfillSession = async (session) => {
         }
 
         const priceEurFormatted = `${(priceCents / 100).toFixed(2).replace('.', ',')} €`;
+        const consentNote = metadata.withdrawalConsent === 'true'
+            ? ` [Widerrufsverzicht zugestimmt am ${new Date(metadata.withdrawalConsentAt || Date.now()).toLocaleDateString('de-DE')}]`
+            : '';
 
         await db.orm.public.CreditTransaction.create({
             user_id: userId,
             amount: credits,
             type: 'CREDIT_PURCHASE',
-            description: `Guthabenkauf: +${credits.toLocaleString('de-DE')} CC (${priceEurFormatted} via Stripe) [Ref: ${session.id}]`,
+            description: `Guthabenkauf: +${credits.toLocaleString('de-DE')} CC (${priceEurFormatted} via Stripe) [Ref: ${session.id}]${consentNote}`,
         });
 
         return { success: true, type: 'CREDIT_PURCHASE', credits };
@@ -398,6 +411,39 @@ export const handleWebhook = async (req, res) => {
             case 'customer.subscription.deleted': {
                 const sub = event.data.object;
                 console.log(`⚠️ Subscription cancelled in Stripe: ${sub.id}`);
+                break;
+            }
+
+            case 'charge.refunded': {
+                const charge = event.data.object;
+                console.log(`ℹ️ Stripe Charge refunded: ${charge.id}, amount refunded: ${charge.amount_refunded}`);
+                // Look for credit purchases matching this charge / payment intent
+                if (charge.payment_intent) {
+                    const pi = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent.id;
+                    const matchingTxs = await db.orm.public.CreditTransaction
+                        .where((t) => t.description.contains(pi))
+                        .all();
+
+                    for (const mTx of matchingTxs) {
+                        if (mTx.amount > 0 && mTx.type === 'CREDIT_PURCHASE') {
+                            const userTxs = await db.orm.public.CreditTransaction
+                                .where({ user_id: mTx.user_id })
+                                .all();
+                            const curBalance = userTxs.reduce((sum, t) => sum + t.amount, 0);
+                            const deductAmount = Math.max(0, Math.min(mTx.amount, curBalance));
+
+                            if (deductAmount > 0) {
+                                await db.orm.public.CreditTransaction.create({
+                                    user_id: mTx.user_id,
+                                    amount: -deductAmount,
+                                    type: 'CREDIT_REFUND',
+                                    description: `Automatische Rückbuchung erstatteter Credits (Stripe Refund ${charge.id}) (-${deductAmount.toLocaleString('de-DE')} CC)`,
+                                });
+                                console.log(`✅ Deducted ${deductAmount} refunded credits from user ${mTx.user_id}`);
+                            }
+                        }
+                    }
+                }
                 break;
             }
 

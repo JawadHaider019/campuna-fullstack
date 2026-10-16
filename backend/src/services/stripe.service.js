@@ -54,6 +54,8 @@ export const createSubscriptionCheckoutSession = async ({
     planName = 'BUSINESS',
     durationMonths = 1,
     returnUrl,
+    withdrawalConsent = false,
+    withdrawalConsentAt = null,
 }) => {
     const s = requireStripe();
     const months = Math.max(1, Number(durationMonths) || 1);
@@ -105,6 +107,8 @@ export const createSubscriptionCheckoutSession = async ({
             durationMonths: String(months),
             totalPriceCents: String(unitAmount),
             creditsGranted: '1000',
+            withdrawalConsent: withdrawalConsent ? 'true' : 'false',
+            withdrawalConsentAt: withdrawalConsentAt || new Date().toISOString(),
         },
         success_url: `${frontendBase}/abo/kasse?session_id={CHECKOUT_SESSION_ID}&stripe_success=true`,
         cancel_url: `${frontendBase}/abo/kasse?cancelled=true`,
@@ -128,6 +132,8 @@ export const createCreditCheckoutSession = async ({
     userEmail,
     credits = 500,
     returnUrl,
+    withdrawalConsent = false,
+    withdrawalConsentAt = null,
 }) => {
     const s = requireStripe();
     const numCredits = Number(credits) || 500;
@@ -168,6 +174,8 @@ export const createCreditCheckoutSession = async ({
             userEmail,
             credits: String(numCredits),
             priceCents: String(pkg.priceCents),
+            withdrawalConsent: withdrawalConsent ? 'true' : 'false',
+            withdrawalConsentAt: withdrawalConsentAt || new Date().toISOString(),
         },
         success_url: `${frontendBase}/mein-konto?tab=credits&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${frontendBase}/mein-konto?tab=credits&stripe_cancelled=true`,
@@ -191,6 +199,8 @@ export const createSpotlightCheckoutSession = async ({
     userEmail,
     durationDays = 7,
     returnUrl,
+    withdrawalConsent = false,
+    withdrawalConsentAt = null,
 }) => {
     const s = requireStripe();
     const days = Math.max(1, Number(durationDays) || 7);
@@ -230,6 +240,8 @@ export const createSpotlightCheckoutSession = async ({
             userEmail,
             durationDays: String(days),
             priceCents: String(unitAmount),
+            withdrawalConsent: withdrawalConsent ? 'true' : 'false',
+            withdrawalConsentAt: withdrawalConsentAt || new Date().toISOString(),
         },
         success_url: `${frontendBase}/mein-konto?tab=overview&spotlight_success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${frontendBase}/mein-konto?tab=overview&spotlight_cancelled=true`,

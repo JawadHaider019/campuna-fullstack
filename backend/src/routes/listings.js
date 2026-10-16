@@ -12,6 +12,7 @@ import {
     exportListingsToCsv,
     generateDescriptionController,
     toggleListingStatus,
+    submitListingAppeal,
 } from '../controllers/listings.js';
 import { createListingReport } from '../controllers/listingReports.js';
 import { authenticate, optionalAuthenticate } from '../middleware/authenticate.js';
@@ -57,6 +58,9 @@ router.delete('/:id', authenticate, deleteListing);
 
 // POST /api/listings/:id/boost → Boost listing with Campuna Credits
 router.post('/:id/boost', authenticate, boostListing);
+
+// POST /api/listings/:id/appeal → Appeal a rejection / request manual review
+router.post('/:id/appeal', authenticate, submitListingAppeal);
 
 // POST /api/listings/:id/reports → Report a listing
 router.post('/:id/reports', authenticate, createListingReport);
