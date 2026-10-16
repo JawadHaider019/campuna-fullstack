@@ -154,7 +154,7 @@ export default function FeaturedShowcaseSection() {
                     </span>
                     <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-forest leading-tight whitespace-normal lg:whitespace-nowrap">
                         <span className="block sm:inline">Campuna </span>
-                        <span>Fundstücke </span>
+                        <span>Fundstücke der Woche </span>
                     </h2>
                     <p className="font-sans text-xs sm:text-sm md:text-base text-charcoal/70 max-w-xl mx-auto font-light leading-relaxed">
                         Entdecke besondere Camping-Fahrzeuge, Zubehör und Ausrüstung aus unserer Community.
