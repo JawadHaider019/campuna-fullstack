@@ -251,7 +251,7 @@ export default function CheckoutBillingPage() {
                                     <span className="w-7 h-7 rounded-full bg-forest text-sand flex items-center justify-center font-bold text-xs font-sans">1</span>
                                     <h2 className="text-lg font-bold text-charcoal font-sans">Laufzeit wählen</h2>
                                 </div>
-                                <span className="text-xs text-charcoal/50 font-sans">Jederzeit monatlich kündbar</span>
+                                <span className="text-xs text-emerald-800 font-bold font-sans">Prepaid-Festlaufzeit – keine automatische Verlängerung</span>
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -449,7 +449,7 @@ export default function CheckoutBillingPage() {
                                     'Professionelles Firmen-Cover & Logo',
                                     'Erweitertes Firmenprofil (1.000 Zeichen)',
                                     'Präsenz im Verzeichnis für Camping-Anbieter',
-                                    'Monatlich flexibel kündbar',
+                                    'Prepaid-Festlaufzeit: endet automatisch ohne Verlängerung',
                                 ].map((f, i) => (
                                     <li key={i} className="flex items-center gap-2">
                                         <Check className="w-3.5 h-3.5 text-forest shrink-0" />
@@ -462,7 +462,7 @@ export default function CheckoutBillingPage() {
                             <div className="py-4 space-y-2 text-xs font-sans">
                                 <div className="flex justify-between text-charcoal/60">
                                     <span>Laufzeit</span>
-                                    <span className="font-bold text-charcoal">{selectedDuration === 1 ? '1 Monat' : `${selectedDuration} Monate`}</span>
+                                    <span className="font-bold text-charcoal">{selectedDuration === 1 ? '1 Monat' : `${selectedDuration} Monate`} (Festlaufzeit)</span>
                                 </div>
                                 <div className="flex justify-between text-charcoal/60">
                                     <span>Nettobetrag</span>
@@ -506,7 +506,7 @@ export default function CheckoutBillingPage() {
                                         className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
                                     />
                                     <span>
-                                        Ich verlange ausdrücklich und stimme zu, dass Campuna vor Ablauf der 14-tägigen Widerrufsfrist mit der Ausführung der gebuchten Dienstleistung beginnt. Mir ist bekannt, dass mein gesetzliches <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> bei vollständiger Vertragserfüllung vorzeitig erlischt.
+                                        Ich buche als Unternehmer / gewerblicher Anbieter (§ 14 BGB). Mir ist bekannt, dass für rein gewerbliche Buchungen kein gesetzliches Verbraucher-Widerrufsrecht besteht. Die gebuchte Laufzeit ({selectedDuration === 1 ? '1 Monat' : `${selectedDuration} Monate`}) endet automatisch nach Ablauf ohne Folgekosten. Sofern ich als Verbraucher handele, verlange ich den sofortigen Leistungsbeginn und nehme zur Kenntnis, dass mein <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> bei vollständiger Erbringung erlischt bzw. Wertersatz für genutzte Tage anfällt.
                                     </span>
                                 </label>
                             </div>

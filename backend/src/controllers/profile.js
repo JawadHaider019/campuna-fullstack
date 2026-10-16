@@ -35,6 +35,10 @@ const COMPANY_ALLOWED_FIELDS = [
     'linkedin_url',
     'logo_url',
     'cover_image_url',
+    'commercial_register',
+    'registration_number',
+    'dsa_compliance_certified',
+    'dsa_certified_at',
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

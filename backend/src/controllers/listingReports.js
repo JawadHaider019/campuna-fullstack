@@ -27,14 +27,14 @@ function parseImages(raw) {
 
 /**
  * POST /api/listings/:id/reports
- * Creates a user report for a specific listing.
- * Authenticated user only.
+ * Creates a user or guest report for a specific listing under Art. 16 DSA (Notice and Action).
+ * Accessible to authenticated users and non-authenticated visitors.
  */
 export const createListingReport = async (req, res) => {
     try {
         const listingId = req.params.id;
-        const reporterId = req.user.id;
-        const { reason, description } = req.body;
+        const reporterId = req.user?.id || null;
+        const { reason, description, reporter_name, reporter_email, is_bona_fide } = req.body;
 
         // 1. Validate reason
         if (!reason || !VALID_REASONS.includes(reason)) {
@@ -44,7 +44,31 @@ export const createListingReport = async (req, res) => {
             });
         }
 
-        // 2. Fetch listing to ensure it exists and get seller info
+        // 2. Validate reporter contact info (Art. 16 Abs. 2 lit. c DSA)
+        const effectiveEmail = (req.user?.email || reporter_email || '').trim().toLowerCase();
+        const effectiveName = (
+            (req.user ? `${req.user.first_name || ''} ${req.user.last_name || ''}`.trim() : null) ||
+            reporter_name ||
+            'Besucher'
+        ).trim();
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!effectiveEmail || !emailRegex.test(effectiveEmail)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Bitte gib eine gültige E-Mail-Adresse für die gesetzliche Eingangsbestätigung (Art. 16 DSA) an.'
+            });
+        }
+
+        // 3. Art. 16 Abs. 2 lit. d DSA: Confirmation of bona fide belief
+        if (is_bona_fide === false) {
+            return res.status(400).json({
+                success: false,
+                error: 'Bitte bestätige, dass deine Angaben nach bestem Wissen und Gewissen richtig und vollständig sind.'
+            });
+        }
+
+        // 4. Fetch listing to ensure it exists and get seller info
         const listingRes = await pool.query(
             `SELECT id, user_id, title, status FROM listings WHERE id = $1`,
             [listingId]
@@ -59,40 +83,68 @@ export const createListingReport = async (req, res) => {
 
         const listing = listingRes.rows[0];
 
-        // 3. Prevent reporting own listing
-        if (String(listing.user_id).toLowerCase() === String(reporterId).toLowerCase()) {
+        // 5. Prevent reporting own listing if authenticated
+        if (reporterId && String(listing.user_id).toLowerCase() === String(reporterId).toLowerCase()) {
             return res.status(400).json({
                 success: false,
                 error: 'Du kannst dein eigenes Inserat nicht melden.'
             });
         }
 
-        // 4. Duplicate Check: User can only report a listing once
-        const existingReport = await pool.query(
-            `SELECT id, status, created_at FROM listing_reports WHERE listing_id = $1 AND reporter_id = $2`,
-            [listingId, reporterId]
-        );
-
-        if (existingReport.rowCount > 0) {
-            return res.status(409).json({
-                success: false,
-                error: 'Du hast dieses Inserat bereits gemeldet. Unser Moderationsteam prüft den Fall.'
-            });
+        // 6. Duplicate Check
+        if (reporterId) {
+            const existingReport = await pool.query(
+                `SELECT id, status, created_at FROM listing_reports WHERE listing_id = $1 AND reporter_id = $2`,
+                [listingId, reporterId]
+            );
+            if (existingReport.rowCount > 0) {
+                return res.status(409).json({
+                    success: false,
+                    error: 'Du hast dieses Inserat bereits gemeldet. Unser Moderationsteam prüft den Fall.'
+                });
+            }
+        } else {
+            // Check if guest recently submitted identical report in last 24h
+            const recentGuestReport = await pool.query(
+                `SELECT id FROM listing_reports 
+                 WHERE listing_id = $1 AND reporter_email = $2 AND created_at > NOW() - INTERVAL '24 hours'`,
+                [listingId, effectiveEmail]
+            );
+            if (recentGuestReport.rowCount > 0) {
+                return res.status(409).json({
+                    success: false,
+                    error: 'Für dieses Inserat liegt bereits ein Hinweis von deiner E-Mail-Adresse vor. Unsere Redaktion prüft den Fall schnellstmöglich.'
+                });
+            }
         }
 
-        // 5. Insert new report
+        // 7. Insert new report with unique DSA reference code
         const reportId = crypto.randomUUID();
+        const dsaReferenceCode = `DSA-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+
         const insertRes = await pool.query(
             `INSERT INTO listing_reports (
-                id, listing_id, reporter_id, reason, description, status, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, 'PENDING', NOW(), NOW())
+                id, listing_id, reporter_id, reporter_name, reporter_email,
+                is_bona_fide, dsa_reference_code, reason, description, status, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'PENDING', NOW(), NOW())
             RETURNING *`,
-            [reportId, listingId, reporterId, reason, description ? description.trim() : null]
+            [
+                reportId,
+                listingId,
+                reporterId,
+                effectiveName,
+                effectiveEmail,
+                Boolean(is_bona_fide ?? true),
+                dsaReferenceCode,
+                reason,
+                description ? description.trim() : null
+            ]
         );
 
         return res.status(201).json({
             success: true,
-            message: 'Vielen Dank für deinen Hinweis. Unser Moderationsteam prüft dieses Angebot schnellstmöglich.',
+            message: 'Vielen Dank für deine Meldung. Die elektronische Eingangsbestätigung (Art. 16 Abs. 4 DSA) wurde erfasst. Unser Moderationsteam prüft den Sachverhalt unverzüglich.',
+            dsa_reference_code: dsaReferenceCode,
             report: insertRes.rows[0]
         });
 
@@ -172,11 +224,14 @@ export const getAdminReports = async (req, res) => {
                 pp_s.last_name as seller_last_name,
                 cp_s.company_name as seller_company_name,
                 -- Reporter details
-                u_rep.email as reporter_email,
-                u_rep.user_type as reporter_type,
+                COALESCE(u_rep.email, lr.reporter_email) as reporter_email,
+                COALESCE(u_rep.user_type, 'GUEST') as reporter_type,
                 pp_r.first_name as reporter_first_name,
                 pp_r.last_name as reporter_last_name,
                 cp_r.company_name as reporter_company_name,
+                lr.reporter_name,
+                lr.dsa_reference_code,
+                lr.is_bona_fide,
                 -- Reviewer details
                 u_rev.email as reviewer_email,
                 -- AI Moderation Score if available
@@ -190,7 +245,7 @@ export const getAdminReports = async (req, res) => {
             JOIN users u_sel ON l.user_id = u_sel.id
             LEFT JOIN private_profiles pp_s ON u_sel.id = pp_s.user_id
             LEFT JOIN company_profiles cp_s ON u_sel.id = cp_s.user_id
-            JOIN users u_rep ON lr.reporter_id = u_rep.id
+            LEFT JOIN users u_rep ON lr.reporter_id = u_rep.id
             LEFT JOIN private_profiles pp_r ON u_rep.id = pp_r.user_id
             LEFT JOIN company_profiles cp_r ON u_rep.id = cp_r.user_id
             LEFT JOIN users u_rev ON lr.reviewed_by_id = u_rev.id
@@ -326,9 +381,11 @@ export const getAdminReportDetail = async (req, res) => {
 
         // Fetch other reports on the same listing
         const relatedReportsRes = await pool.query(
-            `SELECT lr.id, lr.reason, lr.description, lr.status, lr.created_at, u.email as reporter_email
+            `SELECT lr.id, lr.reason, lr.description, lr.status, lr.created_at, lr.dsa_reference_code,
+                    COALESCE(u.email, lr.reporter_email) as reporter_email,
+                    COALESCE(lr.reporter_name, 'Gast') as reporter_name
              FROM listing_reports lr
-             JOIN users u ON lr.reporter_id = u.id
+             LEFT JOIN users u ON lr.reporter_id = u.id
              WHERE lr.listing_id = $1 AND lr.id <> $2
              ORDER BY lr.created_at DESC`,
             [report.listing_id, id]

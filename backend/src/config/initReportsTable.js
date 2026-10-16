@@ -11,7 +11,11 @@ export const initReportsTable = async () => {
             CREATE TABLE IF NOT EXISTS listing_reports (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 listing_id UUID NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
-                reporter_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                reporter_id UUID REFERENCES users(id) ON DELETE CASCADE,
+                reporter_name VARCHAR(255),
+                reporter_email VARCHAR(255),
+                is_bona_fide BOOLEAN DEFAULT TRUE,
+                dsa_reference_code VARCHAR(100),
                 reason VARCHAR(50) NOT NULL,
                 description TEXT,
                 status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
@@ -36,9 +40,24 @@ export const initReportsTable = async () => {
                 )
             );
 
-            -- 2. Create unique index to prevent duplicate reports per user per listing
+            -- Ensure columns exist if table was already created
+            ALTER TABLE listing_reports ALTER COLUMN reporter_id DROP NOT NULL;
+            ALTER TABLE listing_reports ADD COLUMN IF NOT EXISTS reporter_name VARCHAR(255);
+            ALTER TABLE listing_reports ADD COLUMN IF NOT EXISTS reporter_email VARCHAR(255);
+            ALTER TABLE listing_reports ADD COLUMN IF NOT EXISTS is_bona_fide BOOLEAN DEFAULT TRUE;
+            ALTER TABLE listing_reports ADD COLUMN IF NOT EXISTS dsa_reference_code VARCHAR(100);
+
+            -- Ensure company_profiles has DSA Art. 30 trader traceability columns
+            ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS commercial_register VARCHAR(255);
+            ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS registration_number VARCHAR(100);
+            ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS dsa_compliance_certified BOOLEAN DEFAULT FALSE;
+            ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS dsa_certified_at TIMESTAMPTZ;
+
+            -- 2. Create unique index to prevent duplicate reports per registered user per listing
+            DROP INDEX IF EXISTS unique_user_listing_report;
             CREATE UNIQUE INDEX IF NOT EXISTS unique_user_listing_report
-                ON listing_reports(listing_id, reporter_id);
+                ON listing_reports(listing_id, reporter_id)
+                WHERE reporter_id IS NOT NULL;
 
             -- 3. Create performance indexes
             CREATE INDEX IF NOT EXISTS idx_listing_reports_listing_id ON listing_reports(listing_id);
@@ -46,7 +65,7 @@ export const initReportsTable = async () => {
             CREATE INDEX IF NOT EXISTS idx_listing_reports_status ON listing_reports(status);
             CREATE INDEX IF NOT EXISTS idx_listing_reports_created_at ON listing_reports(created_at DESC);
         `);
-        console.log('✅ listing_reports table verified in PostgreSQL');
+        console.log('✅ listing_reports table & DSA columns verified in PostgreSQL');
     } catch (err) {
         console.error('⚠️ listing_reports table initialization notice:', err.message);
     }

@@ -113,3 +113,50 @@ input::-ms-clear {
   text-fill-color: transparent;
   animation: text-shine 6s ease-in-out infinite;
 }
+
+/* ========================================================
+   Print Stylesheet Optimization
+   ======================================================== */
+@media print {
+  /* Hide global layout components and floating widgets */
+  header,
+  nav,
+  footer,
+  aside,
+  #main-navbar,
+  #footer,
+  .no-print,
+  .print-hidden,
+  [data-floating-modal],
+  [class*="ToolsFloatingModal"],
+  [class*="MobileBottomNav"],
+  [class*="BroadcastBanner"] {
+    display: none !important;
+  }
+
+  /* Reset document for clean printing */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
+  }
+}
+

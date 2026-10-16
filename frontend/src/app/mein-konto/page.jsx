@@ -2149,10 +2149,32 @@ export default function MeinKontoPage() {
                                                                             isEditing={true} onChange={v => setDraft(d => ({ ...d, linkedin_url: v }))}
                                                                             placeholder="https://linkedin.com/company/..." icon={Linkedin} type="url" />
                                                                     </div>
-                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                                                         <FormField label="USt-IdNr." value={profile?.vat_id} editValue={draft.vat_id}
                                                                             isEditing={true} onChange={v => setDraft(d => ({ ...d, vat_id: v }))}
                                                                             placeholder="DE123456789" icon={Shield} />
+                                                                        <FormField label="Registergericht" value={profile?.commercial_register} editValue={draft.commercial_register}
+                                                                            isEditing={true} onChange={v => setDraft(d => ({ ...d, commercial_register: v }))}
+                                                                            placeholder="z.B. Amtsgericht München" icon={Building2} />
+                                                                        <FormField label="Registernummer" value={profile?.registration_number} editValue={draft.registration_number}
+                                                                            isEditing={true} onChange={v => setDraft(d => ({ ...d, registration_number: v }))}
+                                                                            placeholder="z.B. HRB 123456" icon={FileText} />
+                                                                    </div>
+
+                                                                    {/* DSA Art. 30 Trader Self-Certification */}
+                                                                    <div className="pt-2">
+                                                                        <label className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-forest/5 border border-forest/20 text-xs text-charcoal/85 cursor-pointer font-sans select-none hover:bg-forest/10 transition-colors">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={draft.dsa_compliance_certified ?? profile?.dsa_compliance_certified ?? false}
+                                                                                onChange={e => setDraft(d => ({ ...d, dsa_compliance_certified: e.target.checked }))}
+                                                                                className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
+                                                                            />
+                                                                            <span className="leading-relaxed">
+                                                                                <strong className="text-forest block mb-0.5">Selbsterklärung zur Rechtstreue (Art. 30 Abs. 1 lit. e Digital Services Act):</strong>
+                                                                                Ich versichere hiermit rechtsverbindlich, dass mein Unternehmen auf Campuna ausschließlich Camping-Fahrzeuge, Produkte und Dienstleistungen anbietet, die den geltenden Vorschriften des Unionsrechts sowie des deutschen Rechts entsprechen.
+                                                                            </span>
+                                                                        </label>
                                                                     </div>
                                                                 </div>
                                                             )}
@@ -3498,7 +3520,7 @@ export default function MeinKontoPage() {
                                     className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
                                 />
                                 <span>
-                                    Ich stimme der sofortigen Platzierung im Campuna Spotlight zu und bestätige meine Kenntnis, dass mein <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> mit vollständiger Leistungserbringung vorzeitig erlischt.
+                                    Ich verlange ausdrücklich und stimme zu, dass Campuna sofort mit der Platzierung im Anbieter-Spotlight beginnt. Mir ist bekannt, dass mein gesetzliches <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> bei vollständiger Erbringung vorzeitig erlischt (§ 356 Abs. 4 BGB) bzw. bei vorzeitigem Widerruf Wertersatz für die genutzten Tage anfällt (§ 357a BGB).
                                 </span>
                             </label>
 
@@ -3653,7 +3675,7 @@ export default function MeinKontoPage() {
                                     className="mt-0.5 rounded text-forest focus:ring-forest cursor-pointer"
                                 />
                                 <span>
-                                    Ich stimme der sofortigen Ausführung des Vertrags (sofortige Gutschrift der Campuna Credits) zu und bestätige meine Kenntnis, dass mein <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> bei vollständiger Vertragserfüllung vorzeitig erlischt.
+                                    Ich verlange und stimme ausdrücklich zu, dass Campuna vor Ablauf der Widerrufsfrist mit der Bereitstellung der Campuna Credits (digitale Inhalte) beginnt. Mir ist bekannt, dass mein gesetzliches <a href="/agb#widerrufsbelehrung" target="_blank" rel="noopener noreferrer" className="underline text-forest font-semibold">Widerrufsrecht</a> mit Beginn der Bereitstellung erlischt (§ 356 Abs. 5 BGB).
                                 </span>
                             </label>
 

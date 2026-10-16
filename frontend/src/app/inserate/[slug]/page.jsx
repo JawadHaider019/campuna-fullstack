@@ -190,11 +190,15 @@ export default function ListingDetailPage() {
     const [contactMessage, setContactMessage] = useState("Guten Tag, ich interessiere mich für Ihr Inserat. Ist das Angebot noch verfügbar?");
     const [isSendingMessage, setIsSendingMessage] = useState(false);
 
-    // Report Modal States
+    // Report Modal States (Art. 16 DSA Notice & Action)
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [reportReasonCategory, setReportReasonCategory] = useState('SCAM');
     const [isReportDropdownOpen, setIsReportDropdownOpen] = useState(false);
     const [reportDescription, setReportDescription] = useState('');
+    const [reportGuestName, setReportGuestName] = useState('');
+    const [reportGuestEmail, setReportGuestEmail] = useState('');
+    const [reportBonaFide, setReportBonaFide] = useState(false);
+    const [reportDsaCode, setReportDsaCode] = useState(null);
     const [isSendingReport, setIsSendingReport] = useState(false);
     const [isReportSent, setIsReportSent] = useState(false);
 
@@ -548,16 +552,21 @@ export default function ListingDetailPage() {
     };
 
     const handleReportListing = () => {
-        if (!currentUser) {
-            toast.error('Bitte melde dich an, um dieses Inserat zu melden.');
-            router.push(`/login?returnUrl=/inserate/${encodeURIComponent(slug)}`);
-            return;
-        }
-        if (isOwner) {
+        if (isOwner && currentUser) {
             toast.error('Du kannst deine eigene Anzeige nicht melden.');
             return;
         }
         setIsReportSent(false);
+        setReportDsaCode(null);
+        if (currentUser) {
+            setReportGuestName(`${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || currentUser.username || '');
+            setReportGuestEmail(currentUser.email || '');
+            setReportBonaFide(true);
+        } else {
+            setReportGuestName('');
+            setReportGuestEmail('');
+            setReportBonaFide(false);
+        }
         setIsReportModalOpen(true);
     };
 
@@ -569,22 +578,40 @@ export default function ListingDetailPage() {
         }
         if (!listing?.id) return;
 
+        const effectiveEmail = (currentUser?.email || reportGuestEmail || '').trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!effectiveEmail || !emailRegex.test(effectiveEmail)) {
+            toast.error('Bitte gib eine gültige E-Mail-Adresse für die gesetzliche Eingangsbestätigung (Art. 16 DSA) an.');
+            return;
+        }
+
+        if (!reportBonaFide) {
+            toast.error('Bitte bestätige, dass deine Angaben nach bestem Wissen und Gewissen richtig sind (Art. 16 Abs. 2 lit. d DSA).');
+            return;
+        }
+
         setIsSendingReport(true);
         try {
             const res = await reportListing(listing.id, {
                 reason: reportReasonCategory,
-                description: reportDescription ? reportDescription.trim() : ''
+                description: reportDescription ? reportDescription.trim() : '',
+                reporter_name: reportGuestName?.trim() || (currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : null),
+                reporter_email: effectiveEmail,
+                is_bona_fide: true
             });
 
-            if (res.data?.success || res.success) {
+            const data = res.data || res;
+            if (data?.success) {
+                setReportDsaCode(data.dsa_reference_code || null);
                 setIsReportSent(true);
-                toast.success('Vielen Dank für deinen Hinweis! Unser Team prüft das Inserat schnellstmöglich.');
+                toast.success('Meldung eingegangen! Gesetzliche Eingangsbestätigung (Art. 16 DSA) erfasst.');
             } else {
-                toast.error(getFriendlyErrorMessage(res.data?.error || res.error, 'Deine Meldung konnte gerade nicht übermittelt werden. Bitte versuche es kurz erneut.'));
+                toast.error(getFriendlyErrorMessage(data?.error, 'Deine Meldung konnte gerade nicht übermittelt werden.'));
             }
         } catch (err) {
             console.error('Error submitting report:', err);
-            toast.error(getFriendlyErrorMessage(err, 'Deine Meldung konnte gerade nicht übermittelt werden. Bitte versuche es gleich noch einmal.'));
+            const errMsg = err?.response?.data?.error || err?.message || 'Deine Meldung konnte gerade nicht übermittelt werden. Bitte versuche es kurz erneut.';
+            toast.error(errMsg);
         } finally {
             setIsSendingReport(false);
         }
@@ -1786,19 +1813,35 @@ export default function ListingDetailPage() {
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="py-10 flex flex-col items-center text-center space-y-4 font-sans"
+                                        className="py-8 flex flex-col items-center text-center space-y-4 font-sans"
                                     >
                                         <div className="w-16 h-16 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
                                             <Check className="w-8 h-8" />
                                         </div>
                                         <h3 className="font-display font-bold text-2xl text-charcoal">Meldung eingegangen</h3>
-                                        <p className="text-xs sm:text-sm text-charcoal/70 max-w-sm leading-relaxed">
-                                            Vielen Dank für deine Mithilfe! Unser Moderationsteam prüft dieses Angebot sorgfältig nach unseren Community-Richtlinien.
+                                        <p className="text-xs sm:text-sm text-charcoal/70 max-w-md leading-relaxed">
+                                            Vielen Dank für deine Meldung. Die elektronische Bestätigung nach <strong className="font-semibold text-charcoal">Art. 16 Abs. 4 Digital Services Act (DSA)</strong> wurde erfasst. Unser Moderationsteam prüft den gemeldeten Inhalt unverzüglich.
                                         </p>
+
+                                        {reportDsaCode && (
+                                            <div className="w-full bg-forest/5 border border-forest/20 rounded-2xl p-4 text-center space-y-1">
+                                                <span className="text-[10px] uppercase font-bold tracking-wider text-forest/70 block">
+                                                    DSA-Vorgangsnummer
+                                                </span>
+                                                <span className="font-mono text-base font-extrabold text-forest select-all block">
+                                                    {reportDsaCode}
+                                                </span>
+                                                <span className="text-[11px] text-charcoal/60 block">
+                                                    Bitte notiere diesen Referenzcode für eventuelle Rückfragen oder künftige Rechtsmittel.
+                                                </span>
+                                            </div>
+                                        )}
+
                                         <button
                                             onClick={() => {
                                                 setIsReportModalOpen(false);
                                                 setIsReportSent(false);
+                                                setReportDsaCode(null);
                                             }}
                                             className="mt-4 px-7 py-3 rounded-full bg-forest text-sand hover:bg-forest/90 text-xs font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
                                         >
@@ -1813,11 +1856,11 @@ export default function ListingDetailPage() {
                                                     <Flag className="w-4 h-4" />
                                                 </span>
                                                 <h3 className="font-display font-extrabold text-lg text-charcoal">
-                                                    Anzeige melden
+                                                    Inhalt oder Anzeige melden
                                                 </h3>
                                             </div>
                                             <p className="text-xs text-charcoal/60 leading-relaxed font-sans">
-                                                Warum möchtest du dieses Angebot ({listing?.title}) melden? Bitte wähle den passenden Grund aus:
+                                                Hinweis- und Abhilfeverfahren gemäß Art. 16 Digital Services Act (DSA) für "{listing?.title}".
                                             </p>
                                         </div>
 
@@ -1899,15 +1942,70 @@ export default function ListingDetailPage() {
                                         {/* Message / Description */}
                                         <div className="space-y-1.5 pt-1">
                                             <label className="block text-xs font-bold text-charcoal">
-                                                Deine Nachricht / Details zum Problem <span className="text-charcoal/40 font-normal">(optional)</span>
+                                                Begründung / Erläuterung des Problems <span className="text-charcoal/40 font-normal">(optional)</span>
                                             </label>
                                             <textarea
                                                 rows={3}
                                                 value={reportDescription}
                                                 onChange={(e) => setReportDescription(e.target.value)}
-                                                placeholder="Beschreibe bitte kurz, was dir aufgefallen ist (z.B. falsche Angaben, Betrugsverdacht, Fahrzeug bereits verkauft)..."
+                                                placeholder="Beschreibe bitte kurz, warum dieser Inhalt rechtswidrig ist oder gegen die Richtlinien verstößt..."
                                                 className="w-full bg-white border border-beige rounded-2xl p-3 text-xs text-charcoal placeholder:text-charcoal/40 focus:border-forest focus:outline-none focus:ring-1 focus:ring-forest leading-relaxed resize-none font-sans"
                                             />
+                                        </div>
+
+                                        {/* Art. 16 Abs. 2 lit. c & d DSA: Contact & Good Faith */}
+                                        <div className="space-y-3 pt-2 border-t border-beige/60">
+                                            <div className="space-y-0.5">
+                                                <label className="block text-xs font-bold text-charcoal">
+                                                    Kontakt für die Bestätigung (Art. 16 Abs. 2 lit. c DSA) <span className="text-rose-600">*</span>
+                                                </label>
+                                                <p className="text-[11px] text-charcoal/60 leading-normal">
+                                                    An diese Adresse senden wir die gesetzliche Eingangsbestätigung sowie das Ergebnis der Prüfung.
+                                                </p>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                                <div>
+                                                    <label className="block text-[11px] font-semibold text-charcoal/70 mb-1">
+                                                        Name / Organisation
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={reportGuestName}
+                                                        onChange={(e) => setReportGuestName(e.target.value)}
+                                                        placeholder="Max Mustermann"
+                                                        className="w-full bg-white border border-beige rounded-xl px-3 py-2 text-xs text-charcoal placeholder:text-charcoal/30 focus:border-forest focus:outline-none"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[11px] font-semibold text-charcoal/70 mb-1">
+                                                        E-Mail-Adresse <span className="text-rose-600">*</span>
+                                                    </label>
+                                                    <input
+                                                        type="email"
+                                                        required
+                                                        value={currentUser ? (currentUser.email || '') : reportGuestEmail}
+                                                        onChange={(e) => setReportGuestEmail(e.target.value)}
+                                                        disabled={Boolean(currentUser)}
+                                                        placeholder="deine.email@beispiel.de"
+                                                        className="w-full bg-white border border-beige rounded-xl px-3 py-2 text-xs text-charcoal placeholder:text-charcoal/30 focus:border-forest focus:outline-none disabled:bg-sand/30 disabled:text-charcoal/60"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Art. 16 Abs. 2 lit. d DSA Bona Fide Checkbox */}
+                                            <label className="flex items-start gap-2.5 p-3 rounded-2xl bg-sand/30 border border-beige cursor-pointer select-none hover:bg-sand/40 transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={reportBonaFide}
+                                                    onChange={(e) => setReportBonaFide(e.target.checked)}
+                                                    required
+                                                    className="mt-0.5 rounded border-beige text-forest focus:ring-forest w-4 h-4 cursor-pointer"
+                                                />
+                                                <span className="text-[11px] text-charcoal/80 leading-relaxed font-normal">
+                                                    Ich erkläre nach bestem Wissen und Gewissen, dass die in dieser Meldung enthaltenen Angaben und Behauptungen richtig und vollständig sind (<span className="font-semibold text-charcoal">Art. 16 Abs. 2 lit. d DSA</span>).
+                                                </span>
+                                            </label>
                                         </div>
 
                                         {/* Action Buttons */}
@@ -1921,7 +2019,7 @@ export default function ListingDetailPage() {
                                             </button>
                                             <button
                                                 type="submit"
-                                                disabled={isSendingReport}
+                                                disabled={isSendingReport || !reportBonaFide}
                                                 className="px-6 py-2.5 rounded-full bg-forest hover:bg-gold text-sand hover:text-forest disabled:opacity-50 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
                                             >
                                                 {isSendingReport ? (

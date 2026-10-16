@@ -802,7 +802,7 @@ export default function BoostListingPage() {
                                         className="mt-0.5 w-4 h-4 rounded text-forest focus:ring-forest border-charcoal/30 cursor-pointer"
                                     />
                                     <span className="leading-snug">
-                                        Ich stimme ausdrücklich zu, dass Campuna mit der Ausführung des Boost-Dienstes sofort vor Ablauf der gesetzlichen Widerrufsfrist beginnt. Mir ist bekannt, dass mein <Link href="/agb#widerrufsbelehrung" target="_blank" className="text-forest underline font-semibold hover:text-emerald-700">Widerrufsrecht</Link> mit vollständiger Leistungserbringung erlischt (§ 356 Abs. 4 BGB).
+                                        Ich verlange ausdrücklich und stimme zu, dass Campuna mit der Ausführung des Boost-Dienstes sofort vor Ablauf der gesetzlichen Widerrufsfrist beginnt. Mir ist bekannt, dass mein <Link href="/agb#widerrufsbelehrung" target="_blank" className="text-forest underline font-semibold hover:text-emerald-700">Widerrufsrecht</Link> bei vollständiger Erbringung der Dienstleistung vorzeitig erlischt (§ 356 Abs. 4 BGB). Bei einem vorzeitigen Widerruf während der Laufzeit ist Wertersatz für die bis zum Widerruf erbrachten Tage zu leisten (§ 357a BGB).
                                     </span>
                                 </label>
                             </div>

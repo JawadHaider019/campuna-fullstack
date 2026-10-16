@@ -154,6 +154,7 @@ export default function Footer() {
                             <li><Link href="/nutzungsbedingungen" className="hover:text-forest hover:translate-x-1 inline-flex items-center transition-all duration-200">Nutzungsbedingungen</Link></li>
                             <li><Link href="/datenschutz" className="hover:text-forest hover:translate-x-1 inline-flex items-center transition-all duration-200">Datenschutz</Link></li>
                             <li><Link href="/impressum" className="hover:text-forest hover:translate-x-1 inline-flex items-center transition-all duration-200">Impressum</Link></li>
+                            <li><Link href="/vertraege-kuendigen" className="text-forest/90 font-semibold hover:text-forest hover:translate-x-1 inline-flex items-center transition-all duration-200">Verträge hier kündigen</Link></li>
                         </ul>
                     </div>
                 </motion.div>

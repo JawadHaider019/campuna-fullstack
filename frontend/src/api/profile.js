@@ -129,3 +129,32 @@ export const createStripeCheckoutSession = (options) => api.post('/stripe/create
  */
 export const verifyStripeSession = (sessionId) => api.get(`/stripe/verify-session?session_id=${encodeURIComponent(sessionId)}`);
 
+/**
+ * POST /api/subscriptions/public-cancel
+ * Public cancellation endpoint under Section 312k BGB (no login required)
+ * @param {{ name?: string, email: string, contract_type?: string, contract_number?: string, cancellation_date_type?: string, reason?: string }} data
+ */
+export const publicCancelContract = (data) => api.post('/subscriptions/public-cancel', data);
+
+/**
+ * POST /api/subscriptions/request-verification
+ * Step 1: Sends email with "Kündigung bestätigen (Das war ich)" button
+ * @param {{ name?: string, email: string, contract_type?: string, contract_number?: string, cancellation_date_type?: string, reason?: string }} data
+ */
+export const requestCancellationVerification = (data) => api.post('/subscriptions/request-verification', data);
+
+/**
+ * POST /api/subscriptions/confirm-cancellation
+ * Step 2: Executes cancellation once email link with "Das war ich" is clicked
+ * @param {string} token
+ */
+export const confirmCancellation = (token) => api.post('/subscriptions/confirm-cancellation', { token });
+
+/**
+ * POST /api/subscriptions/revoke-cancellation
+ * 1-click revocation of unauthorized or accidental cancellation
+ * @param {string} token
+ */
+export const revokeCancellation = (token) => api.post('/subscriptions/revoke-cancellation', { token });
+
+

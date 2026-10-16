@@ -1,7 +1,13 @@
+import jwt from 'jsonwebtoken';
 import { db } from '../prisma/db.js';
 import { checkAndAwardReferralCreditsOnBusinessSubscription } from './referral.js';
 import { toJsDate, toTemporalInstant, nowInstant } from '../utils/temporal.js';
 import { sendSystemNotificationToUser } from './adminBenefits.js';
+import { sendCancellationReceiptEmail, sendCancellationRevokedEmail, sendCancellationVerificationEmail } from '../services/email.services.js';
+
+// In-memory rate limiting guards for public contract cancellations (§ 312k BGB)
+const guestCancelIpAttempts = new Map(); // ip -> [timestamps]
+const guestCancelEmailCooldown = new Map(); // email -> timestamp
 
 // ─── Internal Helper ─────────────────────────────────────────────────────────
 
@@ -82,7 +88,7 @@ export const getUserSubscription = async (userId) => {
         if (activeSub.notes) {
             try {
                 const parsed = JSON.parse(activeSub.notes);
-                if (parsed.cancellation?.cancel_at_period_end || parsed.cancellation?.cancelled_at) {
+                if ((parsed.cancellation?.cancel_at_period_end || parsed.cancellation?.cancelled_at) && !parsed.cancellation?.revoked) {
                     isCancelling = true;
                     cancellationDate = activeSub.expires_at;
                 }
@@ -890,4 +896,587 @@ export const updateLeadStatus = async (req, res) => {
         return res.status(500).json({ success: false, error: 'Fehler beim Aktualisieren der Kontaktanfrage.' });
     }
 };
+
+/**
+ * POST /api/subscriptions/public-cancel
+ * Public, no-login cancellation / termination endpoint under Section 312k BGB.
+ * Allows consumers and customers to cancel contracts electronically without being logged in.
+ */
+export const publicCancelContract = async (req, res) => {
+    try {
+        const {
+            name,
+            email,
+            contract_type = 'BUSINESS_PLAN', // 'BUSINESS_PLAN' | 'LISTING_BOOST' | 'SPOTLIGHT' | 'ACCOUNT'
+            contract_number,
+            cancellation_date_type = 'PERIOD_END', // 'PERIOD_END' | 'IMMEDIATE'
+            reason,
+        } = req.body || {};
+
+        if (!email || !String(email).includes('@')) {
+            return res.status(400).json({
+                success: false,
+                error: 'Bitte gib eine gültige E-Mail-Adresse an, die mit deinem Vertrag verknüpft ist.',
+            });
+        }
+
+        const normalizedEmail = String(email).trim().toLowerCase();
+
+        // 🛡️ Anti-Spam / Rate-limiting protections for guest submissions
+        const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown-client';
+        const nowMs = Date.now();
+
+        const ipAttempts = (guestCancelIpAttempts.get(clientIp) || []).filter(t => nowMs - t < 10 * 60 * 1000);
+        if (ipAttempts.length >= 6) {
+            return res.status(429).json({
+                success: false,
+                error: 'Zu viele Kündigungsanfragen von deiner Internetverbindung. Bitte warte einige Minuten.',
+            });
+        }
+        ipAttempts.push(nowMs);
+        guestCancelIpAttempts.set(clientIp, ipAttempts);
+
+        const lastEmailAttempt = guestCancelEmailCooldown.get(normalizedEmail);
+        if (lastEmailAttempt && (nowMs - lastEmailAttempt < 30 * 1000)) {
+            return res.status(429).json({
+                success: false,
+                error: 'Für diese E-Mail-Adresse wurde vor wenigen Sekunden bereits eine Bestätigung versendet. Bitte prüfe dein Postfach.',
+            });
+        }
+        guestCancelEmailCooldown.set(normalizedEmail, nowMs);
+
+        const confirmationNumber = `KND-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+        const timestamp = new Date().toISOString();
+
+        // Check if caller is authenticated and matches email
+        const isAuthenticatedOwner = !!(req.user && req.user.email?.toLowerCase() === normalizedEmail);
+
+        // 1. Look up user by email
+        const user = await db.orm.public.User
+            .where({ email: normalizedEmail })
+            .first()
+            .catch(() => null);
+
+        let effectiveDate = 'Zum Ende der laufenden Festlaufzeit';
+        let matchedContract = false;
+        let securityNotice = null;
+        let revocationToken = null;
+        let revocationUrl = null;
+        const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+        if (user) {
+            // Find any active subscription
+            const activeSub = await db.orm.public.Subscription
+                .where({ user_id: user.id, status: 'ACTIVE' })
+                .first()
+                .catch(() => null);
+
+            if (activeSub) {
+                matchedContract = true;
+                let notesData = {};
+                if (activeSub.notes) {
+                    try { notesData = JSON.parse(activeSub.notes); } catch {}
+                }
+
+                // Generate cryptographically signed 1-click Revocation / Dispute token
+                revocationToken = jwt.sign(
+                    {
+                        sub_id: activeSub.id,
+                        user_id: user.id,
+                        confirmation_number: confirmationNumber,
+                        action: 'REVOKE_CANCELLATION',
+                    },
+                    process.env.JWT_SECRET || 'campuna_cancellation_revocation_secret_key',
+                    { expiresIn: '30d' }
+                );
+
+                revocationUrl = `${frontendBase}/vertraege-kuendigen/widerrufen?token=${encodeURIComponent(revocationToken)}`;
+
+                // If immediate cancellation was requested:
+                // Only allow immediate cutoff if user is authenticated.
+                // For guest requests without login, safeguard the merchant by continuing until prepaid period end.
+                if (cancellation_date_type === 'IMMEDIATE' && isAuthenticatedOwner) {
+                    effectiveDate = 'Sofort mit Eingang dieser Bestätigung (verifiziert)';
+                    await db.orm.public.Subscription
+                        .where({ id: activeSub.id })
+                        .update({
+                            status: 'CANCELLED',
+                            cancelled_at: nowInstant(),
+                            notes: JSON.stringify({
+                                ...notesData,
+                                cancellation: {
+                                    type: 'AUTHENTICATED_BGB_312K',
+                                    cancelled_at: timestamp,
+                                    confirmation_number: confirmationNumber,
+                                    name: name || user.name || 'Verifizierter Kontoinhaber',
+                                    reason: reason || 'Kein Grund angegeben',
+                                    immediate: true,
+                                    authenticated: true,
+                                }
+                            })
+                        }).catch(() => {});
+                } else {
+                    const expiresAt = activeSub.expires_at ? toJsDate(activeSub.expires_at) : new Date();
+                    effectiveDate = expiresAt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                    
+                    if (cancellation_date_type === 'IMMEDIATE' && !isAuthenticatedOwner) {
+                        securityNotice = 'Hinweis zum Schutz vor unberechtigtem Fremdzugriff: Da die Erklärung ohne vorherige Anmeldung eingereicht wurde, bleibt deine bezahlte Festlaufzeit bis zum regulären Fristende aktiv.';
+                    }
+
+                    await db.orm.public.Subscription
+                        .where({ id: activeSub.id })
+                        .update({
+                            cancelled_at: nowInstant(),
+                            notes: JSON.stringify({
+                                ...notesData,
+                                cancellation: {
+                                    type: isAuthenticatedOwner ? 'AUTHENTICATED_BGB_312K' : 'PUBLIC_GUEST_BGB_312K',
+                                    cancelled_at: timestamp,
+                                    confirmation_number: confirmationNumber,
+                                    name: name || 'Nicht angegeben',
+                                    cancel_at_period_end: true,
+                                    effective_until: activeSub.expires_at ? activeSub.expires_at.toString() : null,
+                                    reason: reason || 'Kein Grund angegeben',
+                                    authenticated: isAuthenticatedOwner,
+                                    revocation_token: revocationToken,
+                                    revocation_created_at: timestamp,
+                                    ip: clientIp,
+                                    user_agent: req.headers['user-agent'] || null,
+                                }
+                            })
+                        }).catch(() => {});
+                }
+
+                // Send in-app system notification if user exists
+                sendSystemNotificationToUser(
+                    user.id,
+                    `Kündigungsbestätigung (${confirmationNumber}) gem. § 312k BGB`,
+                    `Deine Kündigung / Beendigungserklärung für den Vertrag (${contract_type}) ist am ${new Date().toLocaleString('de-DE')} erfolgreich eingegangen.\n\n` +
+                    `• **Vorgangsnummer:** ${confirmationNumber}\n` +
+                    `• **Wirksamkeit:** ${effectiveDate}\n` +
+                    `• **Status:** ${isAuthenticatedOwner ? 'Verifiziert durch Kontoinhaber' : 'Über öffentliches Formular eingegangen'}\n\n` +
+                    `Diese Bestätigung entspricht den gesetzlichen Anforderungen nach § 312k Abs. 4 BGB. Du kannst diesen Beleg für deine Unterlagen ausdrucken oder speichern.`
+                ).catch(() => {});
+            }
+        }
+
+        // 🛡️ Send Statutory Electronic Confirmation Email (§ 312k Abs. 4 BGB) with 1-click Revocation Protection
+        sendCancellationReceiptEmail({
+            to: normalizedEmail,
+            name: name || (user ? user.name : 'Kunde'),
+            confirmationNumber,
+            timestamp: new Date().toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }),
+            contractType: contract_type,
+            effectiveDate,
+            isAuthenticated: isAuthenticatedOwner,
+            revocationUrl,
+        }).catch((err) => {
+            console.warn('⚠️ [Brevo] Could not send statutory cancellation receipt email:', err.message);
+        });
+
+        return res.status(200).json({
+            success: true,
+            confirmation_number: confirmationNumber,
+            timestamp,
+            date_formatted: new Date().toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }),
+            email: normalizedEmail,
+            name: name || (user ? user.name : 'Kunde'),
+            contract_type,
+            contract_number: contract_number || null,
+            effective_date: effectiveDate,
+            matched_contract: matchedContract,
+            is_authenticated: isAuthenticatedOwner,
+            security_notice: securityNotice,
+            revocation_url: revocationUrl,
+            message: `Deine Kündigung wurde erfolgreich erfasst. Vorgangsnummer: ${confirmationNumber}.`,
+        });
+
+    } catch (err) {
+        console.error('❌ publicCancelContract error:', err.message);
+        return res.status(500).json({ success: false, error: 'Fehler beim Übermitteln der Kündigung.' });
+    }
+};
+
+/**
+ * POST /api/subscriptions/revoke-cancellation
+ * GET /api/subscriptions/revoke-cancellation
+ * 1-Click Revocation / Dispute endpoint for unauthorized or accidental cancellations.
+ * Validates the cryptographically signed JWT token, clears cancellation flags, and restores subscription standing.
+ */
+export const revokeCancellation = async (req, res) => {
+    try {
+        const token = req.body?.token || req.query?.token;
+        if (!token) {
+            return res.status(400).json({
+                success: false,
+                error: 'Sicherheits-Token fehlt. Bitte nutze den Link aus deiner Bestätigungs-E-Mail.',
+            });
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(
+                token,
+                process.env.JWT_SECRET || 'campuna_cancellation_revocation_secret_key'
+            );
+        } catch (jwtErr) {
+            return res.status(400).json({
+                success: false,
+                error: 'Dieser Sicherheits-Link ist ungültig oder abgelaufen.',
+            });
+        }
+
+        const { sub_id, user_id, confirmation_number } = decoded;
+
+        const sub = await db.orm.public.Subscription
+            .where({ id: sub_id })
+            .first()
+            .catch(() => null);
+
+        if (!sub) {
+            return res.status(404).json({
+                success: false,
+                error: 'Das zugehörige Abonnement wurde nicht gefunden.',
+            });
+        }
+
+        let notesData = {};
+        if (sub.notes) {
+            try { notesData = JSON.parse(sub.notes); } catch {}
+        }
+
+        const cancellation = notesData.cancellation || {};
+        if (cancellation.revoked) {
+            return res.status(200).json({
+                success: true,
+                already_revoked: true,
+                message: 'Diese Kündigung wurde bereits erfolgreich widerrufen.',
+                confirmation_number: confirmation_number || cancellation.confirmation_number,
+            });
+        }
+
+        // Revert cancellation completely
+        const updatedNotes = {
+            ...notesData,
+            cancellation: {
+                ...cancellation,
+                cancel_at_period_end: false,
+                revoked: true,
+                revoked_at: new Date().toISOString(),
+                revocation_ip: req.ip || req.headers['x-forwarded-for'] || null,
+            }
+        };
+
+        await db.orm.public.Subscription
+            .where({ id: sub.id })
+            .update({
+                cancelled_at: null,
+                notes: JSON.stringify(updatedNotes),
+            });
+
+        // Send in-app notification to the account owner
+        const user = await db.orm.public.User
+            .where({ id: user_id || sub.user_id })
+            .first()
+            .catch(() => null);
+
+        if (user) {
+            sendSystemNotificationToUser(
+                user.id,
+                `🛡️ Kündigung (${confirmation_number}) erfolgreich widerrufen`,
+                `Die Kündigungserklärung zu Vorgangsnummer ${confirmation_number} wurde soeben erfolgreich widerrufen und storniert.\n\n` +
+                `Dein Abonnement und deine gewerblichen Funktionen bleiben uneingeschränkt aktiv. Es werden keine Änderungen an deinem Konto vorgenommen.`
+            ).catch(() => {});
+
+            // Send confirmation email
+            sendCancellationRevokedEmail({
+                to: user.email,
+                name: user.name || 'Kunde',
+                confirmationNumber: confirmation_number || cancellation.confirmation_number,
+            }).catch(() => {});
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `Kündigung (${confirmation_number}) wurde erfolgreich widerrufen. Dein Abonnement läuft wie gewohnt weiter.`,
+            confirmation_number: confirmation_number || cancellation.confirmation_number,
+        });
+
+    } catch (err) {
+        console.error('❌ revokeCancellation error:', err.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Fehler beim Widerrufen der Kündigung.',
+        });
+    }
+};
+
+/**
+ * POST /api/subscriptions/request-verification
+ * Step 1 for Guest Cancellations: Sends an email with "Kündigung bestätigen (Das war ich)" button.
+ * The transaction is NOT executed until the user clicks the verification button in their email!
+ */
+export const requestCancellationVerification = async (req, res) => {
+    try {
+        const {
+            name,
+            email,
+            contract_type = 'BUSINESS_PLAN',
+            contract_number,
+            cancellation_date_type = 'PERIOD_END',
+            reason,
+        } = req.body || {};
+
+        if (!email || !String(email).includes('@')) {
+            return res.status(400).json({
+                success: false,
+                error: 'Bitte gib eine gültige E-Mail-Adresse an.',
+            });
+        }
+
+        const normalizedEmail = String(email).trim().toLowerCase();
+
+        // Anti-Spam / Rate-limiting
+        const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown-client';
+        const nowMs = Date.now();
+
+        const ipAttempts = (guestCancelIpAttempts.get(clientIp) || []).filter(t => nowMs - t < 10 * 60 * 1000);
+        if (ipAttempts.length >= 6) {
+            return res.status(429).json({
+                success: false,
+                error: 'Zu viele Anfragen. Bitte warte einige Minuten.',
+            });
+        }
+        ipAttempts.push(nowMs);
+        guestCancelIpAttempts.set(clientIp, ipAttempts);
+
+        const lastEmailAttempt = guestCancelEmailCooldown.get(normalizedEmail);
+        if (lastEmailAttempt && (nowMs - lastEmailAttempt < 30 * 1000)) {
+            return res.status(429).json({
+                success: false,
+                error: 'Wir haben vor wenigen Sekunden bereits eine Bestätigungs-E-Mail gesendet. Bitte prüfe dein Postfach (auch Spam).',
+            });
+        }
+        guestCancelEmailCooldown.set(normalizedEmail, nowMs);
+
+        // Map contract type display label
+        const contractLabels = {
+            BUSINESS_PLAN: 'Campuna Business-Tarif (1, 3 oder 12 Monate)',
+            LISTING_BOOST: 'Inserate-Hervorhebung (Reichweiten-Boost)',
+            SPOTLIGHT: 'Anbieter-Spotlight Platzierung',
+            ACCOUNT: 'Gesamtes Campuna Nutzerkonto',
+        };
+        const contractLabel = contractLabels[contract_type] || 'Campuna Vertrag';
+        const effectiveDateChoice = cancellation_date_type === 'IMMEDIATE'
+            ? 'Sofortige Beendigung (nach Verifizierung)'
+            : 'Zum regulären Laufzeitende (Prepaid-Frist)';
+
+        // Generate signed JWT verification token (valid for 24h)
+        const confirmToken = jwt.sign(
+            {
+                name: name || 'Kunde',
+                email: normalizedEmail,
+                contract_type,
+                contract_number: contract_number || null,
+                cancellation_date_type,
+                reason: reason || 'Kein Grund angegeben',
+                action: 'CONFIRM_CANCELLATION',
+            },
+            process.env.JWT_SECRET || 'campuna_cancellation_revocation_secret_key',
+            { expiresIn: '24h' }
+        );
+
+        const frontendBase = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const confirmationUrl = `${frontendBase}/vertraege-kuendigen?confirm_token=${encodeURIComponent(confirmToken)}`;
+
+        // Send Email with "Kündigung bestätigen (Das war ich)" button via Brevo
+        await sendCancellationVerificationEmail({
+            to: normalizedEmail,
+            name: name || 'Kunde',
+            contractType: contractLabel,
+            effectiveDateChoice,
+            confirmationUrl,
+        });
+
+        return res.status(200).json({
+            success: true,
+            email: normalizedEmail,
+            message: `Bestätigungs-E-Mail wurde an ${normalizedEmail} gesendet. Bitte klicke auf "Kündigung bestätigen (Das war ich)" in der E-Mail.`,
+        });
+
+    } catch (err) {
+        console.error('❌ requestCancellationVerification error:', err.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Fehler beim Versenden der Bestätigungs-E-Mail.',
+        });
+    }
+};
+
+/**
+ * POST /api/subscriptions/confirm-cancellation
+ * Step 2: Executes and finalizes the cancellation transaction ONLY AFTER the user clicked
+ * "Kündigung bestätigen (Das war ich)" in their verification email.
+ */
+export const confirmCancellation = async (req, res) => {
+    try {
+        const token = req.body?.token || req.query?.token;
+        if (!token) {
+            return res.status(400).json({
+                success: false,
+                error: 'Bestätigungs-Token fehlt. Bitte nutze den Link aus deiner E-Mail.',
+            });
+        }
+
+        let decoded;
+        try {
+            decoded = jwt.verify(
+                token,
+                process.env.JWT_SECRET || 'campuna_cancellation_revocation_secret_key'
+            );
+        } catch (jwtErr) {
+            return res.status(400).json({
+                success: false,
+                error: 'Dieser Bestätigungslink ist ungültig oder abgelaufen (Gültigkeit: 24 Stunden). Bitte fordere eine neue Bestätigung an.',
+            });
+        }
+
+        if (decoded.action !== 'CONFIRM_CANCELLATION') {
+            return res.status(400).json({
+                success: false,
+                error: 'Ungültige Aktionsart im Bestätigungstoken.',
+            });
+        }
+
+        const {
+            name,
+            email,
+            contract_type = 'BUSINESS_PLAN',
+            contract_number,
+            cancellation_date_type = 'PERIOD_END',
+            reason,
+        } = decoded;
+
+        const normalizedEmail = String(email).trim().toLowerCase();
+        const confirmationNumber = `KND-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+        const timestamp = new Date().toISOString();
+
+        // 1. Look up user by email
+        const user = await db.orm.public.User
+            .where({ email: normalizedEmail })
+            .first()
+            .catch(() => null);
+
+        let effectiveDate = 'Zum Ende der laufenden Festlaufzeit';
+        let matchedContract = false;
+
+        if (user) {
+            // Find active subscription
+            const activeSub = await db.orm.public.Subscription
+                .where({ user_id: user.id, status: 'ACTIVE' })
+                .first()
+                .catch(() => null);
+
+            if (activeSub) {
+                matchedContract = true;
+                let notesData = {};
+                if (activeSub.notes) {
+                    try { notesData = JSON.parse(activeSub.notes); } catch {}
+                }
+
+                if (cancellation_date_type === 'IMMEDIATE') {
+                    effectiveDate = 'Sofort mit Eingang dieser Bestätigung (E-Mail verifiziert)';
+                    await db.orm.public.Subscription
+                        .where({ id: activeSub.id })
+                        .update({
+                            status: 'CANCELLED',
+                            cancelled_at: nowInstant(),
+                            notes: JSON.stringify({
+                                ...notesData,
+                                cancellation: {
+                                    type: 'VERIFIED_EMAIL_BGB_312K',
+                                    cancelled_at: timestamp,
+                                    confirmation_number: confirmationNumber,
+                                    name: name || user.name || 'Verifizierter Inhaber',
+                                    reason: reason || 'Kein Grund angegeben',
+                                    immediate: true,
+                                    email_verified: true,
+                                }
+                            })
+                        }).catch(() => {});
+                } else {
+                    const expiresAt = activeSub.expires_at ? toJsDate(activeSub.expires_at) : new Date();
+                    effectiveDate = expiresAt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                    await db.orm.public.Subscription
+                        .where({ id: activeSub.id })
+                        .update({
+                            cancelled_at: nowInstant(),
+                            notes: JSON.stringify({
+                                ...notesData,
+                                cancellation: {
+                                    type: 'VERIFIED_EMAIL_BGB_312K',
+                                    cancelled_at: timestamp,
+                                    confirmation_number: confirmationNumber,
+                                    name: name || user.name || 'Verifizierter Inhaber',
+                                    cancel_at_period_end: true,
+                                    effective_until: activeSub.expires_at ? activeSub.expires_at.toString() : null,
+                                    reason: reason || 'Kein Grund angegeben',
+                                    email_verified: true,
+                                }
+                            })
+                        }).catch(() => {});
+                }
+
+                // In-app notification to the verified user
+                sendSystemNotificationToUser(
+                    user.id,
+                    `Kündigungsbestätigung (${confirmationNumber}) gem. § 312k BGB`,
+                    `Deine Kündigung für den Vertrag (${contract_type}) wurde erfolgreich per E-Mail verifiziert und archiviert.\n\n` +
+                    `• Vorgangsnummer: ${confirmationNumber}\n` +
+                    `• Wirksamkeit: ${effectiveDate}\n` +
+                    `• Status: Verifiziert per E-Mail ("Das war ich")\n\n` +
+                    `Diese Bestätigung entspricht den gesetzlichen Anforderungen nach § 312k Abs. 4 BGB.`
+                ).catch(() => {});
+            }
+        }
+
+        // Send official statutory receipt confirmation email (§ 312k Abs. 4 BGB)
+        sendCancellationReceiptEmail({
+            to: normalizedEmail,
+            name: name || (user ? user.name : 'Kunde'),
+            confirmationNumber,
+            timestamp: new Date().toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }),
+            contractType: contract_type,
+            effectiveDate,
+            isAuthenticated: true, // It is verified by clicking the email link!
+        }).catch((err) => {
+            console.warn('⚠️ [Brevo] Could not send receipt email:', err.message);
+        });
+
+        return res.status(200).json({
+            success: true,
+            confirmation_number: confirmationNumber,
+            timestamp,
+            date_formatted: new Date().toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' }),
+            email: normalizedEmail,
+            name: name || (user ? user.name : 'Kunde'),
+            contract_type,
+            contract_number: contract_number || null,
+            effective_date: effectiveDate,
+            matched_contract: matchedContract,
+            email_verified: true,
+            message: `Kündigung (${confirmationNumber}) erfolgreich verifiziert und erfasst.`,
+        });
+
+    } catch (err) {
+        console.error('❌ confirmCancellation error:', err.message);
+        return res.status(500).json({
+            success: false,
+            error: 'Fehler beim Bestätigen der Kündigung.',
+        });
+    }
+};
+
+
 

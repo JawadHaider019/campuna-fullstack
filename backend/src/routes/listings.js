@@ -62,8 +62,8 @@ router.post('/:id/boost', authenticate, boostListing);
 // POST /api/listings/:id/appeal → Appeal a rejection / request manual review
 router.post('/:id/appeal', authenticate, submitListingAppeal);
 
-// POST /api/listings/:id/reports → Report a listing
-router.post('/:id/reports', authenticate, createListingReport);
+// POST /api/listings/:id/reports → Report a listing (DSA Art. 16 Notice & Action, guests & users)
+router.post('/:id/reports', optionalAuthenticate, createListingReport);
 
 export default router;
 

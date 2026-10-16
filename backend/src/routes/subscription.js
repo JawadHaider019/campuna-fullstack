@@ -1,7 +1,11 @@
 import { Router } from 'express';
-import { authenticate } from '../middleware/authenticate.js';
+import { authenticate, optionalAuthenticate } from '../middleware/authenticate.js';
 import {
     getPlans,
+    publicCancelContract,
+    revokeCancellation,
+    requestCancellationVerification,
+    confirmCancellation,
     getMySubscription,
     getMyFeatures,
     subscribe,
@@ -18,6 +22,20 @@ const router = Router();
 
 // GET /api/subscriptions/plans — list all active plans (no auth required)
 router.get('/plans', getPlans);
+
+// POST /api/subscriptions/public-cancel — public cancellation under Section 312k BGB (with optional auth detection)
+router.post('/public-cancel', optionalAuthenticate, publicCancelContract);
+
+// POST /api/subscriptions/request-verification — Step 1: sends email with "Kündigung bestätigen (Das war ich)" button
+router.post('/request-verification', requestCancellationVerification);
+
+// POST /api/subscriptions/confirm-cancellation — Step 2: executes cancellation once email link is clicked
+router.post('/confirm-cancellation', confirmCancellation);
+router.get('/confirm-cancellation', confirmCancellation);
+
+// POST & GET /api/subscriptions/revoke-cancellation — 1-click reversal of unauthorized/accidental cancellation
+router.post('/revoke-cancellation', revokeCancellation);
+router.get('/revoke-cancellation', revokeCancellation);
 
 // ── Protected ─────────────────────────────────────────────────────────────────
 

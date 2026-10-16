@@ -268,8 +268,235 @@ export const sendContactEmail = async ({ name, email, topic, subject, message, p
   return adminResult;
 };
 
+/**
+ * 4. Send Statutory Contract Cancellation Confirmation Email (§ 312k Abs. 4 BGB)
+ * Includes transaction details, effective date, and (for guest requests) a secure 1-click Revocation / Dispute link.
+ */
+export const sendCancellationReceiptEmail = async ({
+  to,
+  name,
+  confirmationNumber,
+  timestamp,
+  contractType = 'Campuna Business-Tarif',
+  effectiveDate,
+  isAuthenticated = false,
+  revocationUrl = null,
+}) => {
+  const isGuest = !isAuthenticated;
+
+  const securitySection = (isGuest && revocationUrl) ? `
+    <div style="background-color: #FFFBEB; border: 1px solid #FCD34D; border-radius: 12px; padding: 20px 22px; margin: 26px 0;">
+      <h3 style="color: #92400E; margin: 0 0 8px 0; font-size: 15px; font-weight: 700;">
+        🛡️ Wichtiger Sicherheitshinweis & Kontoschutz
+      </h3>
+      <p style="color: #B45309; font-size: 13px; margin: 0 0 12px 0; line-height: 1.5;">
+        Diese Kündigungserklärung wurde <strong>ohne vorherige Anmeldung</strong> über das öffentliche Kündigungsformular eingereicht. 
+        Deine bezahlten Vorteile bleiben bis zum regulären Laufzeitende aktiv.
+      </p>
+      <p style="color: #78350F; font-size: 13px; font-weight: 600; margin: 0 0 14px 0;">
+        <strong>Warst du das NICHT?</strong> Falls ein Dritter deine E-Mail-Adresse irrtümlich oder unberechtigt verwendet hat, klicke auf diesen Link, um die Kündigung sofort mit 1 Klick zu widerrufen:
+      </p>
+      <div style="text-align: center; margin: 16px 0;">
+        <a href="${revocationUrl}" style="display: inline-block; background-color: #DC2626; color: #ffffff !important; font-weight: 700; font-size: 14px; padding: 12px 24px; border-radius: 10px; text-decoration: none; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);">
+          Kündigung sofort widerrufen & mein Konto schützen &rarr;
+        </a>
+      </div>
+      <p style="color: #92400E; font-size: 11px; margin: 10px 0 0 0; text-align: center;">
+        Dieser Schutz-Link ist 30 Tage gültig. Nach dem Klick wird die Erklärung sofort storniert.
+      </p>
+    </div>
+  ` : `
+    <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 16px 20px; margin: 24px 0;">
+      <p style="color: #166534; font-size: 13px; margin: 0;">
+        ✅ <strong>Verifizierte Erklärung:</strong> Du warst während dieser Erklärung mit deinem Campuna-Konto angemeldet. Dein Kündigungswunsch wurde rechtswirksam erfasst.
+      </p>
+    </div>
+  `;
+
+  const htmlContent = wrapEmailTemplate({
+    title: `Gesetzliche Kündigungsbestätigung (${confirmationNumber}) – Campuna`,
+    preheader: `Bestätigung über den Eingang deiner Kündigungserklärung gem. § 312k Abs. 4 BGB. Vorgangsnummer: ${confirmationNumber}`,
+    contentHtml: `
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="display: inline-block; background-color: #DC2626; color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 5px 14px; border-radius: 9999px;">
+          Gesetzliche Eingangsbestätigung (§ 312k Abs. 4 BGB)
+        </span>
+        <h2 style="color: #0A2E1C; font-size: 22px; font-weight: 800; margin: 14px 0 6px 0;">
+          Kündigung erfolgreich eingegangen
+        </h2>
+        <p style="color: #6B7280; font-size: 14px; margin: 0;">
+          Deine Erklärung wurde elektronisch erfasst und archiviert.
+        </p>
+      </div>
+
+      <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 14px; padding: 20px 22px; margin-bottom: 24px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr style="border-bottom: 1px solid #F3F4F6;">
+            <td style="padding: 9px 0; color: #6B7280; width: 160px;">Vorgangsnummer:</td>
+            <td style="padding: 9px 0; color: #111827; font-family: monospace; font-weight: 700;">${confirmationNumber}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #F3F4F6;">
+            <td style="padding: 9px 0; color: #6B7280;">Eingangszeitpunkt:</td>
+            <td style="padding: 9px 0; color: #111827; font-weight: 600;">${timestamp}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #F3F4F6;">
+            <td style="padding: 9px 0; color: #6B7280;">E-Mail-Adresse:</td>
+            <td style="padding: 9px 0; color: #111827;">${to}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #F3F4F6;">
+            <td style="padding: 9px 0; color: #6B7280;">Gekündigter Vertrag:</td>
+            <td style="padding: 9px 0; color: #111827; font-weight: 600;">${contractType}</td>
+          </tr>
+          <tr>
+            <td style="padding: 9px 0; color: #6B7280;">Wirksam zum:</td>
+            <td style="padding: 9px 0; color: #DC2626; font-weight: 700;">${effectiveDate}</td>
+          </tr>
+        </table>
+      </div>
+
+      ${securitySection}
+
+      <div style="background-color: #F3F4F6; border-radius: 10px; padding: 14px 18px; margin-top: 20px;">
+        <p style="color: #4B5563; font-size: 12px; margin: 0; line-height: 1.5;">
+          <strong>Gesetzlicher Hinweis:</strong> Diese Bestätigung erfüllt die Pflichten zur unverzüglichen elektronischen Bestätigung des Eingangs einer Kündigungserklärung auf einem dauerhaften Datenträger nach § 312k Abs. 4 BGB. Bitte bewahre diese E-Mail für deine Unterlagen auf.
+        </p>
+      </div>
+    `,
+  });
+
+  return sendBrevoEmail({
+    to,
+    subject: `Gesetzliche Kündigungsbestätigung (${confirmationNumber}) – Campuna`,
+    htmlContent,
+  });
+};
+
+/**
+ * 5. Send Cancellation Revocation Confirmation Email
+ */
+export const sendCancellationRevokedEmail = async ({ to, name, confirmationNumber }) => {
+  const baseUrl = process.env.FRONTEND_URL || "https://campuna.de";
+
+  const htmlContent = wrapEmailTemplate({
+    title: 'Kündigung erfolgreich widerrufen – Campuna',
+    preheader: `Deine Kündigung (${confirmationNumber}) wurde erfolgreich widerrufen. Dein Abonnement läuft wie gewohnt weiter.`,
+    contentHtml: `
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="display: inline-block; background-color: #00630D; color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 5px 14px; border-radius: 9999px;">
+          Bestätigung über Widerruf
+        </span>
+        <h2 style="color: #0A2E1C; font-size: 22px; font-weight: 800; margin: 14px 0 6px 0;">
+          Kündigung erfolgreich widerrufen
+        </h2>
+        <p style="color: #6B7280; font-size: 14px; margin: 0;">
+          Die Kündigungserklärung zu Vorgangsnummer <strong>${confirmationNumber}</strong> wurde vollständig annulliert.
+        </p>
+      </div>
+
+      <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 14px; padding: 22px; margin-bottom: 24px;">
+        <p style="color: #166534; font-size: 15px; margin: 0 0 10px 0; font-weight: 600;">
+          🛡️ Dein Konto und dein Tarif sind gesichert.
+        </p>
+        <p style="color: #374151; font-size: 14px; margin: 0; line-height: 1.6;">
+          Es werden keine vorzeitigen Änderungen oder Beendigungen an deinen gebuchten Leistungen vorgenommen. Dein Profil, deine Inseratslimits und deine Unternehmenspräsenz bleiben uneingeschränkt aktiv.
+        </p>
+      </div>
+
+      <div style="text-align: center; margin: 28px 0;">
+        <a href="${baseUrl}/mein-konto" class="btn">
+          Zu meinem Kundenkonto &rarr;
+        </a>
+      </div>
+    `,
+  });
+
+  return sendBrevoEmail({
+    to,
+    subject: `Bestätigung: Kündigung (${confirmationNumber}) erfolgreich widerrufen – Campuna`,
+    htmlContent,
+  });
+};
+
+/**
+ * 6. Send Cancellation Verification Email with "Kündigung bestätigen (Das war ich)" button
+ * Sent before executing the cancellation for unauthenticated guests.
+ */
+export const sendCancellationVerificationEmail = async ({
+  to,
+  name,
+  contractType = 'Campuna Business-Tarif',
+  effectiveDateChoice = 'Zum regulären Laufzeitende',
+  confirmationUrl,
+}) => {
+  const htmlContent = wrapEmailTemplate({
+    title: 'Bitte bestätige deine Kündigung (Das war ich) – Campuna',
+    preheader: 'Bitte bestätige deine Kündigung mit einem Klick auf die Schaltfläche.',
+    contentHtml: `
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="display: inline-block; background-color: #00630D; color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; padding: 5px 14px; border-radius: 9999px;">
+          Bestätigung erforderlich
+        </span>
+        <h2 style="color: #0A2E1C; font-size: 22px; font-weight: 800; margin: 14px 0 6px 0;">
+          Kündigung bitte bestätigen
+        </h2>
+        <p style="color: #6B7280; font-size: 14px; margin: 0;">
+          Wir haben eine Kündigungsanfrage für deinen Campuna Vertrag erhalten.
+        </p>
+      </div>
+
+      <p style="color: #374151; font-size: 15px; margin-bottom: 20px; line-height: 1.6;">
+        Hallo ${name || 'Kunde'},<br>
+        um sicherzustellen, dass diese Kündigung tatsächlich von dir veranlasst wurde und dein Konto vor unbefugtem Fremdzugriff geschützt ist, bestätige den Vorgang bitte über die folgende Schaltfläche:
+      </p>
+
+      <div style="background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 14px; padding: 18px 20px; margin-bottom: 24px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+          <tr style="border-bottom: 1px solid #F3F4F6;">
+            <td style="padding: 9px 0; color: #6B7280; width: 160px;">E-Mail-Adresse:</td>
+            <td style="padding: 9px 0; color: #111827; font-weight: 600;">${to}</td>
+          </tr>
+          <tr style="border-bottom: 1px solid #F3F4F6;">
+            <td style="padding: 9px 0; color: #6B7280;">Vertrag / Leistung:</td>
+            <td style="padding: 9px 0; color: #111827; font-weight: 600;">${contractType}</td>
+          </tr>
+          <tr>
+            <td style="padding: 9px 0; color: #6B7280;">Gewünschte Beendigung:</td>
+            <td style="padding: 9px 0; color: #00630D; font-weight: 700;">${effectiveDateChoice}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${confirmationUrl}" class="btn" style="background-color: #00630D; color: #ffffff !important; font-weight: 800; font-size: 16px; padding: 16px 36px; border-radius: 14px; text-decoration: none; display: inline-block; box-shadow: 0 4px 16px rgba(0, 99, 13, 0.35);">
+          Kündigung bestätigen (Das war ich) &rarr;
+        </a>
+        <p style="color: #6B7280; font-size: 12px; margin-top: 14px; margin-bottom: 0;">
+          Dieser Bestätigungslink ist aus Sicherheitsgründen <strong>24 Stunden</strong> lang gültig.
+        </p>
+      </div>
+
+      <div style="background-color: #FEF3C7; border: 1px solid #FCD34D; border-radius: 12px; padding: 16px 18px; margin-top: 24px;">
+        <p style="color: #92400E; font-size: 13px; margin: 0; line-height: 1.5;">
+          <strong>Warst du das NICHT?</strong><br>
+          Falls du diese Kündigung nicht selbst angefordert hast oder jemand Fremdes deine E-Mail-Adresse eingegeben hat, kannst du diese Nachricht einfach <strong>ignorieren</strong>. Ohne Klick auf die Bestätigungsschaltfläche wird <strong>keine Kündigung ausgeführt</strong> und dein Vertrag bleibt unverändert aktiv.
+        </p>
+      </div>
+    `,
+  });
+
+  return sendBrevoEmail({
+    to,
+    subject: "Bitte bestätige deine Kündigung (Das war ich) – Campuna®",
+    htmlContent,
+  });
+};
+
 export default {
   sendVerificationEmail,
   sendPasswordResetOtpEmail,
   sendContactEmail,
+  sendCancellationReceiptEmail,
+  sendCancellationRevokedEmail,
+  sendCancellationVerificationEmail,
 };
+

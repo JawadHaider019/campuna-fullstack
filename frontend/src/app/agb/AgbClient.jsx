@@ -169,16 +169,18 @@ export default function AgbClient() {
                             (2) Private Verkäufer können Inserate kostenlos einstellen. Zusätzlich haben sie die Möglichkeit, einzelne Anzeigen kostenpflichtig hervorzuheben. Kostenpflichtig sind für private Verkäufer nur optionale Zusatzleistungen wie Premium, Premium Plus oder Booster für einzelne Anzeigen. Diese Zusatzbuchungen sind Einmalbuchungen für eine bestimmte Laufzeit und enden automatisch nach der vereinbarten Laufzeit. Es besteht kein Abonnement.
                         </p>
                         <p>
-                            (3) Gewerbliche Verkäufer erhalten ab Registrierung eine kostenlose Einführungsphase von zwei Monaten. Die Einführungsphase beginnt mit dem Registrierungsdatum des gewerblichen Accounts. Während dieser Einführungsphase können gewerbliche Verkäufer die Plattform kostenlos gewerblich nutzen und Inserate erstellen. Nach Ablauf der Einführungsphase ist für die weitere gewerbliche Nutzung ein kostenpflichtiges Business-Paket erforderlich. Es gibt keine dauerhaft kostenlosen Einzelinserate für gewerbliche Verkäufer.
+                            (3) Für gewerbliche Verkäufer (Unternehmer gem. § 14 BGB) stellt der Plattformbetreiber sowohl ein dauerhaft kostenfreies Basiskonto (mit bis zu 3 gleichzeitig aktiven Inseraten) als auch das kostenpflichtige Campuna Business-Paket bereit.
                         </p>
                         <p>
-                            (4) Gewerbliche Verkäufer können das Campuna Business-Abonnement buchen:
+                            (4) Das Campuna Business-Paket umfasst bis zu 25 aktive Inserate (weitere auf Anfrage), ein professionelles Firmen-Cover und Logo, erweiterte Profiltexte (1.000 Zeichen), Live-Performance-Analytics, Präsenz im Camping-Anbieter-Verzeichnis sowie die Berechtigung zur Buchung exklusiver Anbieter-Spotlights. Folgende Laufzeiten und Preise stehen zur Verfügung:
                         </p>
                         <ul className="list-disc pl-6 space-y-1.5 font-normal text-forest">
-                            <li>Campuna Business: 29 € / Monat (monatlich flexibel kündbar, inkl. Firmenprofil, Cover, Performance-Analytics und Verzeichnispräsenz)</li>
+                            <li><strong>1 Monat:</strong> 29 € (Prepaid-Festlaufzeit)</li>
+                            <li><strong>3 Monate:</strong> 79 € (Prepaid-Festlaufzeit)</li>
+                            <li><strong>12 Monate (Jahrespaket):</strong> 290 € (Prepaid-Festlaufzeit, entspricht 2 Gratismonaten)</li>
                         </ul>
                         <p>
-                            (5) Das Business-Abonnement gilt für gewerbliche Verkäufer und Partner. Die Abrechnung erfolgt im Voraus. Das Abonnement ist monatlich kündbar. Bei Kündigung endet die kostenpflichtige Nutzung zum Ende des jeweiligen Abrechnungszeitraums.
+                            (5) <strong>Feste Prepaid-Laufzeit / Kein automatisches Abonnement:</strong> Das Campuna Business-Paket wird als feste Prepaid-Laufzeit erworben und im Voraus abgerechnet. Die Mitgliedschaft endet nach Ablauf der gebuchten 1, 3 oder 12 Monate automatisch, ohne dass es einer Kündigung bedarf. Es findet keine automatische Verlängerung (Abo-Rollover) statt. Der Nutzer kann die Business-Mitgliedschaft vor oder nach Ablauf jederzeit aktiv durch erneuten Kauf verlängern. Nach Ablauf der Frist wechselt das Profil automatisch wieder in das dauerhaft kostenlose Basiskonto (Free-Tier).
                         </p>
                         <p>
                             (6) Private und gewerbliche Verkäufer können einzelne Inserate optional kostenpflichtig hervorheben. Diese Zusatzoptionen sind unabhängig von den Business-Paketen. Hierbei bestehen die folgenden Optionen:
@@ -250,16 +252,16 @@ export default function AgbClient() {
                             (1) Eine kostenpflichtige Mitgliedschaft wird für die vereinbarte Dauer abgeschlossen. Die genaue Laufzeit ergibt sich aus dem jeweiligen Paket. Einzelne Anzeigen-Upgrades und Zusatzoptionen enden automatisch nach Ablauf der gewählten Laufzeit und bedürfen keiner Kündigung.
                         </p>
                         <p>
-                            (2) Business-Pakete sind monatlich buchbar und monatlich kündbar. Beide Seiten sind berechtigt, das Business-Paket zum Ende des laufenden Abrechnungszeitraums zu kündigen. Erfolgt eine Kündigung nicht, verlängert sich die Mitgliedschaft jeweils um einen weiteren Monat.
+                            (2) Das Campuna Business-Paket wird für die gewählte Festlaufzeit (1, 3 oder 12 Monate) im Voraus vereinbart und verlängert sich nicht automatisch. Der Vertrag über das gebuchte Paket endet mit Ablauf des gewählten Zeitraums automatisch, ohne dass eine Kündigung erforderlich ist. Ein Recht zur vorzeitigen Kündigung oder Beendigung über die gesetzliche Online-Kündigungsfunktion gem. § 312k BGB unter <Link href="/vertraege-kuendigen" className="text-forest underline font-medium">/vertraege-kuendigen</Link> oder aus wichtigem Grund bleibt hiervon unberührt.
                         </p>
                         <p>
                             (3) Ein kostenfreier Nutzungsvertrag kann jederzeit ohne Angabe von Gründen in Textform von beiden Parteien gekündigt werden.
                         </p>
                         <p>
-                            (4) Jede Kündigung bedarf der Textform. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt davon unberührt.
+                            (4) Jede Kündigung bedarf der Textform oder kann über die Online-Kündigungsfunktion erfolgen. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt davon unberührt.
                         </p>
                         <p>
-                            (5) Nach Kündigung eines Pakets endet die kostenpflichtige Nutzung zum Ende des jeweiligen Abrechnungszeitraums. Nach Ablauf bzw. Kündigung können Verkäufer ohne aktives Paket keine weiteren Inserate veröffentlichen bzw. bestehende Inserate können deaktiviert oder ausgeblendet werden.
+                            (5) Nach Ablauf oder Kündigung des Business-Pakets endet die kostenpflichtige Nutzung zum Ende der bezahlten Laufzeit. Das Nutzerprofil wechselt automatisch in das kostenlose Basiskonto zurück (bis zu 3 aktive Inserate). Etwaige überzählige Inserate werden vorübergehend pausiert, bleiben jedoch im Nutzerkonto erhalten.
                         </p>
                         <p>
                             (6) Wird der Vertrag durch den Nutzer oder durch den Plattformbetreiber gekündigt, werden die personenbezogenen Nutzerdaten (u.a. Name, E-Mail, Telefonnummer, Nachrichten, hochgeladene Dateien) vom Plattformbetreiber archiviert. Spätestens nach Ablauf von sechs (6) Monaten ab Vertragsbeendigung wird der Nutzeraccount endgültig gelöscht. Dies gilt nicht, soweit der Plattformbetreiber die betreffenden Daten zur Durchsetzung von Ansprüchen Nutzern gegenüber benötigt oder gesetzliche Aufbewahrungspflichten bestehen.
@@ -487,7 +489,16 @@ export default function AgbClient() {
                             (1) Verbrauchern steht bei Abschluss eines entgeltlichen Nutzungsvertrages ein gesetzliches Widerrufsrecht vom Nutzungsvertrag zu. Hierzu verweist der Plattformbetreiber auf die nachfolgende Widerrufsbelehrung.
                         </p>
                         <p>
-                            (2) Unternehmern steht kein Widerrufsrecht zu.
+                            (2) Unternehmern im Sinne von § 14 BGB steht kein gesetzliches Widerrufsrecht zu.
+                        </p>
+                        <p>
+                            (3) <strong>Vorzeitiges Erlöschen bei digitalen Inhalten (Campuna Credits, § 356 Abs. 5 BGB):</strong> Das Widerrufsrecht erlischt beim Erwerb von nicht auf einem körperlichen Datenträger befindlichen digitalen Inhalten (insbesondere Campuna Credits), wenn der Plattformbetreiber mit der Ausführung des Vertrages begonnen hat, nachdem der Verbraucher ausdrücklich zugestimmt hat, dass der Plattformbetreiber mit der Ausführung des Vertrages vor Ablauf der Widerrufsfrist beginnt, und seine Kenntnis davon bestätigt hat, dass er durch seine Zustimmung mit Beginn der Ausführung des Vertrages sein Widerrufsrecht verliert.
+                        </p>
+                        <p>
+                            (4) <strong>Vorzeitiges Erlöschen und Wertersatz bei Dienstleistungen (Reichweiten-Booster, Spotlight-Platzierungen, § 356 Abs. 4, § 357a Abs. 2 BGB):</strong> Das Widerrufsrecht erlischt bei einem Vertrag zur Erbringung von Dienstleistungen, wenn der Plattformbetreiber die Dienstleistung vollständig erbracht hat und mit der Ausführung der Dienstleistung erst begonnen hat, nachdem der Verbraucher dazu seine ausdrückliche Zustimmung erteilt und gleichzeitig seine Kenntnis davon bestätigt hat, dass er sein Widerrufsrecht bei vollständiger Vertragserfüllung verliert. Widerruft der Verbraucher den Vertrag vor vollständiger Erbringung der Dienstleistung, schuldet er dem Plattformbetreiber einen angemessenen Wertersatz gem. § 357a Abs. 2 BGB für die bis zum Zeitpunkt des Widerrufs bereits erbrachte Teilleistung im Verhältnis zum Gesamtumfang der vereinbarten Leistung.
+                        </p>
+                        <p>
+                            (5) <strong>Elektronische Kündigung (§ 312k BGB):</strong> Zur Erleichterung der Vertragsbeendigung stellt der Plattformbetreiber unter <Link href="/vertraege-kuendigen" className="text-forest underline font-medium">/vertraege-kuendigen</Link> eine ständig und unmittelbar zugängliche Schaltfläche („Verträge hier kündigen“) bereit, über die Verträge auch ohne vorherige Anmeldung (Login) formwirksam gekündigt werden können. Der Eingang der Kündigung wird unverzüglich elektronisch mit einer Bestätigungsnummer bestätigt.
                         </p>
 
                         {/* Widerrufsbelehrung Card */}
@@ -595,6 +606,9 @@ export default function AgbClient() {
                         </p>
                         <p>
                             (6) <strong>Missbrauchsschutz &amp; Ausschluss:</strong> Eigenwerbung (Self-Referrals), Mehrfachanmeldungen derselben Person/Firma, Schein-Inserate sowie betrügerische Manipulationen sind untersagt. Bei begründetem Missbrauchsverdacht ist der Plattformbetreiber berechtigt, gutgeschriebene Credits ersatzlos zu stornieren und betreffende Nutzerkonten ganz oder teilweise zu sperren.
+                        </p>
+                        <p>
+                            (7) <strong>Campuna Pioneer-Programm:</strong> Die ersten dreihundert (300) registrierten Nutzer (Verbraucher oder gewerbliche Unternehmer), die ihre E-Mail-Adresse erfolgreich verifiziert, ihr Profil vollständig ausgefüllt und drei (3) redaktionell geprüfte und freigeschaltete Inserate veröffentlicht haben, qualifizieren sich für das exklusive Campuna Pioneer-Programm. Qualifizierte Nutzer erhalten ein dauerhaftes Pioneer-Abzeichen auf ihrem Profil und Inseraten sowie einen einmaligen Bonus von 1.000 Campuna Credits gutgeschrieben. Ein Anspruch auf eine dauerhafte algorithmische Bevorzugung im Such- oder Rankingalgorithmus ist mit dem Pioneer-Status nicht verbunden.
                         </p>
                     </section>
 

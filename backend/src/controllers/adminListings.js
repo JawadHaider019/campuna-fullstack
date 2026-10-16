@@ -340,11 +340,19 @@ export const updateAdminListingStatus = async (req, res) => {
             checkAndAwardReferralCreditsOnApproval(updatedListing.user_id).catch(() => {});
         }
 
-        // If rejected, automatically notify the user with the specific reason
+        // If rejected, automatically notify the user with a standardized Art. 17 DSA statement of reasons
         if (status === 'REJECTED' && updatedListing.user_id) {
             const reasonText = reason || 'Dein Inserat entspricht leider nicht vollständig unseren Marktplatz-Richtlinien oder Qualitätsstandards.';
-            const title = `Dein Inserat "${updatedListing.title || 'Camping-Inserat'}" wurde abgelehnt`;
-            const content = `Hallo,\n\ndein Inserat "${updatedListing.title || 'Camping-Inserat'}" konnte leider nicht veröffentlicht werden.\n\nBegründung:\n${reasonText}\n\nDu kannst das Inserat in deinem Konto anpassen oder eine manuelle Überprüfung anfordern, falls du der Ansicht bist, dass es sich um ein Missverständnis handelt.\n\nViele Grüße,\nDein Campuna Team`;
+            const title = `Moderationsentscheidung zu deinem Inserat "${updatedListing.title || 'Camping-Inserat'}" (Art. 17 DSA)`;
+            const content = `Hallo,\n\ndein Inserat "${updatedListing.title || 'Camping-Inserat'}" konnte nach redaktioneller Prüfung nicht veröffentlicht werden.\n\n` +
+                `📋 **Begründung der Maßnahme (Art. 17 Digital Services Act):**\n` +
+                `• **Maßnahme:** Nichtfreischaltung / Ablehnung des Inserats\n` +
+                `• **Sachverhalt & Grund:** ${reasonText}\n` +
+                `• **Rechts- & Vertragsgrundlage:** Verstoß gegen die Campuna-Nutzungsbedingungen und AGB (§ 2, § 8, § 12 AGB)\n` +
+                `• **Art der Entscheidungsfindung:** Menschliche redaktionelle Überprüfung durch Moderatorenteam\n\n` +
+                `⚖️ **Rechtsbehelf & Einspruchsmöglichkeiten (Art. 20 DSA):**\n` +
+                `Du hast das Recht, innerhalb von sechs (6) Monaten nach Erhalt dieser Mitteilung Einspruch gegen diese Entscheidung einzulegen. Rufe hierzu einfach dein Inserat in deinem Benutzerkonto auf und nutze die Schaltfläche "Einspruch / Manuelle Prüfung anfordern". Darüber hinaus stehen dir Möglichkeiten der außergerichtlichen Streitbeilegung (Art. 21 DSA) sowie der ordentliche Rechtsweg offen.\n\n` +
+                `Viele Grüße,\nDein Campuna Moderationsteam`;
             sendSystemNotificationToUser(updatedListing.user_id, title, content, adminId).catch(err => console.warn('Notification error on listing reject:', err.message));
         }
 

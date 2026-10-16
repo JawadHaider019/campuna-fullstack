@@ -472,8 +472,16 @@ export const submitAdminManualDecision = async (req, res) => {
 
         if (decision === 'REJECTED' && listing.user_id) {
             const reasonText = notes || 'Dein Inserat entspricht leider nicht vollständig unseren Marktplatz-Richtlinien oder Qualitätsstandards.';
-            const title = `Dein Inserat "${listing.title || 'Camping-Inserat'}" wurde abgelehnt`;
-            const content = `Hallo,\n\ndein Inserat "${listing.title || 'Camping-Inserat'}" wurde nach redaktioneller Prüfung abgelehnt.\n\nBegründung:\n${reasonText}\n\nDu kannst das Inserat bearbeiten oder auf der Inseratsseite Einspruch einlegen und eine manuelle Überprüfung anfordern.\n\nViele Grüße,\nDein Campuna Team`;
+            const title = `Moderationsentscheidung zu deinem Inserat "${listing.title || 'Camping-Inserat'}" (Art. 17 DSA)`;
+            const content = `Hallo,\n\ndein Inserat "${listing.title || 'Camping-Inserat'}" konnte nach redaktioneller Prüfung nicht freigeschaltet werden.\n\n` +
+                `📋 **Begründung der Maßnahme (Art. 17 Digital Services Act):**\n` +
+                `• **Maßnahme:** Nichtfreischaltung / Ablehnung des Inserats\n` +
+                `• **Sachverhalt & Grund:** ${reasonText}\n` +
+                `• **Rechts- & Vertragsgrundlage:** Verstoß gegen die Campuna-Nutzungsbedingungen und AGB (§ 2, § 8, § 12 AGB)\n` +
+                `• **Art der Entscheidungsfindung:** Menschliche redaktionelle Überprüfung durch Moderatorenteam (unterstützt durch automatisierte Vorprüfung gem. § 12 AGB)\n\n` +
+                `⚖️ **Rechtsbehelf & Einspruchsmöglichkeiten (Art. 20 DSA):**\n` +
+                `Du hast das Recht, innerhalb von sechs (6) Monaten nach Erhalt dieser Mitteilung Einspruch gegen diese Entscheidung einzulegen. Rufe hierzu einfach dein Inserat in deinem Benutzerkonto auf und nutze die Schaltfläche "Einspruch / Manuelle Prüfung anfordern". Darüber hinaus stehen dir Möglichkeiten der außergerichtlichen Streitbeilegung (Art. 21 DSA) sowie der ordentliche Rechtsweg offen.\n\n` +
+                `Viele Grüße,\nDein Campuna Moderationsteam`;
             sendSystemNotificationToUser(listing.user_id, title, content, adminId).catch(err => console.warn('Notification error on decision reject:', err.message));
         }
 

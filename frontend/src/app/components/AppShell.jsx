@@ -25,14 +25,34 @@ export default function AppShell({ children }) {
 
     return (
         <>
-            {!isAuthPage && !isAdminRoute && <BroadcastBanner />}
-            {!hideHeaderFooter && <Navbar />}
+            {!isAuthPage && !isAdminRoute && (
+                <div className="print:hidden print-hidden no-print">
+                    <BroadcastBanner />
+                </div>
+            )}
+            {!hideHeaderFooter && (
+                <div className="print:hidden print-hidden no-print">
+                    <Navbar />
+                </div>
+            )}
             <main className={`flex-1 ${hideHeaderFooter ? 'h-full min-h-0 overflow-hidden flex flex-col' : ''} ${showMobileBottomNav ? 'pb-16 md:pb-0' : ''}`}>
                 {children}
             </main>
-            {!hideHeaderFooter && <Footer />}
-            {!hideHeaderFooter && <ToolsFloatingModal />}
-            {showMobileBottomNav && <MobileBottomNav />}
+            {!hideHeaderFooter && (
+                <div className="print:hidden print-hidden no-print">
+                    <Footer />
+                </div>
+            )}
+            {!hideHeaderFooter && (
+                <div className="print:hidden print-hidden no-print">
+                    <ToolsFloatingModal />
+                </div>
+            )}
+            {showMobileBottomNav && (
+                <div className="print:hidden print-hidden no-print">
+                    <MobileBottomNav />
+                </div>
+            )}
         </>
     );
 }

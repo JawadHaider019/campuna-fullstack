@@ -33,7 +33,7 @@ const FEATURE_ROWS = [
     { key: 'business_badge', label: 'Exklusives goldenes Business-Siegel', icon: Sparkles, freeValue: false, bizValue: true },
     { key: 'spotlight_eligible', label: 'Spotlight-Buchungsberechtigung', icon: Zap, freeValue: false, bizValue: true },
     { key: 'support', label: 'Persönlicher Support', icon: Shield, freeValue: 'E-Mail Support', bizValue: 'Prioritärer Business-Support' },
-    { key: 'contract', label: 'Laufzeit & Kündigung', icon: FileText, freeValue: 'Dauerhaft kostenlos', bizValue: 'Monatlich flexibel kündbar' },
+    { key: 'contract', label: 'Laufzeit & Verlängerung', icon: FileText, freeValue: 'Dauerhaft kostenlos', bizValue: 'Prepaid-Festlaufzeit – endet automatisch ohne Abo-Verlängerung' },
 ];
 
 const TESTIMONIALS = [
@@ -44,9 +44,9 @@ const TESTIMONIALS = [
 
 const FAQ = [
     { q: 'Wofür kann ich Campuna Credits einsetzen?', a: 'Campuna Credits (1 CC = €0,01) können flexibel für 7-, 14- oder 30-Tage Inserat-Reichweiten-Boosts sowie Spotlight-Platzierungen genutzt werden. Das Business-Abonnement (€29/Monat) wird regulär via SEPA-Lastschrift oder Kreditkarte abgerechnet.' },
-    { q: 'Was passiert mit meinen Anzeigen, wenn ich kündige?', a: 'Deine bestehenden Anzeigen bleiben auf der Plattform aktiv. Bei einer Kündigung wechselt dein Konto zum Ende des gebuchten Zeitraums automatisch wieder auf das kostenfreie Basiskonto.' },
-    { q: 'Kann ich monatlich kündigen?', a: 'Ja! Du kannst dein Business-Abonnement jederzeit kündigen. Es läuft noch bis zum Ende des gebuchten Zeitraums.' },
-    { q: 'Gibt es einen Rabatt für mehrere Monate?', a: 'Ja! Beim 3-Monats-Paket sparst du gegenüber dem Einzelmonat, und beim Jahresplan erhältst du 2 Gratismonate (€290/Jahr).' },
+    { q: 'Was passiert mit meinen Anzeigen nach Ablauf der Festlaufzeit?', a: 'Deine bestehenden Anzeigen bleiben auf der Plattform erhalten. Nach Ablauf deiner gewählten Laufzeit wechselt dein Unternehmensprofil automatisch wieder auf das kostenlose Basiskonto (bis zu 3 aktive Inserate). Du kannst die Business-Präsenz jederzeit aktiv verlängern.' },
+    { q: 'Verlängert sich die Business-Mitgliedschaft automatisch?', a: 'Nein! Campuna setzt auf 100% faire und transparente Festlaufzeiten. Dein Paket (1, 3 oder 12 Monate) läuft nach Ablauf der gebuchten Zeit automatisch aus. Es gibt keine versteckten Kosten, keine Kündigungsfristen und keine automatische Verlängerung.' },
+    { q: 'Gibt es einen Rabatt für längere Laufzeiten?', a: 'Ja! Beim 3-Monats-Paket zahlst du nur €79 (statt €87), und beim Jahresplan erhältst du volle 2 Gratismonate (€290/Jahr statt €348).' },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -443,7 +443,7 @@ export default function AboPage() {
                                             'Erweitertes Firmenprofil (1.000 Zeichen)',
                                             'Präsenz im Verzeichnis für Camping-Anbieter',
                                             'Lead-Management & Interessenten-Tracking',
-                                            'Monatlich flexibel kündbar',
+                                            'Prepaid-Festlaufzeit – endet automatisch ohne Verlängerung',
                                         ].map((f) => (
                                             <li key={f} className="flex items-center gap-2.5 text-xs sm:text-sm text-white/90 font-sans">
                                                 <Check className="w-4 h-4 text-gold shrink-0" />
