@@ -402,7 +402,7 @@ export default function AgbClient() {
                             § 12 KI-gestützte Inhaltsprüfung
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber behält sich das Recht vor, Inhalte, die von Nutzern auf der Plattform eingestellt werden, durch den Einsatz von Künstlicher Intelligenz (KI) zu prüfen. Hierfür wird die OpenAI API als externer Anbieter genutzt. Diese KI-gestützte Inhaltsprüfung dient ausschließlich der Unterstützung der Moderation der eingestellten Inhalte, um sicherzustellen, dass diese den gesetzlichen Bestimmungen, den Richtlinien der Plattform und den allgemeinen Sitten entsprechen.
+                            (1) Der Plattformbetreiber behält sich das Recht vor, Inhalte, die von Nutzern auf der Plattform eingestellt werden, durch den Einsatz von Künstlicher Intelligenz (KI) zu prüfen. Hierfür wird eine intern betriebene, datenschutzkonforme KI-Lösung eingesetzt. Diese KI-gestützte Inhaltsprüfung dient ausschließlich der Unterstützung der Moderation der eingestellten Inhalte, um sicherzustellen, dass diese den gesetzlichen Bestimmungen, den Richtlinien der Plattform und den allgemeinen Sitten entsprechen.
                         </p>
                         <p>
                             (2) Die KI-gestützte Inhaltsprüfung kann folgende Maßnahmen ergreifen: a. Anzeigen freigeben, b. Anzeigen ablehnen, c. Anzeigen zur manuellen Prüfung markieren.
@@ -429,7 +429,7 @@ export default function AgbClient() {
                             (9) Der Plattformbetreiber ist berechtigt, die KI-gestützte Inhaltsprüfung jederzeit zu ändern, zu erweitern oder einzustellen. Die Nutzer werden über wesentliche Änderungen in geeigneter Weise informiert.
                         </p>
                         <p>
-                            (10) Die Nutzung der OpenAI API und anderer externer Anbieter im Rahmen der KI-gestützten Inhaltsprüfung erfolgt in Übereinstimmung mit der Datenschutzerklärung der Plattform.
+                            (10) Die KI-gestützte Inhaltsprüfung erfolgt in Übereinstimmung mit der Datenschutzerklärung der Plattform ohne Übermittlung von Inseratsdaten an ungesicherte externe Cloud-Modelle.
                         </p>
                     </section>
 
