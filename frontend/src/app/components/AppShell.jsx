@@ -35,7 +35,7 @@ export default function AppShell({ children }) {
                     <Navbar />
                 </div>
             )}
-            <main className={`flex-1 ${hideHeaderFooter ? 'h-full min-h-0 overflow-hidden flex flex-col' : ''} ${showMobileBottomNav ? 'pb-16 md:pb-0' : ''}`}>
+            <main className={`flex-1 ${hideHeaderFooter ? 'h-full min-h-0 overflow-hidden flex flex-col' : ''} ${showMobileBottomNav && hideHeaderFooter ? 'pb-16 md:pb-0' : ''}`}>
                 {children}
             </main>
             {!hideHeaderFooter && (

@@ -1,0 +1,13 @@
+# Campuna
+
+> Campuna ist Deutschlands umfassender Camping-Marktplatz: Wohnmobile, Wohnwagen, Camper, Camping-Zubehör, Zelte, Stellplätze, Campingplätze, Tiny Houses, Boote, Vermietung und Camping-Services an einem Ort.
+
+## Hauptbereiche
+- [Startseite](https://campuna.de/): Deutschlands Marktplatz für die ganze Camping-Welt.
+- [Inserate](https://campuna.de/inserate): Alle aktuellen Camping-Inserate aus ganz Deutschland.
+- [Kategorien](https://campuna.de/kategorien): Übersicht der 9 Kategorien (Fahrzeuge, Zubehör, Zelte, Stellplätze, etc.).
+- [Anbieter-Verzeichnis](https://campuna.de/anbieter): Geprüfte Händler, Werkstätten, Vermieter und Campingplätze.
+- [Camping-Ratgeber & Blog](https://campuna.de/blog): Leitfäden, Vergleiche und Tipps rund ums Camping.
+- [So funktioniert Campuna](https://campuna.de/so-funktioniert-campuna): Kauf- und Verkaufsleitfaden ohne Provision.
+- [Sicher handeln](https://campuna.de/sicher-handeln): Empfehlungen für sichere Abwicklung und Kaufverträge.
+- [FAQ & Hilfe](https://campuna.de/faq-hilfe): Häufige Fragen und Antworten.

@@ -1,6 +1,14 @@
+import { Poppins } from "next/font/google";
 import "./globals.css";
 import AppShell from "./components/AppShell";
 import { Toaster } from "react-hot-toast";
+
+const poppins = Poppins({
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-poppins",
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://campuna.de';
 
@@ -80,8 +88,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="de" className="h-full antialiased font-sans" data-scroll-behavior="smooth" suppressHydrationWarning>
-      <body className="min-h-full flex flex-col bg-white text-charcoal" suppressHydrationWarning>
+    <html lang="de" className={`h-full antialiased font-sans ${poppins.variable} ${poppins.className}`} data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body className="min-h-full flex flex-col bg-white text-charcoal font-sans" suppressHydrationWarning>
         <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
         <AppShell>{children}</AppShell>
       </body>

@@ -21,7 +21,27 @@ export const updateMyProfile = (updates) => api.put('/profile/me', updates);
  */
 export const getPublicProfile = (userId) => api.get(`/profile/${userId}`);
 
-export const getAllProfiles = () => api.get('/profile');
+let profilesCachePromise = null;
+let lastProfilesFetchTime = 0;
+
+export const invalidateProfilesCache = () => {
+    profilesCachePromise = null;
+    lastProfilesFetchTime = 0;
+};
+
+export const getAllProfiles = (options = {}) => {
+    const force = typeof options === 'boolean' ? options : options?.force === true;
+    const now = Date.now();
+    if (!force && profilesCachePromise && (now - lastProfilesFetchTime < 15000)) {
+        return profilesCachePromise;
+    }
+    lastProfilesFetchTime = now;
+    profilesCachePromise = api.get('/profile').catch((err) => {
+        profilesCachePromise = null;
+        throw err;
+    });
+    return profilesCachePromise;
+};
 
 // ─── Subscription API ─────────────────────────────────────────────────────────
 

@@ -104,6 +104,7 @@ export function isListingSold(item) {
     const status = String(item.status || item.Status || '').trim().toUpperCase();
     const condition = String(item.condition || item['Condition item'] || '').trim().toUpperCase();
     const state = String(item.state || '').trim().toUpperCase();
+    const title = String(item.title || item.Title || '').trim().toLowerCase();
 
     return Boolean(
         status === 'SOLD' ||
@@ -114,6 +115,10 @@ export function isListingSold(item) {
         condition === 'VERKAUFT' ||
         condition === 'SOLD' ||
         state === 'SOLD' ||
-        state === 'VERKAUFT'
+        state === 'VERKAUFT' ||
+        title.startsWith('verkauft') ||
+        title.startsWith('[verkauft]') ||
+        title.startsWith('(verkauft)') ||
+        title.startsWith('sold')
     );
 }

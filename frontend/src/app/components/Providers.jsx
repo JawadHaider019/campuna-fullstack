@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { motion, useMotionValue } from 'framer-motion';
 import {
     ArrowRight,
@@ -87,13 +88,12 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
             {/* Top Cover Image Area */}
             <div className="relative h-[145px] sm:h-[160px] w-full bg-white border-b border-forest/10 overflow-hidden flex items-center justify-center">
                 {coverUrl ? (
-                    <img
+                    <Image
                         src={coverUrl}
                         alt={partner.name}
-                        className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                        onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                        }}
+                        fill
+                        sizes="(max-width: 640px) 290px, 340px"
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     />
                 ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-sand/15 p-4 text-center">
@@ -107,13 +107,14 @@ const ProviderCard = React.memo(({ partner, onPartnerClick, onAuthRequired, rout
 
             {/* Overlapping Floating Circular Brand Avatar */}
             <div className="relative px-5 -mt-8 sm:-mt-9 md:-mt-10 z-10 flex items-end">
-                <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full bg-white p-1 shadow-md border-2 border-forest/15 group-hover:border-gold group-hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden shrink-0">
+                <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full bg-white p-1 shadow-md border-2 border-forest/15 group-hover:border-gold group-hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden shrink-0 relative">
                     {logoUrl ? (
-                        <img
+                        <Image
                             src={logoUrl}
                             alt={`${partner.name} Logo`}
+                            width={80}
+                            height={80}
                             className="w-full h-full object-contain rounded-full bg-white"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
                         />
                     ) : (
                         <div className="w-full h-full rounded-full bg-sand/30 text-forest flex items-center justify-center font-display font-bold text-lg sm:text-xl">
@@ -180,6 +181,7 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
     const [authModalState, setAuthModalState] = useState({ isOpen: false, returnUrl: '' });
 
     const [providersList, setProvidersList] = useState([]);
+    const [loadingProviders, setLoadingProviders] = useState(true);
 
     useEffect(() => {
         setMounted(true);
@@ -225,6 +227,8 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
                 if (typeof window !== 'undefined') {
                     window.dispatchEvent(new CustomEvent('campuna-spotlight-status', { detail: { hasSpotlight: false } }));
                 }
+            } finally {
+                setLoadingProviders(false);
             }
         };
         loadProviders();
@@ -371,9 +375,9 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
                         </div>
 
                         <div className="relative z-10 pt-2">
-                            <h4 className="font-display text-xs sm:text-[13px] font-bold text-forest leading-snug line-clamp-1">
+                            <h3 className="font-display text-xs sm:text-[13px] font-bold text-forest leading-snug line-clamp-1">
                                 Alle Bereiche
-                            </h4>
+                            </h3>
                             <p className="font-sans text-[10px] text-charcoal/50 font-light truncate mt-0.5">
                                 Gesamtes Verzeichnis
                             </p>
@@ -402,9 +406,9 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
                                 </div>
 
                                 <div className="relative z-10 pt-2">
-                                    <h4 className="font-display text-xs sm:text-[13px] font-bold text-forest leading-snug line-clamp-1">
+                                    <h3 className="font-display text-xs sm:text-[13px] font-bold text-forest leading-snug line-clamp-1">
                                         {cat.shortName || cat.name}
-                                    </h4>
+                                    </h3>
                                     <p className="font-sans text-[10px] text-charcoal/50 font-light truncate mt-0.5">
                                         {cat.name}
                                     </p>
@@ -414,9 +418,9 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
                     })}
                 </div>
 
-                {/* ── 3. SPOTLIGHT SUB-SECTION (Shown only if active spotlight partners exist) ── */}
-                {providersList && providersList.length > 0 && (
-                    <div id="campuna-spotlight" className="pt-8 border-t border-forest/10 scroll-mt-24">
+                {/* ── 3. SPOTLIGHT SUB-SECTION (Shown while loading or if active spotlight partners exist) ── */}
+                {(loadingProviders || (providersList && providersList.length > 0)) && (
+                    <div id="campuna-spotlight" className="pt-8 border-t border-forest/10 scroll-mt-24 min-h-[380px]">
                         <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-6 gap-2">
                             <div className="space-y-1">
                                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gold/15 text-forest border border-gold/30 text-[10px] font-bold uppercase tracking-wider">
@@ -432,50 +436,71 @@ export default function Providers({ onPartnerClick, isLoggedIn: propIsLoggedIn }
                             </div>
                         </div>
 
-                        {/* Spotlight Sliding Carousel / Cards */}
-                        <div className="relative">
-                            {shouldSlide && (
-                                <>
-                                    <div className="hidden md:block absolute inset-y-0 left-0 w-24 lg:w-32 bg-gradient-to-r from-sand via-sand/80 to-transparent z-10 pointer-events-none" />
-                                    <div className="hidden md:block absolute inset-y-0 right-0 w-24 lg:w-32 bg-gradient-to-l from-sand via-sand/80 to-transparent z-10 pointer-events-none" />
-                                </>
-                            )}
+                        {loadingProviders ? (
+                            <div className="flex gap-5 sm:gap-6 overflow-hidden py-2 sm:py-4">
+                                {[1, 2, 3, 4].map((n) => (
+                                    <div
+                                        key={`sk-p-${n}`}
+                                        className="flex-shrink-0 w-[290px] sm:w-[320px] md:w-[340px] rounded-[28px] overflow-hidden bg-white border-2 border-forest/10 h-[328px] md:h-[354px] flex flex-col justify-between animate-pulse"
+                                    >
+                                        <div className="h-[145px] sm:h-[160px] w-full bg-sand/30" />
+                                        <div className="px-5 -mt-8 sm:-mt-9 md:-mt-10 z-10 flex items-end">
+                                            <div className="w-16 h-16 sm:w-18 sm:h-18 md:w-20 md:h-20 rounded-full bg-sand/50 border-2 border-white shadow-md" />
+                                        </div>
+                                        <div className="px-5 pt-3 pb-5 flex-1 space-y-2">
+                                            <div className="h-3 bg-sand/40 rounded-full w-24" />
+                                            <div className="h-4 bg-sand/60 rounded-full w-3/4" />
+                                            <div className="h-3 bg-sand/30 rounded-full w-full" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            /* Spotlight Sliding Carousel / Cards */
+                            <div className="relative">
+                                {shouldSlide && (
+                                    <>
+                                        <div className="hidden md:block absolute inset-y-0 left-0 w-24 lg:w-32 bg-gradient-to-r from-sand via-sand/80 to-transparent z-10 pointer-events-none" />
+                                        <div className="hidden md:block absolute inset-y-0 right-0 w-24 lg:w-32 bg-gradient-to-l from-sand via-sand/80 to-transparent z-10 pointer-events-none" />
+                                    </>
+                                )}
 
-                            <div
-                                className={`relative overflow-x-hidden ${shouldSlide ? 'cursor-grab active:cursor-grabbing' : ''}`}
-                                ref={rowRef}
-                                onMouseEnter={() => { isHoveredRef.current = true; }}
-                                onMouseLeave={() => { isHoveredRef.current = false; }}
-                                onPointerEnter={() => { isHoveredRef.current = true; }}
-                                onPointerLeave={() => { isHoveredRef.current = false; }}
-                            >
-                                <motion.div
-                                    drag={shouldSlide ? "x" : false}
-                                    dragConstraints={shouldSlide ? { right: 0, left: -constraints } : { right: 0, left: 0 }}
-                                    style={shouldSlide ? { x } : { x: 0 }}
-                                    onDragStart={() => { isDraggingRef.current = true; isHoveredRef.current = true; }}
-                                    onDragEnd={() => { isDraggingRef.current = false; }}
+                                <div
+                                    className={`relative overflow-x-hidden ${shouldSlide ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                                    ref={rowRef}
                                     onMouseEnter={() => { isHoveredRef.current = true; }}
                                     onMouseLeave={() => { isHoveredRef.current = false; }}
                                     onPointerEnter={() => { isHoveredRef.current = true; }}
                                     onPointerLeave={() => { isHoveredRef.current = false; }}
-                                    className={shouldSlide
-                                        ? "flex gap-5 sm:gap-6 w-max px-4 sm:px-16 md:px-32 py-2 sm:py-4"
-                                        : "flex gap-5 sm:gap-6 justify-center w-full py-2 sm:py-4"
-                                    }
                                 >
-                                    {providersList.map((partner, idx) => (
-                                        <ProviderCard
-                                            key={`${partner.id}-${idx}`}
-                                            partner={partner}
-                                            onPartnerClick={onPartnerClick}
-                                            onAuthRequired={(url) => setAuthModalState({ isOpen: true, returnUrl: url })}
-                                            router={router}
-                                        />
-                                    ))}
-                                </motion.div>
+                                    <motion.div
+                                        drag={shouldSlide ? "x" : false}
+                                        dragConstraints={shouldSlide ? { right: 0, left: -constraints } : { right: 0, left: 0 }}
+                                        style={shouldSlide ? { x } : { x: 0 }}
+                                        onDragStart={() => { isDraggingRef.current = true; isHoveredRef.current = true; }}
+                                        onDragEnd={() => { isDraggingRef.current = false; }}
+                                        onMouseEnter={() => { isHoveredRef.current = true; }}
+                                        onMouseLeave={() => { isHoveredRef.current = false; }}
+                                        onPointerEnter={() => { isHoveredRef.current = true; }}
+                                        onPointerLeave={() => { isHoveredRef.current = false; }}
+                                        className={shouldSlide
+                                            ? "flex gap-5 sm:gap-6 w-max px-4 sm:px-16 md:px-32 py-2 sm:py-4"
+                                            : "flex gap-5 sm:gap-6 justify-center w-full py-2 sm:py-4"
+                                        }
+                                    >
+                                        {providersList.map((partner, idx) => (
+                                            <ProviderCard
+                                                key={`${partner.id}-${idx}`}
+                                                partner={partner}
+                                                onPartnerClick={onPartnerClick}
+                                                onAuthRequired={(url) => setAuthModalState({ isOpen: true, returnUrl: url })}
+                                                router={router}
+                                            />
+                                        ))}
+                                    </motion.div>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
 

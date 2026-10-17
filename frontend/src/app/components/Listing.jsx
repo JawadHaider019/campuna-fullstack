@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { motion, useMotionValue, animate } from 'framer-motion';
 import { Heart, MapPin, ShieldCheck, Eye, ArrowRight, ChevronLeft, ChevronRight, Rocket, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -184,10 +185,12 @@ const ListingCard = React.memo(({ item: rawItem, onCardClick, isParentDragging }
         >
             <div className="relative aspect-[16/9] w-full overflow-hidden bg-sand/20">
                 {hasImage ? (
-                    <img
+                    <Image
                         src={item.images[imgIdx]}
                         alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
+                        fill
+                        sizes="(max-width: 640px) 290px, 320px"
+                        className="object-cover transition-transform duration-[0.8s] ease-out group-hover:scale-105 pointer-events-none"
                         loading="lazy"
                         onError={() => {
                             if (imgIdx < item.images.length - 1) {
@@ -673,18 +676,45 @@ export default function Listing({
                 </div>
 
                 {isLoading || internalLoading ? (
-                    <div className="space-y-5 relative">
-                        <div className="flex gap-5 overflow-hidden">
+                    <div className="space-y-5 relative min-h-[630px] md:min-h-[650px]">
+                        {/* Row 1 Skeleton */}
+                        <div className="flex gap-5 overflow-hidden pb-1">
                             {[1, 2, 3, 4, 5].map(n => (
-                                <div key={`sk1-${n}`} className="flex-shrink-0 w-[280px] sm:w-[300px] md:w-[320px] rounded-[24px] bg-white border border-forest/10 p-3.5 flex flex-col justify-between animate-pulse">
-                                    <div className="w-full aspect-[4/3] bg-sand/40 rounded-[18px]" />
-                                    <div className="space-y-2 mt-3.5">
-                                        <div className="h-4 bg-sand/60 rounded-full w-3/4" />
-                                        <div className="h-3 bg-sand/40 rounded-full w-1/2" />
+                                <div key={`sk1-${n}`} className="flex-shrink-0 w-[300px] md:w-[320px] rounded-[24px] bg-white border border-forest/5 overflow-hidden flex flex-col justify-between h-[305px] md:h-[315px] animate-pulse">
+                                    <div className="w-full aspect-[16/9] bg-sand/30" />
+                                    <div className="p-4 flex flex-col flex-1 justify-between">
+                                        <div className="space-y-2">
+                                            <div className="h-4 bg-sand/60 rounded-full w-3/4" />
+                                            <div className="flex gap-1.5">
+                                                <div className="h-3 bg-sand/40 rounded-full w-14" />
+                                                <div className="h-3 bg-sand/40 rounded-full w-16" />
+                                            </div>
+                                        </div>
+                                        <div className="pt-2 border-t border-forest/5 flex items-center justify-between">
+                                            <div className="h-3 bg-sand/40 rounded-full w-12" />
+                                            <div className="h-5 bg-sand/60 rounded-full w-20" />
+                                        </div>
                                     </div>
-                                    <div className="pt-3 border-t border-forest/5 flex items-center justify-between mt-3.5">
-                                        <div className="h-3 bg-sand/40 rounded-full w-12" />
-                                        <div className="h-5 bg-sand/60 rounded-full w-20" />
+                                </div>
+                            ))}
+                        </div>
+                        {/* Row 2 Skeleton */}
+                        <div className="flex gap-5 overflow-hidden pb-1">
+                            {[1, 2, 3, 4, 5].map(n => (
+                                <div key={`sk2-${n}`} className="flex-shrink-0 w-[300px] md:w-[320px] rounded-[24px] bg-white border border-forest/5 overflow-hidden flex flex-col justify-between h-[305px] md:h-[315px] animate-pulse">
+                                    <div className="w-full aspect-[16/9] bg-sand/30" />
+                                    <div className="p-4 flex flex-col flex-1 justify-between">
+                                        <div className="space-y-2">
+                                            <div className="h-4 bg-sand/60 rounded-full w-3/4" />
+                                            <div className="flex gap-1.5">
+                                                <div className="h-3 bg-sand/40 rounded-full w-14" />
+                                                <div className="h-3 bg-sand/40 rounded-full w-16" />
+                                            </div>
+                                        </div>
+                                        <div className="pt-2 border-t border-forest/5 flex items-center justify-between">
+                                            <div className="h-3 bg-sand/40 rounded-full w-12" />
+                                            <div className="h-5 bg-sand/60 rounded-full w-20" />
+                                        </div>
                                     </div>
                                 </div>
                             ))}

@@ -1,10 +1,18 @@
 import api from './client.js';
+let listingsCachePromise = null;
+let lastListingsFetchTime = 0;
+
+export const invalidateListingsCache = () => {
+    listingsCachePromise = null;
+    lastListingsFetchTime = 0;
+};
 
 /**
  * Sends multipart form-data to create a listing.
  * @param {FormData} formData - The form data containing images and listing info.
  */
 export const createListing = async (formData) => {
+    invalidateListingsCache();
     return api.post('/listings', formData);
 };
 
@@ -14,6 +22,7 @@ export const createListing = async (formData) => {
  * @param {FormData} formData - The form data containing images and listing info.
  */
 export const updateListing = async (id, formData) => {
+    invalidateListingsCache();
     return api.put(`/listings/${id}`, formData);
 };
 
@@ -23,6 +32,7 @@ export const updateListing = async (id, formData) => {
  * @param {string} id - Listing ID
  */
 export const deleteListing = async (id) => {
+    invalidateListingsCache();
     return api.delete(`/listings/${id}`);
 };
 
@@ -30,8 +40,18 @@ export const getMyListings = async () => {
     return api.get('/listings/my');
 };
 
-export const getAllListings = async () => {
-    return api.get('/listings');
+export const getAllListings = async (options = {}) => {
+    const force = typeof options === 'boolean' ? options : options?.force === true;
+    const now = Date.now();
+    if (!force && listingsCachePromise && (now - lastListingsFetchTime < 15000)) {
+        return listingsCachePromise;
+    }
+    lastListingsFetchTime = now;
+    listingsCachePromise = api.get('/listings').catch((err) => {
+        listingsCachePromise = null;
+        throw err;
+    });
+    return listingsCachePromise;
 };
 
 export const getListingDetail = async (id, params = {}) => {
@@ -91,6 +111,7 @@ export const reportListing = async (id, data) => {
  * @param {string} [status] - Optional target status ('APPROVED' | 'INACTIVE' | 'SOLD')
  */
 export const toggleListingStatus = async (id, status) => {
+    invalidateListingsCache();
     return api.patch(`/listings/${id}/status`, { status });
 };
 

@@ -2,20 +2,15 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import {
-    FileCheck,
-    Shield,
-    Scale,
-    AlertTriangle,
-    CheckCircle2
+    FileCheck
 } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 
 export default function NutzungsbedingungenClient() {
     return (
         <div className="bg-white min-h-screen font-sans text-charcoal overflow-hidden">
-            {/* 1. HERO SECTION (Without bottom shadow) */}
+            {/* 1. HERO SECTION */}
             <section className="relative min-h-[44vh] md:min-h-[50vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-20 sm:mt-20 mx-4 md:mx-8 lg:mx-12 border border-forest/10">
                 {/* Background Cinematic Image */}
                 <div className="absolute inset-0 z-0">
@@ -65,7 +60,7 @@ export default function NutzungsbedingungenClient() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="font-sans text-sm sm:text-base md:text-lg text-sand/90 leading-relaxed max-w-2xl mx-auto font-light drop-shadow-md"
                     >
-                        Plattformregeln für die Nutzung der Plattform „Campuna“
+                        Aktualisierte Fassung | Oktober 2026 | Auf Grundlage der bisherigen sieben Paragraphen
                     </motion.p>
                 </div>
             </section>
@@ -118,45 +113,49 @@ export default function NutzungsbedingungenClient() {
                             (2) Die Nutzer dürfen die Plattform nicht für illegale Aktivitäten oder solche, die gegen geltendes Recht verstoßen, verwenden. Dies umfasst insbesondere:
                         </p>
                         <ul className="list-disc pl-6 space-y-1">
-                            <li>a. Verbreitung von rechtswidrigen, obszönen, beleidigenden, verleumderischen oder anderweitig anstößigen Inhalten.</li>
-                            <li>b. Nutzung der Plattform zur Begehung von Straftaten oder zur Unterstützung von Straftaten.</li>
+                            <li>a. Verbreitung von rechtswidrigen, beleidigenden, verleumderischen, diskriminierenden oder anderweitig rechtsverletzenden Inhalten;</li>
+                            <li>b. Nutzung der Plattform zur Begehung oder Unterstützung von Straftaten;</li>
+                            <li>c. das Anbieten gesetzlich verbotener Waren oder Leistungen.</li>
                         </ul>
                         <p>
                             (3) Es ist den Nutzern untersagt, die Plattform für Aktivitäten zu verwenden, die die Sicherheit, Integrität oder Verfügbarkeit der Plattform oder der Daten anderer Nutzer gefährden könnten.
                         </p>
                         <p>
-                            (4) Reverse Engineering, Dekompilierung oder andere Versuche, den Quellcode der Plattform zu rekonstruieren, sind strengstens untersagt.
+                            (4) Reverse Engineering, Dekompilierung oder andere Versuche, den Quellcode der Plattform zu rekonstruieren, sind untersagt, soweit sie nicht gesetzlich ausdrücklich erlaubt sind.
                         </p>
                         <p>
-                            (5) Jegliche Manipulation der Plattform oder ihrer Komponenten, die nicht ausdrücklich vom Plattformbetreiber genehmigt wurde, ist verboten.
+                            (5) Jegliche unbefugte Manipulation der Plattform oder ihrer Komponenten ist verboten.
                         </p>
                         <p>
-                            (6) Die Nutzung der Plattform zur Versendung von Spam, Kettenbriefen oder unerwünschten Massen-E-Mails ist verboten.
+                            (6) Die Nutzung der Plattform zur Versendung von Spam, Kettenbriefen oder unerwünschten Massen-Nachrichten ist verboten.
                         </p>
                         <p>
-                            (7) Nutzer dürfen keine automatisierten Systeme oder Bots einsetzen, um übermäßige Anfragen an die Plattform zu senden oder sonstige störende Aktivitäten durchzuführen.
+                            (7) Nutzer dürfen keine automatisierten Systeme oder Bots einsetzen, um übermäßige Anfragen an die Plattform zu senden, Inserate missbräuchlich zu veröffentlichen, Daten unbefugt abzugreifen oder sonstige störende Aktivitäten durchzuführen. Gesetzlich zulässige Nutzungen bleiben unberührt.
                         </p>
                         <p>
-                            (8) Nutzern ist es verboten, die Software der Plattform und die Dienstleistungen ohne ausdrückliche Genehmigung des Plattformbetreibers zu anderen Zwecken als zu ihren eigenen, persönlichen oder beruflichen/gewerblichen Zwecken zu nutzen, insbesondere nicht zu sonstigen gewerblichen Zwecken. Insbesondere ist es den Nutzern untersagt:
+                            (8) Nutzern ist es untersagt, die Software der Plattform und die Dienstleistungen ohne ausdrückliche Genehmigung des Plattformbetreibers zu anderen als den vertragsgemäß erlaubten persönlichen oder beruflichen/gewerblichen Zwecken zu nutzen. Insbesondere ist es den Nutzern untersagt:
                         </p>
                         <ul className="list-disc pl-6 space-y-1">
-                            <li>a. Viren, Trojaner, Würmer oder sonstigen Schadcode auf die Plattform zu schleusen oder dies zu versuchen,</li>
-                            <li>b. die Software der Plattform zu hacken, zu manipulieren oder dies zu versuchen,</li>
-                            <li>c. Scripts und andere automatisierbare oder teilautomatisierbare Verfahren zur Nutzung der Plattform einzusetzen,</li>
-                            <li>d. Sicherheitsfunktionen der Plattform zu umgehen oder dies zu versuchen,</li>
-                            <li>e. den Nutzeraccount zu vermieten oder anderweitig gewerblich zu nutzen, zu unterlizenzieren oder in anderer Weise Dritten zur Verfügung zu stellen, es sei denn, dies wurde vom Plattformbetreiber ausdrücklich erlaubt.</li>
+                            <li>a. Viren, Trojaner, Würmer oder sonstigen Schadcode auf die Plattform zu schleusen oder dies zu versuchen;</li>
+                            <li>b. die Software der Plattform zu hacken oder unbefugt zu manipulieren;</li>
+                            <li>c. automatisierte Verfahren einzusetzen, die Sicherheits- oder Nutzungsbeschränkungen umgehen;</li>
+                            <li>d. Sicherheitsfunktionen der Plattform zu umgehen;</li>
+                            <li>e. den Nutzeraccount unbefugt Dritten zu überlassen, zu vermieten oder zu unterlizenzieren.</li>
                         </ul>
                         <p>
-                            (9) Gewerbliche Verkäufer sind verpflichtet, vollständige und richtige Informationen bereitzustellen. Dazu gehören insbesondere die gesetzlich erforderlichen Angaben zur Identität und Erreichbarkeit sowie gegebenenfalls Impressum, steuerliche und registerrechtliche Angaben, eigene AGB, Widerrufsbelehrung, Datenschutzinformationen oder weitere gesetzlich vorgeschriebene Informationen. Der gewerbliche Verkäufer ist selbst verantwortlich für die Vollständigkeit, Richtigkeit und Rechtmäßigkeit dieser Angaben. Der Plattformbetreiber kann nach Maßgabe der anwendbaren gesetzlichen Vorschriften, insbesondere der Händlernachverfolgbarkeit nach Art. 30 DSA, Identitäts- und Unternehmensnachweise einholen und überprüfen. Soweit gesetzlich erforderlich, wird ein gewerbliches Angebot erst nach Abschluss der vorgeschriebenen Überprüfung freigeschaltet. Fehlende oder unzutreffende Angaben können zur Ablehnung oder Aussetzung gewerblicher Profile oder Angebote führen.
+                            (9) Gewerbliche Verkäufer sind verpflichtet, vollständige und richtige Informationen bereitzustellen. Dazu gehören insbesondere die gesetzlich erforderlichen Angaben zur Identität und Erreichbarkeit sowie gegebenenfalls Impressum, steuerliche und registerrechtliche Angaben, eigene AGB, Widerrufsbelehrung, Datenschutzinformationen oder weitere gesetzlich vorgeschriebene Informationen. Der gewerbliche Verkäufer ist selbst verantwortlich für die Vollständigkeit, Richtigkeit und Rechtmäßigkeit dieser Angaben. Der Plattformbetreiber kann nach Maßgabe der anwendbaren gesetzlichen Vorschriften, insbesondere der Händlernachverfolgbarkeit nach Art. 30 DSA, Identitäts- und Unternehmensnachweise einholen und überprüfen. Soweit gesetzlich erforderlich, wird ein gewerbliches Angebot erst nach Abschluss der vorgeschriebenen Überprüfung freigeschaltet. Fehlende oder unzutreffende Angaben können zur Ablehnung oder Aussetzung führen.
                         </p>
                         <p>
-                            (10) Nutzer sind für ihre Inhalte, Bilder, Texte, Preise und Angebote selbst verantwortlich. Nutzer müssen sicherstellen, dass sie die Rechte an hochgeladenen Bildern und Texten haben und dürfen keine rechtswidrigen Inhalte einstellen. Der Plattformbetreiber darf Inserate prüfen, ablehnen, bearbeiten, deaktivieren oder löschen, wenn sie gegen AGB, Plattformregeln oder gesetzliche Vorgaben verstoßen. Der Plattformbetreiber übernimmt keine Gewähr für die Richtigkeit, Qualität, Verfügbarkeit oder Rechtmäßigkeit der Angebote. Verträge entstehen ausschließlich zwischen den Nutzern.
+                            (10) Nutzer sind für ihre Inhalte, Bilder, Texte, Preise und Angebote selbst verantwortlich. Nutzer müssen sicherstellen, dass sie die Rechte an hochgeladenen Bildern und Texten haben und dürfen keine rechtswidrigen Inhalte einstellen. Inserate müssen zutreffend beschrieben und einer passenden campingbezogenen Kategorie zugeordnet werden. Der Plattformbetreiber darf Inserate im Rahmen der AGB und der gesetzlichen Vorschriften prüfen, ablehnen, einschränken, deaktivieren oder entfernen. Verträge über inserierte Waren und Leistungen entstehen ausschließlich zwischen den beteiligten Nutzern.
                         </p>
                         <p>
-                            (11) Der Plattformbetreiber behält sich das Recht vor, Nutzer bei Verstoß gegen diese AGB oder bei Vorliegen eines wichtigen Grundes zu sperren. Der Plattformbetreiber ist jedoch nicht verpflichtet, die Angebote oder Aktivitäten der Nutzer zu überwachen und übernimmt keine Haftung für etwaige Schäden, die durch die Sperrung eines Nutzers entstehen.
+                            (11) Der Plattformbetreiber kann bei Verstößen gegen diese Nutzungsbedingungen oder bei Vorliegen eines sachlichen Grundes nach Maßgabe der gesetzlichen Anforderungen geeignete und verhältnismäßige Maßnahmen ergreifen. Eine allgemeine Pflicht zur Überwachung sämtlicher Nutzerinhalte besteht nicht. Gesetzliche Prüf-, Melde-, Begründungs- und Beschwerdepflichten bleiben unberührt.
                         </p>
                         <p>
-                            (12) Nutzer stellen den Plattformbetreiber von sämtlichen Ansprüchen Dritter frei, die auf einer rechtswidrigen Verwendung der Plattform durch den Nutzer beruhen oder mit dessen Billigung erfolgen. Der Nutzer erkennt an, dass der Plattformbetreiber bei Inanspruchnahme durch Dritte aufgrund rechtswidriger Inhalte des Nutzers berechtigt ist, die entsprechenden Inhalte zu löschen und den Nutzer sofort zu sperren. Der Nutzer ist verpflichtet, dem Plattformbetreiber alle durch die rechtswidrige Verwendung der Plattform entstehenden Schäden zu ersetzen, einschließlich der Kosten der Rechtsverteidigung.
+                            (12) Nutzer stellen den Plattformbetreiber im gesetzlich zulässigen Umfang von begründeten Ansprüchen Dritter frei, die auf einer von ihnen schuldhaft begangenen Rechtsverletzung bei Nutzung der Plattform beruhen. Hierzu gehören erforderliche und angemessene Kosten der Rechtsverteidigung. Zwingende gesetzliche Rechte und Haftungsregelungen bleiben unberührt.
+                        </p>
+                        <p>
+                            (13) Private Nutzer können kostenlos Inserate einstellen; gewerbliche Nutzer unterliegen den in den AGB beschriebenen Free- und Business-Modellen. Bezahlte Boosts, Anbieter-Spotlights, Campuna Credits, Empfehlungsprämien und Pioneer-Auszeichnungen richten sich hinsichtlich Preisen, Laufzeiten, Voraussetzungen und Rechtsfolgen ausschließlich nach den AGB und den jeweils angezeigten Buchungsbedingungen. Manipulationen von Empfehlungs- oder Auszeichnungsbedingungen, Scheinangebote und Mehrfachkonten zur Prämienerschleichung sind untersagt.
                         </p>
                     </section>
 
@@ -168,16 +167,16 @@ export default function NutzungsbedingungenClient() {
                             § 3 Sicherheitsrichtlinien
                         </h2>
                         <p>
-                            (1) Nutzer sind verpflichtet, ihre Zugangsdaten sicher zu verwahren und dürfen diese nicht an Dritte weitergeben. Zugangsdaten sind so zu wählen und zu verwalten, dass sie nicht einfach zu erraten oder zu kompromittieren sind.
+                            (1) Nutzer sind verpflichtet, ihre Zugangsdaten sicher zu verwahren und dürfen diese nicht unbefugt an Dritte weitergeben. Zugangsdaten sind so zu wählen und zu verwalten, dass sie nicht einfach zu erraten oder zu kompromittieren sind.
                         </p>
                         <p>
-                            (2) Der Plattformbetreiber ist berechtigt, Zugangsdaten zu sperren, wenn der Verdacht besteht, dass diese missbräuchlich verwendet werden oder ein Sicherheitsrisiko darstellen.
+                            (2) Der Plattformbetreiber ist berechtigt, Zugangsdaten bei konkreten Anhaltspunkten für Missbrauch oder ein Sicherheitsrisiko vorübergehend zu sperren. Betroffene Nutzer werden informiert, soweit dies möglich und rechtlich zulässig ist.
                         </p>
                         <p>
-                            (3) Nutzer sind verpflichtet, angemessene Sicherheitsmaßnahmen zu ergreifen, um die Integrität und Vertraulichkeit ihrer Daten zu schützen. Dazu gehören insbesondere die regelmäßige Aktualisierung von Passwörtern und die Nutzung von Sicherheitssoftware.
+                            (3) Nutzer sind verpflichtet, angemessene Sicherheitsmaßnahmen zu ergreifen, um die Integrität und Vertraulichkeit ihrer Daten zu schützen. Hierzu gehören insbesondere sichere Passwörter und die Aktualisierung ihrer verwendeten Geräte und Software.
                         </p>
                         <p>
-                            (4) Der Plattformbetreiber setzt angemessene technische und organisatorische Maßnahmen ein, um die Sicherheit der Plattform zu gewährleisten. Dies umfasst unter anderem die Verschlüsselung von Datenübertragungen und die regelmäßige Überprüfung der Sicherheitsvorkehrungen.
+                            (4) Der Plattformbetreiber setzt angemessene technische und organisatorische Maßnahmen ein, um die Sicherheit der Plattform zu gewährleisten. Dies umfasst unter anderem die Verschlüsselung von Datenübertragungen und die regelmäßige Überprüfung der Sicherheitsvorkehrungen. Einzelheiten zum Umgang mit personenbezogenen Daten enthält die Datenschutzerklärung.
                         </p>
                     </section>
 
@@ -189,19 +188,25 @@ export default function NutzungsbedingungenClient() {
                             § 4 Anforderungen aus DSA / DDG
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber stellt einen klaren und leicht zugänglichen Meldeweg zur Verfügung, über den Nutzer rechtswidrige Inhalte melden können. Hierfür können Nutzer das bereitgestellte Online-Formular oder die angegebenen Kontaktmöglichkeiten (E-Mail-Adresse, Telefonnummer) nutzen. Eingehende Meldungen werden vom Plattformbetreiber unverzüglich geprüft und bei Bestätigung der Rechtswidrigkeit entsprechende Maßnahmen ergriffen, um die Inhalte zu entfernen oder den Zugang zu ihnen zu sperren.
+                            (1) Der Plattformbetreiber stellt einen klaren und leicht zugänglichen elektronischen Meldeweg zur Verfügung, über den Nutzer und Dritte mutmaßlich rechtswidrige Inhalte melden können. Hierfür können die bereitgestellte Meldefunktion oder die angegebenen Kontaktmöglichkeiten genutzt werden. Meldungen werden entsprechend den anwendbaren Anforderungen des Digital Services Act geprüft und bearbeitet.
                         </p>
                         <p>
-                            (2) Der Plattformbetreiber verpflichtet sich, Nutzerbeschwerden zeitnah und sorgfältig zu prüfen. Nutzer können Beschwerden über die Plattform oder per E-Mail einreichen. Der Plattformbetreiber wird die Beschwerde innerhalb einer angemessenen Frist bearbeiten und den Nutzer über das Ergebnis der Prüfung und die getroffenen Maßnahmen informieren.
+                            (2) Der Plattformbetreiber prüft Nutzerbeschwerden nach Maßgabe der anwendbaren gesetzlichen Anforderungen zeitnah, sorgfältig, objektiv und ohne willkürliche Benachteiligung. Nutzer können Beschwerden über die bereitgestellten Funktionen und, soweit vorgesehen, per E-Mail einreichen. Über das Ergebnis wird informiert, soweit gesetzlich vorgeschrieben.
                         </p>
                         <p>
-                            (3) Bei Moderationsentscheidungen, wie der Löschung oder Sperrung von Inhalten, wird der Plattformbetreiber den betroffenen Nutzer über die getroffene Entscheidung informieren und eine Begründung dafür liefern. Die Information erfolgt in der Regel per E-Mail oder über das Nachrichtensystem der Plattform. Der Nutzer wird über die Art des Verstoßes und die Grundlage der Entscheidung aufgeklärt.
+                            (3) Bei Moderationsentscheidungen, wie der Ablehnung, Entfernung oder Sperrung von Inhalten oder der Einschränkung eines Nutzerkontos, wird der Plattformbetreiber den betroffenen Nutzer entsprechend Art. 17 DSA über die getroffene Entscheidung und deren wesentliche Gründe informieren, soweit diese Vorschrift anwendbar ist. Die Information erfolgt über das Nutzerkonto oder auf einem anderen geeigneten elektronischen Weg.
                         </p>
                         <p>
-                            (4) Nutzer haben das Recht, Einspruch gegen Entscheidungen des Plattformbetreibers bezüglich der Sperrung, Löschung oder Ablehnung von Inhalten einzulegen. Der Einspruch kann über das dafür vorgesehene Formular auf der Plattform oder per E-Mail eingereicht werden. Der Plattformbetreiber verpflichtet sich, den Einspruch innerhalb einer angemessenen Frist zu prüfen und dem Nutzer das Ergebnis der Prüfung mitzuteilen. Wird dem Einspruch stattgegeben, werden die betroffenen Inhalte wiederhergestellt und etwaige Sperrungen aufgehoben.
+                            (4) Nutzer können gegen einschlägige Moderationsentscheidungen eine Überprüfung beantragen. Hierzu dient insbesondere die auf der Plattform bereitgestellte Funktion „Request Review“. Soweit die Vorschriften über ein internes Beschwerdemanagement nach Art. 20 DSA anwendbar sind, gelten die dort vorgesehenen Fristen und Rechte. Gesetzliche gerichtliche und außergerichtliche Rechtsbehelfe bleiben unberührt.
                         </p>
                         <p>
-                            (5) Der Plattformbetreiber veröffentlicht regelmäßig einen Transparenzbericht, der Informationen über die Anzahl und Art der eingegangenen Meldungen und Beschwerden, die getroffenen Maßnahmen sowie die Ergebnisse von Einsprüchen enthält. Der Bericht ist für alle Nutzer der Plattform zugänglich und soll zur Transparenz und Vertrauensbildung beitragen.
+                            (5) Der Plattformbetreiber veröffentlicht Transparenzinformationen und -berichte im gesetzlich vorgeschriebenen Umfang und innerhalb der einschlägigen Fristen, soweit die jeweiligen Vorschriften auf die Plattform anwendbar sind. Gesetzliche Ausnahmen und Erleichterungen bleiben unberührt.
+                        </p>
+                        <p>
+                            (6) Zur Unterstützung der Moderation kann eine selbst gehostete KI (nach aktueller technischer Dokumentation Qwen3) eingesetzt werden. Inserate können automatisiert freigegeben, zur manuellen Prüfung vorgelegt oder abgelehnt werden. Die Entscheidung kann durch den Plattformbetreiber manuell überprüft und korrigiert werden. Eine vorherige menschliche Prüfung jedes Inserats wird nicht zugesagt. Die maßgeblichen Moderationsgrundsätze, mögliche Beschränkungen und eingesetzte automatisierte Mittel werden transparent erläutert; weitere Einzelheiten regeln die AGB und die Datenschutzerklärung.
+                        </p>
+                        <p>
+                            (7) Für die Kontaktaufnahme mit dem Plattformbetreiber zu Fragen des Digital Services Act stehen die auf der Plattform veröffentlichten elektronischen Kontaktwege zur Verfügung. Soweit gesetzlich vorgeschrieben, werden besondere Kontaktstellen und Informationen hierzu ausgewiesen.
                         </p>
                     </section>
 
@@ -213,19 +218,22 @@ export default function NutzungsbedingungenClient() {
                             § 5 Durchsetzung und Folgen bei Missbrauch
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber behält sich das Recht vor, die Nutzung der Plattform zu überwachen, um die Einhaltung dieser Nutzungsbedingungen sicherzustellen. Dies kann durch technische Maßnahmen oder stichprobenartige Überprüfungen erfolgen.
+                            (1) Der Plattformbetreiber behält sich das Recht vor, im gesetzlich zulässigen Rahmen Maßnahmen zur Erkennung und Unterbindung von Verstößen gegen diese Nutzungsbedingungen zu ergreifen. Dies kann durch automatisierte Inhaltsprüfung, Meldungen oder stichprobenartige Überprüfungen erfolgen.
                         </p>
                         <p>
-                            (2) Bei Verstößen gegen diese Nutzungsbedingungen ist der Plattformbetreiber berechtigt, Maßnahmen zu ergreifen, um den Missbrauch zu unterbinden. Dies kann die Sperrung von Nutzerkonten, die Einschränkung des Zugriffs auf die Plattform oder die Löschung von rechtswidrigen Inhalten umfassen.
+                            (2) Bei Verstößen gegen diese Nutzungsbedingungen ist der Plattformbetreiber berechtigt, erforderliche und verhältnismäßige Maßnahmen zu ergreifen, um den Missbrauch zu unterbinden. Dies kann die Ablehnung oder Entfernung einzelner Inhalte, die vorübergehende Einschränkung von Funktionen oder die Sperrung von Nutzerkonten umfassen. Bei der Auswahl werden insbesondere Art, Schwere und Häufigkeit des Verstoßes sowie berechtigte Interessen der Betroffenen berücksichtigt.
                         </p>
                         <p>
-                            (3) Nutzer, die gegen diese Nutzungsbedingungen verstoßen, haften für alle daraus entstehenden Schäden und halten den Plattformbetreiber von sämtlichen Ansprüchen Dritter frei, die aufgrund des Missbrauchs geltend gemacht werden.
+                            (3) Nutzer haften für Schäden nach Maßgabe der gesetzlichen Vorschriften, soweit sie diese durch schuldhafte Pflichtverletzungen verursacht haben. Eine Freistellung von begründeten Ansprüchen Dritter erfolgt nur im gesetzlich zulässigen Umfang.
                         </p>
                         <p>
-                            (4) Der Plattformbetreiber behält sich das Recht vor, rechtliche Schritte gegen Nutzer einzuleiten, die gegen diese Nutzungsbedingungen verstoßen. Dies umfasst insbesondere die Geltendmachung von Schadensersatzansprüchen und die Einleitung strafrechtlicher Maßnahmen.
+                            (4) Der Plattformbetreiber behält sich das Recht vor, bei Rechtsverletzungen gesetzlich zulässige Maßnahmen zu ergreifen, insbesondere zivilrechtliche Ansprüche geltend zu machen oder bei konkretem Verdacht auf Straftaten zuständige Stellen zu informieren.
                         </p>
                         <p>
-                            (5) Im Falle eines schwerwiegenden Verstoßes gegen die Vertragsbedingungen oder bei sonstigem schwerwiegenden Fehlverhalten des Kunden, erlöschen alle Nutzungsrechte des Kunden an der Plattform mit sofortiger Wirkung. Der Plattformbetreiber behält sich in einem solchen Fall das Recht vor, den Zugang des Nutzers zur Plattform ohne vorherige Ankündigung zu sperren und alle gespeicherten Daten des Nutzers zu löschen, soweit diese nicht aus gesetzlichen Gründen aufbewahrt werden müssen. Der Nutzer ist verpflichtet, alle ihm zur Verfügung gestellten Zugangsdaten unverzüglich an den Plattformbetreiber zurückzugeben und jede weitere Nutzung der Plattform zu unterlassen.
+                            (5) Bei schwerwiegenden Verstößen kann der Plattformbetreiber das Nutzungsverhältnis nach Maßgabe der AGB und des anwendbaren Rechts außerordentlich beenden oder den Zugang vorübergehend sperren. Erforderliche Begründungen, Vorankündigungen und Beschwerdemöglichkeiten werden gewährt, soweit gesetzlich vorgeschrieben. Personenbezogene Daten werden nicht pauschal sofort gelöscht, sondern entsprechend der Datenschutzerklärung und den gesetzlichen Aufbewahrungs- und Löschungspflichten behandelt.
+                        </p>
+                        <p>
+                            (6) Bei der Bearbeitung von Meldungen und Beschwerden kann der Plattformbetreiber offensichtlich missbräuchliche oder wiederholte Verstöße unter den Voraussetzungen des Art. 23 DSA berücksichtigen, soweit diese Vorschrift anwendbar ist.
                         </p>
                     </section>
 
@@ -237,10 +245,13 @@ export default function NutzungsbedingungenClient() {
                             § 6 Änderungen der Nutzungsbedingungen
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber behält sich das Recht vor, diese Nutzungsbedingungen jederzeit zu ändern. Änderungen werden dem Nutzer rechtzeitig bekannt gegeben.
+                            (1) Der Plattformbetreiber kann Änderungen dieser Nutzungsbedingungen für die Zukunft vorschlagen, soweit hierfür ein sachlicher Grund besteht, insbesondere aufgrund von Gesetzesänderungen, Sicherheitsanforderungen oder einer Weiterentwicklung der Plattform. Die Nutzer werden über wesentliche Änderungen rechtzeitig und in geeigneter Form informiert; zwingende gesetzliche Informations- und Fristvorgaben bleiben unberührt.
                         </p>
                         <p>
-                            (2) Widerspricht der Nutzer den geänderten Nutzungsbedingungen nicht innerhalb von vier Wochen nach Bekanntgabe, gelten die Änderungen als akzeptiert. Der Plattformbetreiber wird den Nutzer in der Änderungsmitteilung auf die Bedeutung der Frist und das Widerspruchsrecht hinweisen.
+                            (2) Änderungen, die eine vertragliche Zustimmung erfordern, werden nur mit wirksamer Zustimmung des Nutzers Vertragsbestandteil. Ein bloßes Schweigen oder die unterlassene Ausübung eines Widerspruchsrechts gilt nicht generell als Zustimmung. Für rein redaktionelle Änderungen ohne Auswirkungen auf Rechte und Pflichten kann eine gesonderte Zustimmung entbehrlich sein.
+                        </p>
+                        <p>
+                            (3) Soweit gesetzlich vorgesehen, können Nutzer aufgrund einer wesentlichen Änderung den Vertrag kündigen oder andere gesetzliche Rechte geltend machen. Bereits erworbene Ansprüche und bezahlte Leistungen bleiben nach Maßgabe der gesetzlichen Vorschriften geschützt.
                         </p>
                     </section>
 
@@ -252,13 +263,13 @@ export default function NutzungsbedingungenClient() {
                             § 7 Schlussbestimmungen
                         </h2>
                         <p>
-                            (1) Sollten einzelne Bestimmungen dieser Nutzungsbedingungen unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt.
+                            (1) Sollten einzelne Bestimmungen dieser Nutzungsbedingungen unwirksam sein oder werden, bleibt die Wirksamkeit der übrigen Bestimmungen unberührt. Anstelle unwirksamer Bestimmungen gelten die gesetzlichen Vorschriften.
                         </p>
                         <p>
-                            (2) Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts.
+                            (2) Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Für Verbraucher mit gewöhnlichem Aufenthalt in einem anderen Staat bleiben zwingende verbraucherschützende Vorschriften dieses Staates unberührt.
                         </p>
                         <p>
-                            (3) Gerichtsstand für alle Streitigkeiten aus oder im Zusammenhang mit diesen Nutzungsbedingungen ist, soweit gesetzlich zulässig, der Sitz des Plattformbetreibers.
+                            (3) Gerichtsstand für alle Streitigkeiten aus oder im Zusammenhang mit diesen Nutzungsbedingungen ist, soweit gesetzlich zulässig, der Sitz des Plattformbetreibers. Im Übrigen gelten die gesetzlichen Zuständigkeitsregeln.
                         </p>
                     </section>
 

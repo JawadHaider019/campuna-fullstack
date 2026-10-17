@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Search, Layers, Building2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -36,27 +37,25 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
             className="relative min-h-[80vh] md:min-h-[82vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[38px] md:rounded-[40px] lg:rounded-[48px] mt-24 sm:mt-28 mb-0 mx-4 md:mx-8 lg:mx-12 shadow-2xl"
         >
             {/* Background Cinematic Image with Zoom Animation */}
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0 overflow-hidden">
                 <motion.div
-                    initial={{ scale: 1.1, opacity: 0 }}
-                    animate={{ scale: 1.0, opacity: 1 }}
+                    initial={{ scale: 1.08 }}
+                    animate={{ scale: 1.0 }}
                     transition={{ duration: 1.8, ease: 'easeOut' }}
-                    className="w-full h-full"
+                    className="relative w-full h-full"
                 >
-                    <picture className="w-full h-full">
-                        <source media="(max-width: 768px)" srcSet="/hero.webp" />
-                        <img
-                            src="/hero.webp"
-                            alt="Campingplatz an einem See in Deutschland mit Wohnmobilen und Zelten"
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                            fetchPriority="high"
-                            decoding="async"
-                        />
-                    </picture>
+                    <Image
+                        src="/hero.webp"
+                        alt="Campingplatz an einem See in Deutschland mit Wohnmobilen und Zelten"
+                        fill
+                        priority
+                        fetchPriority="high"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 95vw, 1400px"
+                        className="object-cover"
+                    />
                 </motion.div>
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-forest/75 via-forest/40 to-black/50" />
+                <div className="absolute inset-0 bg-gradient-to-t from-forest/75 via-forest/40 to-black/50 pointer-events-none" />
             </div>
 
             {/* Floating Sparkles Background Effect */}
@@ -142,10 +141,11 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                         >
                             {/* 1. Keyword Input */}
                             <div className="flex items-center space-x-2.5 px-3.5 py-2 flex-1 border-b md:border-b-0 md:border-r border-white/10">
-                                <Search className="w-4 h-4 text-gold shrink-0" />
+                                <Search className="w-4 h-4 text-gold shrink-0" aria-hidden="true" />
                                 <input
                                     type="text"
                                     placeholder="Was suchst du? z. B. Wohnmobil, Dachzelt, Stellplatz..."
+                                    aria-label="Was suchst du?"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="bg-transparent text-white placeholder-sand/70 focus:outline-none w-full font-sans text-xs sm:text-sm font-medium"
@@ -154,10 +154,11 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
 
                             {/* 2. Category Selector */}
                             <div className="flex items-center space-x-2 px-3.5 py-2 flex-1 md:max-w-[260px]">
-                                <Layers className="w-4 h-4 text-gold/80 shrink-0" />
+                                <Layers className="w-4 h-4 text-gold/80 shrink-0" aria-hidden="true" />
                                 <select
                                     value={selectedCategory}
                                     onChange={(e) => setSelectedCategory(e.target.value)}
+                                    aria-label="Kategorie auswählen"
                                     className="bg-transparent text-white focus:outline-none w-full font-sans text-xs sm:text-sm font-medium cursor-pointer [&>option]:bg-forest [&>option]:text-white"
                                 >
                                     <option value="">Alle Kategorien</option>
@@ -172,10 +173,10 @@ export default function Hero({ searchRef, isLoggedIn: propIsLoggedIn }) {
                             {/* 3. Search Submit Button */}
                             <button
                                 type="submit"
-                                aria-label="Suche starten"
+                                aria-label="Angebote finden"
                                 className="bg-gradient-to-r from-gold to-beige text-forest hover:brightness-110 font-sans font-bold py-3.5 px-5 md:p-3.5 rounded-2xl md:rounded-full shadow-lg transition-all duration-300 flex items-center justify-center gap-2 shrink-0 cursor-pointer active:scale-95 text-xs sm:text-sm uppercase tracking-wider mt-1 md:mt-0"
                             >
-                                <Search className="w-4 h-4 shrink-0" />
+                                <Search className="w-4 h-4 shrink-0" aria-hidden="true" />
                                 <span className="md:hidden font-bold">Angebote finden</span>
                             </button>
                         </form>

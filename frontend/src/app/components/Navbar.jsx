@@ -341,7 +341,6 @@ export default function Navbar({ isLoggedIn: propIsLoggedIn, alertCount: propAle
                 alt="Campuna® – Dein Camping-Marktplatz"
                 width={120}
                 height={38}
-                priority
                 className="w-[120px] h-[38px] object-contain transition-opacity duration-300 group-hover:opacity-80"
               />
               <span className="text-2xl sm:text-3xl font-normal text-forest ml-0.5 -mt-1 select-none leading-none">®</span>

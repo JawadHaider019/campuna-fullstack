@@ -61,23 +61,48 @@ export const getImageUrl = (url, fallback = null) => {
             ? trimmed.substring(uploadsIndex)
             : `/${trimmed}`;
 
-        if (apiBase) {
-            return `${apiBase}${relativeUploadPath}`;
+        // In the browser, returning relative /uploads/... lets Next.js internal rewrites proxy cleanly
+        // without cross-origin hops, CORS headers, or SSRF local IP rejections.
+        if (isBrowser) {
+            return relativeUploadPath.replace(/ /g, '%20');
         }
-        return relativeUploadPath;
+
+        if (apiBase) {
+            return `${apiBase}${relativeUploadPath}`.replace(/ /g, '%20');
+        }
+        return relativeUploadPath.replace(/ /g, '%20');
     }
 
     // 3. Protocol-relative URLs (//example.com/image.jpg)
     if (trimmed.startsWith('//')) {
-        return `https:${trimmed}`;
+        trimmed = `https:${trimmed}`;
     }
 
-    // 4. Remote URLs (HTTPS / HTTP)
+    // 4. Optimize Bubble CDN images (convert massive uncompressed uploads into lightweight cached webp/avif via Cloudflare)
+    if (trimmed.includes('cdn.bubble.io') && !trimmed.includes('/cdn-cgi/image/')) {
+        trimmed = trimmed.replace(
+            /(https?:\/\/[^/]+\.cdn\.bubble\.io\/)(f[0-9x]+\/)/,
+            '$1cdn-cgi/image/f=auto,fit=cover/$2'
+        );
+    }
+
+    // 5. Remote URLs (HTTPS / HTTP)
     if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
-        // If image was saved in database with localhost:5000 during dev, point to live backend
+        // Safe decode in case URL was stored already percent-encoded in database
+        // This prevents double-encoding (%20 -> %2520, %CC%88 -> %25CC%2588) when passed to next/image loader
+        try {
+            trimmed = decodeURI(trimmed);
+        } catch {
+            // Keep trimmed as-is if malformed
+        }
+
+        // If image was saved in database with localhost:5000 during dev, point to relative rewrite
         if (trimmed.includes('localhost:5000') || trimmed.includes('127.0.0.1:5000')) {
             const subPath = trimmed.replace(/^https?:\/\/(localhost|127\.0\.0\.1):5000/, '');
             const cleanSub = subPath.startsWith('/') ? subPath : `/${subPath}`;
+            if (isBrowser) {
+                return cleanSub;
+            }
             if (apiBase) {
                 return `${apiBase}${cleanSub}`;
             }
@@ -87,7 +112,8 @@ export const getImageUrl = (url, fallback = null) => {
     }
 
     // 5. Frontend public assets (e.g. /logo.webp, /collection/...)
-    return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    const resolvedPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return resolvedPath.replace(/ /g, '%20');
 };
 
 export default getImageUrl;

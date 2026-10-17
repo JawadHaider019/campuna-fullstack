@@ -103,7 +103,7 @@ function MobileBottomNavContent() {
                     whileTap={{ scale: 0.92 }}
                     onClick={() => handleTabClick('home')}
                     className={`flex-1 flex flex-col items-center justify-center py-1 transition-colors relative cursor-pointer ${
-                        isHome ? 'text-forest font-black' : 'text-charcoal/50 hover:text-charcoal/80 font-medium'
+                        isHome ? 'text-forest font-black' : 'text-charcoal/70 hover:text-charcoal/90 font-medium'
                     }`}
                 >
                     <div className="relative">
@@ -118,7 +118,7 @@ function MobileBottomNavContent() {
                     whileTap={{ scale: 0.92 }}
                     onClick={() => handleTabClick('inserate')}
                     className={`flex-1 flex flex-col items-center justify-center py-1 transition-colors relative cursor-pointer ${
-                        isInserate ? 'text-forest font-black' : 'text-charcoal/50 hover:text-charcoal/80 font-medium'
+                        isInserate ? 'text-forest font-black' : 'text-charcoal/70 hover:text-charcoal/90 font-medium'
                     }`}
                 >
                     <div className="relative">
@@ -150,7 +150,7 @@ function MobileBottomNavContent() {
                         <Plus className={`w-6 h-6 stroke-[2.5] ${isCreateListing ? 'text-forest' : 'text-gold'}`} />
                     </motion.button>
                     <span className={`text-[10px] mt-0.5 tracking-tight font-bold ${
-                        isCreateListing ? 'text-forest font-black' : 'text-charcoal/70'
+                        isCreateListing ? 'text-forest font-black' : 'text-charcoal/80'
                     }`}>
                         Inserieren
                     </span>
@@ -162,7 +162,7 @@ function MobileBottomNavContent() {
                     whileTap={{ scale: 0.92 }}
                     onClick={() => handleTabClick('anbieter')}
                     className={`flex-1 flex flex-col items-center justify-center py-1 transition-colors relative cursor-pointer ${
-                        isAnbieter ? 'text-forest font-black' : 'text-charcoal/50 hover:text-charcoal/80 font-medium'
+                        isAnbieter ? 'text-forest font-black' : 'text-charcoal/70 hover:text-charcoal/90 font-medium'
                     }`}
                 >
                     <div className="relative">
@@ -177,7 +177,7 @@ function MobileBottomNavContent() {
                     whileTap={{ scale: 0.92 }}
                     onClick={() => handleTabClick('account')}
                     className={`flex-1 flex flex-col items-center justify-center py-1 transition-colors relative cursor-pointer ${
-                        isAccount ? 'text-forest font-black' : 'text-charcoal/50 hover:text-charcoal/80 font-medium'
+                        isAccount ? 'text-forest font-black' : 'text-charcoal/70 hover:text-charcoal/90 font-medium'
                     }`}
                 >
                     <div className="relative">

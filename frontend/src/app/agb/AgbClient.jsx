@@ -4,18 +4,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
-    FileText,
-    Shield,
-    Scale,
-    AlertCircle,
-    Info
+    Scale
 } from 'lucide-react';
 import Breadcrumbs from '../components/Breadcrumbs';
 
 export default function AgbClient() {
     return (
         <div className="bg-white min-h-screen font-sans text-charcoal overflow-hidden">
-            {/* 1. HERO SECTION (Without bottom shadow) */}
+            {/* 1. HERO SECTION */}
             <section className="relative min-h-[44vh] md:min-h-[50vh] flex items-center justify-center overflow-hidden rounded-[24px] sm:rounded-[32px] md:rounded-[40px] lg:rounded-[48px] mt-20 sm:mt-20 mx-4 md:mx-8 lg:mx-12 border border-forest/10">
                 {/* Background Cinematic Image */}
                 <div className="absolute inset-0 z-0">
@@ -65,7 +61,7 @@ export default function AgbClient() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="font-sans text-sm sm:text-base md:text-lg text-sand/90 leading-relaxed max-w-2xl mx-auto font-light drop-shadow-md"
                     >
-                        AGB für die Nutzung der Plattform Campuna
+                        Aktualisierte Fassung auf Basis der bestehenden 18 Paragraphen | Stand: 16. Oktober 2026
                     </motion.p>
                 </div>
             </section>
@@ -91,7 +87,7 @@ export default function AgbClient() {
                             (1) Diese Allgemeinen Geschäftsbedingungen (AGB) sind die verbindlichen Regeln, die zwischen <strong>LMR Solutions Ronny Voigt</strong>, Premnitzer Straße 8, 99091 Erfurt, Telefon: +49 163 1516518, E-Mail: <a href="mailto:kontakt@campuna.de" className="text-forest font-medium underline">kontakt@campuna.de</a> (im Folgenden „Plattformbetreiber“ genannt) und den Nutzern (im Folgenden „Nutzer“) bei der Nutzung der Plattform Campuna (im Folgenden „Plattform“) gelten.
                         </p>
                         <p>
-                            (2) Der Plattformbetreiber stellt eine Vermittlungsplattform zum An- und Verkauf von neuen und gebrauchten Waren sowie Dienstleistungen im Camping-Bereich bereit, auf der Verkäufer diese anbieten und Käufer diese erwerben können. Verkäufer und Käufer werden folgend zusammengefasst auch als Nutzer bezeichnet, insofern keine Differenzierung erfolgt.
+                            (2) Der Plattformbetreiber stellt eine Vermittlungsplattform zum An- und Verkauf von neuen und gebrauchten Waren sowie zur Vermittlung von Dienstleistungen, Vermietungen und weiteren campingbezogenen Angeboten bereit, auf der Verkäufer Angebote veröffentlichen und Interessenten Kontakt aufnehmen können. Verkäufer und Käufer werden folgend zusammengefasst auch als Nutzer bezeichnet, insofern keine Differenzierung erfolgt. Der Abschluss und die Abwicklung von Geschäften über inserierte Waren und Leistungen erfolgen unmittelbar zwischen den jeweiligen Nutzern; Campuna stellt hierfür keinen eigenen Kauf- oder Zahlungsabschluss zwischen Nutzern bereit.
                         </p>
                         <p>
                             (3) Sowohl Verkäufer als auch Käufer können dabei sowohl Verbraucher gem. § 13 BGB als auch Unternehmer gem. § 14 BGB sein.
@@ -106,7 +102,7 @@ export default function AgbClient() {
                             (6) Der Plattformbetreiber behält sich vor, den Vertragsschluss abzulehnen, sofern wichtige Gründe vorliegen. Ein solcher kann für den Plattformbetreiber insbesondere dann gegeben sein, wenn eine Interessenskollision besteht oder entstehen kann oder sonstige rechtliche oder gesetzliche Gründe entgegenstehen.
                         </p>
                         <p>
-                            (7) Die Nutzung der Plattform unterliegt zusätzlich den Nutzungsbedingungen, die detaillierte Regelungen zur Nutzung der Plattform, den Rechten und Pflichten der Nutzer sowie zu weiteren wichtigen Aspekten enthalten. Diese Nutzungsbedingungen sind ebenfalls verbindlich und ergänzen die vorliegenden AGB. Die Nutzer verpflichten sich, die Nutzungsbedingungen der Plattform zu beachten und einzuhalten. Die Nutzungsbedingungen sind auf der Plattform einsehbar und werden den Nutzern bei der Registrierung zur Verfügung gestellt.
+                            (7) Die Nutzung der Plattform unterliegt zusätzlich den Nutzungsbedingungen, soweit solche gesondert wirksam vereinbart und auf der Plattform zugänglich gemacht werden. Zwingende gesetzliche Rechte der Nutzer bleiben unberührt.
                         </p>
                     </section>
 
@@ -118,22 +114,22 @@ export default function AgbClient() {
                             § 2 Registrierung und Ablauf
                         </h2>
                         <p>
-                            (1) Für die Nutzung der Plattform ist eine Registrierung mit einer aktuellen E-Mail-Adresse erforderlich. Der Plattformbetreiber sendet auf die Registrierung hin per Mail an die vom Nutzer angegebene E-Mail-Adresse einen anklickbaren Link zur Freischaltung zu. Eine Nutzung der Plattform ist nach Anklicken des Linkes möglich.
+                            (1) Für die aktive Nutzung der Plattform, insbesondere das Einstellen von Inseraten und die Kontaktaufnahme, ist eine Registrierung mit einer aktuellen E-Mail-Adresse erforderlich. Der Plattformbetreiber sendet auf die Registrierung hin per Mail an die vom Nutzer angegebene E-Mail-Adresse einen anklickbaren Link zur Freischaltung zu. Eine Nutzung der registrierungspflichtigen Funktionen ist nach Anklicken des Links möglich. Öffentlich sichtbare Angebote können ohne Registrierung eingesehen werden.
                         </p>
                         <p>
-                            (2) Das Mindestalter für die Registrierung beträgt 16 Jahre.
+                            (2) Das Mindestalter für die Registrierung beträgt 16 Jahre. Für kostenpflichtige Verträge Minderjähriger ist, soweit gesetzlich erforderlich, die Zustimmung der gesetzlichen Vertreter notwendig.
                         </p>
                         <p>
-                            (3) Jeder Nutzer kann nur ein Nutzerkonto anlegen. Die Überlassung an Dritte ist nicht gestattet. Nutzer verpflichten sich, die erforderlichen Maßnahmen zur Gewährleistung der Vertraulichkeit ihrer Account-Daten und ihres Passworts zu ergreifen und ihr Passwort geheim zu halten. Bei Missbrauch des Kontos oder einem entsprechenden Verdacht und bei Missbrauch oder Verlust des Passwortes, ist dies dem Plattformbetreiber unverzüglich anzuzeigen. Der Plattformbetreiber ist in solchen Fällen berechtigt, das Konto ganz oder vorübergehend zu sperren.
+                            (3) Jeder Nutzer kann nur ein Nutzerkonto anlegen. Die Überlassung an Dritte ist nicht gestattet. Nutzer verpflichten sich, die erforderlichen Maßnahmen zur Gewährleistung der Vertraulichkeit ihrer Account-Daten und ihres Passworts zu ergreifen und ihr Passwort geheim zu halten. Bei Missbrauch des Kontos oder einem entsprechenden Verdacht und bei Missbrauch oder Verlust des Passwortes ist dies dem Plattformbetreiber unverzüglich anzuzeigen. Der Plattformbetreiber ist in solchen Fällen berechtigt, das Konto bei Vorliegen eines sachlichen Grundes ganz oder vorübergehend zu sperren.
                         </p>
                         <p>
-                            (4) Nach Freischalten der Plattform zur Nutzung können Verkäufer ein Verkäuferprofil und Käufer ein Käuferprofil anlegen. Dabei sind alle Nutzer verpflichtet, vollständige und wahrheitsgemäße Angaben zu machen. Sollten Nutzer schuldhaft irreführende oder unwahre Angaben machen, sind sie zum Schadensersatz verpflichtet, soweit dem Plattformbetreiber durch diese unwahren Angaben ein Schaden entstanden ist. Nutzer sind weiter verpflichtet, den Plattformbetreiber von Ansprüchen Dritter freizustellen. Weitere Ansprüche, insbesondere Schadensersatzansprüche Dritter oder Schadensersatzansprüche von potenziellen Vertragspartnern, bleiben unberührt.
+                            (4) Nach Freischalten der Plattform zur Nutzung können Verkäufer ein Verkäuferprofil und Käufer ein Käuferprofil anlegen. Dabei sind alle Nutzer verpflichtet, vollständige und wahrheitsgemäße Angaben zu machen. Sollten Nutzer schuldhaft irreführende oder unwahre Angaben machen, sind sie zum Schadensersatz verpflichtet, soweit dem Plattformbetreiber durch diese unwahren Angaben ein Schaden entstanden ist. Nutzer sind weiter verpflichtet, den Plattformbetreiber im gesetzlich zulässigen Umfang von begründeten Ansprüchen Dritter freizustellen, soweit diese auf einer von ihnen zu vertretenden Rechtsverletzung beruhen. Weitere gesetzliche Ansprüche bleiben unberührt.
                         </p>
                         <p>
-                            (5) Der Plattformbetreiber prüft nicht jedes Profil vor dessen Freischaltung. Der Plattformbetreiber behält sich aber vor, einzelne Angaben zu überprüfen, indem er beispielsweise von Nutzern Nachweise verlangt. Der Plattformbetreiber ist berechtigt, die Veröffentlichung von Nutzerprofilen abzulehnen, wenn das jeweilige Profil der Spezialisierung der Plattform nicht entspricht oder die Verlässlichkeit der Angaben nicht ausreichend nachgewiesen wurde. Dies gilt auch, soweit die zu veröffentlichenden Inhalte gegen gesetzliche Vorgaben, behördliche Verbote, Rechte Dritter, gegen die guten Sitten oder gegen diese AGB verstoßen. Der Plattformbetreiber übernimmt keine Garantie für die von Nutzern gemachte Angaben.
+                            (5) Der Plattformbetreiber prüft nicht jedes Profil vor dessen Freischaltung. Der Plattformbetreiber behält sich aber vor, einzelne Angaben zu überprüfen, indem er beispielsweise von Nutzern Nachweise verlangt. Der Plattformbetreiber ist berechtigt, die Veröffentlichung von Nutzerprofilen abzulehnen, wenn das jeweilige Profil der Spezialisierung der Plattform nicht entspricht oder die Verlässlichkeit der Angaben nicht ausreichend nachgewiesen wurde. Dies gilt auch, soweit die zu veröffentlichenden Inhalte gegen gesetzliche Vorgaben, behördliche Verbote, Rechte Dritter, gegen die guten Sitten oder gegen diese AGB verstoßen. Der Plattformbetreiber übernimmt keine Garantie für die von Nutzern gemachten Angaben. Gesetzliche Informations- und Beschwerderechte bleiben unberührt.
                         </p>
                         <p>
-                            (6) Nach Freischaltung des Profils haben Verkäufer die Möglichkeit, Anzeigen zu schalten. Käufer erhalten nun Zugriff auf das Verkäuferprofil und können Angebote wahrnehmen oder sonstige Leistungen vereinbaren. Käufer und Verkäufer haben sodann die Möglichkeit, nachfolgend Verträge zu schließen. Der Plattformbetreiber steht mit den angebotenen Leistungen oder geschlossenen Verträgen nicht in Verbindung und haftet dafür und daraus nicht, genauso für Inhalte und Erfolge der Angebote der Verkäufer.
+                            (6) Nach Freischaltung des Profils haben Verkäufer die Möglichkeit, Anzeigen zu schalten. Käufer erhalten nun Zugriff auf das Verkäuferprofil und können Angebote wahrnehmen oder sonstige Leistungen vereinbaren. Käufer und Verkäufer haben sodann die Möglichkeit, nachfolgend Verträge zu schließen. Der Plattformbetreiber ist nicht Partei solcher Verträge und übernimmt keine Verantwortung für deren Durchführung, soweit nicht zwingende gesetzliche Pflichten bestehen.
                         </p>
                     </section>
 
@@ -151,7 +147,7 @@ export default function AgbClient() {
                             (2) Das Profil und inserierte Angebote sind öffentlich auch für nicht registrierte Nutzer einsehbar. Kontaktaufnahmen sind jedoch nur mit registrierten Nutzern möglich.
                         </p>
                         <p>
-                            (3) Der Plattformbetreiber ist berechtigt, personenbezogen Daten in Nutzerprofilen an andere Nutzer weiterzuleiten, wenn der Nutzer hierzu seine Einwilligung erteilt hat. Die Weitergabe der personenbezogenen Daten erfolgt nur zu dem in der Einwilligung angegeben Zweck.
+                            (3) Der Plattformbetreiber ist berechtigt, personenbezogene Daten in Nutzerprofilen an andere Nutzer weiterzuleiten, wenn hierfür eine wirksame Einwilligung oder eine andere gesetzliche Rechtsgrundlage besteht. Eine Weitergabe erfolgt nur zu den jeweils zulässigen Zwecken. Weitere Einzelheiten enthält die Datenschutzerklärung.
                         </p>
                     </section>
 
@@ -166,48 +162,47 @@ export default function AgbClient() {
                             (1) Um Leistungen auf der Plattform anbieten zu können, ist für Nutzer der Abschluss eines Vertrages über eine Mitgliedschaft zur Nutzung der Plattform erforderlich. Hierbei kann zwischen kostenlosen und kostenpflichtigen Nutzungsmodellen unterschieden werden.
                         </p>
                         <p>
-                            (2) Private Verkäufer können Inserate kostenlos einstellen. Zusätzlich haben sie die Möglichkeit, einzelne Anzeigen kostenpflichtig hervorzuheben. Kostenpflichtig sind für private Verkäufer nur optionale Zusatzleistungen wie Premium, Premium Plus oder Booster für einzelne Anzeigen. Diese Zusatzbuchungen sind Einmalbuchungen für eine bestimmte Laufzeit und enden automatisch nach der vereinbarten Laufzeit. Es besteht kein Abonnement.
+                            (2) Private Verkäufer können Inserate dauerhaft kostenlos einstellen. Zusätzlich haben sie die Möglichkeit, einzelne Anzeigen kostenpflichtig hervorzuheben. Kostenpflichtig sind für private Verkäufer nur freiwillige Zusatzleistungen. Diese Zusatzbuchungen sind Einmalbuchungen für eine bestimmte Laufzeit und enden automatisch nach der vereinbarten Laufzeit. Es besteht kein Abonnement.
                         </p>
                         <p>
-                            (3) Für gewerbliche Verkäufer (Unternehmer gem. § 14 BGB) stellt der Plattformbetreiber sowohl ein dauerhaft kostenfreies Basiskonto (mit bis zu 3 gleichzeitig aktiven Inseraten) als auch das kostenpflichtige Campuna Business-Paket bereit.
+                            (3) Für gewerbliche Verkäufer (Unternehmer gem. § 14 BGB) stellt der Plattformbetreiber sowohl ein dauerhaft kostenfreies Basiskonto (mit bis zu 3 gleichzeitig aktiven Inseraten, Firmenlogo und einer Profilbeschreibung von bis zu 500 Zeichen) als auch das kostenpflichtige Campuna Business-Paket bereit.
                         </p>
                         <p>
-                            (4) Das Campuna Business-Paket umfasst bis zu 25 aktive Inserate (weitere auf Anfrage), ein professionelles Firmen-Cover und Logo, erweiterte Profiltexte (1.000 Zeichen), Live-Performance-Analytics, Präsenz im Camping-Anbieter-Verzeichnis sowie die Berechtigung zur Buchung exklusiver Anbieter-Spotlights. Folgende Laufzeiten und Preise stehen zur Verfügung:
+                            (4) Das Campuna Business-Paket umfasst bis zu 25 gleichzeitig aktive Inserate, ein professionelles Firmen-Cover und Logo, erweiterte Profiltexte (bis zu 1.000 Zeichen), Performance-Statistiken sowie Präsenz im Camping-Anbieter-Verzeichnis. Anbieter-Spotlights können gesondert gebucht werden und sind nicht im Business-Preis enthalten. Folgende Laufzeiten und Preise stehen zur Verfügung:
                         </p>
                         <ul className="list-disc pl-6 space-y-1.5 font-normal text-forest">
                             <li><strong>1 Monat:</strong> 29 € (Prepaid-Festlaufzeit)</li>
                             <li><strong>3 Monate:</strong> 79 € (Prepaid-Festlaufzeit)</li>
-                            <li><strong>12 Monate (Jahrespaket):</strong> 290 € (Prepaid-Festlaufzeit, entspricht 2 Gratismonaten)</li>
+                            <li><strong>12 Monate:</strong> 290 € (Prepaid-Festlaufzeit)</li>
                         </ul>
                         <p>
-                            (5) <strong>Feste Prepaid-Laufzeit / Kein automatisches Abonnement:</strong> Das Campuna Business-Paket wird als feste Prepaid-Laufzeit erworben und im Voraus abgerechnet. Die Mitgliedschaft endet nach Ablauf der gebuchten 1, 3 oder 12 Monate automatisch, ohne dass es einer Kündigung bedarf. Es findet keine automatische Verlängerung (Abo-Rollover) statt. Der Nutzer kann die Business-Mitgliedschaft vor oder nach Ablauf jederzeit aktiv durch erneuten Kauf verlängern. Nach Ablauf der Frist wechselt das Profil automatisch wieder in das dauerhaft kostenlose Basiskonto (Free-Tier).
+                            (5) <strong>Feste Prepaid-Laufzeit / Kein automatisches Abonnement:</strong> Das Campuna Business-Paket wird als feste Prepaid-Laufzeit erworben und im Voraus abgerechnet. Die Mitgliedschaft endet nach Ablauf der gebuchten 1, 3 oder 12 Monate automatisch, ohne dass es einer Kündigung bedarf. Es findet keine automatische Verlängerung statt. Der Nutzer kann die Business-Mitgliedschaft vor oder nach Ablauf aktiv durch erneuten Kauf verlängern. Nach Ablauf der Frist wechselt das Profil automatisch wieder in das dauerhaft kostenlose Basiskonto.
                         </p>
                         <p>
-                            (6) Private und gewerbliche Verkäufer können einzelne Inserate optional kostenpflichtig hervorheben. Diese Zusatzoptionen sind unabhängig von den Business-Paketen. Hierbei bestehen die folgenden Optionen:
+                            (6) Private und gewerbliche Verkäufer können einzelne Inserate optional kostenpflichtig hervorheben („Boost“). Der zuletzt abgestimmte Tarif lautet: <strong>7 Tage 4,99 € oder 500 CC</strong>; <strong>14 Tage 7,99 € oder 800 CC</strong>; <strong>30 Tage 12,99 € oder 1.300 CC</strong>. Maßgeblich sind die bei Bestellung ausgewiesenen Endpreise und Credit-Beträge. Eine erneute Buchung während einer laufenden Hervorhebung verlängert deren Laufzeit nach der im Buchungsprozess ausgewiesenen Berechnung.
+                        </p>
+                        <p>
+                            (7) Die Hervorhebung startet nach erfolgreicher Zahlung beziehungsweise wirksamer Einlösung von Credits. Die Laufzeit richtet sich nach der gewählten Option. Die Hervorhebung endet automatisch nach Ablauf der gebuchten Laufzeit. Es erfolgt keine automatische Verlängerung. Es besteht kein Abonnement. Es besteht kein Anspruch auf eine bestimmte Anzahl an Klicks, Anfragen oder Verkäufen.
+                        </p>
+                        <p>
+                            (8) Zusätzlich können gewerbliche Verkäufer eine kostenpflichtige Zusatzoption namens „Anbieter-Spotlight“ buchen, um ihr Verkäuferprofil zeitlich begrenzt im Bereich „Ausgewählte Anbieter“ beziehungsweise in einer Anbieter-Rotation auf der Startseite erscheinen zu lassen. Die zuletzt abgestimmten Preise hierfür betragen:
                         </p>
                         <ul className="list-disc pl-6 space-y-1.5 font-normal text-forest">
-                            <li>a. Premium: 7 Tage: 7,99 €, 14 Tage: 12,99 €, 30 Tage: 19,99 €</li>
-                            <li>b. Premium Plus: 7 Tage: 14,99 €, 14 Tage: 24,99 €, 30 Tage: 39,99 €</li>
+                            <li><strong>7 Tage:</strong> 14,99 €</li>
+                            <li><strong>14 Tage:</strong> 24,99 €</li>
+                            <li><strong>30 Tage:</strong> 39,99 €</li>
                         </ul>
                         <p>
-                            (7) Die Hervorhebung startet nach erfolgreicher Zahlung. Die Laufzeit richtet sich nach der gewählten Option. Die Hervorhebung endet automatisch nach Ablauf der gebuchten Laufzeit. Es erfolgt keine automatische Verlängerung. Es besteht kein Abonnement. Es besteht kein Anspruch auf eine bestimmte Anzahl an Klicks, Anfragen oder Verkäufen.
+                            Voraussetzung ist ein vollständig eingerichtetes und verifiziertes gewerbliches Profil nach den auf der Plattform ausgewiesenen Kriterien. Ein aktives Inserat ist nicht zwingend erforderlich. Die Buchung kann nach Maßgabe der Plattform auch mit Campuna Credits erfolgen.
                         </p>
                         <p>
-                            (8) Zusätzlich können gewerbliche Verkäufer eine kostenpflichtige Zusatzoption namens "Anbieter-Spotlight" buchen, um ihr Verkäuferprofil zeitlich begrenzt im Bereich „Ausgewählte Anbieter“ bzw. in einer Anbieter-Rotation auf der Startseite erscheinen zu lassen. Die Preise hierfür betragen:
-                        </p>
-                        <ul className="list-disc pl-6 space-y-1.5 font-normal text-forest">
-                            <li>a. Für 7 Tage: 19 €</li>
-                            <li>b. Für 14 Tage: 29 €</li>
-                            <li>c. Für 30 Tage: 49 €</li>
-                        </ul>
-                        <p>
-                            (9) Die Platzierung erfolgt im Bereich „Ausgewählte Anbieter“ / Startseiten-Rotation. Die Laufzeit richtet sich nach der gewählten Option. Die Zusatzoption beginnt nach erfolgreicher Zahlung und endet automatisch nach Ablauf der gebuchten Laufzeit. Es erfolgt keine automatische Verlängerung. Es besteht kein Abonnement. Es besteht kein Anspruch auf eine bestimmte Anzahl an Klicks, Anfragen, Kontakten oder Umsätzen. Bei mehreren gebuchten oder aktiven Anbieter-Spotlights kann die Darstellung rotierend erfolgen.
+                            (9) Die Platzierung erfolgt im Bereich „Ausgewählte Anbieter“ / Startseiten-Rotation. Die Laufzeit richtet sich nach der gewählten Option. Die Zusatzoption beginnt nach erfolgreicher Zahlung oder Credit-Einlösung und endet automatisch nach Ablauf der gebuchten Laufzeit. Es erfolgt keine automatische Verlängerung. Es besteht kein Abonnement. Es besteht kein Anspruch auf eine bestimmte Anzahl an Klicks, Anfragen, Kontakten oder Umsätzen. Bei mehreren gebuchten oder aktiven Anbieter-Spotlights kann die Darstellung rotierend erfolgen.
                         </p>
                         <p>
-                            (10) Die Präsentation und Bewerbung von Optionen auf der Webseite stellen noch kein bindendes Angebot zum Abschluss eines Vertrags dar. Ein Vertrag kommt erst zustande, wenn der Plattformbetreiber die Bestellung des Nutzers durch eine Annahmeerklärung annimmt oder wenn die Leistung erbracht wird.
+                            (10) Die Präsentation und Bewerbung von Optionen auf der Webseite stellen noch kein bindendes Angebot zum Abschluss eines Vertrags dar. Ein Vertrag kommt erst zustande, wenn der Plattformbetreiber die Bestellung des Nutzers durch eine Annahmeerklärung annimmt oder wenn die Leistung erbracht wird. Zwingende Vorgaben zum elektronischen Geschäftsverkehr bleiben unberührt.
                         </p>
                         <p>
-                            (11) Nach Abschluss des Nutzungsvertrages kann der Nutzer für die vereinbarte Dauer die Leistungen in Anspruch nehmen. Der Nutzer ist bei der Gestaltung von Profil und Angeboten sowie deren Abwicklung frei. Der Nutzer ist allerdings für die Einhaltung der gesetzlichen Bestimmungen verantwortlich und stellt den Plattformbetreiber von allen Schäden oder Ansprüchen Dritter aufgrund von Verstößen frei.
+                            (11) Nach Abschluss des Nutzungsvertrages kann der Nutzer für die vereinbarte Dauer die Leistungen in Anspruch nehmen. Der Nutzer ist bei der Gestaltung von Profil und Angeboten sowie deren Abwicklung frei. Der Nutzer ist allerdings für die Einhaltung der gesetzlichen Bestimmungen verantwortlich und stellt den Plattformbetreiber im gesetzlich zulässigen Umfang von Ansprüchen Dritter aufgrund von von ihm zu vertretenden Verstößen frei.
                         </p>
                     </section>
 
@@ -225,19 +220,19 @@ export default function AgbClient() {
                             (2) Die Zahlung für kostenpflichtige Leistungen erfolgt über den Zahlungsdienstleister Stripe.
                         </p>
                         <p>
-                            (3) Die Abrechnung für Business-Pakete erfolgt monatlich im Voraus. Einzelne Zusatzoptionen werden als Einmalzahlungen abgerechnet.
+                            (3) Die Abrechnung für Business-Pakete erfolgt für die gesamte gewählte Laufzeit (1, 3 oder 12 Monate) einmalig im Voraus. Einzelne Zusatzoptionen und Credit-Pakete werden als Einmalzahlungen abgerechnet. Es erfolgen keine automatischen Folgebelastungen für Business-Pakete.
                         </p>
                         <p>
-                            (4) Die Freischaltung der Nutzung kostenpflichtiger Leistungen erfolgt erst nach erfolgreicher Zahlung. Der Plattformbetreiber behält sich das Recht vor, die Freischaltung bis zur Bestätigung der Zahlung durch Stripe zu verzögern.
+                            (4) Die Freischaltung der Nutzung kostenpflichtiger Leistungen erfolgt erst nach erfolgreicher Zahlung beziehungsweise bei Credit-Buchungen nach erfolgreicher Einlösung. Der Plattformbetreiber behält sich das Recht vor, die Freischaltung bis zur Bestätigung der Zahlung durch Stripe zu verzögern.
                         </p>
                         <p>
-                            (5) Im Falle einer fehlgeschlagenen Zahlung wird der Nutzer per E-Mail benachrichtigt und aufgefordert, die Zahlung innerhalb von 7 Tagen zu begleichen. Erfolgt keine Zahlung innerhalb dieser Frist, behält sich der Plattformbetreiber das Recht vor, die kostenpflichtigen Leistungen zu sperren oder zu deaktivieren, bis die Zahlung erfolgreich abgeschlossen wurde.
+                            (5) Im Falle einer fehlgeschlagenen Zahlung wird der Nutzer über den Zahlungsstatus informiert. Die kostenpflichtige Leistung wird grundsätzlich erst nach erfolgreicher Zahlung freigeschaltet. Soweit ausnahmsweise eine fällige Forderung besteht, gelten die gesetzlichen Zahlungs- und Verzugsregelungen.
                         </p>
                         <p>
-                            (6) Nutzer sind nicht berechtigt, gegenüber Forderungen des Plattformbetreibers aufzurechnen, es sei denn, die Gegenansprüche sind rechtskräftig festgestellt oder unbestritten.
+                            (6) Nutzer sind zur Aufrechnung mit unbestrittenen oder rechtskräftig festgestellten Forderungen berechtigt. Gesetzliche Aufrechnungsrechte bleiben unberührt.
                         </p>
                         <p>
-                            (7) Der Plattformbetreiber behält sich das Recht vor, bei wiederholt fehlgeschlagenen Zahlungen das Vertragsverhältnis mit dem Nutzer außerordentlich zu kündigen. Der Nutzer wird in einem solchen Fall per E-Mail über die Kündigung informiert.
+                            (7) Der Plattformbetreiber behält sich das Recht vor, bei erheblichen schuldhaften Zahlungsverstößen nach Maßgabe der gesetzlichen Voraussetzungen das betroffene Vertragsverhältnis außerordentlich zu kündigen. Der Nutzer wird über eine solche Maßnahme informiert.
                         </p>
                     </section>
 
@@ -252,22 +247,22 @@ export default function AgbClient() {
                             (1) Eine kostenpflichtige Mitgliedschaft wird für die vereinbarte Dauer abgeschlossen. Die genaue Laufzeit ergibt sich aus dem jeweiligen Paket. Einzelne Anzeigen-Upgrades und Zusatzoptionen enden automatisch nach Ablauf der gewählten Laufzeit und bedürfen keiner Kündigung.
                         </p>
                         <p>
-                            (2) Das Campuna Business-Paket wird für die gewählte Festlaufzeit (1, 3 oder 12 Monate) im Voraus vereinbart und verlängert sich nicht automatisch. Der Vertrag über das gebuchte Paket endet mit Ablauf des gewählten Zeitraums automatisch, ohne dass eine Kündigung erforderlich ist. Ein Recht zur vorzeitigen Kündigung oder Beendigung über die gesetzliche Online-Kündigungsfunktion gem. § 312k BGB unter <Link href="/vertraege-kuendigen" className="text-forest underline font-medium">/vertraege-kuendigen</Link> oder aus wichtigem Grund bleibt hiervon unberührt.
+                            (2) Das Campuna Business-Paket wird für die gewählte Festlaufzeit (1, 3 oder 12 Monate) im Voraus vereinbart und verlängert sich nicht automatisch. Der Vertrag über das gebuchte Paket endet mit Ablauf des gewählten Zeitraums automatisch, ohne dass eine Kündigung erforderlich ist. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt. Soweit gesetzlich eine Online-Kündigungsmöglichkeit erforderlich ist, stellt der Plattformbetreiber diese unter <Link href="/vertraege-kuendigen" className="text-forest font-semibold underline hover:text-forest/80">/vertraege-kuendigen</Link> bereit.
                         </p>
                         <p>
-                            (3) Ein kostenfreier Nutzungsvertrag kann jederzeit ohne Angabe von Gründen in Textform von beiden Parteien gekündigt werden.
+                            (3) Ein kostenfreier Nutzungsvertrag kann jederzeit ohne Angabe von Gründen in Textform von beiden Parteien gekündigt werden, wobei für eine Kündigung durch den Plattformbetreiber gesetzliche Informations-, Frist- und Begründungspflichten unberührt bleiben.
                         </p>
                         <p>
-                            (4) Jede Kündigung bedarf der Textform oder kann über die Online-Kündigungsfunktion erfolgen. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt davon unberührt.
+                            (4) Kündigungen können in Textform oder über eine bereitgestellte Online-Kündigungsfunktion erklärt werden. Gesetzlich vorgeschriebene Kündigungswege dürfen nicht von einer Anmeldung oder zusätzlichen, unzulässigen Hürden abhängig gemacht werden. Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt davon unberührt.
                         </p>
                         <p>
-                            (5) Nach Ablauf oder Kündigung des Business-Pakets endet die kostenpflichtige Nutzung zum Ende der bezahlten Laufzeit. Das Nutzerprofil wechselt automatisch in das kostenlose Basiskonto zurück (bis zu 3 aktive Inserate). Etwaige überzählige Inserate werden vorübergehend pausiert, bleiben jedoch im Nutzerkonto erhalten.
+                            (5) Nach Ablauf des Business-Pakets endet die kostenpflichtige Nutzung zum Ende der bezahlten Laufzeit. Das Nutzerprofil wechselt automatisch in das kostenlose Basiskonto zurück (bis zu 3 aktive Inserate). Etwaige überzählige Inserate werden vorübergehend pausiert, bleiben jedoch im Nutzerkonto erhalten.
                         </p>
                         <p>
-                            (6) Wird der Vertrag durch den Nutzer oder durch den Plattformbetreiber gekündigt, werden die personenbezogenen Nutzerdaten (u.a. Name, E-Mail, Telefonnummer, Nachrichten, hochgeladene Dateien) vom Plattformbetreiber archiviert. Spätestens nach Ablauf von sechs (6) Monaten ab Vertragsbeendigung wird der Nutzeraccount endgültig gelöscht. Dies gilt nicht, soweit der Plattformbetreiber die betreffenden Daten zur Durchsetzung von Ansprüchen Nutzern gegenüber benötigt oder gesetzliche Aufbewahrungspflichten bestehen.
+                            (6) Wird das gesamte Nutzerkonto beendet, werden personenbezogene Daten nach Maßgabe der Datenschutzerklärung gelöscht oder für gesetzlich zulässige Zwecke aufbewahrt. Gesetzliche Aufbewahrungspflichten, berechtigte Rechtsverfolgung und die Rechte betroffener Personen bleiben unberührt. Eine pauschale Löschung sämtlicher Daten nach sechs Monaten wird nicht zugesagt.
                         </p>
                         <p>
-                            (7) Mit Wirksamwerden der Kündigung endet das Vertragsverhältnis und der Nutzer kann seinen Zugang nicht mehr nutzen. Der Plattformbetreiber behält sich vor, den Benutzernamen sowie das Passwort mit Wirksamwerden der Kündigung zu sperren.
+                            (7) Mit Wirksamwerden der Beendigung des gesamten Nutzerkontos endet das Nutzungsverhältnis und der Nutzer kann seinen Zugang nicht mehr nutzen. Der Plattformbetreiber behält sich vor, den Benutzernamen sowie das Passwort mit Wirksamwerden der Beendigung zu sperren. Die Beendigung lediglich des Business-Pakets führt nicht zur Sperrung des kostenlosen Kontos.
                         </p>
                     </section>
 
@@ -279,10 +274,10 @@ export default function AgbClient() {
                             § 7 Vermittlungstätigkeit
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber erbringt keine eigenen Dienstleistungen. Bei dem Dienst auf der Plattform handelt es sich um eine reine Vermittlung von Kontakten zwischen Verkäufern und Käufern und das Zurverfügungstellen der Plattform. Der Plattformbetreiber kann nicht gewährleisten, dass Verkäufer und deren Dienste für die Käufer auch tatsächlich verfügbar sind. Es besteht für Nutzer kein Anspruch auf eine erfolgreiche Vermittlung und kein Anspruch auf die Bereitstellung einer bestimmten Anzahl von Vertragsabschlüssen.
+                            (1) Der Plattformbetreiber erbringt keine eigenen Dienstleistungen in Bezug auf die von Nutzern inserierten Waren und Leistungen. Bei dem Dienst auf der Plattform handelt es sich um eine reine Vermittlung von Kontakten zwischen Verkäufern und Käufern und das Zurverfügungstellen der Plattform. Davon unberührt bleiben die eigenen kostenpflichtigen Plattformleistungen. Der Plattformbetreiber kann nicht gewährleisten, dass Verkäufer und deren Dienste für die Käufer auch tatsächlich verfügbar sind. Es besteht für Nutzer kein Anspruch auf eine erfolgreiche Vermittlung und kein Anspruch auf die Bereitstellung einer bestimmten Anzahl von Vertragsabschlüssen.
                         </p>
                         <p>
-                            (2) Der Plattformbetreiber handelt lediglich als Vermittler und ist nicht verantwortlich für die Inhalte der Angebote der Verkäufer. Der Plattformbetreiber übernimmt keine Gewährleistung oder Haftung für die Richtigkeit, Qualität, Verfügbarkeit oder rechtliche Zulässigkeit der angebotenen Leistungen. Jeder Vertrag kommt ausschließlich zwischen dem Käufer und dem jeweiligen Verkäufer zustande. Jegliche Ansprüche, die sich aus oder im Zusammenhang mit den Angeboten ergeben, sind ausschließlich gegenüber den Verkäufern geltend zu machen.
+                            (2) Der Plattformbetreiber handelt lediglich als Vermittler und ist nicht verantwortlich für die Inhalte der Angebote der Verkäufer, soweit nicht eigene gesetzliche Pflichten bestehen. Der Plattformbetreiber übernimmt keine Gewährleistung für die Richtigkeit, Qualität, Verfügbarkeit oder rechtliche Zulässigkeit der von Nutzern angebotenen Leistungen. Jeder Vertrag kommt ausschließlich zwischen dem Käufer und dem jeweiligen Verkäufer zustande. Vertragliche Ansprüche aus diesen Geschäften sind grundsätzlich gegenüber dem jeweiligen Vertragspartner geltend zu machen. Zwingende gesetzliche Ansprüche gegen den Plattformbetreiber bleiben unberührt.
                         </p>
                     </section>
 
@@ -297,7 +292,7 @@ export default function AgbClient() {
                             (1) Wenn die Nutzer Inhalte auf der Plattform bereitstellen, beauftragen sie den Plattformbetreiber damit, diese zu speichern, zu hosten und wenn dies vereinbart ist, Dritten zugänglich zu machen. Der Plattformbetreiber verwendet Nutzerinhalte im Einklang mit der zwischen Nutzern und dem Plattformbetreiber bestehenden Vereinbarung. Indem die Nutzer ihre Inhalte bereitstellen, räumen sie dem Plattformbetreiber für die Dauer der Vereinbarung eine nicht ausschließliche, räumlich unbegrenzte Lizenz ein, diese Inhalte für die Zwecke der Erbringung der Dienstleistungen im Rahmen der Vereinbarung zu nutzen. Dazu gehört auch das Recht, die Inhalte zu speichern, zu reproduzieren, zu formatieren, (technisch) zu bearbeiten, zu übertragen, zugänglich zu machen und selbst oder durch Dritte zu analysieren und auszuwerten. Der Plattformbetreiber ist auch berechtigt, die Daten in einem Ausfallsystem bzw. separaten Ausfallrechenzentrum vorzuhalten. Zur Beseitigung von Störungen ist der Plattformbetreiber ferner berechtigt, Änderungen an der Struktur der Daten oder dem Datenformat vorzunehmen. Der Plattformbetreiber wird die von den Nutzern in der Plattform hochgeladenen Inhalte nur insoweit veröffentlichen und Dritten zugänglich machen, wie dies für den Vertragszweck erforderlich ist.
                         </p>
                         <p>
-                            (2) Nutzer sichern zu, dass sie alle Rechte, an den von ihnen auf die Plattform hochgeladenen Inhalten haben oder über eine Lizenz für die Inhalte verfügen, um dem Plattformbetreiber die Rechte gemäß dieser Klausel einzuräumen.
+                            (2) Nutzer sichern zu, dass sie alle Rechte an den von ihnen auf die Plattform hochgeladenen Inhalten haben oder über eine Lizenz für die Inhalte verfügen, um dem Plattformbetreiber die Rechte gemäß dieser Klausel einzuräumen.
                         </p>
                     </section>
 
@@ -309,16 +304,16 @@ export default function AgbClient() {
                             § 9 Pflichten des Plattformbetreibers
                         </h2>
                         <p>
-                            (1) Die vom Plattformbetreiber auf der Plattform angebotenen Dienste unterliegen einer kontinuierlichen Weiterentwicklung, die sich von Zeit zu Zeit in zumutbarem Umfang ändern. Der Plattformbetreiber behält sich vor, die Bereitstellung der Dienste (oder Funktionen innerhalb der Dienste) für einzelne oder alle Nutzer zeitweise oder dauerhaft einzustellen. Änderungen oder Einschränkungen der Dienste teilt der Plattformbetreiber den Nutzern mit angemessenem Vorlauf mit.
+                            (1) Die vom Plattformbetreiber auf der Plattform angebotenen Dienste unterliegen einer kontinuierlichen Weiterentwicklung, die sich von Zeit zu Zeit in zumutbarem Umfang ändern. Der Plattformbetreiber behält sich vor, die Bereitstellung der Dienste (oder Funktionen innerhalb der Dienste) im gesetzlich zulässigen Rahmen für einzelne oder alle Nutzer zeitweise oder dauerhaft einzustellen. Änderungen oder Einschränkungen der Dienste teilt der Plattformbetreiber den Nutzern mit angemessenem Vorlauf mit, soweit dies rechtlich erforderlich ist.
                         </p>
                         <p>
-                            (2) Der Plattformbetreiber haftet nicht für den Datenverlust aufgrund einer etwaigen technischen Störung oder einer Einstellung von Diensten.
+                            (2) Der Plattformbetreiber haftet für Datenverluste aufgrund technischer Störungen oder der Einstellung von Diensten nach Maßgabe der gesetzlichen Bestimmungen und der Haftungsregelungen in § 11.
                         </p>
                         <p>
-                            (3) Die Verfügbarkeit der Plattform beträgt 98 % im Jahresmittel. Ausgenommen sind Zeiten, in denen die Server wegen routinemäßiger und zuvor angekündigter Wartungsarbeiten oder Störungen außerhalb des Einflussbereiches des Plattformbetreibers nicht verfügbar sind.
+                            (3) Der Plattformbetreiber strebt eine hohe Verfügbarkeit der Plattform an. Vorübergehende Einschränkungen können insbesondere durch Wartung, Sicherheitsmaßnahmen oder Störungen außerhalb seines Einflussbereichs entstehen. Eine garantierte Verfügbarkeitsquote von 98 % wird nicht vereinbart, sofern sie nicht ausdrücklich im jeweiligen Vertrag zugesagt ist.
                         </p>
                         <p>
-                            (4) Der Plattformbetreiber ist bemüht die Software aktuell zu halten, ohne dass jedoch ein Rechtsanspruch hierauf besteht. Der Plattformbetreiber kann den Funktionsumfang der Plattform jederzeit einschränken oder erweitern.
+                            (4) Der Plattformbetreiber ist bemüht, die Software aktuell zu halten. Gesetzliche Pflichten zur Bereitstellung von Aktualisierungen, insbesondere bei entgeltlichen digitalen Leistungen, bleiben unberührt. Der Plattformbetreiber kann den Funktionsumfang im gesetzlich zulässigen Rahmen einschränken oder erweitern.
                         </p>
                     </section>
 
@@ -330,31 +325,31 @@ export default function AgbClient() {
                             § 10 Bewertungs- und Reputationssystem
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber stellt den Nutzern ein Bewertungs- und Reputationssystem zur Verfügung, über das Nutzer die Möglichkeit haben, sich gegenseitig zu bewerten. Dieses System dient der Förderung von Transparenz und Vertrauen innerhalb der Plattform.
+                            (1) Der Plattformbetreiber stellt den Nutzern, soweit die Funktion auf der Plattform freigeschaltet ist, ein Bewertungs- und Reputationssystem zur Verfügung, über das Nutzer die Möglichkeit haben, sich gegenseitig zu bewerten. Dieses System dient der Förderung von Transparenz und Vertrauen innerhalb der Plattform.
                         </p>
                         <p>
                             (2) Bewertungen können nur von registrierten Nutzern abgegeben werden und müssen den tatsächlichen Erfahrungen des bewertenden Nutzers entsprechen. Unwahre, beleidigende oder unsachliche Bewertungen sind unzulässig.
                         </p>
                         <p>
-                            (3) Der Plattformbetreiber behält sich das Recht vor, Bewertungen, die gegen die Plattformrichtlinien oder gesetzliche Bestimmungen verstoßen, zu löschen oder zu ändern. Nutzer, deren Bewertungen entfernt oder geändert wurden, werden darüber informiert und haben die Möglichkeit, Einspruch gegen diese Entscheidung einzulegen. Der Einspruch ist schriftlich an den Plattformbetreiber zu richten und wird manuell von einem Mitarbeiter überprüft.
+                            (3) Der Plattformbetreiber behält sich das Recht vor, Bewertungen, die gegen die Plattformrichtlinien oder gesetzliche Bestimmungen verstoßen, zu entfernen oder zu moderieren. Nutzer, deren Bewertungen entfernt oder eingeschränkt wurden, werden darüber informiert, soweit gesetzlich erforderlich, und haben die Möglichkeit, Einspruch gegen diese Entscheidung einzulegen. Der Einspruch kann über die bereitgestellten Melde- und Beschwerdewege eingelegt werden und wird nach Maßgabe der gesetzlichen Anforderungen überprüft.
                         </p>
                         <p>
                             (4) Nutzer, die Bewertungen abgeben, sind verpflichtet, dabei die allgemeinen Sitten und den respektvollen Umgang zu wahren. Insbesondere sind diskriminierende, rassistische, sexistische oder anderweitig unangemessene Bewertungen untersagt.
                         </p>
                         <p>
-                            (5) Der Plattformbetreiber übernimmt keine Haftung für die Richtigkeit und Vollständigkeit der abgegebenen Bewertungen. Die Bewertungen spiegeln ausschließlich die Meinungen der jeweiligen Nutzer wider und stellen keine Meinungen des Plattformbetreibers dar.
+                            (5) Der Plattformbetreiber übernimmt keine Gewähr für die Richtigkeit und Vollständigkeit der abgegebenen Bewertungen, soweit gesetzlich zulässig. Die Bewertungen spiegeln ausschließlich die Meinungen der jeweiligen Nutzer wider und stellen keine Meinungen des Plattformbetreibers dar.
                         </p>
                         <p>
-                            (6) Der Plattformbetreiber ist berechtigt, die Kriterien und Funktionsweise des Bewertungs- und Reputationssystems jederzeit zu ändern, zu erweitern oder einzustellen. Die Nutzer werden über wesentliche Änderungen in geeigneter Weise informiert.
+                            (6) Der Plattformbetreiber ist berechtigt, die Kriterien und Funktionsweise des Bewertungs- und Reputationssystems im gesetzlich zulässigen Rahmen zu ändern, zu erweitern oder einzustellen. Die Nutzer werden über wesentliche Änderungen in geeigneter Weise informiert.
                         </p>
                         <p>
                             (7) Nutzer, die sich durch eine Bewertung in ihren Rechten verletzt sehen, können dies dem Plattformbetreiber melden. Der Plattformbetreiber wird die Beschwerde prüfen und gegebenenfalls Maßnahmen ergreifen, um die beanstandete Bewertung zu entfernen oder zu ändern.
                         </p>
                         <p>
-                            (8) Der Nutzer stellt den Plattformbetreiber von allen Ansprüchen Dritter frei, die aufgrund von Bewertungen geltend gemacht werden, die der Nutzer abgegeben hat, sofern die Bewertungen gegen gesetzliche Bestimmungen oder Rechte Dritter verstoßen.
+                            (8) Der Nutzer stellt den Plattformbetreiber im gesetzlich zulässigen Umfang von begründeten Ansprüchen Dritter frei, die aufgrund von Bewertungen geltend gemacht werden, die der Nutzer abgegeben hat, sofern die Bewertungen schuldhaft gegen gesetzliche Bestimmungen oder Rechte Dritter verstoßen.
                         </p>
                         <p>
-                            (9) Der Plattformbetreiber haftet nicht für Schäden, die durch das Bewertungs- und Reputationssystem entstehen, es sei denn, der Plattformbetreiber handelt vorsätzlich oder grob fahrlässig.
+                            (9) Für Schäden im Zusammenhang mit dem Bewertungs- und Reputationssystem gelten die Haftungsregeln des § 11.
                         </p>
                     </section>
 
@@ -366,7 +361,7 @@ export default function AgbClient() {
                             § 11 Haftung
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber übernimmt für angeliefertes Datenmaterial, Anzeigentexte oder diesbezügliche Speichermedien keine Verantwortung und ist insbesondere nicht verpflichtet, diese aufzubewahren oder zurückzugeben. Eine Löschung nach Vertragsende erfolgt nach den gesetzlichen Vorgaben.
+                            (1) Der Plattformbetreiber übernimmt für angeliefertes Datenmaterial, Anzeigentexte oder diesbezügliche Speichermedien keine über gesetzliche Pflichten hinausgehende Aufbewahrungspflicht. Eine Löschung nach Vertragsende erfolgt nach den gesetzlichen Vorgaben.
                         </p>
                         <p>
                             (2) Der Plattformbetreiber haftet für Sach- oder Rechtsmängel nach den vorhandenen geltenden gesetzlichen Vorschriften.
@@ -375,7 +370,7 @@ export default function AgbClient() {
                             (3) Der Plattformbetreiber haftet Nutzern gegenüber in allen Fällen vertraglicher und außervertraglicher Haftung bei Vorsatz und grober Fahrlässigkeit nach Maßgabe der gesetzlichen Bestimmungen auf Schadensersatz oder Ersatz vergeblicher Aufwendungen.
                         </p>
                         <p>
-                            (4) In sonstigen Fällen haftet der Plattformbetreiber - soweit nicht abweichend geregelt – nur bei Verletzung einer Vertragspflicht, deren Erfüllung die ordnungsgemäße Durchführung des Vertrags überhaupt erst ermöglicht und auf deren Einhaltung die Nutzer regelmäßig vertrauen dürfen (sogenannte Kardinalpflicht), und zwar beschränkt auf den Ersatz des vorhersehbaren und typischen Schadens. In allen übrigen Fällen ist die Haftung des Plattformbetreibers vorbehaltlich abweichender Regelungen ausgeschlossen.
+                            (4) In sonstigen Fällen haftet der Plattformbetreiber – soweit nicht abweichend geregelt – nur bei Verletzung einer Vertragspflicht, deren Erfüllung die ordnungsgemäße Durchführung des Vertrags überhaupt erst ermöglicht und auf deren Einhaltung die Nutzer regelmäßig vertrauen dürfen (sogenannte Kardinalpflicht), und zwar beschränkt auf den Ersatz des vorhersehbaren und typischen Schadens. In allen übrigen Fällen ist die Haftung des Plattformbetreibers vorbehaltlich abweichender Regelungen ausgeschlossen.
                         </p>
                         <p>
                             (5) Eine Haftung für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit und nach dem Produkthaftungsgesetz bleibt von den vorstehenden Haftungsbeschränkungen und -ausschlüssen unberührt.
@@ -384,13 +379,13 @@ export default function AgbClient() {
                             (6) Die Haftungsbeschränkungen gelten zugunsten der Mitarbeiter, Beauftragten und Erfüllungsgehilfen des Plattformbetreibers entsprechend.
                         </p>
                         <p>
-                            (7) Der Plattformbetreiber ist ausschließlich als Plattformbetreiber tätig und übernimmt keine Haftung für die von Nutzern eingestellten Inhalte, die Durchführung von Verträgen zwischen den Nutzern, die Gewährleistung für die von Nutzern angebotenen Produkte oder Dienstleistungen sowie für Streitigkeiten, die zwischen den Nutzern entstehen. Die Nutzer sind selbst dafür verantwortlich, dass ihre Inhalte keine Rechte Dritter verletzen und den gesetzlichen Bestimmungen entsprechen.
+                            (7) Der Plattformbetreiber ist ausschließlich als Plattformbetreiber tätig und übernimmt keine vertragliche Verantwortung für die Durchführung von Verträgen zwischen den Nutzern, die Gewährleistung für die von Nutzern angebotenen Produkte oder Dienstleistungen sowie für Streitigkeiten, die zwischen den Nutzern entstehen. Die Nutzer sind selbst dafür verantwortlich, dass ihre Inhalte keine Rechte Dritter verletzen und den gesetzlichen Bestimmungen entsprechen. Eigene gesetzliche Pflichten des Plattformbetreibers bleiben unberührt.
                         </p>
                         <p>
-                            (8) Die Nutzer stellen den Plattformbetreiber sowie dessen Mitarbeiter, Beauftragte und Erfüllungsgehilfen von allen Ansprüchen Dritter frei, die aufgrund der von den Nutzern eingestellten Inhalte, der Durchführung von Verträgen oder der angebotenen Produkte und Dienstleistungen geltend gemacht werden. Dies umfasst insbesondere Ansprüche aufgrund von Rechtsverletzungen oder Streitigkeiten zwischen den Nutzern.
+                            (8) Die Nutzer stellen den Plattformbetreiber sowie dessen Mitarbeiter, Beauftragte und Erfüllungsgehilfen im gesetzlich zulässigen Umfang von begründeten Ansprüchen Dritter frei, die auf schuldhaften Rechtsverletzungen durch die von ihnen eingestellten Inhalte oder von ihnen angebotenen Produkte und Dienstleistungen beruhen.
                         </p>
                         <p>
-                            (9) Die vorstehenden Haftungsbeschränkungen und Freistellungsklauseln gelten auch für die Nutzung der Plattform im Rahmen der KI-gestützten Inhaltsprüfung. Der Plattformbetreiber haftet nicht für Schäden, die durch die automatisierte Prüfung oder die daraus resultierenden Maßnahmen entstehen, es sei denn, der Plattformbetreiber handelt vorsätzlich oder grob fahrlässig.
+                            (9) Für die KI-gestützte Inhaltsprüfung und darauf beruhende Maßnahmen gelten die vorstehenden Haftungsregelungen. Zwingende gesetzliche Ansprüche und Rechte bleiben unberührt.
                         </p>
                     </section>
 
@@ -402,34 +397,37 @@ export default function AgbClient() {
                             § 12 KI-gestützte Inhaltsprüfung
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber behält sich das Recht vor, Inhalte, die von Nutzern auf der Plattform eingestellt werden, durch den Einsatz von Künstlicher Intelligenz (KI) zu prüfen. Hierfür wird eine intern betriebene, datenschutzkonforme KI-Lösung eingesetzt. Diese KI-gestützte Inhaltsprüfung dient ausschließlich der Unterstützung der Moderation der eingestellten Inhalte, um sicherzustellen, dass diese den gesetzlichen Bestimmungen, den Richtlinien der Plattform und den allgemeinen Sitten entsprechen.
+                            (1) Der Plattformbetreiber behält sich das Recht vor, Inhalte, die von Nutzern auf der Plattform eingestellt werden, durch den Einsatz von Künstlicher Intelligenz (KI) zu prüfen. Nach der aktuellen technischen Dokumentation erfolgt diese Prüfung mit einem selbst gehosteten KI-Modell (Qwen3) und nicht über die zuvor in den AGB genannte OpenAI API. Die KI-gestützte Inhaltsprüfung dient der Unterstützung der Moderation der eingestellten Inhalte, um Verstöße gegen gesetzliche Bestimmungen und die Richtlinien der Plattform zu erkennen.
                         </p>
                         <p>
-                            (2) Die KI-gestützte Inhaltsprüfung kann folgende Maßnahmen ergreifen: a. Anzeigen freigeben, b. Anzeigen ablehnen, c. Anzeigen zur manuellen Prüfung markieren.
+                            (2) Die KI-gestützte Inhaltsprüfung kann folgende Maßnahmen ergreifen: a. Anzeigen freigeben, b. Anzeigen automatisiert ablehnen, c. Anzeigen zur manuellen Prüfung markieren. Eine anschließende manuelle Prüfung und Korrektur ist möglich.
                         </p>
                         <p>
-                            (3) Die endgültige Entscheidungsgewalt über die Freigabe, Ablehnung oder Änderung von Inhalten liegt beim Plattformbetreiber. Es werden keine endgültigen vollautomatisierten rechtlichen Entscheidungen ohne menschliche Prüfung getroffen.
+                            (3) Der Plattformbetreiber behält die Befugnis, KI-Entscheidungen manuell zu überprüfen, zu bestätigen oder zu korrigieren. Eine vorherige menschliche Prüfung jedes Einzelfalls ist nicht zugesagt.
                         </p>
                         <p>
-                            (4) Die KI-gestützte Inhaltsprüfung erfolgt automatisiert, jedoch wird keine Profilbildung oder Verhaltensanalyse der Nutzer durchgeführt. Eine automatisierte Sperrung von Inhalten ohne menschliche Überprüfung findet nicht statt.
+                            (4) Die automatisierte Inhaltsprüfung dient der Beurteilung eingestellter Inhalte. Einzelheiten zu einer etwaigen Verarbeitung personenbezogener Daten und zu den Rechten betroffener Personen ergeben sich aus der Datenschutzerklärung und den gesetzlichen Vorschriften.
                         </p>
                         <p>
-                            (5) Die Nutzer werden über die Ablehnung oder Markierung ihrer Inhalte zur manuellen Prüfung informiert und haben die Möglichkeit, Einspruch gegen die Entscheidung einzulegen. Der Einspruch ist schriftlich an den Plattformbetreiber zu richten und wird manuell von einem Mitarbeiter überprüft.
+                            (5) Die Nutzer werden bei Ablehnung oder Sperrung ihrer Inhalte über die wesentlichen Gründe informiert, soweit gesetzlich vorgeschrieben. Über die in der Plattform angebotene Funktion „Request Review“ können sie eine manuelle Überprüfung beantragen. Weitere gesetzlich vorgeschriebene Melde-, Beschwerde- und Rechtsbehelfswege bleiben unberührt.
                         </p>
                         <p>
                             (6) Die Nutzung der KI-gestützten Inhaltsprüfung entbindet die Nutzer nicht von ihrer Verantwortung, nur rechtmäßige und den Plattformrichtlinien entsprechende Inhalte einzustellen. Die Nutzer sind weiterhin verpflichtet, sicherzustellen, dass ihre Inhalte keine Rechte Dritter verletzen und keine illegalen, beleidigenden oder anderweitig unangemessenen Inhalte enthalten.
                         </p>
                         <p>
-                            (7) Der Plattformbetreiber haftet nicht für Schäden, die durch die automatisierte KI-gestützte Inhaltsprüfung entstehen, es sei denn, der Plattformbetreiber handelt vorsätzlich oder grob fahrlässig.
+                            (7) Für Schäden im Zusammenhang mit der automatisierten Inhaltsprüfung gelten die Haftungsregelungen des § 11.
                         </p>
                         <p>
-                            (8) Die Nutzer stellen den Plattformbetreiber von allen Ansprüchen Dritter frei, die aufgrund der von ihnen eingestellten Inhalte geltend gemacht werden, sofern die Inhalte trotz der KIgestützten Inhaltsprüfung gegen gesetzliche Bestimmungen oder Rechte Dritter verstoßen.
+                            (8) Die Nutzer stellen den Plattformbetreiber im gesetzlich zulässigen Umfang von begründeten Ansprüchen Dritter frei, die auf von ihnen zu vertretenden Rechtsverletzungen durch eingestellte Inhalte beruhen.
                         </p>
                         <p>
-                            (9) Der Plattformbetreiber ist berechtigt, die KI-gestützte Inhaltsprüfung jederzeit zu ändern, zu erweitern oder einzustellen. Die Nutzer werden über wesentliche Änderungen in geeigneter Weise informiert.
+                            (9) Der Plattformbetreiber ist berechtigt, die KI-gestützte Inhaltsprüfung im gesetzlich zulässigen Rahmen zu ändern, zu erweitern oder einzustellen. Die Nutzer werden über wesentliche Änderungen in geeigneter Weise informiert.
                         </p>
                         <p>
-                            (10) Die KI-gestützte Inhaltsprüfung erfolgt in Übereinstimmung mit der Datenschutzerklärung der Plattform ohne Übermittlung von Inseratsdaten an ungesicherte externe Cloud-Modelle.
+                            (10) Der Einsatz der KI-Moderation sowie gegebenenfalls weiterer technischer Dienstleister wird in der Datenschutzerklärung entsprechend der tatsächlichen Verarbeitung erläutert.
+                        </p>
+                        <p>
+                            (11) Nutzer und sonstige berechtigte Personen können mutmaßlich rechtswidrige Inhalte über die bereitgestellte Meldefunktion melden. Entscheidungen über Einschränkungen von Inhalten werden nach Maßgabe der einschlägigen Vorschriften, insbesondere des Digital Services Act, begründet und überprüfbar gemacht, soweit diese Vorschriften anwendbar sind.
                         </p>
                     </section>
 
@@ -441,7 +439,7 @@ export default function AgbClient() {
                             § 13 Verschwiegenheit
                         </h2>
                         <p>
-                            Nutzer verpflichten sich, über alle im Rahmen der Vermittlungstätigkeit erhaltenen geschäftlichen Informationen während der Vertragslaufzeit und nach Beendigung dieses Vertrags gegenüber Dritten Stillschweigen zu bewahren.
+                            Nutzer verpflichten sich, über alle im Rahmen der Vermittlungstätigkeit erhaltenen nicht öffentlichen, erkennbar vertraulichen geschäftlichen Informationen während der Vertragslaufzeit und nach Beendigung dieses Vertrags gegenüber unberechtigten Dritten Stillschweigen zu bewahren. Gesetzliche Offenlegungspflichten und die zulässige Weitergabe zur Durchführung eigener Geschäfte bleiben unberührt.
                         </p>
                     </section>
 
@@ -453,10 +451,10 @@ export default function AgbClient() {
                             § 14 Urheberrechte
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber hält die Urheberrechte an allen Bildern, Filmen und Texten, die von ihm auf der Plattform veröffentlicht werden. Eine Verwendung dieser Bilder, Filme und Texte ist ohne ausdrückliche Zustimmung des Plattformbetreibers nicht gestattet.
+                            (1) Der Plattformbetreiber hält die Urheberrechte an allen Bildern, Filmen und Texten, die von ihm auf der Plattform veröffentlicht werden, soweit diese Rechte bei ihm liegen. Eine Verwendung dieser Bilder, Filme und Texte ist ohne ausdrückliche Zustimmung des Plattformbetreibers oder eine andere gesetzliche Berechtigung nicht gestattet.
                         </p>
                         <p>
-                            (2) Die Urheberrechte und Nutzungsrechte an Bildern, Filmen und Texten, die vom Verkäufer auf die Plattform hochgeladen werden, verbleiben beim Verkäufer. Der Verkäufer räumt dem Plattformbetreiber jedoch das Recht ein, diese Inhalte im Rahmen der Plattform zu nutzen, zu vervielfältigen und zu veröffentlichen, soweit dies für den Betrieb und die Bewerbung der Plattform notwendig ist. Eine darüberhinausgehende Nutzung durch den Plattformbetreiber bedarf der ausdrücklichen Zustimmung des Verkäufers.
+                            (2) Die Urheberrechte und Nutzungsrechte an Bildern, Filmen und Texten, die vom Verkäufer auf die Plattform hochgeladen werden, verbleiben beim Verkäufer beziehungsweise dem jeweiligen Rechteinhaber. Der Verkäufer räumt dem Plattformbetreiber jedoch das Recht ein, diese Inhalte im Rahmen der Plattform zu nutzen, zu vervielfältigen und zu veröffentlichen, soweit dies für den Betrieb und die Bewerbung der Plattform notwendig ist. Eine darüberhinausgehende Nutzung durch den Plattformbetreiber bedarf der ausdrücklichen Zustimmung des Verkäufers oder einer anderen Rechtsgrundlage.
                         </p>
                     </section>
 
@@ -468,47 +466,41 @@ export default function AgbClient() {
                             § 15 Datenschutz
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber darf die Nutzerdaten, die Nutzer in ihrem Nutzerprofil hochladen, verarbeiten und speichern und an Dritte weitergeben, soweit dies für die Ausführung der Vermittlung erforderlich ist und solange er zur Aufbewahrung dieser Daten aufgrund gesetzlicher Vorschriften verpflichtet ist.
+                            (1) Der Plattformbetreiber verarbeitet personenbezogene Daten im Rahmen der gesetzlichen Vorschriften, soweit hierfür eine Rechtsgrundlage besteht. Dies umfasst insbesondere die Durchführung des Nutzungsverhältnisses, die Vermittlungsfunktionen, die Zahlungsabwicklung und die Erfüllung gesetzlicher Pflichten.
                         </p>
                         <p>
-                            (2) Weitere Informationen zum Datenschutz finden die Nutzer in der Datenschutzerklärung des Plattformbetreibers unter{' '}
-                            <Link href="/datenschutzerkl_rung" className="text-forest font-medium underline">
-                                Datenschutzerklärung
-                            </Link>.
+                            (2) Weitere Informationen zum Datenschutz finden die Nutzer in der Datenschutzerklärung des Plattformbetreibers auf der Plattform. Diese erläutert insbesondere die eingesetzten technischen Dienstleister und die jeweiligen Datenverarbeitungen.
                         </p>
                     </section>
 
                     <hr className="border-forest/10" />
 
                     {/* § 16 */}
-                    <section className="space-y-4">
+                    <section id="widerrufsbelehrung" className="space-y-5">
                         <h2 className="font-display text-xl sm:text-2xl font-bold text-forest">
                             § 16 Gesetzliches Widerrufsrecht für Verbraucher
                         </h2>
                         <p>
-                            (1) Verbrauchern steht bei Abschluss eines entgeltlichen Nutzungsvertrages ein gesetzliches Widerrufsrecht vom Nutzungsvertrag zu. Hierzu verweist der Plattformbetreiber auf die nachfolgende Widerrufsbelehrung.
+                            (1) Verbrauchern steht bei Abschluss eines entgeltlichen Nutzungsvertrages im Fernabsatz grundsätzlich ein gesetzliches Widerrufsrecht zu, soweit dieses nicht nach den gesetzlichen Vorschriften ausgeschlossen ist oder erlischt. Hierzu verweist der Plattformbetreiber auf die nachfolgende Widerrufsbelehrung.
                         </p>
                         <p>
-                            (2) Unternehmern im Sinne von § 14 BGB steht kein gesetzliches Widerrufsrecht zu.
+                            (2) Unternehmern im Sinne von § 14 BGB steht bei einem Vertragsschluss in Ausübung ihrer gewerblichen oder selbständigen beruflichen Tätigkeit grundsätzlich kein gesetzliches Verbraucherwiderrufsrecht zu.
                         </p>
                         <p>
-                            (3) <strong>Vorzeitiges Erlöschen bei digitalen Inhalten (Campuna Credits, § 356 Abs. 5 BGB):</strong> Das Widerrufsrecht erlischt beim Erwerb von nicht auf einem körperlichen Datenträger befindlichen digitalen Inhalten (insbesondere Campuna Credits), wenn der Plattformbetreiber mit der Ausführung des Vertrages begonnen hat, nachdem der Verbraucher ausdrücklich zugestimmt hat, dass der Plattformbetreiber mit der Ausführung des Vertrages vor Ablauf der Widerrufsfrist beginnt, und seine Kenntnis davon bestätigt hat, dass er durch seine Zustimmung mit Beginn der Ausführung des Vertrages sein Widerrufsrecht verliert.
+                            (3) Für digitale Inhalte, die nicht auf einem körperlichen Datenträger geliefert werden, kann das Widerrufsrecht unter den Voraussetzungen des § 356 Abs. 5 BGB vorzeitig erlöschen. Ob Campuna Credits im jeweiligen Vertragsmodell als solche digitalen Inhalte einzuordnen sind, richtet sich nach der rechtlichen Natur der Leistung; die bloße technische Gutschrift oder eine Checkbox allein begründet kein automatisches Erlöschen.
                         </p>
                         <p>
-                            (4) <strong>Vorzeitiges Erlöschen und Wertersatz bei Dienstleistungen (Reichweiten-Booster, Spotlight-Platzierungen, § 356 Abs. 4, § 357a Abs. 2 BGB):</strong> Das Widerrufsrecht erlischt bei einem Vertrag zur Erbringung von Dienstleistungen, wenn der Plattformbetreiber die Dienstleistung vollständig erbracht hat und mit der Ausführung der Dienstleistung erst begonnen hat, nachdem der Verbraucher dazu seine ausdrückliche Zustimmung erteilt und gleichzeitig seine Kenntnis davon bestätigt hat, dass er sein Widerrufsrecht bei vollständiger Vertragserfüllung verliert. Widerruft der Verbraucher den Vertrag vor vollständiger Erbringung der Dienstleistung, schuldet er dem Plattformbetreiber einen angemessenen Wertersatz gem. § 357a Abs. 2 BGB für die bis zum Zeitpunkt des Widerrufs bereits erbrachte Teilleistung im Verhältnis zum Gesamtumfang der vereinbarten Leistung.
+                            (4) Bei Dienstleistungen, insbesondere zeitlich begrenzten Boost- und Spotlight-Leistungen, kann das Widerrufsrecht unter den Voraussetzungen des § 356 Abs. 4 BGB erst nach vollständiger Erbringung erlöschen. Bei einem wirksamen Widerruf nach Beginn der Dienstleistung kann unter den gesetzlichen Voraussetzungen Wertersatz nach § 357a BGB anfallen. Zwingende Verbraucherrechte bleiben unberührt.
                         </p>
                         <p>
-                            (5) <strong>Elektronische Kündigung (§ 312k BGB):</strong> Zur Erleichterung der Vertragsbeendigung stellt der Plattformbetreiber unter <Link href="/vertraege-kuendigen" className="text-forest underline font-medium">/vertraege-kuendigen</Link> eine ständig und unmittelbar zugängliche Schaltfläche („Verträge hier kündigen“) bereit, über die Verträge auch ohne vorherige Anmeldung (Login) formwirksam gekündigt werden können. Der Eingang der Kündigung wird unverzüglich elektronisch mit einer Bestätigungsnummer bestätigt.
+                            (5) Soweit § 312k BGB anwendbar ist, stellt der Plattformbetreiber unter <Link href="/vertraege-kuendigen" className="text-forest font-semibold underline hover:text-forest/80">/vertraege-kuendigen</Link> eine unmittelbar zugängliche Online-Kündigungsfunktion bereit. Eine gesetzlich wirksame Kündigung darf nicht von einer vorherigen Anmeldung oder einer zusätzlichen, gesetzlich unzulässigen Bestätigung abhängig gemacht werden. Die Kündigung wird entsprechend den gesetzlichen Anforderungen elektronisch bestätigt.
                         </p>
 
-                        {/* Widerrufsbelehrung Card */}
-                        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-forest/15 shadow-xs space-y-4">
-                            <h3 className="font-display text-lg font-bold text-forest uppercase tracking-wide">
+                        {/* WIDERRUFSBELEHRUNG CALLOUT */}
+                        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-forest/15 shadow-sm space-y-5 my-6">
+                            <h3 className="font-display text-lg sm:text-xl font-bold text-forest uppercase tracking-wider border-b border-forest/10 pb-3">
                                 Widerrufsbelehrung
                             </h3>
-                            <p className="text-xs text-charcoal/60">
-                                Widerrufsbelehrung nach EGBGB Anlage 1 zu Art. 246a § 1 Abs. 2 Satz 2. Fundstelle: BGBl. I 2013, 3642 - 3670
-                            </p>
 
                             <div className="space-y-3">
                                 <h4 className="font-bold text-forest">Widerrufsrecht</h4>
@@ -516,7 +508,7 @@ export default function AgbClient() {
                                     Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen. Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsschlusses.
                                 </p>
                                 <p>
-                                    Um Ihr Widerrufsrecht auszuüben, müssen Sie uns, <strong>LMR Solutions Ronny Voigt</strong>, Inhaber: Ronny Voigt, Premnitzer Straße 8, 99091 Erfurt, mittels einer eindeutigen Erklärung (z. B. ein mit der Post versandter Brief oder E-Mail an <a href="mailto:kontakt@campuna.de" className="text-forest underline font-medium">kontakt@campuna.de</a>) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.
+                                    Um Ihr Widerrufsrecht auszuüben, müssen Sie uns, <strong>LMR Solutions Ronny Voigt</strong>, Inhaber: Ronny Voigt, Premnitzer Straße 8, 99091 Erfurt, E-Mail: <a href="mailto:kontakt@campuna.de" className="text-forest font-semibold underline">kontakt@campuna.de</a>, mittels einer eindeutigen Erklärung (z. B. ein mit der Post versandter Brief oder E-Mail) über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.
                                 </p>
                                 <p>
                                     Zur Wahrung der Widerrufsfrist reicht es aus, dass Sie die Mitteilung über die Ausübung des Widerrufsrechts vor Ablauf der Widerrufsfrist absenden.
@@ -526,10 +518,10 @@ export default function AgbClient() {
                             <div className="space-y-3 pt-2">
                                 <h4 className="font-bold text-forest">Folgen des Widerrufs</h4>
                                 <p>
-                                    Wenn Sie diesen Vertrag widerrufen, haben wir Ihnen alle Zahlungen, die wir von Ihnen erhalten haben, einschließlich der Lieferkosten (mit Ausnahme der zusätzlichen Kosten, die sich daraus ergeben, dass Sie eine andere Art der Lieferung als die von uns angebotene, günstigste Standardlieferung gewählt haben), unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag zurückzuzahlen, an dem die Mitteilung über Ihren Widerruf dieses Vertrags bei uns eingegangen ist. Für diese Rückzahlung verwenden wir dasselbe Zahlungsmittel, das Sie bei der ursprünglichen Transaktion eingesetzt haben, es sei denn, mit Ihnen wurde ausdrücklich etwas anderes vereinbart; in keinem Fall werden Ihnen wegen dieser Rückzahlung Entgelte berechnet.
+                                    Wenn Sie diesen Vertrag widerrufen, haben wir Ihnen alle Zahlungen, die wir von Ihnen für den widerrufenen Vertrag erhalten haben, unverzüglich und spätestens binnen vierzehn Tagen ab dem Tag zurückzuzahlen, an dem die Mitteilung über Ihren Widerruf dieses Vertrags bei uns eingegangen ist. Für diese Rückzahlung verwenden wir dasselbe Zahlungsmittel, das Sie bei der ursprünglichen Transaktion eingesetzt haben, es sei denn, mit Ihnen wurde ausdrücklich etwas anderes vereinbart; in keinem Fall werden Ihnen wegen dieser Rückzahlung Entgelte berechnet.
                                 </p>
                                 <p>
-                                    Haben Sie verlangt, dass die Dienstleistungen während der Widerrufsfrist beginnen soll, so haben Sie uns einen angemessenen Betrag zu zahlen, der dem Anteil der bis zu dem Zeitpunkt, zu dem Sie uns von der Ausübung des Widerrufsrechts hinsichtlich dieses Vertrags unterrichten, bereits erbrachten Dienstleistungen im Vergleich zum Gesamtumfang der im Vertrag vorgesehenen Dienstleistungen entspricht.
+                                    Haben Sie ausdrücklich verlangt, dass die Dienstleistungen während der Widerrufsfrist beginnen sollen, so haben Sie uns unter den gesetzlichen Voraussetzungen einen angemessenen Betrag zu zahlen, der dem Anteil der bis zu dem Zeitpunkt, zu dem Sie uns von der Ausübung des Widerrufsrechts hinsichtlich dieses Vertrags unterrichten, bereits erbrachten Dienstleistungen im Vergleich zum Gesamtumfang der im Vertrag vorgesehenen Dienstleistungen entspricht.
                                 </p>
                             </div>
 
@@ -541,8 +533,8 @@ export default function AgbClient() {
                                 </p>
                                 <div className="text-xs sm:text-sm space-y-1.5 font-mono text-charcoal/80 bg-white p-4 rounded-lg border border-forest/10">
                                     <p>An LMR Solutions Ronny Voigt, Inhaber: Ronny Voigt, Premnitzer Straße 8, 99091 Erfurt (E-Mail: kontakt@campuna.de):</p>
-                                    <p>Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren (*)/die Erbringung der folgenden Dienstleistung (*):</p>
-                                    <p>– Bestellt am (*)/erhalten am (*)</p>
+                                    <p>Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über die Erbringung der folgenden Dienstleistung / die folgende digitale Leistung (*):</p>
+                                    <p>– Bestellt am (*)</p>
                                     <p>– Name des/der Verbraucher(s)</p>
                                     <p>– Anschrift des/der Verbraucher(s)</p>
                                     <p>– Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier)</p>
@@ -561,7 +553,7 @@ export default function AgbClient() {
                             § 17 Streitschlichtung, Anwendbares Recht und Gerichtsstand
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber nimmt an keinem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle im Sinne des Verbraucherstreitbeilegungsgesetzes teil.
+                            (1) Der Plattformbetreiber nimmt an keinem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle im Sinne des Verbraucherstreitbeilegungsgesetzes teil, soweit keine gesetzliche Verpflichtung besteht.
                         </p>
                         <p>
                             (2) Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Wenn der Nutzer die Bestellung als Verbraucher abgegeben hat und zum Zeitpunkt der Bestellung seinen gewöhnlichen Aufenthalt in einem anderen Land hat, bleibt die Anwendung zwingender Rechtsvorschriften dieses Landes von der in Satz 1 getroffenen Rechtswahl unberührt.
@@ -576,19 +568,22 @@ export default function AgbClient() {
                     {/* § 18 */}
                     <section id="empfehlungen" className="space-y-4 pt-2">
                         <h2 className="font-display text-xl sm:text-2xl font-bold text-forest">
-                            § 18 Campuna Credits &amp; Empfehlungsprogramm (Referral-System)
+                            § 18 Campuna Credits, Empfehlungsprogramm und Pioneer Award
                         </h2>
                         <p>
-                            (1) Der Plattformbetreiber stellt registrierten Nutzern ein Empfehlungsprogramm zur Verfügung. Nutzer können über ihren persönlichen Empfehlungslink bzw. Empfehlungscode neue Nutzer werben und hierfür zweckgebundene Plattform-Credits („Campuna Credits“ oder „CC“) erhalten.
+                            (1) Der Plattformbetreiber stellt registrierten Nutzern ein Empfehlungsprogramm zur Verfügung. Nutzer können über ihren persönlichen Empfehlungslink beziehungsweise Empfehlungscode neue Nutzer werben und hierfür zweckgebundene Plattform-Credits („Campuna Credits“ oder „CC“) erhalten.
                         </p>
                         <p>
-                            (2) <strong>Gegenwert &amp; Zweckbindung:</strong> 1 Campuna Credit (CC) entspricht einem Plattform-Gegenwert von 1 Cent (100 CC = 1,00 €). Campuna Credits sind ausschließlich für interne Plattform-Zusatzleistungen (z. B. Inserate-Highlights, Booster und Spotlight-Buchungen) einsetzbar. Eine Auszahlung in bar, eine Rückerstattung oder eine Übertragung auf Drittkonten ist ausgeschlossen.
+                            (2) <strong>Gegenwert &amp; Zweckbindung:</strong> Campuna Credits sind ausschließlich für interne, entsprechend gekennzeichnete Plattform-Zusatzleistungen (z. B. Inserat-Boosts und Anbieter-Spotlight-Buchungen) einsetzbar. Als unverbindliche Orientierung entsprechen 100 CC ungefähr 1 € Plattform-Gegenwert; die tatsächlichen Credit-Preise und Einlösekonditionen ergeben sich aus dem jeweiligen Angebot. Campuna Credits sind kein gesetzliches Zahlungsmittel. Eine Barauszahlung oder Übertragung auf Drittkonten ist grundsätzlich ausgeschlossen. Gesetzliche Widerrufs-, Erstattungs- und Rückabwicklungsansprüche für entgeltlich erworbene Credits bleiben unberührt.
                         </p>
                         <p>
-                            (3) <strong>Einseitige Belohnung:</strong> Die Gutschrift von Campuna Credits erfolgt ausschließlich zugunsten des werbenden Nutzers (Referrer). Geworbene Neukunden erhalten durch die reine Vermittlung keine gesonderten Credits.
+                            (3) <strong>Erwerb und Verwaltung:</strong> Campuna Credits können entgeltlich erworben oder unentgeltlich als Aktions-, Empfehlungs- oder Pioneer-Prämie gewährt werden. Derzeit vorgesehene Kaufpakete sind 500 CC für 4,99 €, 800 CC für 7,99 €, 1.300 CC für 12,99 € und 2.500 CC für 24,99 €. Maßgeblich sind die im Checkout angezeigten Preise. Gekaufte und unentgeltlich gewährte Credits werden getrennt verbucht. Credits verfallen nicht automatisch durch Zeitablauf. Bei berechtigten Rückerstattungen werden zugehörige noch ungenutzte Credits korrigiert; gesetzliche Rechte bleiben unberührt.
                         </p>
                         <p>
-                            (4) <strong>Qualifikationsvoraussetzungen:</strong> Die Gutschrift an den Werber erfolgt vollautomatisiert, sobald der geworbene Nutzer folgende Voraussetzungen kumulativ erfüllt hat:
+                            (4) <strong>Einseitige Belohnung:</strong> Die Gutschrift von Campuna Credits erfolgt ausschließlich zugunsten des werbenden Nutzers (Referrer). Geworbene Neukunden erhalten durch die reine Vermittlung keine gesonderten Credits.
+                        </p>
+                        <p>
+                            (5) <strong>Qualifikationsvoraussetzungen:</strong> Die Gutschrift an den Werber erfolgt vollautomatisiert, sobald der geworbene Nutzer die jeweils geltenden Voraussetzungen kumulativ erfüllt hat:
                         </p>
                         <ul className="list-disc pl-6 space-y-2 font-normal text-forest">
                             <li>
@@ -598,17 +593,31 @@ export default function AgbClient() {
                                 <strong>Gewerbliche Partner – Free (1.000 CC):</strong> Der geworbene gewerbliche Nutzer hat sich über den Empfehlungslink/Code registriert, seine E-Mail-Adresse verifiziert, ein vollständiges Firmenprofil angelegt und mindestens ein Inserat erfolgreich freigeschaltet.
                             </li>
                             <li>
-                                <strong>Gewerbliche Partner – Business (1.000 CC):</strong> Der geworbene gewerbliche Nutzer hat sich über den Empfehlungslink/Code registriert, seine E-Mail-Adresse verifiziert, ein vollständiges Firmenprofil angelegt und das kostenpflichtige Campuna Business-Abonnement (29 € / Monat) gebucht sowie die erste Zahlung erfolgreich abgeschlossen. Die Veröffentlichung eines Inserats ist in diesem Fall nicht erforderlich.
+                                <strong>Gewerbliche Partner – Business (1.000 CC):</strong> Der geworbene gewerbliche Nutzer hat sich über den Empfehlungslink/Code registriert, seine E-Mail-Adresse verifiziert, ein vollständiges Firmenprofil angelegt und ein kostenpflichtiges Campuna Business-Paket gebucht sowie die erste Zahlung erfolgreich abgeschlossen. Die Veröffentlichung eines Inserats ist in diesem Fall nicht erforderlich.
                             </li>
                         </ul>
                         <p>
-                            (5) <strong>Einmaligkeit:</strong> Pro geworbenem Nutzer bzw. Unternehmen kann maximal eine Empfehlungsprämie generiert werden. Die Qualifikation über Free und Business schließt Mehrfachvergütungen für denselben geworbenen Nutzer aus.
+                            (6) <strong>Einmaligkeit:</strong> Pro geworbenem Nutzer beziehungsweise Unternehmen kann maximal eine Empfehlungsprämie generiert werden. Die Qualifikation über Free und Business schließt Mehrfachvergütungen für denselben geworbenen Nutzer aus.
                         </p>
                         <p>
-                            (6) <strong>Missbrauchsschutz &amp; Ausschluss:</strong> Eigenwerbung (Self-Referrals), Mehrfachanmeldungen derselben Person/Firma, Schein-Inserate sowie betrügerische Manipulationen sind untersagt. Bei begründetem Missbrauchsverdacht ist der Plattformbetreiber berechtigt, gutgeschriebene Credits ersatzlos zu stornieren und betreffende Nutzerkonten ganz oder teilweise zu sperren.
+                            (7) <strong>Missbrauchsschutz &amp; Ausschluss:</strong> Eigenwerbung (Self-Referrals), Mehrfachanmeldungen derselben Person/Firma, Schein-Inserate sowie betrügerische Manipulationen sind untersagt. Bei nachgewiesenem Missbrauch ist der Plattformbetreiber berechtigt, unberechtigt gutgeschriebene Aktions-Credits nach angemessener Prüfung zu stornieren und betreffende Nutzerkonten nach Maßgabe der gesetzlichen Vorschriften einzuschränken. Berechtigte Ansprüche auf entgeltlich erworbene Credits bleiben unberührt.
                         </p>
                         <p>
-                            (7) <strong>Campuna Pioneer-Programm:</strong> Die ersten dreihundert (300) registrierten Nutzer (Verbraucher oder gewerbliche Unternehmer), die ihre E-Mail-Adresse erfolgreich verifiziert, ihr Profil vollständig ausgefüllt und drei (3) redaktionell geprüfte und freigeschaltete Inserate veröffentlicht haben, qualifizieren sich für das exklusive Campuna Pioneer-Programm. Qualifizierte Nutzer erhalten ein dauerhaftes Pioneer-Abzeichen auf ihrem Profil und Inseraten sowie einen einmaligen Bonus von 1.000 Campuna Credits gutgeschrieben. Ein Anspruch auf eine dauerhafte algorithmische Bevorzugung im Such- oder Rankingalgorithmus ist mit dem Pioneer-Status nicht verbunden.
+                            (8) <strong>Campuna Pioneer-Programm:</strong> Insgesamt dreihundert (300) Nutzer (Verbraucher und gewerbliche Unternehmer zusammen), die die jeweiligen Qualifikationsanforderungen vollständig erfüllen, können einen Pioneer Award erhalten. Maßgeblich ist die Reihenfolge der vollständigen Qualifikation, nicht der Registrierung.
+                        </p>
+                        <ul className="list-disc pl-6 space-y-1.5 font-normal text-forest">
+                            <li>
+                                <strong>Private Nutzer:</strong> verifizierte E-Mail-Adresse, vollständiges Profil mit Vorname, Nachname und Standort sowie drei geprüfte und freigeschaltete aktive Inserate.
+                            </li>
+                            <li>
+                                <strong>Gewerbliche Nutzer:</strong> verifizierte E-Mail-Adresse, Firmenlogo, Unternehmensbeschreibung von mindestens 20 Zeichen, vollständige Unternehmens- und Kontaktdaten einschließlich Name, Anschrift und Telefonnummer sowie drei geprüfte und freigeschaltete aktive Inserate.
+                            </li>
+                        </ul>
+                        <p>
+                            (9) Qualifizierte Nutzer erhalten ein dauerhaftes goldenes Pioneer-Abzeichen auf ihrem Profil und ihren Inseraten sowie einmalig 1.000 Campuna Credits. Pro Person beziehungsweise Unternehmen wird höchstens eine Pioneer-Auszeichnung vergeben. Ein Anspruch auf eine dauerhafte algorithmische Bevorzugung im Such- oder Rankingalgorithmus ist mit dem Pioneer-Status nicht verbunden. Bei nachgewiesenem Missbrauch kann eine unberechtigte Auszeichnung nach angemessener Prüfung widerrufen werden.
+                        </p>
+                        <p>
+                            (10) Die Nutzung von Credits für Zusatzleistungen erfolgt nach den für diese Zusatzleistungen geltenden Bestimmungen. Bei vorzeitiger Entfernung oder Pausierung eines Inserats werden gesetzliche Ansprüche geprüft; darüber hinaus kann der Plattformbetreiber im Einzelfall freiwillig eine Kulanzlösung anbieten. Eine pauschale Erstattungsgarantie besteht nicht.
                         </p>
                     </section>
 

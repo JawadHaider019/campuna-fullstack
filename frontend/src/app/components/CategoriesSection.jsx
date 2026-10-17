@@ -133,9 +133,9 @@ export default function CategoriesSection({
                                         <Icon className="w-5 h-5 transition-transform duration-300" />
                                     </div>
 
-                                    <h3 className="font-display text-[10.5px] sm:text-xs font-semibold text-charcoal group-hover:text-forest leading-tight tracking-tight transition-colors duration-300 line-clamp-2 h-[2.2em] flex items-center justify-center text-center">
+                                    <span className="font-display text-[10.5px] sm:text-xs font-semibold text-charcoal group-hover:text-forest leading-tight tracking-tight transition-colors duration-300 line-clamp-2 h-[2.2em] flex items-center justify-center text-center">
                                         {cat.name}
-                                    </h3>
+                                    </span>
                                 </Link>
                             </motion.div>
                         );

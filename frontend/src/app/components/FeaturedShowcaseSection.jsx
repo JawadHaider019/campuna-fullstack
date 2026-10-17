@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
     Sparkles,
@@ -109,10 +110,18 @@ export default function FeaturedShowcaseSection() {
         return (
             <section id="featured-showcase" className="py-8 sm:py-12 md:py-16 lg:py-20 bg-sand/20 scroll-mt-24 overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 space-y-2">
-                        <div className="h-4 w-36 bg-sand/60 rounded-full mx-auto animate-pulse" />
-                        <div className="h-8 sm:h-10 w-3/4 max-w-md bg-sand/60 rounded-2xl mx-auto animate-pulse" />
-                        <div className="h-4 w-5/6 max-w-lg bg-sand/40 rounded-full mx-auto animate-pulse" />
+                    {/* Section Header */}
+                    <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-10 md:mb-12 space-y-2 px-2">
+                        <span className="font-sans text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] sm:tracking-[0.35em] text-gold block">
+                            Highlights & Entdeckungen
+                        </span>
+                        <h2 className="font-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-forest leading-tight whitespace-normal lg:whitespace-nowrap">
+                            <span className="block sm:inline">Campuna </span>
+                            <span>Fundstücke der Woche </span>
+                        </h2>
+                        <p className="font-sans text-xs sm:text-sm md:text-base text-charcoal/70 max-w-xl mx-auto font-light leading-relaxed">
+                            Entdecke besondere Camping-Fahrzeuge, Zubehör und Ausrüstung aus unserer Community.
+                        </p>
                     </div>
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-10 xl:gap-14 items-center">
                         <div className="lg:col-span-6 rounded-2xl sm:rounded-3xl lg:rounded-[32px] aspect-[4/3] sm:aspect-[16/10] lg:aspect-[4/3] bg-sand/40 animate-pulse border border-forest/5 w-full" />
@@ -140,7 +149,7 @@ export default function FeaturedShowcaseSection() {
     }
 
     const targetUrl = `/inserate/${featuredItem.slug || featuredItem.id}`;
-    const primaryImage = featuredItem.images?.[0];
+    const primaryImage = getImageUrl(featuredItem.images?.[0]);
     const showPlaceholder = !primaryImage || imageError;
 
     return (
@@ -175,9 +184,11 @@ export default function FeaturedShowcaseSection() {
                     >
                         {/* Real DB Image or Brand Placeholder */}
                         {!showPlaceholder ? (
-                            <img
+                            <Image
                                 src={primaryImage}
                                 alt={featuredItem.title}
+                                fill
+                                sizes="(max-width: 640px) calc(100vw - 32px), (max-width: 1024px) calc(100vw - 48px), 600px"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                                 loading="lazy"
                                 onError={() => setImageError(true)}

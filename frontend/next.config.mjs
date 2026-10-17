@@ -6,7 +6,11 @@ const backendDestination = process.env.BACKEND_INTERNAL_URL ||
 
 const nextConfig = {
   reactCompiler: true,
+  compress: true,
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,
+    dangerouslyAllowLocalIP: true,
     remotePatterns: [
       {
         protocol: 'https',
